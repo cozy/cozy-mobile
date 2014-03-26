@@ -1,0 +1,19 @@
+{
+    "prepare_queue": {
+        "installed": [],
+        "uninstalled": []
+    },
+    "config_munge": {
+        "res/xml/config.xml": {
+            "/*": {
+                "<feature name=\"CBLite\"><param name=\"android-package\" value=\"com.couchbase.cblite.phonegap.CBLite\" /><param name=\"onload\" value=\"true\" /></feature>": 1
+            }
+        }
+    },
+    "installed_plugins": {
+        "com.couchbase.lite.phonegap": {
+            "PACKAGE_NAME": "io.cozy.files_client"
+        }
+    },
+    "dependent_plugins": {}
+}

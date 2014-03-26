@@ -1,0 +1,20 @@
+C:\Users\Romain\Projects\cozy-files-mobile\platforms\android\ant-build\classes.dex : \
+C:\Users\Romain\Projects\cozy-files-mobile\platforms\android\ant-build\classes\com\couchbase\cblite\phonegap\CBLite.class \
+C:\Users\Romain\Projects\cozy-files-mobile\platforms\android\ant-build\classes\io\cozy\files_client\BuildConfig.class \
+C:\Users\Romain\Projects\cozy-files-mobile\platforms\android\ant-build\classes\io\cozy\files_client\HelloCordova.class \
+C:\Users\Romain\Projects\cozy-files-mobile\platforms\android\ant-build\classes\io\cozy\files_client\R$attr.class \
+C:\Users\Romain\Projects\cozy-files-mobile\platforms\android\ant-build\classes\io\cozy\files_client\R$drawable.class \
+C:\Users\Romain\Projects\cozy-files-mobile\platforms\android\ant-build\classes\io\cozy\files_client\R$string.class \
+C:\Users\Romain\Projects\cozy-files-mobile\platforms\android\ant-build\classes\io\cozy\files_client\R$xml.class \
+C:\Users\Romain\Projects\cozy-files-mobile\platforms\android\ant-build\classes\io\cozy\files_client\R.class \
+C:\Users\Romain\Projects\cozy-files-mobile\platforms\android\ant-build\dexedLibs\classes-ee582ada21f4a276589eff4aa11ac2af.jar \
+C:\Users\Romain\Projects\cozy-files-mobile\platforms\android\ant-build\dexedLibs\CBLiteJavascript-1.0.0-beta2-bb0708cd14cc17eabc2a64f2e63395bf.jar \
+C:\Users\Romain\Projects\cozy-files-mobile\platforms\android\ant-build\dexedLibs\jackson-core-asl-1.9.2-7f8240281f2ca69045e0ee24b2392298.jar \
+C:\Users\Romain\Projects\cozy-files-mobile\platforms\android\ant-build\dexedLibs\rhino-1.7R3-4ea4abb876cae46d049bff7372689621.jar \
+C:\Users\Romain\Projects\cozy-files-mobile\platforms\android\ant-build\dexedLibs\CBLiteListener-1.0.0-beta2-d0bb011741450b6cfadc980cee240541.jar \
+C:\Users\Romain\Projects\cozy-files-mobile\platforms\android\ant-build\dexedLibs\td_collator_so-e9a117696512402e6733423b2de9fda3.jar \
+C:\Users\Romain\Projects\cozy-files-mobile\platforms\android\ant-build\dexedLibs\servlet-2-3-21c61ca97652e10d5d24dd752e899542.jar \
+C:\Users\Romain\Projects\cozy-files-mobile\platforms\android\ant-build\dexedLibs\commons-io-2.0.1-ed32559e48b2c8cf6b3245f9697152d9.jar \
+C:\Users\Romain\Projects\cozy-files-mobile\platforms\android\ant-build\dexedLibs\webserver-2-3-c8c7418c79ebce976a654bce5308f21e.jar \
+C:\Users\Romain\Projects\cozy-files-mobile\platforms\android\ant-build\dexedLibs\jackson-mapper-asl-1.9.2-1d0c739ee2f317ac183d10af5fca07e1.jar \
+C:\Users\Romain\Projects\cozy-files-mobile\platforms\android\ant-build\dexedLibs\CBLite-1.0.0-beta2-fe6b423c99f5aa6e179727e057bb9351.jar \
