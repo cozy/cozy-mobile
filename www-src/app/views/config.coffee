@@ -1,4 +1,6 @@
 BaseView = require '../lib/base_view'
+showLoader = require './loader'
+urlparse = require '../lib/url'
 
 module.exports = class ConfigView extends BaseView
 
@@ -17,6 +19,9 @@ module.exports = class ConfigView extends BaseView
         unless url and pass and device
             return @displayError 'all fields are required'
 
+        if url[0..3] is 'http'
+            @$('#input-url').val url = urlparse(url).hostname
+
         config =
             cozyURL: url
             password: pass
@@ -27,7 +32,13 @@ module.exports = class ConfigView extends BaseView
 
             $('#footer').text 'begin replication'
 
-            app.replicator.replicateToLocalOneShotNoDeleted (err) =>
+            loader = showLoader 'initial replication'
+
+            progressback = (ratio) ->
+                loader.setContent 'status = ' + 100*ratio + '%'
+
+            app.replicator.initialReplication progressback, (err) =>
+                loader.hide()
                 return @displayError err.message if err
 
                 $('#footer').text 'replication complete'

@@ -1,13 +1,15 @@
 app = require 'application'
 FolderView = require './views/folder'
 ConfigView = require './views/config'
+ConfigRunView = require './views/config_run'
 FolderCollection = require './collections/files'
 
 module.exports = class Router extends Backbone.Router
 
     routes:
         'folder/*path'                     : 'folder'
-        'config'                          : 'config'
+        'config'                          : 'login'
+        'configrun'                       : 'config'
 
     folder: (path) ->
         if path is null
@@ -23,8 +25,11 @@ module.exports = class Router extends Backbone.Router
         @display new FolderView
             collection: FolderCollection.getAtPath path
 
-    config: ->
+    login: ->
         @display new ConfigView()
+
+    config: ->
+        @display new ConfigRunView()
 
     display: (view) ->
         @mainView.remove() if @mainView

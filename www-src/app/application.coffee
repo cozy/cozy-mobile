@@ -23,9 +23,9 @@ module.exports =
         window.cblite ?= getURL: (cb) -> cb null, 'http://localhost:5984/'
         @replicator = new Replicator()
 
-        $('#header').on 'click', =>
-            @replicator.destroyDB (err) =>
-                $('#header').text err?.message
+        # $('#header').on 'click', =>
+        #     @replicator.destroyDB (err) =>
+        #         $('#header').text err?.message
 
 
         @replicator.init (err, config) =>
@@ -34,8 +34,8 @@ module.exports =
             Backbone.history.start()
 
             if config
-                @replicator.sync (err) ->
-                    console.log "SYNC OVER", err
+                # @replicator.startSync (err) ->
+                    # console.log "SYNC OVER", err
                 @router.navigate 'folder/', trigger: true
             else
                 @router.navigate 'config', trigger: true

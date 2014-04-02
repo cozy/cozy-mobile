@@ -2,6 +2,7 @@ request = require './request'
 urlparse = require './url'
 DBNAME = "cozy-files"
 
+REGEXP_PROCESS_STATUS = /Processed (\d+) \/ (\d+) changes/
 
 module.exports = class Replicator
 
@@ -63,7 +64,7 @@ module.exports = class Replicator
                 byFullPath: makeView 'Folder', fullPath
 
             ops.push createView @db, 'Binary',
-                all: makeView 'Device', '_id'
+                all: makeView 'Binary', '_id'
 
             async.series ops, (err) ->
                 callback err
@@ -85,8 +86,8 @@ module.exports = class Replicator
                 body:
                     views: {}
                     filters:
-                        filter:        makeFilter ['Folder', 'File']
-                        filterDocType: makeFilter ['Folder', 'File'], true
+                        filter:        makeFilter ['Folder', 'File'], true
+                        filterDocType: makeFilter ['Folder', 'File']
             , cb
 
         async.series ops, callback
@@ -94,7 +95,6 @@ module.exports = class Replicator
 
     registerRemote: (config, callback) ->
         # expect url as "fakename.cozycloud.cc" (no protocol)
-
         request.post
             uri: "https://#{config.cozyURL}/device/",
             auth:
@@ -123,26 +123,75 @@ module.exports = class Replicator
                 @prepareDevice callback
 
 
-    replicateToLocalOneShotNoDeleted: (callback) ->
-        @start_replication
+    initialReplication: (progressback, callback) ->
+
+        expectedtotal = 3000
+        done = 0
+
+        # begin the replication
+        xhr = @start_replication
             source: @config.fullRemoteURL
             target: DBNAME
-            filter: "#{@config.deviceId}/filter"
-        , callback
+            filter: "#{@config.deviceId}/filterDocType"
+        , (err, replication) =>
+            waiting = @waitReplication replication, {}, (err) ->
+                callback err
 
-    sync: (callback) ->
+        return abort: ->
+            waiting.abort() if waiting
+            xhr?.abort()
+
+
+    getBinary: (binary, callback) ->
+        binary_id = binary.file.id
+        binary_rev = binary.file.rev
+        url = "#{@db}/#{binary_id}/file"
+        waiting = null
+
+        xhr = request.couch {url, method: 'HEAD'}, (err, response) =>
+
+            return callback null, url if response.statusCode isnt 404
+
+            xhr = @start_replication
+                source: @config.fullRemoteURL
+                target: DBNAME
+                since: 0
+                filter: '_doc_ids'
+                doc_ids: "%5B%22#{binary_id}%22%5D"
+            , (err, replication) =>
+                xhr = null
+                return callback err if err
+                waiting = @waitReplication replication, (err) =>
+                    callback err, url
+
+
+        return abort: ->
+            waiting.abort() if waiting
+            xhr?.abort()
+
+    startSync: (callback) ->
         @start_replication
             source: @config.fullRemoteURL
             target: DBNAME
             continuous: true
-            filter: "#{@config.deviceId}/filterDocType"
+            filter: "#{@config.deviceId}/filter"
         , (err) =>
             return callback err if err
             @start_replication
                 source: DBNAME
                 target: @config.fullRemoteURL
                 continuous: true
-                filter: "#{@config.deviceId}/filterDocType"
+                filter: "#{@config.deviceId}/filter"
+            , callback
+
+    stopSync: (callback) ->
+        @cancel_replication
+            source: DBNAME
+            target: @config.fullRemoteURL
+        , (err) =>
+            @cancel_replication
+                source: @config.fullRemoteURL
+                target: DBNAME
             , callback
 
     start_replication: (options, callback) ->
@@ -151,47 +200,78 @@ module.exports = class Replicator
             method: "POST"
             body: options
         , (err, response, replication) =>
-            return callback err if err
-            return callback null, replication unless options.continuous
-
-            # if the replication is continous, we poll its status
-            @status_replication replication._local_id, callback
-
+            callback err, replication
 
     cancel_replication: (options, callback) ->
-        options.cancel = true
+        {source, target} = options
         request.couch
             url: "#{@server}_replicate"
             method: "POST"
-            body: options
-        , callback
+            body: {source, target, cancel: true}
+        , (err, response, body) ->
+            # if we can't find the replication, that's a good thing
+            err = null if err.message.indexOf('unable to lookup') is -1
+            callback err
 
-    status_replication: (id, callback) =>
-        request.couch
-            url: "#{@server}_active_tasks"
-            method: "GET"
-        , (err, response, tasks) =>
+
+    replication_status: (replication, callback) ->
+        request.couch "#{@server}_active_tasks", (err, response, tasks) =>
             return callback err if err
-            task = _.findWhere tasks, {replication_id: id}
+            # couch vs couchbase lite
+            id = replication._local_id or replication.session_id
+            task = _.findWhere(tasks, {replication_id: id}) or
+                   _.findWhere(tasks, {task: id})
+
+            console.log JSON.stringify(task)
 
             if not task
-                return callback new Error('lost replication')
+                return callback null, null
 
             if task.error
-                return callback task.error[1]
+                return callback task.error[1] or task.error[0]
 
             if task.status in ['Idle', 'Stopped']
-                return callback null
+                # Not quite sure when we get here. iOS ?
+                task.complete = true
 
-            if /Processed/.test(task.status) && !/Processed 0/.test(task.status)
-                return callback null
+            else if REGEXP_PROCESS_STATUS.test task.status
+                [all, done, total] = REGEXP_PROCESS_STATUS.exec task.status
+                task.done = parseInt done
+                task.total = parseInt total
 
-            if /Processed 0 \/ 0 changes/.test(task.status)
-                return callback null
+            return callback null, task
 
-            # let's loop
-            next = @status_replication.bind(@, id, callback)
-            setTimeout next, 1000
+    waitReplication: (replication, waiting, callback) ->
+
+        waiting.xhr = @replication_status replication, (err, task) =>
+            waiting.xhr = null
+
+            return callback err if err
+            return callback null if not task or task.complete
+
+            # normal for a continous to get stuck
+            return callback null if replication.continuous
+
+            if waiting.lastDone isnt task.done
+                waiting.lastDone = task.done
+                waiting.bugCount = if task.done > 0 then 10 else 0
+            else if ++waiting.bugCount > 12
+                # status hasnt changed for 2 minutes
+                # either the replication failed or it succeeds
+                # let's abort it
+                return @cancel_replication task, (err) ->
+                    console.log err if err
+                    callback null
+
+            next = @waitReplication.bind(@, replication, waiting, callback)
+            waiting.timer = setTimeout next, 10000
+
+        return abort: ->
+            waiting.xhr?.abort()
+            clearTimeout waiting.timer if waiting.timer
+
+
+
 
 createView = (db, docType, views) -> (callback) ->
     request.couch
@@ -207,7 +287,11 @@ makeView = (docType, field) ->
     return map: fn
 
 makeFilter = (docTypes, allowDeleted) ->
-    fn = if allowDeleted then (doc) -> return (doc.docType in docTypes)
-    else (doc) -> return not doc._deleted and (doc.docType in docTypes)
-    fn = fn.toString().replace('docTypes', JSON.stringify(docTypes))
+
+    test = ("doc.docType == '#{docType}'" for docType in docTypes).join(' || ')
+
+    fn = if allowDeleted then (doc) -> return doc._deleted or test
+    else (doc) -> return test
+
+    fn = fn.toString().replace 'test', test
 
