@@ -10,18 +10,37 @@
     <script src="cordova.js"></script>
     <script src="javascripts/vendor.js"></script>
     <script src="javascripts/app.js"></script>
-    <script>require('initialize');</script>
   </head>
 
   <body>
-    <div class="bar bar-header bar-calm">
-      <a id="btn-back" class="button button-icon icon ion-ios7-arrow-back"></a>
-      <h1 id="header" class="title">Cozy Files</h1>
-      <a href="#configrun" class="button button-icon icon ion-wrench"></a>
+
+
+    <div id="content" class="pane">
+      <div class="bar bar-header bar-calm">
+        <a id="btn-menu" class="button button-icon icon ion-navicon-round"></a>
+        <h1 id="header" class="title">Cozy Files</h1>
+      </div>
+
+      <div id="mainContent" class="padding content has-header has-footer">
+      </div>
+
+      <div class="bar bar-footer">
+        <a id="btn-back" class="button button-icon icon ion-ios7-arrow-back"></a>
+        <div class="title statusbar"></div>
+        <a id="btn-edit" class="button button-icon icon ion-edit"></a>
+      </div>
     </div>
 
-    <div id="mainContent" class="padding content has-header has-footer">
+    <div id="menu-left" class="menu menu-left">
+      <header class="bar bar-header bar-dark">
+        <h1 class="title">Menu</h1>
+      </header>
+      <div class="content has-header">
+        <div class="list" id="menu-left-list">
+        </div>
+      </div>
     </div>
 
+    <script>require('initialize');</script>
   </body>
 </html>

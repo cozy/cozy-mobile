@@ -7,7 +7,8 @@ FolderCollection = require './collections/files'
 module.exports = class Router extends Backbone.Router
 
     routes:
-        'folder/*path'                     : 'folder'
+        'folder/*path'                    : 'folder'
+        'search/*query'                   : 'search'
         'config'                          : 'login'
         'configrun'                       : 'config'
 
@@ -22,8 +23,18 @@ module.exports = class Router extends Backbone.Router
             .removeClass('ion-home')
             .addClass('ion-ios7-arrow-back')
 
-        @display new FolderView
-            collection: FolderCollection.getAtPath path
+        collection = new FolderCollection [], path: path
+        collection.fetch()
+        @display new FolderView {collection}
+
+    search: (query) ->
+        app.backButton.attr('href', '#folder/')
+            .removeClass('ion-ios7-arrow-back')
+            .addClass('ion-home')
+
+        collection = new FolderCollection [], query: query
+        collection.fetch()
+        @display new FolderView {collection}
 
     login: ->
         @display new ConfigView()

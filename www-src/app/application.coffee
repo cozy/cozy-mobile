@@ -1,4 +1,4 @@
-Replicator = require './lib/couchbase'
+Replicator = require './lib/replicator'
 
 module.exports =
 
@@ -19,6 +19,11 @@ module.exports =
         @router = new Router()
 
         @backButton = $('#btn-back')
+
+        MenuView = require './views/menu'
+        @menu = MenuView()
+        $('#btn-menu').on 'click', => @menu.reset().toggleLeft()
+
 
         window.cblite ?= getURL: (cb) -> cb null, 'http://localhost:5984/'
         @replicator = new Replicator()

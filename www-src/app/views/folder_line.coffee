@@ -4,23 +4,31 @@ showLoader = require './loader'
 module.exports = class ConfigView extends BaseView
 
     tagName: 'a'
-    className: 'item item-icon-left'
     template: require '../templates/folder_line'
     events:
         'click': 'onClick'
+
+    className: 'item item-icon-left item-icon-right'
+
+    initialize: =>
+        @listenTo @model, 'change', @render
 
     onClick: =>
         if @model.get('docType') is 'Folder'
             path = @model.get('path') + '/' + @model.get('name')
             app.router.navigate "#folder#{path}", trigger: true
         else
-            loader = showLoader 'downloading binary'
-            xhr = app.replicator.getBinary @model.get('binary'), (err, url) ->
-                loader.hide()
-                return alert err.message if err
-                # let the OS handle it
-                window.open url, '_system'
+            @loader = showLoader 'downloading binary'
+            app.replicator.getBinary @model.attributes, (err, url) =>
+                return @onError err if err
+                ExternalFileUtil.openWith url, '', undefined, @afterOpen, @onError
 
-            loader.$el.on 'click', ->
-                xhr.abort()
-                loader.hide()
+    afterOpen: =>
+        @model.set incache: true
+        @loader.hide()
+        @loader.$el.remove()
+
+    onError: (e) =>
+        @loader.hide()
+        @loader.$el.remove()
+        alert(e)

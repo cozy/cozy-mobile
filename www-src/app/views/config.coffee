@@ -30,9 +30,10 @@ module.exports = class ConfigView extends BaseView
         app.replicator.registerRemote config, (err) =>
             return @displayError err.message if err
 
-            $('#footer').text 'begin replication'
-
-            loader = showLoader 'initial replication'
+            loader = showLoader """
+                dowloading file structure
+                (this may take a while, do not turn off the application)
+            """
 
             progressback = (ratio) ->
                 loader.setContent 'status = ' + 100*ratio + '%'

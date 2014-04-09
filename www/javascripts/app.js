@@ -93,11 +93,11 @@
 require.register("application", function(exports, require, module) {
 var Replicator;
 
-Replicator = require('./lib/couchbase');
+Replicator = require('./lib/replicator');
 
 module.exports = {
   initialize: function() {
-    var Router, e, locales, _ref,
+    var MenuView, Router, e, locales, _ref,
       _this = this;
 
     window.app = this;
@@ -113,6 +113,11 @@ module.exports = {
     Router = require('router');
     this.router = new Router();
     this.backButton = $('#btn-back');
+    MenuView = require('./views/menu');
+    this.menu = MenuView();
+    $('#btn-menu').on('click', function() {
+      return _this.menu.reset().toggleLeft();
+    });
     if ((_ref = window.cblite) == null) {
       window.cblite = {
         getURL: function(cb) {
@@ -158,36 +163,83 @@ module.exports = FileAndFolderCollection = (function(_super) {
 
   FileAndFolderCollection.prototype.model = File;
 
-  FileAndFolderCollection.prototype.parse = function(couchdb_result) {
-    return couchdb_result.rows.map(function(row) {
-      return row.value;
+  FileAndFolderCollection.prototype.initialize = function(models, options) {
+    this.path = options.path;
+    return this.query = options.query;
+  };
+
+  FileAndFolderCollection.prototype.comparator = function(a, b) {
+    var aname, atype, bname, btype;
+
+    atype = a.get('docType').toLowerCase();
+    btype = b.get('docType').toLowerCase();
+    aname = a.get('name').toLowerCase();
+    bname = b.get('name').toLowerCase();
+    if (atype < btype) {
+      return 1;
+    } else if (btype > atype) {
+      return -1;
+    } else if (aname < bname) {
+      return -1;
+    } else if (aname > bname) {
+      return 1;
+    } else {
+      return 0;
+    }
+  };
+
+  FileAndFolderCollection.prototype.fetch = function() {
+    var map, options, regexp,
+      _this = this;
+
+    map = options = null;
+    if (this.query) {
+      options = {};
+      regexp = new RegExp(this.query, 'i');
+      map = function(doc, emit) {
+        var _ref1;
+
+        if (((_ref1 = doc.docType) === 'Folder' || _ref1 === 'File') && regexp.test(doc.name)) {
+          return emit(doc._id, doc);
+        }
+      };
+    } else {
+      options = {
+        key: this.path ? '/' + this.path : ''
+      };
+      map = function(doc, emit) {
+        var _ref1;
+
+        if ((_ref1 = doc.docType) === 'Folder' || _ref1 === 'File') {
+          return emit(doc.path, doc);
+        }
+      };
+    }
+    return app.replicator.db.query(map, options, function(err, response) {
+      var doc, docs, isDoc, _i, _len;
+
+      docs = response.rows.map(function(row) {
+        return row.value;
+      });
+      for (_i = 0, _len = docs.length; _i < _len; _i++) {
+        doc = docs[_i];
+        if (!(doc.docType === 'File')) {
+          continue;
+        }
+        isDoc = function(entry) {
+          return entry.name === doc.binary.file.id;
+        };
+        if (app.replicator.cache.some(isDoc)) {
+          doc.incache = true;
+        }
+      }
+      return _this.reset(docs);
     });
   };
 
   return FileAndFolderCollection;
 
 })(Backbone.Collection);
-
-FileAndFolderCollection.getAtPath = function(path) {
-  var col;
-
-  if (!path) {
-    path = '';
-  } else {
-    path = '/' + path;
-  }
-  col = new FileAndFolderCollection();
-  col.url = app.replicator.db + '/_design/folder/_view/byFolder?key=%22' + path + '%22';
-  col.fetch({
-    remove: false
-  });
-  col.url = app.replicator.db + '/_design/file/_view/byFolder?key=%22' + path + '%22';
-  col.fetch({
-    remove: false
-  });
-  console.log("col was fetched", col.url);
-  return col;
-};
 
 });
 
@@ -251,12 +303,54 @@ module.exports = BaseView = (function(_super) {
 
 });
 
-;require.register("lib/couchbase", function(exports, require, module) {
-var DBNAME, REGEXP_PROCESS_STATUS, Replicator, createView, makeFilter, makeView, request, urlparse;
+;require.register("lib/basic", function(exports, require, module) {
+var b64, b64_enc;
+
+b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+
+b64_enc = function(data) {
+  var ac, bits, h1, h2, h3, h4, i, o1, o2, o3, out;
+
+  if (!data) {
+    return data;
+  }
+  i = 0;
+  ac = 0;
+  out = [];
+  while (i < data.length) {
+    o1 = data.charCodeAt(i++);
+    o2 = data.charCodeAt(i++);
+    o3 = data.charCodeAt(i++);
+    bits = o1 << 16 | o2 << 8 | o3;
+    h1 = bits >> 18 & 0x3f;
+    h2 = bits >> 12 & 0x3f;
+    h3 = bits >> 6 & 0x3f;
+    h4 = bits & 0x3f;
+    out[ac++] = b64.charAt(h1) + b64.charAt(h2) + b64.charAt(h3) + b64.charAt(h4);
+  }
+  out = out.join('');
+  switch (data.length % 3) {
+    case 1:
+      out = out.slice(0, -2) + '==';
+      break;
+    case 2:
+      out = out.slice(0, -1) + '=';
+  }
+  return out;
+};
+
+module.exports = function(user, pass) {
+  return 'Basic ' + b64_enc(user + ':' + pass);
+};
+
+});
+
+;require.register("lib/replicator", function(exports, require, module) {
+var DBNAME, REGEXP_PROCESS_STATUS, Replicator, basic, deleteEntry, getChildren, getFile, getOrCreateSubFolder, request;
 
 request = require('./request');
 
-urlparse = require('./url');
+basic = require('./basic');
 
 DBNAME = "cozy-files";
 
@@ -272,114 +366,54 @@ module.exports = Replicator = (function() {
   Replicator.prototype.config = null;
 
   Replicator.prototype.destroyDB = function(callback) {
-    return request.couch({
-      url: this.db,
-      method: 'DELETE'
-    }, callback);
+    return this.db.destroy(callback);
   };
 
   Replicator.prototype.init = function(callback) {
     var _this = this;
 
-    return window.cblite.getURL(function(err, server) {
+    return this.initDownloadFolder(function(err) {
       if (err) {
         return callback(err);
       }
-      _this.server = server;
-      _this.db = server + DBNAME;
-      return request.get(_this.db, function(err, response, body) {
-        if (response.statusCode === 404) {
-          return _this.prepareDatabase(callback);
-        } else if (response.statusCode === 200) {
-          return _this.loadConfig(callback);
+      _this.db = new PouchDB(DBNAME, {
+        adapter: 'websql'
+      });
+      return _this.db.get('localconfig', function(err, config) {
+        if (err) {
+          console.log(err);
+          return callback(null, null);
         } else {
-          if (err == null) {
-            err = new Error('unexpected db state');
-          }
-          return callback(err);
+          _this.config = config;
+          return callback(null, config);
         }
       });
     });
   };
 
-  Replicator.prototype.loadConfig = function(callback) {
-    var _this = this;
-
-    return request.couch("" + this.db + "/config", function(err, res, config) {
-      if (res.statusCode === 404) {
-        return callback(null, null);
-      } else if (res.statusCode === 200) {
-        return callback(null, _this.config = config);
-      } else {
-        if (err == null) {
-          err = new Error('unexpected config state');
-        }
-        return callback(err);
-      }
-    });
-  };
-
-  Replicator.prototype.prepareDatabase = function(callback) {
-    var _this = this;
-
-    return request.put(this.db, function(err) {
-      var fullPath, ops;
-
-      if (err) {
-        return cb(err);
-      }
-      fullPath = "path.toLowerCase() + '/' + doc.name.toLowerCase()";
-      ops = [];
-      ops.push(createView(_this.db, 'Device', {
-        all: makeView('Device', '_id'),
-        byUrl: makeView('Device', 'url')
-      }));
-      ops.push(createView(_this.db, 'File', {
-        all: makeView('File', '_id'),
-        byFolder: makeView('File', 'path.toLowerCase()'),
-        byFullPath: makeView('File', fullPath)
-      }));
-      ops.push(createView(_this.db, 'Folder', {
-        all: makeView('Folder', '_id'),
-        byFolder: makeView('Folder', 'path.toLowerCase()'),
-        byFullPath: makeView('Folder', fullPath)
-      }));
-      ops.push(createView(_this.db, 'Binary', {
-        all: makeView('Binary', '_id')
-      }));
-      return async.series(ops, function(err) {
-        return callback(err);
-      });
-    });
-  };
-
-  Replicator.prototype.prepareDevice = function(callback) {
-    var config, ops,
+  Replicator.prototype.initDownloadFolder = function(callback) {
+    var onError, onSuccess,
       _this = this;
 
-    config = this.config;
-    ops = [];
-    ops.push(function(cb) {
-      return request.couch({
-        url: "" + _this.db + "/config",
-        method: 'PUT',
-        body: config
-      }, cb);
-    });
-    ops.push(function(cb) {
-      return request.couch({
-        uri: "" + _this.db + "/_design/" + config.deviceId,
-        method: 'PUT',
-        body: {
-          views: {},
-          filters: {
-            filter: makeFilter(['Folder', 'File'], true),
-            filterDocType: makeFilter(['Folder', 'File'])
-          }
+    onError = function(err) {
+      return callback(err);
+    };
+    onSuccess = function(fs) {
+      return getOrCreateSubFolder(fs.root, 'cozy-downloads', function(err, downloads) {
+        if (err) {
+          return callback(err);
         }
-      }, cb);
-    });
-    return async.series(ops, callback);
+        _this.downloads = downloads;
+        return getChildren(downloads, function(err, children) {
+          if (err) {
+            return callback(err);
+          }
+          _this.cache = children;
+          return callback(null);
+        });
+      });
+    };
+    return window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, onSuccess, onError);
   };
 
   Replicator.prototype.registerRemote = function(config, callback) {
@@ -399,7 +433,7 @@ module.exports = Replicator = (function() {
       if (err) {
         return callback(err);
       } else if (response.statusCode === 401 && response.reason) {
-        return callback(new Error('ds need patch'));
+        return callback(new Error('cozy need patch'));
       } else if (response.statusCode === 401) {
         return callback(new Error('wrong password'));
       } else if (response.statusCode === 400) {
@@ -409,273 +443,159 @@ module.exports = Replicator = (function() {
         config.deviceId = body.id;
         config.fullRemoteURL = ("https://" + config.deviceName + ":" + config.password) + ("@" + config.cozyURL + "/cozy");
         _this.config = config;
-        return _this.prepareDevice(callback);
+        _this.config._id = 'localconfig';
+        return _this.saveConfig(callback);
       }
+    });
+  };
+
+  Replicator.prototype.saveConfig = function(callback) {
+    var _this = this;
+
+    return this.db.put(this.config, function(err, result) {
+      if (err) {
+        return callback(err);
+      }
+      if (!result.ok) {
+        return callback(new Error(JSON.stringify(result)));
+      }
+      _this.config._id = result.id;
+      _this.config._rev = result.rev;
+      return callback(null);
     });
   };
 
   Replicator.prototype.initialReplication = function(progressback, callback) {
-    var done, expectedtotal, xhr,
-      _this = this;
+    var _this = this;
 
-    expectedtotal = 3000;
-    done = 0;
-    xhr = this.start_replication({
-      source: this.config.fullRemoteURL,
-      target: DBNAME,
-      filter: "" + this.config.deviceId + "/filterDocType"
-    }, function(err, replication) {
-      var waiting;
-
-      return waiting = _this.waitReplication(replication, {}, function(err) {
-        return callback(err);
-      });
-    });
-    return {
-      abort: function() {
-        if (waiting) {
-          waiting.abort();
-        }
-        return xhr != null ? xhr.abort() : void 0;
-      }
-    };
-  };
-
-  Replicator.prototype.getBinary = function(binary, callback) {
-    var binary_id, binary_rev, url, waiting, xhr,
-      _this = this;
-
-    binary_id = binary.file.id;
-    binary_rev = binary.file.rev;
-    url = "" + this.db + "/" + binary_id + "/file";
-    waiting = null;
-    xhr = request.couch({
-      url: url,
-      method: 'HEAD'
-    }, function(err, response) {
-      if (response.statusCode !== 404) {
-        return callback(null, url);
-      }
-      return xhr = _this.start_replication({
-        source: _this.config.fullRemoteURL,
-        target: DBNAME,
-        since: 0,
-        filter: '_doc_ids',
-        doc_ids: "%5B%22" + binary_id + "%22%5D"
-      }, function(err, replication) {
-        xhr = null;
+    return this.db.replicate.from(this.config.fullRemoteURL, {
+      filter: "" + this.config.deviceId + "/filterDocType",
+      complete: function(err, result) {
         if (err) {
           return callback(err);
         }
-        return waiting = _this.waitReplication(replication, function(err) {
-          return callback(err, url);
-        });
-      });
+        _this.config.checkpointed = result.last_seq;
+        return _this.saveConfig(callback);
+      }
     });
-    return {
-      abort: function() {
-        if (waiting) {
-          waiting.abort();
-        }
-        return xhr != null ? xhr.abort() : void 0;
+  };
+
+  Replicator.prototype.download = function(binary_id, local, callback) {
+    var errors, ft, onError, onSuccess, options, url;
+
+    url = encodeURI("" + this.config.fullRemoteURL + "/" + binary_id + "/file");
+    ft = new FileTransfer();
+    errors = ['An error happened (UNKNOWN)', 'An error happened (NOT FOUND)', 'An error happened (INVALID URL)', 'This file isnt available offline', 'ABORTED'];
+    onSuccess = function(entry) {
+      return callback(null, entry);
+    };
+    onError = function(err) {
+      return callback(new Error(errors[err.code]));
+    };
+    options = {
+      headers: {
+        Authorization: basic(this.config.deviceName, this.config.password)
       }
     };
+    return ft.download(url, local, onSuccess, onError, false, options);
   };
 
-  Replicator.prototype.startSync = function(callback) {
-    var _this = this;
+  Replicator.prototype.getBinary = function(model, callback) {
+    var binary_id,
+      _this = this;
 
-    return this.start_replication({
-      source: this.config.fullRemoteURL,
-      target: DBNAME,
-      continuous: true,
-      filter: "" + this.config.deviceId + "/filter"
-    }, function(err) {
+    binary_id = model.binary.file.id;
+    return getOrCreateSubFolder(this.downloads, binary_id, function(err, binfolder) {
       if (err) {
         return callback(err);
       }
-      return _this.start_replication({
-        source: DBNAME,
-        target: _this.config.fullRemoteURL,
-        continuous: true,
-        filter: "" + _this.config.deviceId + "/filter"
-      }, callback);
-    });
-  };
+      return getFile(binfolder, model.name, function(err, entry) {
+        var local;
 
-  Replicator.prototype.stopSync = function(callback) {
-    var _this = this;
-
-    return this.cancel_replication({
-      source: DBNAME,
-      target: this.config.fullRemoteURL
-    }, function(err) {
-      return _this.cancel_replication({
-        source: _this.config.fullRemoteURL,
-        target: DBNAME
-      }, callback);
-    });
-  };
-
-  Replicator.prototype.start_replication = function(options, callback) {
-    var _this = this;
-
-    return request.couch({
-      url: "" + this.server + "_replicate",
-      method: "POST",
-      body: options
-    }, function(err, response, replication) {
-      return callback(err, replication);
-    });
-  };
-
-  Replicator.prototype.cancel_replication = function(options, callback) {
-    var source, target;
-
-    source = options.source, target = options.target;
-    return request.couch({
-      url: "" + this.server + "_replicate",
-      method: "POST",
-      body: {
-        source: source,
-        target: target,
-        cancel: true
-      }
-    }, function(err, response, body) {
-      if (err.message.indexOf('unable to lookup') === -1) {
-        err = null;
-      }
-      return callback(err);
-    });
-  };
-
-  Replicator.prototype.replication_status = function(replication, callback) {
-    var _this = this;
-
-    return request.couch("" + this.server + "_active_tasks", function(err, response, tasks) {
-      var all, done, id, task, total, _ref, _ref1;
-
-      if (err) {
-        return callback(err);
-      }
-      id = replication._local_id || replication.session_id;
-      task = _.findWhere(tasks, {
-        replication_id: id
-      }) || _.findWhere(tasks, {
-        task: id
-      });
-      console.log(JSON.stringify(task));
-      if (!task) {
-        return callback(null, null);
-      }
-      if (task.error) {
-        return callback(task.error[1] || task.error[0]);
-      }
-      if ((_ref = task.status) === 'Idle' || _ref === 'Stopped') {
-        task.complete = true;
-      } else if (REGEXP_PROCESS_STATUS.test(task.status)) {
-        _ref1 = REGEXP_PROCESS_STATUS.exec(task.status), all = _ref1[0], done = _ref1[1], total = _ref1[2];
-        task.done = parseInt(done);
-        task.total = parseInt(total);
-      }
-      return callback(null, task);
-    });
-  };
-
-  Replicator.prototype.waitReplication = function(replication, waiting, callback) {
-    var _this = this;
-
-    waiting.xhr = this.replication_status(replication, function(err, task) {
-      var next;
-
-      waiting.xhr = null;
-      if (err) {
-        return callback(err);
-      }
-      if (!task || task.complete) {
-        return callback(null);
-      }
-      if (replication.continuous) {
-        return callback(null);
-      }
-      if (waiting.lastDone !== task.done) {
-        waiting.lastDone = task.done;
-        waiting.bugCount = task.done > 0 ? 10 : 0;
-      } else if (++waiting.bugCount > 12) {
-        return _this.cancel_replication(task, function(err) {
+        if (entry) {
+          return callback(null, entry.toURL());
+        }
+        local = binfolder.toURL() + '/' + model.name;
+        return _this.download(binary_id, local, function(err, entry) {
           if (err) {
-            console.log(err);
+            return deleteEntry(binfolder, function(delerr) {
+              return callback(err);
+            });
+          } else {
+            _this.cache.push(binfolder);
+            return callback(null, entry.toURL());
           }
-          return callback(null);
         });
-      }
-      next = _this.waitReplication.bind(_this, replication, waiting, callback);
-      return waiting.timer = setTimeout(next, 10000);
+      });
     });
-    return {
-      abort: function() {
-        var _ref;
+  };
 
-        if ((_ref = waiting.xhr) != null) {
-          _ref.abort();
-        }
-        if (waiting.timer) {
-          return clearTimeout(waiting.timer);
-        }
+  Replicator.prototype.sync = function(callback) {
+    var _this = this;
+
+    return this.db.replicate.from(this.config.fullRemoteURL, {
+      filter: "" + this.config.deviceId + "/filter",
+      since: this.config.checkpointed,
+      complete: function(err, result) {
+        _this.config.checkpointed = result.last_seq;
+        return _this.saveConfig(callback);
       }
-    };
+    });
   };
 
   return Replicator;
 
 })();
 
-createView = function(db, docType, views) {
-  return function(callback) {
-    return request.couch({
-      uri: "" + db + "/_design/" + (docType.toLowerCase()),
-      method: 'PUT',
-      body: {
-        views: views
-      }
-    }, callback);
+deleteEntry = function(entry, callback) {
+  var onError, onSuccess;
+
+  onSuccess = function() {
+    return callback(null);
   };
+  onError = function(err) {
+    return callback(err);
+  };
+  return entry.remove(onSuccess, onError);
 };
 
-makeView = function(docType, field) {
-  var fn;
+getFile = function(parent, name, callback) {
+  var onError, onSuccess;
 
-  fn = function(doc) {
-    if (doc.docType === '[DOCTYPE]') {
-      return emit(doc.__field__, doc);
-    }
+  onSuccess = function(entry) {
+    return callback(null, entry);
   };
-  fn = fn.toString().replace('[DOCTYPE]', docType);
-  fn = fn.replace('__field__', field);
-  return {
-    map: fn
+  onError = function(err) {
+    return callback(err);
   };
+  return parent.getFile(name, null, onSuccess, onError);
 };
 
-makeFilter = function(docTypes, allowDeleted) {
-  var docType, fn, test;
+getOrCreateSubFolder = function(parent, name, callback) {
+  var onError, onSuccess;
 
-  test = ((function() {
-    var _i, _len, _results;
-
-    _results = [];
-    for (_i = 0, _len = docTypes.length; _i < _len; _i++) {
-      docType = docTypes[_i];
-      _results.push("doc.docType == '" + docType + "'");
-    }
-    return _results;
-  })()).join(' || ');
-  fn = allowDeleted ? function(doc) {
-    return doc._deleted || test;
-  } : function(doc) {
-    return test;
+  onSuccess = function(entry) {
+    return callback(null, entry);
   };
-  return fn = fn.toString().replace('test', test);
+  onError = function(err) {
+    return callback(err);
+  };
+  return parent.getDirectory(name, {
+    create: true
+  }, onSuccess, onError);
+};
+
+getChildren = function(directory, callback) {
+  var onError, onSuccess, reader;
+
+  reader = directory.createReader();
+  onSuccess = function(entries) {
+    return callback(null, entries);
+  };
+  onError = function(err) {
+    return callback(err);
+  };
+  return reader.readEntries(onSuccess, onError);
 };
 
 });
@@ -1602,18 +1522,38 @@ module.exports = Router = (function(_super) {
 
   Router.prototype.routes = {
     'folder/*path': 'folder',
+    'search/*query': 'search',
     'config': 'login',
     'configrun': 'config'
   };
 
   Router.prototype.folder = function(path) {
+    var collection;
+
     if (path === null) {
       app.backButton.attr('href', '#folder/').removeClass('ion-ios7-arrow-back').addClass('ion-home');
     } else {
       app.backButton.attr('href', '#folder/' + path.split('/').slice(0, -1)).removeClass('ion-home').addClass('ion-ios7-arrow-back');
     }
+    collection = new FolderCollection([], {
+      path: path
+    });
+    collection.fetch();
     return this.display(new FolderView({
-      collection: FolderCollection.getAtPath(path)
+      collection: collection
+    }));
+  };
+
+  Router.prototype.search = function(query) {
+    var collection;
+
+    app.backButton.attr('href', '#folder/').removeClass('ion-ios7-arrow-back').addClass('ion-home');
+    collection = new FolderCollection([], {
+      query: query
+    });
+    collection.fetch();
+    return this.display(new FolderView({
+      collection: collection
     }));
   };
 
@@ -1690,6 +1630,22 @@ buf.push('<span>');
 var __val__ = model.name
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</span>');
+if ( model.incache)
+{
+buf.push('<i class="icon ion-ios7-download-outline"></i>');
+}
+}
+return buf.join("");
+};
+});
+
+;require.register("templates/menu", function(exports, require, module) {
+module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
+attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
+var buf = [];
+with (locals || {}) {
+var interp;
+buf.push('<div class="item item-input-inset"><label class="item-input-wrapper"><input id="search-input" type="text" placeholder="Search"/></label><a id="btn-search" class="button button-icon icon ion-search"></a></div><a href="#folder/" class="item item-icon-left"><i class="icon ion-home"></i>Home</a><a href="#configrun" class="item item-icon-left"><i class="icon ion-wrench"></i>Config</a><a id="refresher" class="item item-icon-left"><i class="icon ion-loop"></i>Refresh</a>');
 }
 return buf.join("");
 };
@@ -1748,8 +1704,7 @@ module.exports = ConfigView = (function(_super) {
       if (err) {
         return _this.displayError(err.message);
       }
-      $('#footer').text('begin replication');
-      loader = showLoader('initial replication');
+      loader = showLoader("dowloading file structure\n(this may take a while, do not turn off the application)");
       progressback = function(ratio) {
         return loader.setContent('status = ' + 100 * ratio + '%');
       };
@@ -1883,13 +1838,14 @@ module.exports = ConfigView = (function(_super) {
   __extends(ConfigView, _super);
 
   function ConfigView() {
-    this.onClick = __bind(this.onClick, this);    _ref = ConfigView.__super__.constructor.apply(this, arguments);
+    this.onError = __bind(this.onError, this);
+    this.afterOpen = __bind(this.afterOpen, this);
+    this.onClick = __bind(this.onClick, this);
+    this.initialize = __bind(this.initialize, this);    _ref = ConfigView.__super__.constructor.apply(this, arguments);
     return _ref;
   }
 
   ConfigView.prototype.tagName = 'a';
-
-  ConfigView.prototype.className = 'item item-icon-left';
 
   ConfigView.prototype.template = require('../templates/folder_line');
 
@@ -1897,8 +1853,15 @@ module.exports = ConfigView = (function(_super) {
     'click': 'onClick'
   };
 
+  ConfigView.prototype.className = 'item item-icon-left item-icon-right';
+
+  ConfigView.prototype.initialize = function() {
+    return this.listenTo(this.model, 'change', this.render);
+  };
+
   ConfigView.prototype.onClick = function() {
-    var loader, path, xhr;
+    var path,
+      _this = this;
 
     if (this.model.get('docType') === 'Folder') {
       path = this.model.get('path') + '/' + this.model.get('name');
@@ -1906,19 +1869,28 @@ module.exports = ConfigView = (function(_super) {
         trigger: true
       });
     } else {
-      loader = showLoader('downloading binary');
-      xhr = app.replicator.getBinary(this.model.get('binary'), function(err, url) {
-        loader.hide();
+      this.loader = showLoader('downloading binary');
+      return app.replicator.getBinary(this.model.attributes, function(err, url) {
         if (err) {
-          return alert(err.message);
+          return _this.onError(err);
         }
-        return window.open(url, '_system');
-      });
-      return loader.$el.on('click', function() {
-        xhr.abort();
-        return loader.hide();
+        return ExternalFileUtil.openWith(url, '', void 0, _this.afterOpen, _this.onError);
       });
     }
+  };
+
+  ConfigView.prototype.afterOpen = function() {
+    this.model.set({
+      incache: true
+    });
+    this.loader.hide();
+    return this.loader.$el.remove();
+  };
+
+  ConfigView.prototype.onError = function(e) {
+    this.loader.hide();
+    this.loader.$el.remove();
+    return alert(e);
   };
 
   return ConfigView;
@@ -1941,6 +1913,71 @@ module.exports = function(content) {
     return $el.find('.loading').text(text);
   };
   return view;
+};
+
+});
+
+;require.register("views/menu", function(exports, require, module) {
+module.exports = function() {
+  var $menu, content, doSearch, leftMenu, menu;
+
+  $menu = $('#menu-left-list');
+  $menu.append(require('../templates/menu')());
+  $menu.on('click', '#refresher', function(event) {
+    $('#refresher i').removeClass('ion-loop').addClass('ion-looping');
+    event.stopImmediatePropagation();
+    return app.replicator.sync(function(err) {
+      var _ref, _ref1;
+
+      if (err) {
+        alert(err);
+      }
+      if ((_ref = app.router.mainView) != null) {
+        if ((_ref1 = _ref.collection) != null) {
+          _ref1.fetch();
+        }
+      }
+      $('#refresher i').removeClass('ion-looping').addClass('ion-loop');
+      return menu.toggleLeft();
+    });
+  });
+  doSearch = function() {
+    var val;
+
+    val = $('#search-input').val();
+    if (val.length === 0) {
+      return true;
+    }
+    app.router.navigate('#search/' + val, {
+      trigger: true
+    });
+    return menu.toggleLeft();
+  };
+  $menu.on('click', '#btn-search', doSearch);
+  $menu.on('keydown', '#search-input', function(event) {
+    if (event.which === 13) {
+      return doSearch();
+    }
+  });
+  $menu.on('click', 'a.item', function() {
+    return menu.toggleLeft();
+  });
+  content = new ionic.views.SideMenuContent({
+    el: document.getElementById('content')
+  });
+  leftMenu = new ionic.views.SideMenu({
+    el: $menu[0],
+    width: 270
+  });
+  menu = new ionic.controllers.SideMenuController({
+    content: content,
+    left: leftMenu
+  });
+  menu.reset = function() {
+    $('#search-input').val('');
+    return menu;
+  };
+  return menu;
 };
 
 });
