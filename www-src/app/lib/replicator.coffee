@@ -16,7 +16,7 @@ module.exports = class Replicator
     init: (callback) ->
         @initDownloadFolder (err) =>
             return callback err if err
-            @db = new PouchDB DBNAME, adapter: 'websql'
+            @db = new PouchDB DBNAME #, adapter: 'websql'
             @db.get 'localconfig', (err, config) =>
                 if err
                     console.log err
@@ -27,6 +27,10 @@ module.exports = class Replicator
 
 
     initDownloadFolder: (callback) ->
+        if window.isBrowserDebugging # flag for developpement in browser
+            @cache = []
+            return callback null
+
         onError = (err) -> callback err
         onSuccess = (fs) =>
             getOrCreateSubFolder fs.root, 'cozy-downloads', (err, downloads) =>

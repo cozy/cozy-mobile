@@ -12,31 +12,37 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
         btype = b.get('docType').toLowerCase()
         aname = a.get('name').toLowerCase()
         bname = b.get('name').toLowerCase()
-        if atype < btype then return 1
-        else if btype > atype then return -1
-        else if aname < bname then return -1
-        else if aname > bname then return 1
-        else return 0
+        return out = if atype < btype then 1
+        else   if atype > btype then -1
+        else   if aname > bname then 2
+        else   if aname < bname then -2
+        else 0
 
-    fetch: ->
-        map = options = null
+
+    fetch: (options) ->
+        map = params = null
         if @query
-            options = {}
+            params = {}
             regexp = new RegExp @query, 'i'
             map = (doc, emit) ->
                 if doc.docType in ['Folder', 'File'] and regexp.test doc.name
                     emit doc._id, doc
         else
-            options = key: if @path then '/' + @path else ''
+            params = key: if @path then '/' + @path else ''
             map = (doc, emit) ->
                 if doc.docType in ['Folder', 'File']
                     emit doc.path, doc
 
-        app.replicator.db.query map, options, (err, response) =>
-            docs = response.rows.map (row) -> row.value
-            for doc in docs when doc.docType is 'File'
+        app.replicator.db.query map, params, (err, response) =>
+            return options?.onError? err if err
+
+            docs = response.rows.map (row) ->
+                doc = row.value
                 isDoc = (entry) -> entry.name is doc.binary.file.id
-                if app.replicator.cache.some isDoc
+                if doc.docType is 'File' and app.replicator.cache.some isDoc
                     doc.incache = true
+                return doc
 
             @reset docs
+
+            options?.onSuccess? this
