@@ -6255,6 +6255,42 @@ a.button {
 .whatever {
   color: #f00;
 }
+#mainContent .pane {
+  -webkit-transform: translate3d(0, 0, 0);
+  -moz-transform: translate3d(0, 0, 0);
+  -o-transform: translate3d(0, 0, 0);
+  -ms-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+  -webkit-transition: all ease-in-out 250ms;
+  -moz-transition: all ease-in-out 250ms;
+  -o-transition: all ease-in-out 250ms;
+  -ms-transition: all ease-in-out 250ms;
+  transition: all ease-in-out 250ms;
+}
+#mainContent .sliding-next {
+  -webkit-transform: translate3d(100%, 0, 0);
+  -moz-transform: translate3d(100%, 0, 0);
+  -o-transform: translate3d(100%, 0, 0);
+  -ms-transform: translate3d(100%, 0, 0);
+  transform: translate3d(100%, 0, 0);
+  -webkit-transition: all ease-in-out 250ms;
+  -moz-transition: all ease-in-out 250ms;
+  -o-transition: all ease-in-out 250ms;
+  -ms-transition: all ease-in-out 250ms;
+  transition: all ease-in-out 250ms;
+}
+#mainContent .sliding-prev {
+  -webkit-transform: translate3d(-100%, 0, 0);
+  -moz-transform: translate3d(-100%, 0, 0);
+  -o-transform: translate3d(-100%, 0, 0);
+  -ms-transform: translate3d(-100%, 0, 0);
+  transform: translate3d(-100%, 0, 0);
+  -webkit-transition: all ease-in-out 250ms;
+  -moz-transition: all ease-in-out 250ms;
+  -o-transition: all ease-in-out 250ms;
+  -ms-transition: all ease-in-out 250ms;
+  transition: all ease-in-out 250ms;
+}
 
 
 /*@ sourceMappingURL=app.css.map*/

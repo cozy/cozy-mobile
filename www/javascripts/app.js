@@ -169,32 +169,22 @@ module.exports = FileAndFolderCollection = (function(_super) {
   };
 
   FileAndFolderCollection.prototype.comparator = function(a, b) {
-    var aname, atype, bname, btype;
+    var aname, atype, bname, btype, out;
 
     atype = a.get('docType').toLowerCase();
     btype = b.get('docType').toLowerCase();
     aname = a.get('name').toLowerCase();
     bname = b.get('name').toLowerCase();
-    if (atype < btype) {
-      return 1;
-    } else if (btype > atype) {
-      return -1;
-    } else if (aname < bname) {
-      return -1;
-    } else if (aname > bname) {
-      return 1;
-    } else {
-      return 0;
-    }
+    return out = atype < btype ? 1 : atype > btype ? -1 : aname > bname ? 2 : aname < bname ? -2 : 0;
   };
 
-  FileAndFolderCollection.prototype.fetch = function() {
-    var map, options, regexp,
+  FileAndFolderCollection.prototype.fetch = function(options) {
+    var map, params, regexp,
       _this = this;
 
-    map = options = null;
+    map = params = null;
     if (this.query) {
-      options = {};
+      params = {};
       regexp = new RegExp(this.query, 'i');
       map = function(doc, emit) {
         var _ref1;
@@ -204,7 +194,7 @@ module.exports = FileAndFolderCollection = (function(_super) {
         }
       };
     } else {
-      options = {
+      params = {
         key: this.path ? '/' + this.path : ''
       };
       map = function(doc, emit) {
@@ -215,25 +205,26 @@ module.exports = FileAndFolderCollection = (function(_super) {
         }
       };
     }
-    return app.replicator.db.query(map, options, function(err, response) {
-      var doc, docs, isDoc, _i, _len;
+    return app.replicator.db.query(map, params, function(err, response) {
+      var docs;
 
+      if (err) {
+        return options != null ? typeof options.onError === "function" ? options.onError(err) : void 0 : void 0;
+      }
       docs = response.rows.map(function(row) {
-        return row.value;
-      });
-      for (_i = 0, _len = docs.length; _i < _len; _i++) {
-        doc = docs[_i];
-        if (!(doc.docType === 'File')) {
-          continue;
-        }
+        var doc, isDoc;
+
+        doc = row.value;
         isDoc = function(entry) {
           return entry.name === doc.binary.file.id;
         };
-        if (app.replicator.cache.some(isDoc)) {
+        if (doc.docType === 'File' && app.replicator.cache.some(isDoc)) {
           doc.incache = true;
         }
-      }
-      return _this.reset(docs);
+        return doc;
+      });
+      _this.reset(docs);
+      return options != null ? typeof options.onSuccess === "function" ? options.onSuccess(_this) : void 0 : void 0;
     });
   };
 
@@ -376,9 +367,7 @@ module.exports = Replicator = (function() {
       if (err) {
         return callback(err);
       }
-      _this.db = new PouchDB(DBNAME, {
-        adapter: 'websql'
-      });
+      _this.db = new PouchDB(DBNAME);
       return _this.db.get('localconfig', function(err, config) {
         if (err) {
           console.log(err);
@@ -395,6 +384,10 @@ module.exports = Replicator = (function() {
     var onError, onSuccess,
       _this = this;
 
+    if (window.isBrowserDebugging) {
+      this.cache = [];
+      return callback(null);
+    }
     onError = function(err) {
       return callback(err);
     };
@@ -1528,8 +1521,10 @@ module.exports = Router = (function(_super) {
   };
 
   Router.prototype.folder = function(path) {
-    var collection;
+    var collection,
+      _this = this;
 
+    $('#btn-menu, #btn-back').show();
     if (path === null) {
       app.backButton.attr('href', '#folder/').removeClass('ion-ios7-arrow-back').addClass('ion-home');
     } else {
@@ -1538,39 +1533,74 @@ module.exports = Router = (function(_super) {
     collection = new FolderCollection([], {
       path: path
     });
-    collection.fetch();
-    return this.display(new FolderView({
-      collection: collection
-    }));
+    return collection.fetch({
+      onError: function(err) {
+        return alert(err);
+      },
+      onSuccess: function() {
+        return _this.display(new FolderView({
+          collection: collection
+        }));
+      }
+    });
   };
 
   Router.prototype.search = function(query) {
-    var collection;
+    var collection,
+      _this = this;
 
+    $('#btn-menu, #btn-back').show();
     app.backButton.attr('href', '#folder/').removeClass('ion-ios7-arrow-back').addClass('ion-home');
     collection = new FolderCollection([], {
       query: query
     });
-    collection.fetch();
-    return this.display(new FolderView({
-      collection: collection
-    }));
+    return collection.fetch({
+      onError: function(err) {
+        return alert(err);
+      },
+      onSuccess: function() {
+        return _this.display(new FolderView({
+          collection: collection
+        }));
+      }
+    });
   };
 
   Router.prototype.login = function() {
+    $('#btn-menu, #btn-back').hide();
     return this.display(new ConfigView());
   };
 
   Router.prototype.config = function() {
+    $('#btn-back').hide();
     return this.display(new ConfigRunView());
   };
 
   Router.prototype.display = function(view) {
-    if (this.mainView) {
-      this.mainView.remove();
+    var isBack, next, transitionend,
+      _this = this;
+
+    if (this.mainView instanceof FolderView && view instanceof FolderView) {
+      isBack = this.mainView.isParentOf(view);
+      next = view.render().$el.addClass(isBack ? 'sliding-next' : 'sliding-prev');
+      $('#mainContent').append(next);
+      next.width();
+      this.mainView.$el.addClass(isBack ? 'sliding-prev' : 'sliding-next');
+      next.removeClass(isBack ? 'sliding-next' : 'sliding-prev');
+      transitionend = 'webkitTransitionEnd otransitionend oTransitionEnd msTransitionEnd transitionend';
+      return next.one(transitionend, function() {
+        console.log("trend");
+        _this.mainView.remove();
+        return _this.mainView = view;
+      });
+    } else {
+      console.log("DOH");
+      if (this.mainView) {
+        this.mainView.remove();
+      }
+      this.mainView = view.render();
+      return $('#mainContent').append(this.mainView.$el);
     }
-    this.mainView = view.render();
-    return $('#mainContent').append(this.mainView.$el);
   };
 
   return Router;
@@ -1752,36 +1782,27 @@ module.exports = ConfigView = (function(_super) {
   }
 
   ConfigView.prototype.template = function() {
-    return "<button id=\"redbtn\">RED BUTTON</button>\n<button id=\"greenbtn\">GREEN BUTTON</button>";
+    return "<button id=\"redbtn\" class=\"button button-block button-assertive\">Reset</button>\n<p>This will erase all cozy-files generated data on your device.</p>";
   };
 
   ConfigView.prototype.events = function() {
     return {
-      'click #redbtn': 'redBtn',
-      'click #greenbtn': 'greenBtn'
+      'click #redbtn': 'redBtn'
     };
   };
 
   ConfigView.prototype.redBtn = function() {
     var _this = this;
 
-    return app.replicator.destroyDB(function(err) {
-      if (err) {
-        return _this.displayError(err.message, '#redbtn');
-      }
-      return $('#redbtn').text('DONE');
-    });
-  };
-
-  ConfigView.prototype.greenBtn = function() {
-    var _this = this;
-
-    return app.replicator.startSync(function(err) {
-      if (err) {
-        return _this.displayError(err.message, '#greenbtn');
-      }
-      return $('#greenbtn').text('DONE');
-    });
+    if (confirm("Are you sure ?")) {
+      return app.replicator.destroyDB(function(err) {
+        if (err) {
+          return _this.displayError(err.message, '#redbtn');
+        }
+        $('#redbtn').text('DONE');
+        return window.location.reload(true);
+      });
+    }
   };
 
   ConfigView.prototype.displayError = function(text, field) {
@@ -1814,9 +1835,28 @@ module.exports = FolderView = (function(_super) {
     return _ref;
   }
 
-  FolderView.prototype.className = 'list';
+  FolderView.prototype.className = 'pane';
 
   FolderView.prototype.itemview = require('./folder_line');
+
+  FolderView.prototype.template = function() {
+    return "<div class=\"list\"></div>";
+  };
+
+  FolderView.prototype.collectionEl = '.list';
+
+  FolderView.prototype.isParentOf = function(otherFolderView) {
+    if (this.collection.path === null) {
+      return true;
+    }
+    if (this.collection.path === void 0) {
+      return false;
+    }
+    if (!otherFolderView.collection.path) {
+      return false;
+    }
+    return -1 !== otherFolderView.collection.path.indexOf(this.collection.path);
+  };
 
   return FolderView;
 
