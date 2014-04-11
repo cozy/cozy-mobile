@@ -24,14 +24,8 @@ module.exports =
         @menu = MenuView()
         $('#btn-menu').on 'click', => @menu.reset().toggleLeft()
 
-
         window.cblite ?= getURL: (cb) -> cb null, 'http://localhost:5984/'
         @replicator = new Replicator()
-
-        # $('#header').on 'click', =>
-        #     @replicator.destroyDB (err) =>
-        #         $('#header').text err?.message
-
 
         @replicator.init (err, config) =>
             return alert err.message if err
@@ -39,8 +33,6 @@ module.exports =
             Backbone.history.start()
 
             if config
-                # @replicator.startSync (err) ->
-                    # console.log "SYNC OVER", err
                 @router.navigate 'folder/', trigger: true
             else
                 @router.navigate 'config', trigger: true

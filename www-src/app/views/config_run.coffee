@@ -3,25 +3,20 @@ BaseView = require '../lib/base_view'
 module.exports = class ConfigView extends BaseView
 
     template: -> """
-        <button id="redbtn">RED BUTTON</button>
-        <button id="greenbtn">GREEN BUTTON</button>
+        <button id="redbtn" class="button button-block button-assertive">Reset</button>
+        <p>This will erase all cozy-files generated data on your device.</p>
     """
 
     events: ->
         'click #redbtn': 'redBtn'
-        'click #greenbtn': 'greenBtn'
 
     redBtn: ->
-        app.replicator.destroyDB (err) =>
-            return @displayError err.message, '#redbtn' if err
+        if confirm "Are you sure ?"
+            app.replicator.destroyDB (err) =>
+                return @displayError err.message, '#redbtn' if err
 
-            $('#redbtn').text 'DONE'
-
-    greenBtn: ->
-        app.replicator.startSync (err) =>
-            return @displayError err.message, '#greenbtn' if err
-
-            $('#greenbtn').text 'DONE'
+                $('#redbtn').text 'DONE'
+                window.location.reload(true);
 
     displayError: (text, field) ->
         @error.remove() if @error
