@@ -19,8 +19,7 @@ Get it from the app store or the play store.
 
 
 
-Make your changes in www-src
-Launch in a terminal
+Make your changes in www-src, use brunch to compile in wwww
     
     cd www-src
     npm install
