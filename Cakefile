@@ -64,6 +64,28 @@ installPlatforms = (done) ->
             cb()
     , done
 
+release = (done) ->
+
+    password = fs.readFileSync 'keys/cozy-play-store.password', encoding: 'utf8'
+    signing =  'jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 '
+    signing += '-keystore keys/cozy-play-store.keystore -storepass '
+    signing += password
+    signing += ' platforms/android/ant-build/CozyFiles-release-unsigned.apk cozy-play-store'
+    aligning = 'zipalign -v 4 platforms/android/ant-build/CozyFiles-release-unsigned.apk CozyFiles.apk'
+
+    exec signing, (err, stdout, stderr) ->
+        console.log stdout
+        console.log stderr
+        return done err if err
+        exec aligning, (err, stdout, stderr) ->
+            console.log stdout
+            console.log stderr
+            return done err
+
+
+
+
 task 'platforms', 'install cordova platforms', -> installPlatforms -> console.log "DONE"
 task 'plugins', 'install cordova platforms', -> installPlugins -> console.log "DONE"
 task 'assets', 'copy assets platforms', -> copyAssets -> console.log "DONE"
+task 'release', 'create the released apk', -> release -> console.log "DONE"
