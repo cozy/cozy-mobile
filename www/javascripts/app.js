@@ -357,7 +357,20 @@ module.exports = Replicator = (function() {
   Replicator.prototype.config = null;
 
   Replicator.prototype.destroyDB = function(callback) {
-    return this.db.destroy(callback);
+    return this.db.destroy(function(err) {
+      var onError, onSuccess;
+
+      if (err) {
+        return callback(err);
+      }
+      onError = function(err) {
+        return callback(err);
+      };
+      onSuccess = function() {
+        return callback(null);
+      };
+      return this.downloads.removeRecursively(onSuccess, onError);
+    });
   };
 
   Replicator.prototype.init = function(callback) {

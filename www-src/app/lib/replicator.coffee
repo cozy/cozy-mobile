@@ -11,7 +11,12 @@ module.exports = class Replicator
     config: null
 
     destroyDB: (callback) ->
-        @db.destroy callback
+        @db.destroy (err) ->
+            return callback err if err
+            onError = (err) -> callback err
+            onSuccess = -> callback null
+            @downloads.removeRecursively onSuccess, onError
+
 
     init: (callback) ->
         @initDownloadFolder (err) =>
