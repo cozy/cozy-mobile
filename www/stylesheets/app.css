@@ -6291,6 +6291,24 @@ a.button {
   -ms-transition: all ease-in-out 250ms;
   transition: all ease-in-out 250ms;
 }
+.bar.bar-calm {
+  background-color: #34a6ff;
+  border-color: #008af6;
+  background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0, #008af6), color-stop(0.5, #008af6), color-stop(0.5, transparent));
+  background-image: -webkit-linear-gradient(top, #008af6 0%, #008af6 50%, transparent 50%);
+  background-image: -moz-linear-gradient(top, #008af6 0%, #008af6 50%, transparent 50%);
+  background-image: -o-linear-gradient(top, #008af6 0%, #008af6 50%, transparent 50%);
+  background-image: -ms-linear-gradient(top, #008af6 0%, #008af6 50%, transparent 50%);
+  background-image: linear-gradient(top, #008af6 0%, #008af6 50%, transparent 50%);
+}
+.button.button-energized {
+  background-color: #fe8800;
+  border-color: #cb6d00;
+}
+.button.button-balanced {
+  background-color: #5c5;
+  border-color: #35b235;
+}
 
 
 /*@ sourceMappingURL=app.css.map*/

@@ -357,6 +357,8 @@ module.exports = Replicator = (function() {
   Replicator.prototype.config = null;
 
   Replicator.prototype.destroyDB = function(callback) {
+    var _this = this;
+
     return this.db.destroy(function(err) {
       var onError, onSuccess;
 
@@ -369,7 +371,7 @@ module.exports = Replicator = (function() {
       onSuccess = function() {
         return callback(null);
       };
-      return this.downloads.removeRecursively(onSuccess, onError);
+      return _this.downloads.removeRecursively(onSuccess, onError);
     });
   };
 
@@ -377,10 +379,15 @@ module.exports = Replicator = (function() {
     var _this = this;
 
     return this.initDownloadFolder(function(err) {
+      var options;
+
       if (err) {
         return callback(err);
       }
-      _this.db = new PouchDB(DBNAME);
+      options = window.isBrowserDebugging ? {} : {
+        adapter: 'websql'
+      };
+      _this.db = new PouchDB(DBNAME, options);
       return _this.db.get('localconfig', function(err, config) {
         if (err) {
           console.log(err);
@@ -1519,6 +1526,8 @@ ConfigRunView = require('./views/config_run');
 FolderCollection = require('./collections/files');
 
 module.exports = Router = (function(_super) {
+  var cache, cacheChildren, cacheOrPrepare, timeouts;
+
   __extends(Router, _super);
 
   function Router() {
@@ -1534,8 +1543,7 @@ module.exports = Router = (function(_super) {
   };
 
   Router.prototype.folder = function(path) {
-    var collection,
-      _this = this;
+    var _this = this;
 
     $('#btn-menu, #btn-back').show();
     if (path === null) {
@@ -1543,18 +1551,14 @@ module.exports = Router = (function(_super) {
     } else {
       app.backButton.attr('href', '#folder/' + path.split('/').slice(0, -1)).removeClass('ion-home').addClass('ion-ios7-arrow-back');
     }
-    collection = new FolderCollection([], {
-      path: path
-    });
-    return collection.fetch({
-      onError: function(err) {
+    return cacheOrPrepare(path, function(err, collection) {
+      if (err) {
         return alert(err);
-      },
-      onSuccess: function() {
-        return _this.display(new FolderView({
-          collection: collection
-        }));
       }
+      app.menu.close();
+      return _this.display(new FolderView({
+        collection: collection
+      }));
     });
   };
 
@@ -1572,6 +1576,8 @@ module.exports = Router = (function(_super) {
         return alert(err);
       },
       onSuccess: function() {
+        app.menu.close();
+        $('#search-input').blur();
         return _this.display(new FolderView({
           collection: collection
         }));
@@ -1602,18 +1608,83 @@ module.exports = Router = (function(_super) {
       next.removeClass(isBack ? 'sliding-next' : 'sliding-prev');
       transitionend = 'webkitTransitionEnd otransitionend oTransitionEnd msTransitionEnd transitionend';
       return next.one(transitionend, function() {
-        console.log("trend");
         _this.mainView.remove();
         return _this.mainView = view;
       });
     } else {
-      console.log("DOH");
       if (this.mainView) {
         this.mainView.remove();
       }
       this.mainView = view.render();
       return $('#mainContent').append(this.mainView.$el);
     }
+  };
+
+  cache = {};
+
+  timeouts = {};
+
+  cacheChildren = function(collection, array) {
+    var parent, path,
+      _this = this;
+
+    if (collection) {
+      cache = {};
+      array = collection.filter(function(model) {
+        var _ref1;
+
+        return ((_ref1 = model.get('docType')) != null ? typeof _ref1.toLowerCase === "function" ? _ref1.toLowerCase() : void 0 : void 0) === 'folder';
+      });
+      array = array.map(function(model) {
+        return (model.get('path') + '/' + model.get('name')).substr(1);
+      });
+      parent = (collection.path || '/fake').split('/').slice(0, -1).join('/');
+      console.log("PARENT = ", parent);
+      array.push(parent);
+    }
+    if (array.length === 0) {
+      return;
+    }
+    path = array.shift();
+    collection = new FolderCollection([], {
+      path: path
+    });
+    return collection.fetch({
+      onError: function(err) {
+        console.log(err);
+        return cacheChildren(null, array);
+      },
+      onSuccess: function() {
+        cache[path] = collection;
+        return cacheChildren(null, array);
+      }
+    });
+  };
+
+  cacheOrPrepare = function(path, callback) {
+    var collection, incache,
+      _this = this;
+
+    if (!path) {
+      path = "";
+    }
+    if (incache = cache[path]) {
+      setTimeout(cacheChildren.bind(null, incache), 10);
+      return callback(null, incache);
+    }
+    console.log('CACHE MISS');
+    collection = new FolderCollection([], {
+      path: path
+    });
+    return collection.fetch({
+      onError: function(err) {
+        return cb(err);
+      },
+      onSuccess: function() {
+        callback(null, collection);
+        return setTimeout(cacheChildren.bind(null, collection), 10);
+      }
+    });
   };
 
   return Router;
@@ -1637,7 +1708,7 @@ buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</span><input id="input-pass" type="password"/></label><label class="item item-input"><span class="input-label">');
 var __val__ = t('device name')
 buf.push(escape(null == __val__ ? "" : __val__));
-buf.push('</span><input id="input-device" type="text"/></label><button id="btn-save" class="button button-block button-calm">Save</button>');
+buf.push('</span><input id="input-device" type="text"/></label><button id="btn-save" class="button button-block button-balanced">Save</button>');
 }
 return buf.join("");
 };
@@ -1767,6 +1838,9 @@ module.exports = ConfigView = (function(_super) {
   ConfigView.prototype.displayError = function(text, field) {
     if (this.error) {
       this.error.remove();
+    }
+    if (~text.indexOf('CORS request rejected')) {
+      text = 'Connection faillure';
     }
     this.error = $('<div>').addClass('button button-full button-energized');
     this.error.text(text);
