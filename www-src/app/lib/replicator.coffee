@@ -11,7 +11,7 @@ module.exports = class Replicator
     config: null
 
     destroyDB: (callback) ->
-        @db.destroy (err) ->
+        @db.destroy (err) =>
             return callback err if err
             onError = (err) -> callback err
             onSuccess = -> callback null
@@ -21,7 +21,8 @@ module.exports = class Replicator
     init: (callback) ->
         @initDownloadFolder (err) =>
             return callback err if err
-            @db = new PouchDB DBNAME #, adapter: 'websql'
+            options = if window.isBrowserDebugging then {} else adapter: 'websql'
+            @db = new PouchDB DBNAME, options
             @db.get 'localconfig', (err, config) =>
                 if err
                     console.log err
