@@ -48,6 +48,7 @@ module.exports = class ConfigView extends BaseView
 
     displayError: (text, field) ->
         @error.remove() if @error
+        text = 'Connection faillure' if ~text.indexOf('CORS request rejected')
         @error = $('<div>').addClass('button button-full button-energized')
         @error.text text
         @$(field or '#btn-save').before @error

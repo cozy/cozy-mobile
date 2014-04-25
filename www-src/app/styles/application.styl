@@ -16,3 +16,33 @@
     transform translate3d(-100%, 0, 0)
     transition all ease-in-out 250ms
 
+// blue
+basecolor = #34A6FF
+basecolor-alpha = rgba(49, 156, 256, 0.5)
+
+// green
+contrastcolor = #5C5
+
+// orange
+actioncolor = #fe8800
+actioncolor-alpha = rgba(254,128,0,0.5)
+
+// gray and dark gray
+lightcolor = #fcfcfc
+mediumcolor = #BDBDBD
+mediumcolor-contrast = #428bca
+darkcolor = #444
+
+darkbase = basecolor - 20%
+.bar.bar-calm
+    background-color basecolor
+    border-color darkbase
+    background-image linear-gradient(top, darkbase, darkbase 50%, transparent 50%);
+
+.button.button-energized
+    background-color actioncolor
+    border-color actioncolor - 20%
+
+.button.button-balanced
+    background-color contrastcolor
+    border-color contrastcolor - 20%
