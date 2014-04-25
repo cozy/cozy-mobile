@@ -24,10 +24,10 @@ module.exports = class Router extends Backbone.Router
             .removeClass('ion-home')
             .addClass('ion-ios7-arrow-back')
 
-        collection = new FolderCollection [], path: path
-        collection.fetch
-            onError: (err) => alert(err)
-            onSuccess: => @display new FolderView {collection}
+        cacheOrPrepare path, (err, collection) =>
+            return alert err if err
+            app.menu.close()
+            @display new FolderView {collection}
 
     search: (query) ->
         $('#btn-menu, #btn-back').show()
@@ -38,7 +38,10 @@ module.exports = class Router extends Backbone.Router
         collection = new FolderCollection [], query: query
         collection.fetch
             onError: (err) => alert(err)
-            onSuccess: => @display new FolderView {collection}
+            onSuccess: =>
+                app.menu.close()
+                $('#search-input').blur() # close keyboard
+                @display new FolderView {collection}
 
     login: ->
         $('#btn-menu, #btn-back').hide()
@@ -62,12 +65,64 @@ module.exports = class Router extends Backbone.Router
             next.removeClass if isBack then 'sliding-next' else 'sliding-prev'
             transitionend = 'webkitTransitionEnd otransitionend oTransitionEnd msTransitionEnd transitionend'
             next.one transitionend, =>
-                console.log "trend"
                 @mainView.remove()
                 @mainView = view
 
         else
-            console.log "DOH"
             @mainView.remove() if @mainView
             @mainView = view.render()
             $('#mainContent').append @mainView.$el
+
+
+
+    # we cache collection fetching for better performance
+    cache = {}
+    timeouts = {}
+    cacheChildren = (collection, array) ->
+        # first run, empty cache and transform collection in array of path
+        if collection
+            cache = {}
+            array = collection.filter (model) ->
+                model.get('docType')?.toLowerCase?() is 'folder'
+            array = array.map (model) ->
+                (model.get('path') + '/' + model.get('name')).substr 1
+
+            parent = (collection.path or '/fake').split('/')[0..-2].join('/')
+            console.log "PARENT = ", parent
+            array.push parent
+
+        # first & next runs
+        if array.length is 0
+            return # all done
+
+        # shift, prefetch, next
+        path = array.shift()
+        collection = new FolderCollection [], path: path
+        collection.fetch
+            onError: (err) =>
+                # don't handle err
+                console.log err
+                cacheChildren null, array
+            onSuccess: =>
+                cache[path] = collection
+                cacheChildren null, array
+
+    cacheOrPrepare = (path, callback) ->
+
+        path = "" unless path
+
+        if incache = cache[path]
+            setTimeout cacheChildren.bind(null, incache), 10
+            return callback null, incache
+
+        console.log 'CACHE MISS'
+
+        collection = new FolderCollection [], path: path
+        collection.fetch
+            onError: (err) => cb err
+            onSuccess: =>
+                callback null, collection
+                # next tick, do not freeze UI
+                setTimeout cacheChildren.bind(null, collection), 10
+
+
