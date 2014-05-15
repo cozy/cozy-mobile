@@ -91,13 +91,15 @@
   globals.require.brunch = true;
 })();
 require.register("application", function(exports, require, module) {
-var Replicator;
+var LayoutView, Replicator;
 
 Replicator = require('./lib/replicator');
 
+LayoutView = require('./views/layout');
+
 module.exports = {
   initialize: function() {
-    var MenuView, Router, e, locales, _ref,
+    var Router, e, locales,
       _this = this;
 
     window.app = this;
@@ -112,21 +114,13 @@ module.exports = {
     window.t = this.polyglot.t.bind(this.polyglot);
     Router = require('router');
     this.router = new Router();
-    this.backButton = $('#btn-back');
-    MenuView = require('./views/menu');
-    this.menu = MenuView();
-    $('#btn-menu').on('click', function() {
-      return _this.menu.reset().toggleLeft();
-    });
-    if ((_ref = window.cblite) == null) {
-      window.cblite = {
-        getURL: function(cb) {
-          return cb(null, 'http://localhost:5984/');
-        }
-      };
-    }
+    this.layout = new LayoutView();
+    $('body').empty().append(this.layout.render().$el);
     this.replicator = new Replicator();
     return this.replicator.init(function(err, config) {
+      if (err) {
+        console.log(err.stack);
+      }
       if (err) {
         return alert(err.message);
       }
@@ -206,25 +200,35 @@ module.exports = FileAndFolderCollection = (function(_super) {
       };
     }
     return app.replicator.db.query(map, params, function(err, response) {
-      var docs;
-
       if (err) {
         return options != null ? typeof options.onError === "function" ? options.onError(err) : void 0 : void 0;
       }
-      docs = response.rows.map(function(row) {
-        var doc, isDoc;
+      _this.reset(response.rows.map(function(row) {
+        var binary_id;
 
-        doc = row.value;
-        isDoc = function(entry) {
-          return entry.name === doc.binary.file.id;
-        };
-        if (doc.docType === 'File' && app.replicator.cache.some(isDoc)) {
-          doc.incache = true;
+        if (row.value.docType === 'File') {
+          binary_id = row.value.binary.file.id;
+          row.value.incache = app.replicator.binaryInCache(binary_id);
         }
-        return doc;
-      });
-      _this.reset(docs);
+        return row.value;
+      }));
       return options != null ? typeof options.onSuccess === "function" ? options.onSuccess(_this) : void 0 : void 0;
+    });
+  };
+
+  FileAndFolderCollection.prototype.fetchAdditional = function(options) {
+    var folders;
+
+    folders = this.where({
+      docType: 'Folder'
+    });
+    return folders.forEach(function(folder) {
+      return app.replicator.folderInCache(folder.toJSON(), function(err, incache) {
+        if (err) {
+          return console.log(err);
+        }
+        return folder.set('incache', incache);
+      });
     });
   };
 
@@ -337,7 +341,8 @@ module.exports = function(user, pass) {
 });
 
 ;require.register("lib/replicator", function(exports, require, module) {
-var DBNAME, REGEXP_PROCESS_STATUS, Replicator, basic, deleteEntry, getChildren, getFile, getOrCreateSubFolder, request;
+var DBNAME, REGEXP_PROCESS_STATUS, Replicator, basic, binariesInFolder, deleteEntry, getChildren, getFile, getOrCreateSubFolder, request, __chromeSafe,
+  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
 request = require('./request');
 
@@ -347,12 +352,77 @@ DBNAME = "cozy-files";
 
 REGEXP_PROCESS_STATUS = /Processed (\d+) \/ (\d+) changes/;
 
-module.exports = Replicator = (function() {
-  function Replicator() {}
+__chromeSafe = function() {
+  var FileTransfer;
 
-  Replicator.prototype.server = null;
+  window.LocalFileSystem = {
+    PERSISTENT: window.PERSISTENT
+  };
+  window.requestFileSystem = function(type, size, onSuccess, onError) {
+    size = 5 * 1024 * 1024;
+    return navigator.webkitPersistentStorage.requestQuota(size, function(granted) {
+      return window.webkitRequestFileSystem(type, granted, onSuccess, onError);
+    }, onError);
+  };
+  return window.FileTransfer = FileTransfer = (function() {
+    function FileTransfer() {}
+
+    FileTransfer.prototype.download = function(url, local, onSuccess, onError, _, options) {
+      var key, value, xhr, _ref;
+
+      xhr = new XMLHttpRequest();
+      xhr.open('GET', url, true);
+      xhr.overrideMimeType('text/plain; charset=x-user-defined');
+      xhr.responseType = "arraybuffer";
+      console.log("HERE", options.headers);
+      _ref = options.headers;
+      for (key in _ref) {
+        value = _ref[key];
+        xhr.setRequestHeader(key, value);
+      }
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState !== 4) {
+          return;
+        }
+        return FileTransfer.fs.root.getFile(local, {
+          create: true
+        }, function(entry) {
+          return entry.createWriter(function(writer) {
+            var bb;
+
+            writer.onwrite = function() {
+              return onSuccess(entry);
+            };
+            writer.onerror = function(err) {
+              return onError(err);
+            };
+            bb = new BlobBuilder();
+            bb.append(xhr.response);
+            return writer.write(bb.getBlob(mimetype));
+          }, function(err) {
+            return onError(err);
+          });
+        }, function(err) {
+          return onError(err);
+        });
+      };
+      return xhr.send(null);
+    };
+
+    return FileTransfer;
+
+  })();
+};
+
+module.exports = Replicator = (function() {
+  function Replicator() {
+    this.folderInCache = __bind(this.folderInCache, this);
+    this.binaryInCache = __bind(this.binaryInCache, this);
+  }
 
   Replicator.prototype.db = null;
+
+  Replicator.prototype.server = null;
 
   Replicator.prototype.config = null;
 
@@ -378,6 +448,9 @@ module.exports = Replicator = (function() {
   Replicator.prototype.init = function(callback) {
     var _this = this;
 
+    if (window.isBrowserDebugging) {
+      __chromeSafe();
+    }
     return this.initDownloadFolder(function(err) {
       var options;
 
@@ -401,17 +474,14 @@ module.exports = Replicator = (function() {
   };
 
   Replicator.prototype.initDownloadFolder = function(callback) {
-    var onError, onSuccess,
+    var onError, onSuccess, size,
       _this = this;
 
-    if (window.isBrowserDebugging) {
-      this.cache = [];
-      return callback(null);
-    }
     onError = function(err) {
       return callback(err);
     };
     onSuccess = function(fs) {
+      window.FileTransfer.fs = fs;
       return getOrCreateSubFolder(fs.root, 'cozy-downloads', function(err, downloads) {
         if (err) {
           return callback(err);
@@ -426,7 +496,14 @@ module.exports = Replicator = (function() {
         });
       });
     };
-    return window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, onSuccess, onError);
+    if (window.isBrowserDebugging) {
+      size = 5 * 1024 * 1024;
+      return navigator.webkitPersistentStorage.requestQuota(size, function(granted) {
+        return window.requestFileSystem(LocalFileSystem.PERSISTENT, granted, onSuccess, onError);
+      }, onError);
+    } else {
+      return window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, onSuccess, onError);
+    }
   };
 
   Replicator.prototype.registerRemote = function(config, callback) {
@@ -454,6 +531,10 @@ module.exports = Replicator = (function() {
       } else {
         config.password = body.password;
         config.deviceId = body.id;
+        config.auth = {
+          username: config.deviceName,
+          password: config.password
+        };
         config.fullRemoteURL = ("https://" + config.deviceName + ":" + config.password) + ("@" + config.cozyURL + "/cozy");
         _this.config = config;
         _this.config._id = 'localconfig';
@@ -479,24 +560,70 @@ module.exports = Replicator = (function() {
   };
 
   Replicator.prototype.initialReplication = function(progressback, callback) {
-    var _this = this;
+    var auth, url,
+      _this = this;
 
-    return this.db.replicate.from(this.config.fullRemoteURL, {
-      filter: "" + this.config.deviceId + "/filterDocType",
-      complete: function(err, result) {
+    url = "" + this.config.fullRemoteURL + "/_changes?descending=true&limit=1";
+    auth = this.config.auth;
+    progressback(0);
+    return request.get({
+      url: url,
+      auth: auth,
+      json: true
+    }, function(err, res, body) {
+      var last_seq;
+
+      if (err) {
+        return callback(err);
+      }
+      last_seq = body.last_seq;
+      progressback(1 / 4);
+      return _this.copyView('file', function(err) {
         if (err) {
           return callback(err);
         }
-        _this.config.checkpointed = result.last_seq;
-        return _this.saveConfig(callback);
-      }
+        progressback(2 / 4);
+        return _this.copyView('folder', function(err) {
+          if (err) {
+            return callback(err);
+          }
+          progressback(3 / 4);
+          _this.config.checkpointed = last_seq;
+          return _this.saveConfig(callback);
+        });
+      });
     });
   };
 
-  Replicator.prototype.download = function(binary_id, local, callback) {
+  Replicator.prototype.copyView = function(model, callback) {
+    var auth, url,
+      _this = this;
+
+    url = "" + this.config.fullRemoteURL + "/_design/" + model + "/_view/all/";
+    auth = this.config.auth;
+    return request.get({
+      url: url,
+      auth: auth,
+      json: true
+    }, function(err, res, body) {
+      if (err) {
+        return callback(err);
+      }
+      return async.each(body.rows, function(row, cb) {
+        return _this.db.put(row.value, cb);
+      }, function(err) {
+        if (err) {
+          return callback(err);
+        }
+        return callback(null);
+      });
+    });
+  };
+
+  Replicator.prototype.download = function(binary_id, local, progressback, callback) {
     var errors, ft, onError, onSuccess, options, url;
 
-    url = encodeURI("" + this.config.fullRemoteURL + "/" + binary_id + "/file");
+    url = encodeURI("https://" + this.config.cozyURL + "/cozy/" + binary_id + "/file");
     ft = new FileTransfer();
     errors = ['An error happened (UNKNOWN)', 'An error happened (NOT FOUND)', 'An error happened (INVALID URL)', 'This file isnt available offline', 'ABORTED'];
     onSuccess = function(entry) {
@@ -510,10 +637,48 @@ module.exports = Replicator = (function() {
         Authorization: basic(this.config.deviceName, this.config.password)
       }
     };
+    ft.onprogress = function(e) {
+      if (e.lengthComputable) {
+        return progressback(e.loaded, e.total);
+      } else {
+        return progressback(3, 10);
+      }
+    };
     return ft.download(url, local, onSuccess, onError, false, options);
   };
 
-  Replicator.prototype.getBinary = function(model, callback) {
+  Replicator.prototype.getFreeDiskSpace = function(callback) {
+    var onSuccess;
+
+    onSuccess = function(kBs) {
+      return callback(null, kBs * 1024);
+    };
+    return cordova.exec(onSuccess, callback, 'File', 'getFreeDiskSpace', []);
+  };
+
+  Replicator.prototype.binaryInCache = function(binary_id) {
+    return this.cache.some(function(entry) {
+      return entry.name === binary_id;
+    });
+  };
+
+  Replicator.prototype.folderInCache = function(folder, callback) {
+    var _this = this;
+
+    return this.db.query(binariesInFolder(folder), {}, function(err, result) {
+      var ids;
+
+      if (err) {
+        return callback(err);
+      }
+      ids = result.rows.map(function(row) {
+        return row.value.binary.file.id;
+      });
+      return callback(null, _.every(ids, _this.binaryInCache));
+    });
+  };
+
+  Replicator.prototype.getBinary = function(model, callback, progressback) {
     var binary_id,
       _this = this;
 
@@ -522,6 +687,9 @@ module.exports = Replicator = (function() {
       if (err) {
         return callback(err);
       }
+      if (!model.name) {
+        return callback(new Error('no model name :' + JSON.stringify(model)));
+      }
       return getFile(binfolder, model.name, function(err, entry) {
         var local;
 
@@ -529,7 +697,7 @@ module.exports = Replicator = (function() {
           return callback(null, entry.toURL());
         }
         local = binfolder.toURL() + '/' + model.name;
-        return _this.download(binary_id, local, function(err, entry) {
+        return _this.download(binary_id, local, progressback, function(err, entry) {
           if (err) {
             return deleteEntry(binfolder, function(delerr) {
               return callback(err);
@@ -539,6 +707,122 @@ module.exports = Replicator = (function() {
             return callback(null, entry.toURL());
           }
         });
+      });
+    });
+  };
+
+  Replicator.prototype.getBinaryFolder = function(folder, callback, progressback) {
+    var _this = this;
+
+    console.log("GBININFOLDER");
+    return this.db.query(binariesInFolder(folder), {}, function(err, result) {
+      var sizes, totalSize;
+
+      if (err) {
+        return callback(err);
+      }
+      sizes = result.rows.map(function(row) {
+        return row.value.size;
+      });
+      totalSize = sizes.reduce(function(a, b) {
+        return a + b;
+      });
+      return _this.getFreeDiskSpace(function(err, available) {
+        var progressHandlers, reportProgress;
+
+        console.log("GFDS RESULT = " + available);
+        if (err) {
+          return callback(err);
+        }
+        if (totalSize > available) {
+          alert('There is not enough disk space, try download sub-folders.');
+          return callback(null);
+        } else {
+          progressHandlers = {};
+          reportProgress = function() {
+            var done, key, status, total;
+
+            total = done = 0;
+            for (key in progressHandlers) {
+              status = progressHandlers[key];
+              done += status[0];
+              total += status[1];
+            }
+            return progressback(done, total);
+          };
+          return async.each(result.rows, function(row, cb) {
+            console.log("DOWNLOAD", row.name);
+            return _this.getBinary(row.value, cb, function(done, total) {
+              progressHandlers[row.value._id] = [done, total];
+              return reportProgress();
+            });
+          }, function() {
+            if (err) {
+              return callback(err);
+            }
+            app.router.bustCache(folder.path + '/' + folder.name);
+            return callback();
+          });
+        }
+      });
+    });
+  };
+
+  Replicator.prototype.removeLocal = function(model, callback) {
+    var binary_id, onBinFolderFound,
+      _this = this;
+
+    binary_id = model.binary.file.id;
+    console.log("REMOVE LOCAL");
+    console.log(binary_id);
+    onBinFolderFound = function(binfolder) {
+      var onSuccess;
+
+      onSuccess = function() {
+        var entry, index, _i, _len, _ref;
+
+        _ref = _this.cache;
+        for (index = _i = 0, _len = _ref.length; _i < _len; index = ++_i) {
+          entry = _ref[index];
+          if (!(entry.name === binary_id)) {
+            continue;
+          }
+          _this.cache.splice(index, 1);
+          break;
+        }
+        return callback(null);
+      };
+      return binfolder.removeRecursively(onSuccess, callback);
+    };
+    return this.downloads.getDirectory(binary_id, {}, onBinFolderFound, callback);
+  };
+
+  Replicator.prototype.removeLocalFolder = function(folder, callback) {
+    var _this = this;
+
+    return this.db.query(binariesInFolder(folder), {}, function(err, result) {
+      var ids;
+
+      if (err) {
+        return callback(err);
+      }
+      ids = result.rows.map(function(row) {
+        return row.value.binary.file.id;
+      });
+      return async.eachSeries(ids, function(id, cb) {
+        return _this.removeLocal({
+          binary: {
+            file: {
+              id: id
+            }
+          }
+        }, cb);
+      }, function(err) {
+        if (err) {
+          return callback(err);
+        }
+        app.router.bustCache(folder.path + '/' + folder.name);
+        return callback();
       });
     });
   };
@@ -559,6 +843,19 @@ module.exports = Replicator = (function() {
   return Replicator;
 
 })();
+
+binariesInFolder = function(folder) {
+  var path;
+
+  path = folder.path + '/' + folder.name;
+  return function(doc, emit) {
+    var _ref;
+
+    if (((_ref = doc.docType) != null ? _ref.toLowerCase() : void 0) === 'file' && doc.path.indexOf(path) === 0) {
+      return emit(doc._id, doc);
+    }
+  };
+};
 
 deleteEntry = function(entry, callback) {
   var onError, onSuccess;
@@ -1348,126 +1645,6 @@ module.exports = {
 
 });
 
-;require.register("locales/fr", function(exports, require, module) {
-module.exports = {
-  "Add": "Ajouter",
-  "alarm": "Alarme",
-  "event": "Evénement",
-  "add the alarm": "Ajouter l'alarme",
-  "create alarm": "Création d'une alarme",
-  "create event": "Création d'un évènement",
-  "edit alarm": "Modification d'une alarme",
-  "edit event": "Modification d'un évènement",
-  "edit": "Enregistrer",
-  "create": "Enregistrer",
-  "creation": "Creation",
-  "invite": "Inviter",
-  "close": "Fermer",
-  "delete": "Supprimer",
-  "Place": "Lieu",
-  "description": "Description",
-  "date": "Date",
-  "Day": "Jour",
-  "Edit": "Modifier",
-  "Email": "Email",
-  "Import": "Import",
-  "Export": "Export",
-  "List": "Liste",
-  "list": "liste",
-  "Calendar": "Calendrier",
-  "calendar": "Calendrier",
-  "Sync": "Sync",
-  "ie: 9:00 important meeting": "exemple: 9:00 appeler Jacque",
-  "Month": "Mois",
-  "Popup": "Popup",
-  "Switch to List": "Basculer en mode List",
-  "Switch to Calendar": "Basculer en mode Calendrier",
-  "time": "Heure",
-  "Today": "Aujourd'hui",
-  "What should I remind you ?": "Que dois-je vous rappeler ?",
-  "alarm description placeholder": "Que voulez-vous vous rappeler ?",
-  "ICalendar importer": "Importateur ICalendar",
-  "import your icalendar file": "Importer votre fichier icalendar",
-  "confirm import": "Confirmer l'import",
-  "cancel": "Annuler",
-  "Create": "Créer",
-  "Alarms to import": "Alarmes à importer",
-  "Events to import": "Evenements à importer",
-  "Create Event": "Créer un évènement",
-  "From hours:minutes": "De heures:minutes",
-  "To hours:minutes+days": "A heures:minutes+jours",
-  "Description": "Description",
-  "days after": "jours plus tard",
-  "days later": "jours plus tard",
-  "Week": "Semaine",
-  "Alarms": "Alarmes",
-  "Display": "Notification",
-  "DISPLAY": "Notification",
-  "EMAIL": "E-mail",
-  "BOTH": "E-mail & Notification",
-  "display previous events": "Montrer les évènements précédent",
-  "event": "Evenement",
-  "alarm": "Alarme",
-  "are you sure": "Etes-vous sur ?",
-  "advanced": "Détails",
-  "enter email": "Entrer l'addresse email",
-  "ON": "activée",
-  "OFF": "désactivée",
-  "recurrence": "Recurrence",
-  "recurrence rule": "Règle de recurrence",
-  "make reccurent": "Rendre réccurent",
-  "repeat every": "Répéter tous les",
-  "no recurrence": "Pas de répétition",
-  "repeat on": "Répéter les",
-  "repeat on date": "Répéter les jours du mois",
-  "repeat on weekday": "Répéter le jour de la semaine",
-  "repeat until": "Répéter jusqu'au",
-  "after": "ou après",
-  "repeat": "Répétition",
-  "forever": "Pour toujours",
-  "occurences": "occasions",
-  "every": "tous les",
-  "days": "jours",
-  "day": "jour",
-  "weeks": "semaines",
-  "week": "semaines",
-  "months": "mois",
-  "month": "mois",
-  "years": "ans",
-  "year": "ans",
-  "until": "jusqu'au",
-  "for": "pour",
-  "on": "le",
-  "on the": "le",
-  "th": "ème",
-  "nd": "ème",
-  "rd": "ème",
-  "st": "er",
-  "last": "dernier",
-  "and": "et",
-  "times": "fois",
-  "weekday": "jours de la semaine",
-  "summary": "Titre",
-  "place": "Endroit",
-  "start": "Début",
-  "end": "Fin",
-  "tags": "Tags",
-  "add tags": "Ajouter des tags",
-  "change": "Modifier",
-  "change calendar": "Changer le calendrier",
-  "save changes": "Enregistrer",
-  "save changes and invite guests": "Enregistrer et envoyer les invitations",
-  "guests": "Invités",
-  "no description": "Le titre est obligatoire",
-  "start after end": "La fin est après le début.",
-  "invalid start date": "Le début est invalide.",
-  "invalid end date": "La fin est invalide.",
-  "invalid trigg date": "Le moment est invalide.",
-  "invalid action": "L'action est invalide."
-};
-
-});
-
 ;require.register("models/file", function(exports, require, module) {
 var File, _ref,
   __hasProp = {}.hasOwnProperty,
@@ -1481,27 +1658,12 @@ module.exports = File = (function(_super) {
     return _ref;
   }
 
-  File.prototype.sync = function(method, model, options) {
-    var progress;
+  File.prototype.idAttribute = "_id";
 
-    progress = function(e) {
-      return model.trigger('progress', e);
+  File.prototype.defaults = function() {
+    return {
+      incache: 'loading'
     };
-    _.extend(options, {
-      xhr: function() {
-        var xhr;
-
-        xhr = $.ajaxSettings.xhr();
-        if (xhr instanceof window.XMLHttpRequest) {
-          xhr.addEventListener('progress', progress, false);
-        }
-        if (xhr.upload) {
-          xhr.upload.addEventListener('progress', progress, false);
-        }
-        return xhr;
-      }
-    });
-    return Backbone.sync.apply(this, arguments);
   };
 
   return File;
@@ -1543,19 +1705,20 @@ module.exports = Router = (function(_super) {
   };
 
   Router.prototype.folder = function(path) {
-    var _this = this;
+    var backpath,
+      _this = this;
 
     $('#btn-menu, #btn-back').show();
     if (path === null) {
-      app.backButton.attr('href', '#folder/').removeClass('ion-ios7-arrow-back').addClass('ion-home');
+      app.layout.setBackButton('#folder/', 'home');
     } else {
-      app.backButton.attr('href', '#folder/' + path.split('/').slice(0, -1)).removeClass('ion-home').addClass('ion-ios7-arrow-back');
+      backpath = '#folder/' + path.split('/').slice(0, -1);
+      app.layout.setBackButton(backpath, 'ios7-arrow-back');
     }
     return cacheOrPrepare(path, function(err, collection) {
       if (err) {
         return alert(err);
       }
-      app.menu.close();
       return _this.display(new FolderView({
         collection: collection
       }));
@@ -1567,7 +1730,7 @@ module.exports = Router = (function(_super) {
       _this = this;
 
     $('#btn-menu, #btn-back').show();
-    app.backButton.attr('href', '#folder/').removeClass('ion-ios7-arrow-back').addClass('ion-home');
+    app.layout.setBackButton('#folder/', 'home');
     collection = new FolderCollection([], {
       query: query
     });
@@ -1576,7 +1739,6 @@ module.exports = Router = (function(_super) {
         return alert(err);
       },
       onSuccess: function() {
-        app.menu.close();
         $('#search-input').blur();
         return _this.display(new FolderView({
           collection: collection
@@ -1596,28 +1758,23 @@ module.exports = Router = (function(_super) {
   };
 
   Router.prototype.display = function(view) {
-    var isBack, next, transitionend,
-      _this = this;
+    var direction;
 
     if (this.mainView instanceof FolderView && view instanceof FolderView) {
-      isBack = this.mainView.isParentOf(view);
-      next = view.render().$el.addClass(isBack ? 'sliding-next' : 'sliding-prev');
-      $('#mainContent').append(next);
-      next.width();
-      this.mainView.$el.addClass(isBack ? 'sliding-prev' : 'sliding-next');
-      next.removeClass(isBack ? 'sliding-next' : 'sliding-prev');
-      transitionend = 'webkitTransitionEnd otransitionend oTransitionEnd msTransitionEnd transitionend';
-      return next.one(transitionend, function() {
-        _this.mainView.remove();
-        return _this.mainView = view;
-      });
+      direction = this.mainView.isParentOf(view) ? 'left' : 'right';
     } else {
-      if (this.mainView) {
-        this.mainView.remove();
-      }
-      this.mainView = view.render();
-      return $('#mainContent').append(this.mainView.$el);
+      direction = 'none';
     }
+    return app.layout.transitionTo(view, direction);
+  };
+
+  Router.prototype.bustCache = function(path) {
+    path = path.substr(1);
+    console.log("BUST");
+    console.log(path);
+    console.log(cache[path]);
+    delete cache[path];
+    return setTimeout(cacheChildren.bind(null, null, [path]), 10);
   };
 
   cache = {};
@@ -1639,7 +1796,6 @@ module.exports = Router = (function(_super) {
         return (model.get('path') + '/' + model.get('name')).substr(1);
       });
       parent = (collection.path || '/fake').split('/').slice(0, -1).join('/');
-      console.log("PARENT = ", parent);
       array.push(parent);
     }
     if (array.length === 0) {
@@ -1714,24 +1870,13 @@ return buf.join("");
 };
 });
 
-;require.register("templates/folder", function(exports, require, module) {
-module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
-attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
-var buf = [];
-with (locals || {}) {
-var interp;
-buf.push('<div id="dialog-upload-file" class="modal fade"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button type="button" data-dismiss="modal" aria-hidden="true" class="close">×</button><h4 class="modal-title">' + escape((interp = t("upload caption")) == null ? '' : interp) + '</h4></div><div class="modal-body"><fieldset><div class="form-group"><label for="uploader">' + escape((interp = t("upload msg")) == null ? '' : interp) + '</label><input id="uploader" type="file" multiple="multiple" class="form-control"/></div></fieldset></div><div class="modal-footer"><button id="cancel-new-file" type="button" data-dismiss="modal" class="btn btn-link">' + escape((interp = t("upload close")) == null ? '' : interp) + '</button><button id="upload-file-send" type="button" class="btn btn-cozy-contrast">' + escape((interp = t("upload send")) == null ? '' : interp) + '</button></div></div></div></div><div id="dialog-new-folder" class="modal fade"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button type="button" data-dismiss="modal" aria-hidden="true" class="close">×</button><h4 class="modal-title">' + escape((interp = t("new folder caption")) == null ? '' : interp) + '</h4></div><div class="modal-body"><fieldset><div class="form-group"><label for="inputName">' + escape((interp = t("new folder msg")) == null ? '' : interp) + '</label><input id="inputName" type="text" class="form-control"/></div><div id="folder-upload-form" class="form-group hide"><br/><p class="text-center">or</p><label for="inputName">' + escape((interp = t("upload folder msg")) == null ? '' : interp) + '</label><input id="folder-uploader" type="file" directory="directory" mozdirectory="mozdirectory" webkitdirectory="webkitdirectory" class="form-control"/></div></fieldset></div><div class="modal-footer"><button id="cancel-new-folder" type="button" data-dismiss="modal" class="btn btn-link">' + escape((interp = t("new folder close")) == null ? '' : interp) + '</button><button id="new-folder-send" type="button" class="btn btn-cozy">' + escape((interp = t("new folder send")) == null ? '' : interp) + '</button></div></div></div></div><div id="affixbar" data-spy="affix" data-offset-top="1"><div class="container"><div class="row"><div class="col-lg-12"><p class="pull-right"><input id="search-box" type="search" class="pull-right"/><div id="upload-buttons" class="pull-right"><a id="button-upload-new-file" class="btn btn-cozy"><img src="images/add-file.png"/></a>&nbsp;<a id="button-new-folder" data-toggle="modal" data-target="#dialog-new-folder" class="btn btn-cozy"><img src="images/add-folder.png"/></a></div></p></div></div></div></div><div class="container"><div class="row content-shadow"><div id="content" class="col-lg-12"><div id="crumbs"></div><div id="loading-indicator"></div><table id="table-items" class="table table-hover"><tbody id="table-items-body"><tr class="table-headers"><td><span>Name</span><a id="down-name" class="btn glyphicon glyphicon-chevron-down"></a><a id="up-name" class="btn glyphicon glyphicon-chevron-up"></a></td><td class="size-column-cell"><span>Size</span><a id="down-size" class="glyphicon glyphicon-chevron-down btn"></a><a id="up-size" class="unactive btn glyphicon glyphicon-chevron-up"></a></td><td class="type-column-cell"><span>Type</span><a id="down-class" class="btn glyphicon glyphicon-chevron-down"></a><a id="up-class" class="glyphicon glyphicon-chevron-up btn unactive"></a></td><td class="date-column-cell"><span>Date</span><a id="down-lastModification" class="btn glyphicon glyphicon-chevron-down"></a><a id="up-lastModification" class="btn glyphicon glyphicon-chevron-up unactive"></a></td></tr></tbody></table><div id="files"></div></div></div></div>');
-}
-return buf.join("");
-};
-});
-
 ;require.register("templates/folder_line", function(exports, require, module) {
 module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
 attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
 var buf = [];
 with (locals || {}) {
 var interp;
+buf.push('<div class="item-content">');
 if ( model.docType == 'Folder')
 {
 buf.push('<i class="icon ion-folder"></i>');
@@ -1744,10 +1889,66 @@ buf.push('<span>');
 var __val__ = model.name
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</span>');
-if ( model.incache)
+if ( model.docType == 'Folder')
 {
-buf.push('<i class="icon ion-ios7-download-outline"></i>');
+buf.push('<i class="icon ion-chevron-right"></i>');
 }
+else if ( model.incache)
+{
+buf.push('<i class="cache-indicator icon ion-ios7-download-outline"></i>');
+}
+else
+{
+buf.push('<i class="cache-indicator icon ion-ios7-cloud-download-outline"></i>');
+}
+buf.push('</div><div class="item-options invisible">');
+if ( model.incache == 'loading')
+{
+buf.push('<div class="button">Loading</div>');
+}
+else if ( model.incache)
+{
+buf.push('<div class="button uncache">Remove local</div>');
+}
+else
+{
+buf.push('<div class="button download">Download</div>');
+}
+buf.push('</div>');
+}
+return buf.join("");
+};
+});
+
+;require.register("templates/folder_modal", function(exports, require, module) {
+module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
+attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
+var buf = [];
+with (locals || {}) {
+var interp;
+buf.push('<div class="modal-backdrop"><div class="modal-wrapper"><div class="modal"><div class="bar bar-header"><h1 class="title">');
+var __val__ = name
+buf.push(escape(null == __val__ ? "" : __val__));
+buf.push('</h1><button class="close button button-clear button-positive">Cancel</button></div><div class="content has-header"><div class="list"><div style="margin: -1px 0px" class="item item-toggle">Enable offline access<label class="toggle"><input');
+buf.push(attrs({ 'type':("checkbox"), 'checked':(offline), 'disabled':(forced), "class": ('offline-checkbox') }, {"type":true,"checked":true,"disabled":true}));
+buf.push('/><div class="track"><div class="handle"></div></div></label></div>');
+if ( forced)
+{
+buf.push('This folder is too big to be made available offline.\nChange its subfolders items.');
+}
+buf.push('</div></div></div></div></div>');
+}
+return buf.join("");
+};
+});
+
+;require.register("templates/layout", function(exports, require, module) {
+module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
+attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
+var buf = [];
+with (locals || {}) {
+var interp;
+buf.push('<div id="container" class="pane"><div class="bar bar-header bar-calm"><a id="btn-menu" class="button button-icon icon ion-navicon-round"></a><h1 class="title">Cozy Files</h1></div><div id="viewsPlaceholder" class="scroll-content has-header has-footer"></div><div class="bar bar-footer"><a id="btn-back" class="button button-icon icon ion-ios7-arrow-back"></a></div></div>');
 }
 return buf.join("");
 };
@@ -1759,20 +1960,18 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<div class="item item-input-inset"><label class="item-input-wrapper"><input id="search-input" type="text" placeholder="Search"/></label><a id="btn-search" class="button button-icon icon ion-search"></a></div><a href="#folder/" class="item item-icon-left"><i class="icon ion-home"></i>Home</a><a href="#configrun" class="item item-icon-left"><i class="icon ion-wrench"></i>Config</a><a id="refresher" class="item item-icon-left"><i class="icon ion-loop"></i>Refresh</a>');
+buf.push('<div class="bar bar-header bar-dark"><h1 class="title">Menu</h1></div><div class="content has-header"><div class="item item-input-inset"><label class="item-input-wrapper"><input id="search-input" type="text" placeholder="Search"/></label><a id="btn-search" class="button button-icon icon ion-search"></a></div><a href="#folder/" class="item item-icon-left"><i class="icon ion-home"></i>Home</a><a href="#configrun" class="item item-icon-left"><i class="icon ion-wrench"></i>Config</a><a id="refresher" class="item item-icon-left"><i class="icon ion-loop"></i>Refresh</a></div>');
 }
 return buf.join("");
 };
 });
 
 ;require.register("views/config", function(exports, require, module) {
-var BaseView, ConfigView, showLoader, urlparse, _ref,
+var BaseView, ConfigView, urlparse, _ref,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 BaseView = require('../lib/base_view');
-
-showLoader = require('./loader');
 
 urlparse = require('../lib/url');
 
@@ -1798,6 +1997,13 @@ module.exports = ConfigView = (function(_super) {
     var config, device, pass, url,
       _this = this;
 
+    if (this.saving) {
+      return null;
+    }
+    this.saving = $('#btn-save').text();
+    if (this.error) {
+      this.error.remove();
+    }
     url = this.$('#input-url').val();
     pass = this.$('#input-pass').val();
     device = this.$('#input-device').val();
@@ -1812,18 +2018,17 @@ module.exports = ConfigView = (function(_super) {
       password: pass,
       deviceName: device
     };
+    $('#btn-save').text('registering ...');
     return app.replicator.registerRemote(config, function(err) {
-      var loader, progressback;
+      var onProgress;
 
       if (err) {
         return _this.displayError(err.message);
       }
-      loader = showLoader("dowloading file structure\n(this may take a while, do not turn off the application)");
-      progressback = function(ratio) {
-        return loader.setContent('status = ' + 100 * ratio + '%');
+      onProgress = function(percent) {
+        return $('#btn-save').text('downloading hierarchy ' + parseInt(percent * 100) + '%');
       };
-      return app.replicator.initialReplication(progressback, function(err) {
-        loader.hide();
+      return app.replicator.initialReplication(onProgress, function(err) {
         if (err) {
           return _this.displayError(err.message);
         }
@@ -1836,6 +2041,8 @@ module.exports = ConfigView = (function(_super) {
   };
 
   ConfigView.prototype.displayError = function(text, field) {
+    $('#btn-save').text(this.saving);
+    this.saving = false;
     if (this.error) {
       this.error.remove();
     }
@@ -1909,6 +2116,7 @@ module.exports = ConfigView = (function(_super) {
 
 ;require.register("views/folder", function(exports, require, module) {
 var CollectionView, FolderView, _ref,
+  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -1918,19 +2126,20 @@ module.exports = FolderView = (function(_super) {
   __extends(FolderView, _super);
 
   function FolderView() {
-    _ref = FolderView.__super__.constructor.apply(this, arguments);
+    this.displaySlider = __bind(this.displaySlider, this);
+    this.appendView = __bind(this.appendView, this);    _ref = FolderView.__super__.constructor.apply(this, arguments);
     return _ref;
   }
 
-  FolderView.prototype.className = 'pane';
+  FolderView.prototype.className = 'list';
 
   FolderView.prototype.itemview = require('./folder_line');
 
-  FolderView.prototype.template = function() {
-    return "<div class=\"list\"></div>";
+  FolderView.prototype.events = function() {
+    return {
+      'click .cache-indicator': 'displaySlider'
+    };
   };
-
-  FolderView.prototype.collectionEl = '.list';
 
   FolderView.prototype.isParentOf = function(otherFolderView) {
     if (this.collection.path === null) {
@@ -1945,6 +2154,51 @@ module.exports = FolderView = (function(_super) {
     return -1 !== otherFolderView.collection.path.indexOf(this.collection.path);
   };
 
+  FolderView.prototype.afterRender = function() {
+    FolderView.__super__.afterRender.apply(this, arguments);
+    this.ionicView = new ionic.views.ListView({
+      el: this.$el[0],
+      _handleDrag: function(e) {
+        ionic.views.ListView.prototype._handleDrag.apply(this, arguments);
+        return e.stopPropagation();
+      }
+    });
+    return this.collection.fetchAdditional();
+  };
+
+  FolderView.prototype.appendView = function(view) {
+    FolderView.__super__.appendView.apply(this, arguments);
+    return view.parent = this;
+  };
+
+  FolderView.prototype.displaySlider = function(event) {
+    var dX, op,
+      _this = this;
+
+    this.ionicView.clearDragEffects();
+    op = new ionic.SlideDrag({
+      el: this.ionicView.el,
+      canSwipe: function() {
+        return true;
+      }
+    });
+    op.start({
+      target: event.target
+    });
+    dX = op._currentDrag.startOffsetX === 0 ? 0 - op._currentDrag.buttonsWidth : op._currentDrag.buttonsWidth;
+    op.end({
+      gesture: {
+        deltaX: dX,
+        direction: 'right'
+      }
+    });
+    ionic.requestAnimationFrame(function() {
+      return _this.ionicView._lastDragOp = op;
+    });
+    event.preventDefault();
+    return event.stopPropagation();
+  };
+
   return FolderView;
 
 })(CollectionView);
@@ -1952,160 +2206,355 @@ module.exports = FolderView = (function(_super) {
 });
 
 ;require.register("views/folder_line", function(exports, require, module) {
-var BaseView, ConfigView, showLoader, _ref,
+var BaseView, FolderLineView, _ref,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 BaseView = require('../lib/base_view');
 
-showLoader = require('./loader');
+module.exports = FolderLineView = (function(_super) {
+  __extends(FolderLineView, _super);
 
-module.exports = ConfigView = (function(_super) {
-  __extends(ConfigView, _super);
-
-  function ConfigView() {
+  function FolderLineView() {
     this.onError = __bind(this.onError, this);
     this.afterOpen = __bind(this.afterOpen, this);
+    this.removeFromCache = __bind(this.removeFromCache, this);
+    this.addToCache = __bind(this.addToCache, this);
     this.onClick = __bind(this.onClick, this);
-    this.initialize = __bind(this.initialize, this);    _ref = ConfigView.__super__.constructor.apply(this, arguments);
+    this.updateProgress = __bind(this.updateProgress, this);
+    this.hideProgress = __bind(this.hideProgress, this);
+    this.displayProgress = __bind(this.displayProgress, this);
+    this.setCacheIcon = __bind(this.setCacheIcon, this);
+    this.afterRender = __bind(this.afterRender, this);
+    this.initialize = __bind(this.initialize, this);    _ref = FolderLineView.__super__.constructor.apply(this, arguments);
     return _ref;
   }
 
-  ConfigView.prototype.tagName = 'a';
+  FolderLineView.prototype.tagName = 'a';
 
-  ConfigView.prototype.template = require('../templates/folder_line');
+  FolderLineView.prototype.template = require('../templates/folder_line');
 
-  ConfigView.prototype.events = {
-    'click': 'onClick'
+  FolderLineView.prototype.events = {
+    'click .item-content': 'onClick',
+    'tap .item-options .download': 'addToCache',
+    'tap .item-options .uncache': 'removeFromCache'
   };
 
-  ConfigView.prototype.className = 'item item-icon-left item-icon-right';
+  FolderLineView.prototype.className = 'item item-icon-left item-icon-right item-complex';
 
-  ConfigView.prototype.initialize = function() {
+  FolderLineView.prototype.initialize = function() {
     return this.listenTo(this.model, 'change', this.render);
   };
 
-  ConfigView.prototype.onClick = function() {
-    var path,
+  FolderLineView.prototype.afterRender = function() {
+    return this.$el[0].dataset.folderid = this.model.get('_id');
+  };
+
+  FolderLineView.prototype.setCacheIcon = function(klass) {
+    var icon, _ref1, _ref2;
+
+    icon = this.$('.cache-indicator');
+    icon.removeClass('ion-warning ion-looping ion-ios7-cloud-download-outline');
+    icon.removeClass('ion-ios7-download-outline').addClass(klass);
+    return (_ref1 = this.parent) != null ? (_ref2 = _ref1.ionicView) != null ? _ref2.clearDragEffects() : void 0 : void 0;
+  };
+
+  FolderLineView.prototype.displayProgress = function() {
+    this.hideProgress();
+    this.progresscontainer = $('<div class="item-progress"></div>').append(this.progressbar = $('<div class="item-progress-bar"></div>'));
+    return this.progresscontainer.appendTo(this.$el);
+  };
+
+  FolderLineView.prototype.hideProgress = function() {
+    var _ref1;
+
+    return (_ref1 = this.progresscontainer) != null ? _ref1.remove() : void 0;
+  };
+
+  FolderLineView.prototype.updateProgress = function(percent) {
+    var _ref1;
+
+    return (_ref1 = this.progressbar) != null ? _ref1.css('width', (100 * percent) + '%') : void 0;
+  };
+
+  FolderLineView.prototype.onClick = function(event) {
+    var onload, onprogress, path,
       _this = this;
 
+    if ($(event.target).closest('.cache-indicator').length) {
+      return true;
+    }
     if (this.model.get('docType') === 'Folder') {
       path = this.model.get('path') + '/' + this.model.get('name');
       return app.router.navigate("#folder" + path, {
         trigger: true
       });
     } else {
-      this.loader = showLoader('downloading binary');
-      return app.replicator.getBinary(this.model.attributes, function(err, url) {
+      this.displayProgress();
+      onprogress = function(done, total) {
+        return _this.updateProgress(done / total);
+      };
+      onload = function(err, url) {
+        _this.hideProgress();
         if (err) {
           return _this.onError(err);
         }
         return ExternalFileUtil.openWith(url, '', void 0, _this.afterOpen, _this.onError);
-      });
+      };
+      return app.replicator.getBinary(this.model.attributes, onload, onprogress);
     }
   };
 
-  ConfigView.prototype.afterOpen = function() {
-    this.model.set({
-      incache: true
-    });
-    this.loader.hide();
-    return this.loader.$el.remove();
+  FolderLineView.prototype.addToCache = function() {
+    var after, onprogress,
+      _this = this;
+
+    this.setCacheIcon('ion-looping');
+    after = function(err) {
+      _this.hideProgress();
+      if (err) {
+        alert(err);
+      } else {
+        _this.model.set({
+          incache: true
+        });
+      }
+      return _this.render();
+    };
+    this.displayProgress();
+    onprogress = function(done, total) {
+      return _this.updateProgress(done / total);
+    };
+    if (this.model.get('docType') === 'Folder') {
+      return app.replicator.getBinaryFolder(this.model.attributes, after, onprogress);
+    } else {
+      return app.replicator.getBinary(this.model.attributes, after);
+    }
   };
 
-  ConfigView.prototype.onError = function(e) {
-    this.loader.hide();
-    this.loader.$el.remove();
+  FolderLineView.prototype.removeFromCache = function() {
+    var after,
+      _this = this;
+
+    this.setCacheIcon('ion-looping');
+    after = function(err) {
+      if (err) {
+        alert(err);
+      } else {
+        _this.model.set({
+          incache: false
+        });
+      }
+      return _this.render();
+    };
+    if (this.model.get('docType') === 'Folder') {
+      return app.replicator.removeLocalFolder(this.model.attributes, after);
+    } else {
+      return app.replicator.removeLocal(this.model.attributes, after);
+    }
+  };
+
+  FolderLineView.prototype.afterOpen = function() {
+    return this.model.set({
+      incache: true
+    });
+  };
+
+  FolderLineView.prototype.onError = function(e) {
     return alert(e);
   };
 
-  return ConfigView;
+  return FolderLineView;
 
 })(BaseView);
 
 });
 
-;require.register("views/loader", function(exports, require, module) {
-module.exports = function(content) {
-  var el, view;
+;require.register("views/layout", function(exports, require, module) {
+var BaseView, FolderView, Layout, Menu, _ref,
+  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  $('body').append(el = $("<div class=\"loading-backdrop\" class=\"enabled\">\n    <div class=\"loading\">" + content + "</div>\n</div>"));
-  view = new ionic.views.Loading({
-    el: el[0]
-  });
-  view.$el = el;
-  view.show();
-  view.setContent = function(text) {
-    return $el.find('.loading').text(text);
+BaseView = require('../lib/base_view');
+
+FolderView = require('./folder');
+
+Menu = require('./menu');
+
+module.exports = Layout = (function(_super) {
+  __extends(Layout, _super);
+
+  function Layout() {
+    this.setBackButton = __bind(this.setBackButton, this);
+    this.closeMenu = __bind(this.closeMenu, this);    _ref = Layout.__super__.constructor.apply(this, arguments);
+    return _ref;
+  }
+
+  Layout.prototype.template = require('../templates/layout');
+
+  Layout.prototype.events = function() {
+    return {
+      'click #btn-menu': 'onMenuButtonClicked'
+    };
   };
-  return view;
-};
+
+  Layout.prototype.afterRender = function() {
+    this.menu = new Menu();
+    this.menu.render();
+    this.$el.append(this.menu.$el);
+    this.container = this.$('#container');
+    this.viewsPlaceholder = this.$('#viewsPlaceholder');
+    this.viewsBlock = $('<div class="scroll"></div>');
+    this.viewsPlaceholder.append(this.viewsBlock);
+    this.backButton = this.container.find('#btn-back');
+    this.menuButton = this.container.find('#btn-menu');
+    this.ionicContainer = new ionic.views.SideMenuContent({
+      el: this.container[0]
+    });
+    this.ionicMenu = new ionic.views.SideMenu({
+      el: this.menu.$el[0],
+      width: 270
+    });
+    this.controller = new ionic.controllers.SideMenuController({
+      content: this.ionicContainer,
+      left: this.ionicMenu
+    });
+    return this.ionicScroll = new ionic.views.Scroll({
+      el: this.viewsPlaceholder[0]
+    });
+  };
+
+  Layout.prototype.closeMenu = function() {
+    return this.controller.toggleLeft(false);
+  };
+
+  Layout.prototype.setBackButton = function(href, icon) {
+    this.backButton.attr('href', href);
+    this.backButton.removeClass('ion-home ion-ios7-arrow-back');
+    return this.backButton.addClass('ion-' + icon);
+  };
+
+  Layout.prototype.transitionTo = function(view, type) {
+    var $next, currClass, nextClass, transitionend, _ref1,
+      _this = this;
+
+    this.closeMenu();
+    $next = view.render().$el;
+    if (this.currentView instanceof FolderView && view instanceof FolderView) {
+      type = this.currentView.isParentOf(view) ? 'left' : 'right';
+    } else {
+      type = 'none';
+    }
+    if (type === 'none') {
+      if ((_ref1 = this.currentView) != null) {
+        _ref1.remove();
+      }
+      this.viewsBlock.empty().append($next);
+      this.ionicScroll.hintResize();
+      return this.currentView = view;
+    } else {
+      nextClass = type === 'left' ? 'sliding-next' : 'sliding-prev';
+      currClass = type === 'left' ? 'sliding-prev' : 'sliding-next';
+      $next.addClass(nextClass);
+      this.viewsBlock.append($next);
+      $next.width();
+      this.currentView.$el.addClass(currClass);
+      $next.removeClass(nextClass);
+      transitionend = 'webkitTransitionEnd otransitionend oTransitionEnd msTransitionEnd transitionend';
+      return $next.one(transitionend, function() {
+        _this.currentView.remove();
+        return _this.currentView = view;
+      });
+    }
+  };
+
+  Layout.prototype.onMenuButtonClicked = function() {
+    this.menu.reset();
+    return this.controller.toggleLeft();
+  };
+
+  return Layout;
+
+})(BaseView);
 
 });
 
 ;require.register("views/menu", function(exports, require, module) {
-module.exports = function() {
-  var $menu, content, doSearch, leftMenu, menu;
+var BaseView, Menu, _ref,
+  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  $menu = $('#menu-left-list');
-  $menu.append(require('../templates/menu')());
-  $menu.on('click', '#refresher', function(event) {
-    $('#refresher i').removeClass('ion-loop').addClass('ion-looping');
+BaseView = require('../lib/base_view');
+
+module.exports = Menu = (function(_super) {
+  __extends(Menu, _super);
+
+  function Menu() {
+    this.doSearchIfEnter = __bind(this.doSearchIfEnter, this);    _ref = Menu.__super__.constructor.apply(this, arguments);
+    return _ref;
+  }
+
+  Menu.prototype.id = 'menu';
+
+  Menu.prototype.className = 'menu menu-left';
+
+  Menu.prototype.template = require('../templates/menu');
+
+  Menu.prototype.events = {
+    'click #refresher': 'refresh',
+    'click #btn-search': 'doSearch',
+    'click a.item': 'closeMenu',
+    'keydown #search-input': 'doSearchIfEnter'
+  };
+
+  Menu.prototype.refresh = function() {
+    this.$('#refresher i').removeClass('ion-loop').addClass('ion-looping');
     event.stopImmediatePropagation();
     return app.replicator.sync(function(err) {
-      var _ref, _ref1;
+      var _ref1, _ref2;
 
       if (err) {
         alert(err);
       }
-      if ((_ref = app.router.mainView) != null) {
-        if ((_ref1 = _ref.collection) != null) {
-          _ref1.fetch();
+      if ((_ref1 = app.layout.currentView) != null) {
+        if ((_ref2 = _ref1.collection) != null) {
+          _ref2.fetch();
         }
       }
-      $('#refresher i').removeClass('ion-looping').addClass('ion-loop');
-      return menu.toggleLeft();
+      this.$('#refresher i').removeClass('ion-looping').addClass('ion-loop');
+      return app.layout.closeMenu();
     });
-  });
-  doSearch = function() {
+  };
+
+  Menu.prototype.doSearchIfEnter = function(event) {
+    if (event.which === 13) {
+      return this.doSearch();
+    }
+  };
+
+  Menu.prototype.doSearch = function() {
     var val;
 
     val = $('#search-input').val();
     if (val.length === 0) {
       return true;
     }
-    app.router.navigate('#search/' + val, {
+    app.layout.closeMenu();
+    return app.router.navigate('#search/' + val, {
       trigger: true
     });
-    return menu.toggleLeft();
   };
-  $menu.on('click', '#btn-search', doSearch);
-  $menu.on('keydown', '#search-input', function(event) {
-    if (event.which === 13) {
-      return doSearch();
-    }
-  });
-  $menu.on('click', 'a.item', function() {
-    return menu.toggleLeft();
-  });
-  content = new ionic.views.SideMenuContent({
-    el: document.getElementById('content')
-  });
-  leftMenu = new ionic.views.SideMenu({
-    el: $menu[0],
-    width: 270
-  });
-  menu = new ionic.controllers.SideMenuController({
-    content: content,
-    left: leftMenu
-  });
-  menu.reset = function() {
-    $('#search-input').val('');
-    return menu;
+
+  Menu.prototype.reset = function() {
+    return this.$('#search-input').val('');
   };
-  return menu;
-};
+
+  return Menu;
+
+})(BaseView);
 
 });
 

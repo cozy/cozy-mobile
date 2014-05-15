@@ -6252,10 +6252,10 @@ a.button {
 .platform-android.platform-cordova .title {
   line-height: 48px; }
 
-.whatever {
-  color: #f00;
-}
-#mainContent .pane {
+.scroll .list {
+  position: absolute;
+  top: 0px;
+  width: 100%;
   -webkit-transform: translate3d(0, 0, 0);
   -moz-transform: translate3d(0, 0, 0);
   -o-transform: translate3d(0, 0, 0);
@@ -6267,7 +6267,7 @@ a.button {
   -ms-transition: all ease-in-out 250ms;
   transition: all ease-in-out 250ms;
 }
-#mainContent .sliding-next {
+.scroll .list.sliding-next {
   -webkit-transform: translate3d(100%, 0, 0);
   -moz-transform: translate3d(100%, 0, 0);
   -o-transform: translate3d(100%, 0, 0);
@@ -6279,7 +6279,7 @@ a.button {
   -ms-transition: all ease-in-out 250ms;
   transition: all ease-in-out 250ms;
 }
-#mainContent .sliding-prev {
+.scroll .list.sliding-prev {
   -webkit-transform: translate3d(-100%, 0, 0);
   -moz-transform: translate3d(-100%, 0, 0);
   -o-transform: translate3d(-100%, 0, 0);
@@ -6308,6 +6308,33 @@ a.button {
 .button.button-balanced {
   background-color: #5c5;
   border-color: #35b235;
+}
+.cache-indicator {
+  color: #bdbdbd;
+}
+.icon.ion-chevron-right {
+  left: auto;
+}
+.icon.ion-chevron-right + .cache-indicator {
+  left: auto;
+  right: 40px;
+}
+.pull-right {
+  float: right;
+}
+.item-progress {
+  position: absolute;
+  bottom: 0px;
+  left: 0px;
+  width: 100%;
+  display: block;
+  z-index: 100;
+  height: 5px;
+}
+.item-progress .item-progress-bar {
+  position: absolute;
+  height: 100%;
+  background-color: rgba(49,156,255,0.5);
 }
 
 
