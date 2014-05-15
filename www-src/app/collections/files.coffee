@@ -36,13 +36,20 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
         app.replicator.db.query map, params, (err, response) =>
             return options?.onError? err if err
 
-            docs = response.rows.map (row) ->
-                doc = row.value
-                isDoc = (entry) -> entry.name is doc.binary.file.id
-                if doc.docType is 'File' and app.replicator.cache.some isDoc
-                    doc.incache = true
-                return doc
-
-            @reset docs
+            @reset response.rows.map (row) ->
+                if row.value.docType is 'File'
+                    binary_id = row.value.binary.file.id
+                    row.value.incache = app.replicator.binaryInCache binary_id
+                return row.value
 
             options?.onSuccess? this
+
+    fetchAdditional: (options) ->
+        folders = @where docType: 'Folder'
+        folders.forEach (folder) ->
+            app.replicator.folderInCache folder.toJSON(), (err, incache) ->
+                return console.log err if err
+                folder.set 'incache', incache
+
+
+

@@ -1,4 +1,5 @@
 Replicator = require './lib/replicator'
+LayoutView = require './views/layout'
 
 module.exports =
 
@@ -18,16 +19,12 @@ module.exports =
         Router = require 'router'
         @router = new Router()
 
-        @backButton = $('#btn-back')
+        @layout = new LayoutView()
+        $('body').empty().append @layout.render().$el
 
-        MenuView = require './views/menu'
-        @menu = MenuView()
-        $('#btn-menu').on 'click', => @menu.reset().toggleLeft()
-
-        window.cblite ?= getURL: (cb) -> cb null, 'http://localhost:5984/'
         @replicator = new Replicator()
-
         @replicator.init (err, config) =>
+            console.log err.stack if err
             return alert err.message if err
 
             Backbone.history.start()

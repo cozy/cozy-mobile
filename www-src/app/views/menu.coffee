@@ -1,42 +1,31 @@
-module.exports = ->
-    $menu = $('#menu-left-list')
-    $menu.append require('../templates/menu')()
+BaseView = require '../lib/base_view'
 
-    $menu.on 'click', '#refresher', (event) ->
-        $('#refresher i').removeClass('ion-loop').addClass('ion-looping')
+module.exports = class Menu extends BaseView
+
+    id: 'menu'
+    className: 'menu menu-left'
+    template: require '../templates/menu'
+    events:
+        'click #refresher': 'refresh'
+        'click #btn-search': 'doSearch'
+        'click a.item': 'closeMenu'
+        'keydown #search-input': 'doSearchIfEnter'
+
+    refresh: ->
+        @$('#refresher i').removeClass('ion-loop').addClass('ion-looping')
         event.stopImmediatePropagation()
         app.replicator.sync (err) ->
             alert err if err
-            app.router.mainView?.collection?.fetch()
-            $('#refresher i').removeClass('ion-looping').addClass('ion-loop')
-            menu.toggleLeft()
+            app.layout.currentView?.collection?.fetch()
+            @$('#refresher i').removeClass('ion-looping').addClass('ion-loop')
+            app.layout.closeMenu()
 
-    doSearch = () ->
+    doSearchIfEnter: (event) => @doSearch() if event.which is 13
+    doSearch: ->
         val = $('#search-input').val()
         return true if val.length is 0
+        app.layout.closeMenu()
         app.router.navigate '#search/' + val, trigger: true
-        menu.toggleLeft()
 
-    $menu.on 'click', '#btn-search', doSearch
-    $menu.on 'keydown', '#search-input', (event) ->
-        doSearch() if event.which is 13
-
-    $menu.on 'click', 'a.item', ->
-        menu.toggleLeft()
-
-    content = new ionic.views.SideMenuContent
-      el: document.getElementById 'content'
-
-    leftMenu = new ionic.views.SideMenu
-      el: $menu[0],
-      width: 270
-
-    menu = new ionic.controllers.SideMenuController
-      content: content
-      left: leftMenu
-
-    menu.reset = ->
-        $('#search-input').val('')
-        return menu
-
-    return menu
+    reset: ->
+        @$('#search-input').val('')

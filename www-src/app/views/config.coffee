@@ -1,5 +1,4 @@
 BaseView = require '../lib/base_view'
-showLoader = require './loader'
 urlparse = require '../lib/url'
 
 module.exports = class ConfigView extends BaseView
@@ -11,14 +10,19 @@ module.exports = class ConfigView extends BaseView
         'click #btn-save': 'doSave'
 
     doSave: ->
+        return null if @saving
+        @saving = $('#btn-save').text()
+        @error.remove() if @error
 
         url = @$('#input-url').val()
         pass = @$('#input-pass').val()
         device = @$('#input-device').val()
 
+        # check all fields filled
         unless url and pass and device
             return @displayError 'all fields are required'
 
+        # keep only the hostname
         if url[0..3] is 'http'
             @$('#input-url').val url = urlparse(url).hostname
 
@@ -27,19 +31,16 @@ module.exports = class ConfigView extends BaseView
             password: pass
             deviceName: device
 
+        $('#btn-save').text 'registering ...'
+        # register on cozy's server
         app.replicator.registerRemote config, (err) =>
             return @displayError err.message if err
 
-            loader = showLoader """
-                dowloading file structure
-                (this may take a while, do not turn off the application)
-            """
+            onProgress = (percent) ->
+                $('#btn-save').text 'downloading hierarchy ' + parseInt(percent * 100) + '%'
 
-            progressback = (ratio) ->
-                loader.setContent 'status = ' + 100*ratio + '%'
-
-            app.replicator.initialReplication progressback, (err) =>
-                loader.hide()
+            # first replication to fetch hierarchy
+            app.replicator.initialReplication onProgress, (err) =>
                 return @displayError err.message if err
 
                 $('#footer').text 'replication complete'
@@ -47,6 +48,8 @@ module.exports = class ConfigView extends BaseView
 
 
     displayError: (text, field) ->
+        $('#btn-save').text @saving
+        @saving = false
         @error.remove() if @error
         text = 'Connection faillure' if ~text.indexOf('CORS request rejected')
         @error = $('<div>').addClass('button button-full button-energized')

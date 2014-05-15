@@ -15,31 +15,23 @@ module.exports = class Router extends Backbone.Router
     folder: (path) ->
         $('#btn-menu, #btn-back').show()
         if path is null
-            app.backButton.attr('href', '#folder/')
-            .removeClass('ion-ios7-arrow-back')
-            .addClass('ion-home')
-
+            app.layout.setBackButton '#folder/', 'home'
         else
-            app.backButton.attr('href', '#folder/' + path.split('/')[0..-2])
-            .removeClass('ion-home')
-            .addClass('ion-ios7-arrow-back')
+            backpath = '#folder/' + path.split('/')[0..-2]
+            app.layout.setBackButton backpath, 'ios7-arrow-back'
 
         cacheOrPrepare path, (err, collection) =>
             return alert err if err
-            app.menu.close()
             @display new FolderView {collection}
 
     search: (query) ->
         $('#btn-menu, #btn-back').show()
-        app.backButton.attr('href', '#folder/')
-            .removeClass('ion-ios7-arrow-back')
-            .addClass('ion-home')
+        app.layout.setBackButton '#folder/', 'home'
 
         collection = new FolderCollection [], query: query
         collection.fetch
             onError: (err) => alert(err)
             onSuccess: =>
-                app.menu.close()
                 $('#search-input').blur() # close keyboard
                 @display new FolderView {collection}
 
@@ -53,31 +45,27 @@ module.exports = class Router extends Backbone.Router
 
     display: (view) ->
         if @mainView instanceof FolderView and view instanceof FolderView
-
-            isBack = @mainView.isParentOf view
-
-            # sliding transition
-            next = view.render().$el.addClass if isBack then 'sliding-next' else 'sliding-prev'
-            $('#mainContent').append next
-            next.width() # force reflow
-
-            @mainView.$el.addClass if isBack then 'sliding-prev' else 'sliding-next'
-            next.removeClass if isBack then 'sliding-next' else 'sliding-prev'
-            transitionend = 'webkitTransitionEnd otransitionend oTransitionEnd msTransitionEnd transitionend'
-            next.one transitionend, =>
-                @mainView.remove()
-                @mainView = view
-
+            direction = if @mainView.isParentOf(view) then 'left' else 'right'
         else
-            @mainView.remove() if @mainView
-            @mainView = view.render()
-            $('#mainContent').append @mainView.$el
+            direction = 'none'
 
+        app.layout.transitionTo view, direction
 
 
     # we cache collection fetching for better performance
+    #
+    bustCache: (path) ->
+        path = path.substr 1
+        console.log "BUST"
+        console.log path
+        console.log cache[path]
+        delete cache[path]
+        setTimeout cacheChildren.bind(null, null, [path]), 10
+
     cache = {}
     timeouts = {}
+
+
     cacheChildren = (collection, array) ->
         # first run, empty cache and transform collection in array of path
         if collection
@@ -88,7 +76,6 @@ module.exports = class Router extends Backbone.Router
                 (model.get('path') + '/' + model.get('name')).substr 1
 
             parent = (collection.path or '/fake').split('/')[0..-2].join('/')
-            console.log "PARENT = ", parent
             array.push parent
 
         # first & next runs
