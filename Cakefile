@@ -11,39 +11,6 @@ plugins = [
 
 platforms = ['ios', 'android']
 
-copy = (src, target, done) ->
-    r = fs.createReadStream src
-    w = fs.createWriteStream target
-    r.on 'error', done
-    w.on 'error', done
-    w.on 'close', done
-
-    r.pipe w
-
-copyAssets = (done) ->
-    copies = [
-        # android
-        ['icon-36-ldpi.png', 'platforms/android/res/drawable-ldpi/icon.png']
-        ['icon-48-mdpi.png', 'platforms/android/res/drawable-mdpi/icon.png']
-        ['icon-72-hdpi.png', 'platforms/android/res/drawable-hdpi/icon.png']
-        ['icon-96-xhdpi.png', 'platforms/android/res/drawable-xhdpi/icon.png']
-        ['icon-96-xhdpi.png', 'platforms/android/res/drawable/icon.png']
-        # iOs
-        ['icon-57-ios.png', 'platforms/ios/Project/Resources/icons/icon.png']
-        ['icon-114-ios.png', 'platforms/ios/Project/Resources/icons/icon@2x.png']
-        ['icon-72-ios.png', 'platforms/ios/Project/Resources/icons/icon-72.png']
-        ['icon-144-ios.png', 'platforms/ios/Project/Resources/icons/icon-72@2x.png']
-    ]
-
-    copies = copies.map (c) ->
-        [src, target] = c
-        return (done) ->
-            copy "./res/icons/#{src}", "./#{target}", (err) ->
-                console.log "#{src} -> #{target}", if err then 'KO' else 'OK'
-                done()
-
-    async.series copies, done
-
 installPlugins = (done) ->
     async.eachSeries plugins, (plugin, cb) ->
         console.log "installing plugin #{plugin} ..."
@@ -87,5 +54,4 @@ release = (done) ->
 
 task 'platforms', 'install cordova platforms', -> installPlatforms -> console.log "DONE"
 task 'plugins', 'install cordova platforms', -> installPlugins -> console.log "DONE"
-task 'assets', 'copy assets platforms', -> copyAssets -> console.log "DONE"
 task 'release', 'create the released apk', -> release -> console.log "DONE"

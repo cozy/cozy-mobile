@@ -1,12 +1,28 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="io.cozy.files-client" version="0.0.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+<widget android-versionCode="4"
+    android-versionName="0.0.4"
+    id="io.cozy.files-client"
+    version="0.0.4"
+    xmlns="http://www.w3.org/ns/widgets"
+    xmlns:cdv="http://cordova.apache.org/ns/1.0">
+
     <name>Cozy-Files</name>
-    <description>
-        Sync files from cozy files
-    </description>
-    <author email="contact@cozycloud.cc" href="http://cozy.io">
-        Cozy Cloud
-    </author>
-    <content src="index.html" />
-    <access origin="*" />
+    <description>Sync files from cozy files</description>
+    <author email="contact@cozycloud.cc" href="http://cozy.io">Cozy Cloud</author>
+    <content src="index.html"/>
+    <platform name="android">
+        <icon density="ldpi" src="res/icons/icon-36-ldpi.png"/>
+        <icon density="mdpi" src="res/icons/icon-48-mdpi.png"/>
+        <icon density="hdpi" src="res/icons/icon-72-hdpi.png"/>
+        <icon density="xhdpi" src="res/icons/icon-96-xhdpi.png"/>
+    </platform>
+    <platform name="ios">
+        <!-- iPhone / iPod Touch -->
+        <icon height="57" src="res/icons/icon-57-ios.png" width="57"/>
+        <icon height="114" src="res/ios/icon-114-ios.png" width="144"/>
+        <!-- iPad -->
+        <icon height="72" src="res/icons/icon-72-ios.png" width="72"/>
+        <icon height="144" src="res/ios/icon-144-ios.png" width="144"/>
+    </platform>
+    <access origin="*"/>
 </widget>
