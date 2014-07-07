@@ -14,6 +14,12 @@ module.exports = class Layout extends BaseView
         # 'click #btn-back': 'onBackButtonClicked'
         'click #btn-menu': 'onMenuButtonClicked'
 
+    initialize: ->
+        document.addEventListener "menubutton", @onMenuButtonClicked, false
+        document.addEventListener "searchbutton", @onSearchButtonClicked, false
+        document.addEventListener "backbutton", @onBackButtonClicked, false
+
+
     afterRender: ->
         @menu = new Menu()
         @menu.render()
@@ -82,6 +88,13 @@ module.exports = class Layout extends BaseView
                 @currentView.remove()
                 @currentView = view
 
-    onMenuButtonClicked: ->
+    onMenuButtonClicked: =>
         @menu.reset()
         @controller.toggleLeft()
+
+    onSearchButtonClicked: =>
+        @onMenuButtonClicked()
+        @$('#search-input').focus()
+
+    onBackButtonClicked: =>
+        app.router.navigate @backButton.attr('href'), trigger: true
