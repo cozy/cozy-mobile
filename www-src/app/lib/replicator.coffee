@@ -1,39 +1,7 @@
 request = require './request'
 basic = require './basic'
+fs = require './filesystem'
 DBNAME = "cozy-files"
-
-REGEXP_PROCESS_STATUS = /Processed (\d+) \/ (\d+) changes/
-
-__chromeSafe = ->
-    window.LocalFileSystem = PERSISTENT: window.PERSISTENT
-    window.requestFileSystem = (type, size, onSuccess, onError) ->
-        size = 5*1024*1024
-        navigator.webkitPersistentStorage.requestQuota size, (granted) ->
-            window.webkitRequestFileSystem type, granted, onSuccess, onError
-        , onError
-
-
-    window.FileTransfer = class FileTransfer
-        download: (url, local, onSuccess, onError, _, options) ->
-            xhr = new XMLHttpRequest();
-            xhr.open 'GET', url, true
-            xhr.overrideMimeType 'text/plain; charset=x-user-defined'
-            xhr.responseType = "arraybuffer";
-            console.log "HERE", options.headers
-            xhr.setRequestHeader key, value for key, value of options.headers
-            xhr.onreadystatechange = ->
-                return unless xhr.readyState == 4
-                FileTransfer.fs.root.getFile local, {create: true}, (entry) ->
-                    entry.createWriter (writer) ->
-                        writer.onwrite = -> onSuccess entry
-                        writer.onerror = (err) -> onError err
-                        bb = new BlobBuilder();
-                        bb.append(xhr.response);
-                        writer.write(bb.getBlob(mimetype));
-
-                    , (err) -> onError err
-                , (err) -> onError err
-            xhr.send(null)
 
 module.exports = class Replicator
 
@@ -44,13 +12,9 @@ module.exports = class Replicator
     destroyDB: (callback) ->
         @db.destroy (err) =>
             return callback err if err
-            onError = (err) -> callback err
-            onSuccess = -> callback null
-            @downloads.removeRecursively onSuccess, onError
-
+            fs.rmrf @downloads
 
     init: (callback) ->
-        __chromeSafe() if window.isBrowserDebugging
         @initDownloadFolder (err) =>
             return callback err if err
             options = if window.isBrowserDebugging then {} else adapter: 'websql'
@@ -63,30 +27,17 @@ module.exports = class Replicator
                     @config = config
                     callback null, config
 
-
     initDownloadFolder: (callback) ->
-        #     @cache = []
-        #     return callback null
-
-        onError = (err) -> callback err
-        onSuccess = (fs) =>
-            window.FileTransfer.fs = fs
-            getOrCreateSubFolder fs.root, 'cozy-downloads', (err, downloads) =>
+        fs.initialize (err, filesystem) =>
+            return callback err if err
+            window.FileTransfer.fs = filesystem
+            fs.getOrCreateSubFolder filesystem.root, 'cozy-downloads', (err, downloads) =>
                 return callback err if err
                 @downloads = downloads
-                getChildren downloads, (err, children) =>
+                fs.getChildren downloads, (err, children) =>
                     return callback err if err
                     @cache = children
                     callback null
-
-        if window.isBrowserDebugging # flag for developpement in browser
-            size = 5*1024*1024
-            navigator.webkitPersistentStorage.requestQuota size, (granted) ->
-                window.requestFileSystem LocalFileSystem.PERSISTENT, granted, onSuccess, onError
-            , onError
-
-        else
-            window.requestFileSystem LocalFileSystem.PERSISTENT, 0, onSuccess, onError
 
     registerRemote: (config, callback) ->
         request.post
@@ -159,34 +110,7 @@ module.exports = class Replicator
 
             async.each body.rows, (row, cb) =>
                 @db.put row.value, cb
-            , (err) ->
-                return callback err if err
-                callback null
-
-    download: (binary_id, local, progressback, callback) ->
-        url = encodeURI "https://#{@config.cozyURL}/cozy/#{binary_id}/file"
-        ft = new FileTransfer()
-
-        errors = [
-            'An error happened (UNKNOWN)',
-            'An error happened (NOT FOUND)',
-            'An error happened (INVALID URL)',
-            'This file isnt available offline',
-            'ABORTED'
-        ]
-
-        onSuccess = (entry) -> callback null, entry
-        onError = (err) -> callback new Error errors[err.code]
-        options = headers: Authorization: basic @config.deviceName, @config.password
-        ft.onprogress = (e) ->
-            if e.lengthComputable then progressback e.loaded, e.total
-            else progressback 3, 10 #@TODO, better aproximation
-
-        ft.download url, local, onSuccess, onError, false, options
-
-    getFreeDiskSpace: (callback) ->
-        onSuccess = (kBs) -> callback null, kBs * 1024
-        cordova.exec onSuccess, callback, 'File', 'getFreeDiskSpace', []
+            , callback
 
 
     binaryInCache: (binary_id) =>
@@ -196,27 +120,29 @@ module.exports = class Replicator
         @db.query binariesInFolder(folder), {}, (err, result) =>
             return callback err if err
             ids = result.rows.map (row) -> row.value.binary.file.id
-            # console.log "FOLDER IN CACHE " + folder.name + " " + ids.length + " " + ids
-            # console.log "     " + @cache.map (entry) -> entry.name
-            # console.log "     " + _.every ids, @binaryInCache
+            # a folder is in cache if all its children are in cache
             callback null, _.every ids, @binaryInCache
 
     getBinary: (model, callback, progressback) ->
         binary_id = model.binary.file.id
 
-        getOrCreateSubFolder @downloads, binary_id, (err, binfolder) =>
+        fs.getOrCreateSubFolder @downloads, binary_id, (err, binfolder) =>
             return callback err if err
             return callback new Error('no model name :' + JSON.stringify(model)) unless model.name
 
-            getFile binfolder, model.name, (err, entry) =>
+            fs.getFile binfolder, model.name, (err, entry) =>
                 return callback null, entry.toURL() if entry
 
                 # getFile failed, let's download
-                local = binfolder.toURL() + '/' + model.name
-                @download binary_id, local, progressback, (err, entry) =>
+                options =
+                    from: encodeURI "https://#{@config.cozyURL}/cozy/#{binary_id}/file"
+                    headers: Authorization: basic @config.deviceName, @config.password
+                    to: binfolder.toURL() + '/' + model.name
+
+                fs.download options, progressback, (err, entry) =>
                     if err
                         # failed to download
-                        deleteEntry binfolder, (delerr) ->
+                        fs.delete binfolder, (delerr) ->
                             #@TODO handle delerr
                             callback err
                     else
@@ -224,17 +150,15 @@ module.exports = class Replicator
                         callback null, entry.toURL()
 
     getBinaryFolder: (folder, callback, progressback) ->
-        console.log "GBININFOLDER"
         @db.query binariesInFolder(folder), {}, (err, result) =>
             return callback err if err
 
             sizes = result.rows.map (row) -> row.value.size
             totalSize = sizes.reduce (a,b) -> a + b
 
-            @getFreeDiskSpace (err, available) =>
-                console.log "GFDS RESULT = " + available
+            fs.freeSpace (err, available) ->
                 return callback err if err
-                if totalSize > available
+                if totalSize > available * 1024 # available is in KB
                     alert 'There is not enough disk space, try download sub-folders.'
                     callback null
                 else
@@ -265,19 +189,14 @@ module.exports = class Replicator
         console.log "REMOVE LOCAL"
         console.log binary_id
 
-        onBinFolderFound = (binfolder) =>
-            onSuccess = =>
+        fs.getDirectory @downloads, binary_id, (err, binfolder) =>
+            return callback err if err
+            fs.rmrf binfolder, (err) =>
                 # remove from @cache
                 for entry, index in @cache when entry.name is binary_id
                     @cache.splice index, 1
                     break
-
                 callback null
-
-            binfolder.removeRecursively onSuccess, callback
-
-
-        @downloads.getDirectory binary_id, {}, onBinFolderFound, callback
 
     removeLocalFolder: (folder, callback) ->
          @db.query binariesInFolder(folder), {}, (err, result) =>
@@ -306,26 +225,3 @@ binariesInFolder = (folder) ->
     return (doc, emit) ->
         if doc.docType?.toLowerCase() is 'file' and doc.path.indexOf(path) is 0
             emit doc._id, doc
-
-deleteEntry = (entry, callback) ->
-    onSuccess = -> callback null
-    onError = (err) -> callback err
-    entry.remove onSuccess, onError
-
-getFile = (parent, name, callback) ->
-    onSuccess = (entry) -> callback null, entry
-    onError = (err) -> callback err
-    parent.getFile name, null, onSuccess, onError
-
-getOrCreateSubFolder = (parent, name, callback) ->
-    onSuccess = (entry) -> callback null, entry
-    onError = (err) -> callback err
-    parent.getDirectory name, {create: true}, onSuccess, onError
-
-getChildren = (directory, callback) ->
-    # assume we are using cordova-file-plugin and call reader only once
-    reader = directory.createReader()
-    onSuccess = (entries) -> callback null, entries
-    onError = (err) -> callback err
-    reader.readEntries onSuccess, onError
-
