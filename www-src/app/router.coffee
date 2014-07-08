@@ -1,7 +1,7 @@
 app = require 'application'
 FolderView = require './views/folder'
-ConfigView = require './views/config'
-ConfigRunView = require './views/config_run'
+ConfigView = require './views/login'
+ConfigRunView = require './views/config'
 FolderCollection = require './collections/files'
 
 module.exports = class Router extends Backbone.Router
@@ -37,11 +37,11 @@ module.exports = class Router extends Backbone.Router
 
     login: ->
         $('#btn-menu, #btn-back').hide()
-        @display new ConfigView()
+        @display new LoginView()
 
     config: ->
         $('#btn-back').hide()
-        @display new ConfigRunView()
+        @display new ConfigView()
 
     display: (view) ->
         if @mainView instanceof FolderView and view instanceof FolderView

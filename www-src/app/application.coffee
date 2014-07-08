@@ -32,5 +32,5 @@ module.exports =
             if config
                 @router.navigate 'folder/', trigger: true
             else
-                @router.navigate 'config', trigger: true
+                @router.navigate 'login', trigger: true
 

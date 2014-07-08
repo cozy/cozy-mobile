@@ -15,6 +15,7 @@ module.exports = class FolderView extends CollectionView
         return -1 isnt otherFolderView.collection.path.indexOf @collection.path
 
     afterRender: ->
+        @ionicView?.destroy()
         super
         @ionicView = new ionic.views.ListView
             el: @$el[0]
