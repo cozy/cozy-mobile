@@ -11,8 +11,8 @@ module.exports = class Layout extends BaseView
     template: require '../templates/layout'
 
     events: ->
-        'click #btn-back': 'onBackButtonClicked'
-        'click #btn-menu': 'onMenuButtonClicked'
+        'tap #btn-back': 'onBackButtonClicked'
+        'tap #btn-menu': 'onMenuButtonClicked'
 
     initialize: ->
         document.addEventListener "menubutton", @onMenuButtonClicked, false
@@ -84,7 +84,8 @@ module.exports = class Layout extends BaseView
             $next.removeClass nextClass
 
             transitionend = 'webkitTransitionEnd otransitionend oTransitionEnd msTransitionEnd transitionend'
-            $next.one transitionend, =>
+            # double one & once because there is multiple events type
+            $next.one transitionend, _.once =>
                 @currentView.remove()
                 @currentView = view
 
@@ -96,5 +97,7 @@ module.exports = class Layout extends BaseView
         @onMenuButtonClicked()
         @$('#search-input').focus()
 
-    onBackButtonClicked: =>
+    onBackButtonClicked: (event) =>
         app.router.navigate @backButton.attr('href'), trigger: true
+        event.preventDefault()
+        event.stopPropagation()

@@ -5,7 +5,7 @@ module.exports = class FolderLineView extends BaseView
     tagName: 'a'
     template: require '../templates/folder_line'
     events:
-        'click .item-content': 'onClick'
+        'tap .item-content': 'onClick'
         'tap .item-options .download': 'addToCache'
         'tap .item-options .uncache': 'removeFromCache'
 

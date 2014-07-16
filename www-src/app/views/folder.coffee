@@ -6,7 +6,8 @@ module.exports = class FolderView extends CollectionView
     className: 'list'
     itemview: require './folder_line'
     events: ->
-        'click .cache-indicator': 'displaySlider'
+        'tap .cache-indicator': 'displaySlider'
+        'hold .item': 'displaySlider'
 
     isParentOf: (otherFolderView) ->
         return true if @collection.path is null #root
@@ -31,6 +32,8 @@ module.exports = class FolderView extends CollectionView
         view.parent = this
 
     displaySlider: (event) =>
+        console.log "DISPLAY SLIDER"
+        # simulate a drag effect on the line to display the hidden button
         @ionicView.clearDragEffects()
         op = new ionic.SlideDrag(el: @ionicView.el, canSwipe: -> true)
         op.start target: event.target
