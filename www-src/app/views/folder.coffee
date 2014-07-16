@@ -27,6 +27,21 @@ module.exports = class FolderView extends CollectionView
 
         @collection.fetchAdditional()
 
+    onChange: ->
+        if _.size(@views) is 0
+
+            message = if @collection.path is undefined
+                'no results'
+            else
+                'this folder is empty'
+
+            $('<li class="item" id="empty-message">')
+            .text(message)
+            .appendTo @$el
+
+
+        else @$('#empty-message').remove()
+
     appendView: (view) =>
         super
         view.parent = this
