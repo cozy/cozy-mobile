@@ -135,7 +135,12 @@ module.exports = class Replicator
     saveConfig: (callback) ->
         @db.put @config, (err, result) =>
             return callback err if err
-            return callback new Error(JSON.stringify(result)) unless result.ok
+            unless result.ok
+                msg = "Cant save config"
+                msg += JSON.stringify @config
+                msg += JSON.stringify result
+                return callback new Error msg
+
             @config._id = result.id
             @config._rev = result.rev
             callback null
@@ -167,8 +172,6 @@ module.exports = class Replicator
         auth = @config.auth
         request.get {url, auth, json:true}, (err, res, body) =>
             return callback err if err
-
-            console.log "BUG? #{JSON.stringify(body)}"
 
             async.each body.rows, (row, cb) =>
                 @db.put row.value, cb
