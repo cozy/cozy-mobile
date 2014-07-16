@@ -2,6 +2,8 @@ request = require './request'
 basic = require './basic'
 fs = require './filesystem'
 DBNAME = "cozy-files.db"
+DBCONTACTS = "cozy-contacts.db"
+DBOPTIONS = if window.isBrowserDebugging then {} else adapter: 'websql'
 
 module.exports = class Replicator
 
@@ -14,30 +16,20 @@ module.exports = class Replicator
             return callback err if err
             fs.rmrf @downloads, callback
 
-    destroyContacts: (callback) ->
-        @db.query 'ContactsByLocalId', {}, (err, res) =>
-            console.log "GOT CONTACTS LIST #{res.rows.length} #{err}"
-            return callback err if err
-            async.eachSeries res.rows, (row, cb) =>
-                @db.remove row.id, row.value[1], cb
-            , callback
-
     init: (callback) ->
         @initDownloadFolder (err) =>
             return callback err if err
-            options = if window.isBrowserDebugging then {} else adapter: 'websql'
-            @db = new PouchDB DBNAME, options
+            @db = new PouchDB DBNAME, DBOPTIONS
             @db.get 'localconfig', (err, config) =>
                 if err
                     callback null, null
                 else
                     @config = config
                     @remote = new PouchDB @config.fullRemoteURL
+                    @contactsDB = new PouchDB DBCONTACTS, DBOPTIONS
                     @initDatabase (err) =>
-                        # return callback err if err
-                        # @destroyContacts (err) =>
-                            return callback err if err
-                            callback null, config
+                        return callback err if err
+                        callback null, config
 
     initDownloadFolder: (callback) ->
         fs.initialize (err, filesystem) =>
@@ -51,14 +43,14 @@ module.exports = class Replicator
                     @cache = children
                     callback null
 
-    createOrUpdateDesign: (design, callback) ->
-        @db.get design._id, (err, existing) =>
+    createOrUpdateDesign: (db, design, callback) ->
+        db.get design._id, (err, existing) =>
             if existing?.version is design.version
                 return callback null
             else
                 console.log "REDEFINING DESIGN #{design._id}"
                 design._rev = existing._rev if existing
-                @db.put design, callback
+                db.put design, callback
 
     initDatabase: (callback) ->
         FilesAndFolderDesignDoc =
@@ -88,11 +80,11 @@ module.exports = class Replicator
                             emit doc.localId, [doc.localVersion, doc._rev]
 
 
-        @createOrUpdateDesign FilesAndFolderDesignDoc, (err) =>
+        @createOrUpdateDesign @db, FilesAndFolderDesignDoc, (err) =>
             return callback err if err
-            @createOrUpdateDesign ContactsByLocalIdDesignDoc, (err) =>
+            @createOrUpdateDesign @db, LocalPathDesignDoc, (err) =>
                 return callback err if err
-                @createOrUpdateDesign LocalPathDesignDoc, callback
+                @createOrUpdateDesign @contactsDB, ContactsByLocalIdDesignDoc, callback
 
     getDbFilesOfFolder: (folder, callback) ->
         path = folder.path + '/' + folder.name
@@ -294,7 +286,7 @@ module.exports = class Replicator
     syncContacts: (callback) ->
         async.parallel [
             ImagesBrowser.getContactsList
-            (cb) => @db.query 'ContactsByLocalId', {}, cb
+            (cb) => @contactsDB.query 'ContactsByLocalId', {}, cb
         ], (err, result) =>
             return callback err if err
             [phoneContacts, rows: dbContacts] = result
@@ -325,22 +317,22 @@ module.exports = class Replicator
                 # the contact already exists, but has changed, we update it
                 else if inDb?
                     console.log "UPDATING"
-                    @db.put contact, inDb.id, inDb.rev, cb
+                    @contactsDB.put contact, inDb.id, inDb.rev, cb
                     return
 
                 # this is a new contact
                 else
                     console.log "CREATING"
-                    @db.post contact, cb
+                    @contactsDB.post contact, cb
 
 
             , callback
 
     replicateContacts: (callback) ->
-        @db.query 'ContactsByLocalId', {}, (err, result) =>
+        @contactsDB.query 'ContactsByLocalId', {}, (err, result) =>
             return callback err if err
             ids = result.rows.map (row) -> row.id
-            @db.replicate.to @remote,
+            @contactsDB.replicate.to @remote,
                 doc_ids: ids,
                 complete: callback
 
