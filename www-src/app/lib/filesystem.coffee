@@ -1,16 +1,17 @@
 
+splitCallback = (callback) ->
+    return [
+        onSuccess = (x) -> callback null, x
+        onError = (err) -> callback err
+    ]
+
+
+
 module.exports.initialize = (callback) ->
     onSuccess = (fs) -> callback null, fs
     onError = (err) -> callback err
-    if window.isBrowserDebugging # flag for developpement in browser
-        __chromeSafe()
-        size = 5*1024*1024
-        navigator.webkitPersistentStorage.requestQuota size, (granted) ->
-            window.requestFileSystem LocalFileSystem.PERSISTENT, granted, onSuccess, onError
-        , onError
-
-    else
-        window.requestFileSystem LocalFileSystem.PERSISTENT, 0, onSuccess, onError
+    __chromeSafe() if window.isBrowserDebugging # flag for developpement in browser
+    window.requestFileSystem LocalFileSystem.PERSISTENT, 0, onSuccess, onError
 
 module.exports.delete = (entry, callback) ->
     onSuccess = -> callback null
@@ -50,6 +51,34 @@ module.exports.freeSpace = (callback) ->
     cordova.exec onSuccess, onError, 'File', 'getFreeDiskSpace', []
 
 
+module.exports.entryFromPath = (path, callback) ->
+    onSuccess = (entry) -> callback null, entry
+    onError = (err) -> callback err
+    resolveLocalFileSystemURL 'file://' + path, onSuccess, onError
+
+module.exports.fileFromEntry = (entry, callback) ->
+    onSuccess = (file) -> callback null, file
+    onError = (err) -> callback err
+    entry.file onSuccess, onError
+
+module.exports.contentFromFile = (file, callback) ->
+    [onSuccess, onError] = splitCallback callback
+    reader = new FileReader()
+    reader.onerror = onError
+    reader.onload = -> onSuccess reader.result
+    reader.readAsArrayBuffer file
+
+module.exports.getFileFromPath = (path, callback) ->
+    module.exports.entryFromPath path, (err, entry) ->
+        return callback err if err
+        module.exports.fileFromEntry entry, callback
+
+module.exports.metadataFromEntry = (entry, callback) ->
+    onSuccess = (file) -> callback null, file
+    onError = (err) -> callback err
+    entry.getMetadata onSuccess, onError
+
+
 module.exports.download = (options, progressback, callback) ->
     headers = options.headers
     url = options.from
@@ -71,7 +100,7 @@ module.exports.download = (options, progressback, callback) ->
         if e.lengthComputable then progressback e.loaded, e.total
         else progressback 3, 10 #@TODO, better aproximation
 
-    ft.download url, local, onSuccess, onError, false, {headers}
+    ft.download url, local, onSuccess, onError, true, {headers}
 
 
 # various patches to debug in chrome

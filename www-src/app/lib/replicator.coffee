@@ -12,7 +12,15 @@ module.exports = class Replicator
     destroyDB: (callback) ->
         @db.destroy (err) =>
             return callback err if err
-            fs.rmrf @downloads
+            fs.rmrf @downloads, callback
+
+    destroyContacts: (callback) ->
+        @db.query 'ContactsByLocalId', {}, (err, res) =>
+            console.log "GOT CONTACTS LIST #{res.rows.length} #{err}"
+            return callback err if err
+            async.eachSeries res.rows, (row, cb) =>
+                @db.remove row.id, row.value[1], cb
+            , callback
 
     init: (callback) ->
         @initDownloadFolder (err) =>
@@ -21,11 +29,15 @@ module.exports = class Replicator
             @db = new PouchDB DBNAME, options
             @db.get 'localconfig', (err, config) =>
                 if err
-                    console.log err
                     callback null, null
                 else
                     @config = config
-                    callback null, config
+                    @remote = new PouchDB @config.fullRemoteURL
+                    @initDatabase (err) =>
+                        # return callback err if err
+                        # @destroyContacts (err) =>
+                            return callback err if err
+                            callback null, config
 
     initDownloadFolder: (callback) ->
         fs.initialize (err, filesystem) =>
@@ -38,6 +50,62 @@ module.exports = class Replicator
                     return callback err if err
                     @cache = children
                     callback null
+
+    createOrUpdateDesign: (design, callback) ->
+        @db.get design._id, (err, existing) =>
+            if existing?.version is design.version
+                return callback null
+            else
+                console.log "REDEFINING DESIGN #{design._id}"
+                design._rev = existing._rev if existing
+                @db.put design, callback
+
+    initDatabase: (callback) ->
+        FilesAndFolderDesignDoc =
+            _id: '_design/FilesAndFolder'
+            version: 1
+            views:
+                'FilesAndFolder':
+                    map: Object.toString.apply (doc) ->
+                        if doc.docType?.toLowerCase() in ['file', 'folder']
+                            emit doc.path
+
+        LocalPathDesignDoc =
+            _id: '_design/LocalPath'
+            version: 1
+            views:
+                'LocalPath':
+                    map: Object.toString.apply (doc) ->
+                        emit doc.localPath if doc.localPath
+
+        ContactsByLocalIdDesignDoc =
+            _id: '_design/ContactsByLocalId'
+            version: 1
+            views:
+                'ContactsByLocalId':
+                    map: Object.toString.apply (doc) ->
+                        if doc.docType?.toLowerCase() is 'contact' and doc.localId
+                            emit doc.localId, [doc.localVersion, doc._rev]
+
+
+        @createOrUpdateDesign FilesAndFolderDesignDoc, (err) =>
+            return callback err if err
+            @createOrUpdateDesign ContactsByLocalIdDesignDoc, (err) =>
+                return callback err if err
+                @createOrUpdateDesign LocalPathDesignDoc, callback
+
+    getDbFilesOfFolder: (folder, callback) ->
+        path = folder.path + '/' + folder.name
+        options =
+            include_docs: true
+            startkey: path
+            endkey: path + '\uffff'
+
+        @db.query 'FilesAndFolder', options, (err, results) ->
+            return callback err if err
+            docs = results.rows.map (row) -> row.doc
+            files = docs.filter (doc) -> doc.docType?.toLowerCase() is 'file'
+            callback null, files
 
     registerRemote: (config, callback) ->
         request.post
@@ -108,6 +176,8 @@ module.exports = class Replicator
         request.get {url, auth, json:true}, (err, res, body) =>
             return callback err if err
 
+            console.log "BUG? #{JSON.stringify(body)}"
+
             async.each body.rows, (row, cb) =>
                 @db.put row.value, cb
             , callback
@@ -117,11 +187,11 @@ module.exports = class Replicator
         @cache.some (entry) -> entry.name is binary_id
 
     folderInCache: (folder, callback) =>
-        @db.query binariesInFolder(folder), {}, (err, result) =>
+        @getDbFilesOfFolder folder, (err, files) =>
             return callback err if err
-            ids = result.rows.map (row) -> row.value.binary.file.id
             # a folder is in cache if all its children are in cache
-            callback null, _.every ids, @binaryInCache
+            callback null, _.every files, (file) =>
+                @binaryInCache file.binary.file.id
 
     getBinary: (model, callback, progressback) ->
         binary_id = model.binary.file.id
@@ -150,13 +220,12 @@ module.exports = class Replicator
                         callback null, entry.toURL()
 
     getBinaryFolder: (folder, callback, progressback) ->
-        @db.query binariesInFolder(folder), {}, (err, result) =>
+        @getDbFilesOfFolder folder, (err, files) =>
             return callback err if err
 
-            sizes = result.rows.map (row) -> row.value.size
-            totalSize = sizes.reduce (a,b) -> a + b
+            totalSize = files.reduce ((sum, file) -> sum + file.size), 0
 
-            fs.freeSpace (err, available) ->
+            fs.freeSpace (err, available) =>
                 return callback err if err
                 if totalSize > available * 1024 # available is in KB
                     alert 'There is not enough disk space, try download sub-folders.'
@@ -172,10 +241,10 @@ module.exports = class Replicator
                         progressback done, total
 
 
-                    async.each result.rows, (row, cb) =>
-                        console.log "DOWNLOAD", row.name
-                        @getBinary row.value, cb, (done, total) ->
-                            progressHandlers[row.value._id] = [done, total]
+                    async.each files, (file, cb) =>
+                        console.log "DOWNLOAD #{file.name}"
+                        @getBinary file, cb, (done, total) ->
+                            progressHandlers[file._id] = [done, total]
                             reportProgress()
 
                     , ->
@@ -199,29 +268,163 @@ module.exports = class Replicator
                 callback null
 
     removeLocalFolder: (folder, callback) ->
-         @db.query binariesInFolder(folder), {}, (err, result) =>
+         @getDbFilesOfFolder folder, (err, files) =>
             return callback err if err
-            ids = result.rows.map (row) -> row.value.binary.file.id
 
-            async.eachSeries ids, (id, cb) =>
-                @removeLocal binary:file:id: id, cb
+            async.eachSeries files, (file, cb) =>
+                @removeLocal file, cb
             , (err) ->
                 return callback err if err
                 app.router.bustCache(folder.path + '/' + folder.name)
                 callback()
 
-
     sync: (callback) ->
-        @db.replicate.from @config.fullRemoteURL,
+        @db.replicate.from @remote,
             filter: "#{@config.deviceId}/filter"
             since: @config.checkpointed
             complete: (err, result) =>
+                console.log "REPLICATION COMPLETED"
                 @config.checkpointed = result.last_seq
-                @saveConfig callback
+                @saveConfig =>
+                    console.log "CONFIG SAVED"
+                    @syncPictures =>
+                        console.log "PICTURES SYNCED"
+                        callback null
 
-binariesInFolder = (folder) ->
-    path = folder.path + '/' + folder.name
-    # console.log "bif" + path
-    return (doc, emit) ->
-        if doc.docType?.toLowerCase() is 'file' and doc.path.indexOf(path) is 0
-            emit doc._id, doc
+    syncContacts: (callback) ->
+        async.parallel [
+            ImagesBrowser.getContactsList
+            (cb) => @db.query 'ContactsByLocalId', {}, cb
+        ], (err, result) =>
+            return callback err if err
+            [phoneContacts, rows: dbContacts] = result
+
+            console.log "BEGIN SYNC #{dbContacts.length} #{phoneContacts.length}"
+
+            dbCache = {}
+            dbContacts.forEach (row) ->
+                dbCache[row.key] =
+                    id: row.id
+                    rev: row.value[1]
+                    version: row.value[0]
+
+            async.eachSeries phoneContacts, (contact, cb) =>
+
+                contact.localId = contact.localId.toString()
+                contact.docType = 'Contact'
+                inDb = dbCache[contact.localId]
+
+                console.log "CONTACT : #{contact.localId} #{contact.localVersion}"
+                console.log "DB #{inDb}"
+
+                # no changes
+                if contact.localVersion is inDb?.version
+                    console.log "NOTHING TO DO"
+                    return cb null
+
+                # the contact already exists, but has changed, we update it
+                else if inDb?
+                    console.log "UPDATING"
+                    @db.put contact, inDb.id, inDb.rev, cb
+                    return
+
+                # this is a new contact
+                else
+                    console.log "CREATING"
+                    @db.post contact, cb
+
+
+            , callback
+
+    replicateContacts: (callback) ->
+        @db.query 'ContactsByLocalId', {}, (err, result) =>
+            return callback err if err
+            ids = result.rows.map (row) -> row.id
+            @db.replicate.to @remote,
+                doc_ids: ids,
+                complete: callback
+
+
+    syncPictures: (callback) ->
+        ImagesBrowser.getImagesList (err, images) =>
+            return callback err if err
+
+            images = images[0..3] # for tests
+            console.log "SYNC IMAGES : #{images.length}"
+            async.eachSeries images, (path, cb) =>
+                console.log "IMAGE : #{path}"
+                @alreadyinDB path, (err, exist) =>
+                    if err or exist
+                        # dont break
+                        console.log "ALREADY IN DB #{path} #{exist} #{err}"
+                        return cb null
+
+                    @uploadPicture path, (err) ->
+                        console.log "ERROR #{err}"
+                        cb null
+
+            , callback
+
+    alreadyinDB: (path, callback) ->
+        @db.query 'LocalPath', key: path, (err, result) ->
+            console.log "RESULT = #{result.rows.length}"
+            callback err, result?.rows.length > 0
+
+    uploadPicture: (path, callback) ->
+        fs.getFileFromPath path, (err, file) =>
+            return callback err if err
+
+            fs.contentFromFile file, (err, content) =>
+                return callback err if err
+
+                @createBinary content, file.type, (err, bin) =>
+                    return callback err if err
+
+                    @createFile file, path, bin, callback
+
+
+    createBinary: (blob, mime, callback) ->
+        @remote.post docType: 'Binary', (err, doc) =>
+            return callback err if err
+            return callback new Error('cant create binary') unless doc.ok
+
+            @remote.putAttachment doc.id, 'file', doc.rev, blob, mime, (err, doc) ->
+                return callback err if err
+                return callback new Error('cant attach') unless doc.ok
+                callback null, doc
+
+    createFile: (cordovaFile, localPath, binaryDoc, callback) ->
+
+        dbFile =
+            docType: 'File'
+            name: cordovaFile.name
+            path: '/' + @config.deviceName
+            localPath: localPath
+            type: @fileClassFromMime cordovaFile.type
+            lastModification: new Date(cordovaFile.lastModified).toISOString()
+            creationDate: new Date(cordovaFile.lastModified).toISOString()
+            size: cordovaFile.size
+            tags: ['uploaded-from-' + @config.deviceName]
+            binary: file:
+                id: binaryDoc.id
+                rev: binaryDoc.rev
+
+        @remote.post dbFile, (err, doc) =>
+            return callback err if err
+            return callback new Error('cant create file') unless doc.ok
+
+            dbFile._id = doc.id
+            dbFile._rev = doc.rev
+
+            console.log "NOW #{JSON.stringify(dbFile)}"
+
+            # put it immediately in local db
+            @db.put dbFile, callback
+
+    fileClassFromMime: (type) ->
+        return switch type.split('/')[0]
+            when 'image' then "image"
+            when 'audio' then "music"
+            when 'video' then "video"
+            when 'text', 'application' then "document"
+            else "file"
