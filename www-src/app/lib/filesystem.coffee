@@ -90,7 +90,6 @@ __chromeSafe = ->
             xhr.open 'GET', url, true
             xhr.overrideMimeType 'text/plain; charset=x-user-defined'
             xhr.responseType = "arraybuffer";
-            console.log "HERE", options.headers
             xhr.setRequestHeader key, value for key, value of options.headers
             xhr.onreadystatechange = ->
                 return unless xhr.readyState == 4

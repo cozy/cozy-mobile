@@ -11,7 +11,7 @@ module.exports = class Layout extends BaseView
     template: require '../templates/layout'
 
     events: ->
-        # 'click #btn-back': 'onBackButtonClicked'
+        'click #btn-back': 'onBackButtonClicked'
         'click #btn-menu': 'onMenuButtonClicked'
 
     initialize: ->

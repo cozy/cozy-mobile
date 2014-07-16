@@ -19,30 +19,39 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
         else 0
 
 
+    # search use temporary view
+    search: (options) ->
+        regexp = new RegExp @query, 'i'
+        map = (doc, emit) ->
+            if doc.docType in ['Folder', 'File'] and regexp.test doc.name
+                emit doc._id, doc
+        params =
+            include_docs: true
+
+        callback = @resetFromPouch.bind this, options
+        app.replicator.db.query map, params, callback
+
+    # fetch use
     fetch: (options) ->
-        map = params = null
-        if @query
-            params = {}
-            regexp = new RegExp @query, 'i'
-            map = (doc, emit) ->
-                if doc.docType in ['Folder', 'File'] and regexp.test doc.name
-                    emit doc._id, doc
-        else
-            params = key: if @path then '/' + @path else ''
-            map = (doc, emit) ->
-                if doc.docType in ['Folder', 'File']
-                    emit doc.path, doc
+        params =
+            key: if @path then '/' + @path else ''
+            include_docs: true
 
-        app.replicator.db.query map, params, (err, response) =>
-            return options?.onError? err if err
+        callback = @resetFromPouch.bind this, options
+        app.replicator.db.query 'FilesAndFolder', params, callback
 
-            @reset response.rows.map (row) ->
-                if row.value.docType is 'File'
-                    binary_id = row.value.binary.file.id
-                    row.value.incache = app.replicator.binaryInCache binary_id
-                return row.value
 
-            options?.onSuccess? this
+
+    resetFromPouch: (options, err, response) =>
+        return options?.onError? err if err
+
+        @reset response.rows.map (row) ->
+            if row.doc.docType is 'File'
+                binary_id = row.doc.binary.file.id
+                row.doc.incache = app.replicator.binaryInCache binary_id
+            return row.doc
+
+        options?.onSuccess? this
 
     fetchAdditional: (options) ->
         folders = @where docType: 'Folder'

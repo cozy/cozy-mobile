@@ -70,7 +70,7 @@ module.exports = class FolderLineView extends BaseView
         if @model.get('docType') is 'Folder'
             app.replicator.getBinaryFolder @model.attributes, after, onprogress
         else
-            app.replicator.getBinary @model.attributes, after
+            app.replicator.getBinary @model.attributes, after, onprogress
 
     removeFromCache: =>
         @setCacheIcon 'ion-looping'

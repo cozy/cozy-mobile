@@ -1,7 +1,7 @@
 request = require './request'
 basic = require './basic'
 fs = require './filesystem'
-DBNAME = "cozy-files"
+DBNAME = "cozy-files.db"
 
 module.exports = class Replicator
 

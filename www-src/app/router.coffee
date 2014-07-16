@@ -1,7 +1,7 @@
 app = require 'application'
 FolderView = require './views/folder'
-ConfigView = require './views/login'
-ConfigRunView = require './views/config'
+LoginView = require './views/login'
+ConfigView = require './views/config'
 FolderCollection = require './collections/files'
 
 module.exports = class Router extends Backbone.Router
@@ -9,15 +9,15 @@ module.exports = class Router extends Backbone.Router
     routes:
         'folder/*path'                    : 'folder'
         'search/*query'                   : 'search'
-        'config'                          : 'login'
-        'configrun'                       : 'config'
+        'login'                           : 'login'
+        'config'                          : 'config'
 
     folder: (path) ->
         $('#btn-menu, #btn-back').show()
         if path is null
             app.layout.setBackButton '#folder/', 'home'
         else
-            backpath = '#folder/' + path.split('/')[0..-2]
+            backpath = '#folder/' + path.split('/')[0..-2].join '/'
             app.layout.setBackButton backpath, 'ios7-arrow-back'
 
         cacheOrPrepare path, (err, collection) =>
@@ -29,7 +29,7 @@ module.exports = class Router extends Backbone.Router
         app.layout.setBackButton '#folder/', 'home'
 
         collection = new FolderCollection [], query: query
-        collection.fetch
+        collection.search
             onError: (err) => alert(err)
             onSuccess: =>
                 $('#search-input').blur() # close keyboard
@@ -56,9 +56,7 @@ module.exports = class Router extends Backbone.Router
     #
     bustCache: (path) ->
         path = path.substr 1
-        console.log "BUST"
-        console.log path
-        console.log cache[path]
+        console.log "BUST #{path} #{cache[path]}"
         delete cache[path]
         setTimeout cacheChildren.bind(null, null, [path]), 10
 
@@ -106,7 +104,7 @@ module.exports = class Router extends Backbone.Router
 
         collection = new FolderCollection [], path: path
         collection.fetch
-            onError: (err) => cb err
+            onError: (err) => callback err
             onSuccess: =>
                 callback null, collection
                 # next tick, do not freeze UI
