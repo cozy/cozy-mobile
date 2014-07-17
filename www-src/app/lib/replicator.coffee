@@ -404,14 +404,12 @@ module.exports = class Replicator
                 id: binaryDoc.id
                 rev: binaryDoc.rev
 
-        @remote.post dbFile, (err, doc) =>
+        @remote.post dbFile, (err, created) =>
             return callback err if err
-            return callback new Error('cant create file') unless doc.ok
+            return callback new Error('cant create file') unless created.ok
 
-            dbFile._id = doc.id
-            dbFile._rev = doc.rev
-
-            console.log "NOW #{JSON.stringify(dbFile)}"
+            dbFile._id = created.id
+            dbFile._rev = created.rev
 
             # put it immediately in local db
             @db.put dbFile, callback
