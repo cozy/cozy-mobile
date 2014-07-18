@@ -145,6 +145,17 @@ module.exports = class Replicator
             @config._rev = result.rev
             callback null
 
+    updateIndex: (callback) ->
+        # build the search index
+        @db.search
+            build: true
+            fields: ['name']
+        , (err) ->
+            console.log "INDEX BUILDING FAILED"
+            console.log err if err
+            callback null
+
+
     initialReplication: (progressback, callback) ->
         url = "#{@config.fullRemoteURL}/_changes?descending=true&limit=1"
         auth = @config.auth
@@ -165,7 +176,11 @@ module.exports = class Replicator
 
                     progressback 3/4
                     @config.checkpointed = last_seq
-                    @saveConfig callback
+                    @saveConfig (err) =>
+                        return callback err if err
+                        @updateIndex callback
+
+
 
     copyView: (model, callback) ->
         url = "#{@config.fullRemoteURL}/_design/#{model}/_view/all/"
@@ -274,17 +289,17 @@ module.exports = class Replicator
                 callback()
 
     sync: (callback) ->
-        @db.replicate.from @remote,
+        replication = @db.replicate.from @remote,
             filter: "#{@config.deviceId}/filter"
             since: @config.checkpointed
-            complete: (err, result) =>
-                console.log "REPLICATION COMPLETED"
-                @config.checkpointed = result.last_seq
-                @saveConfig =>
-                    console.log "CONFIG SAVED"
-                    @syncPictures =>
-                        console.log "PICTURES SYNCED"
-                        callback null
+        replication.on 'change', (info) ->
+            console.log "change #{info}"
+        replication.on 'complete', (err, result) =>
+            console.log "REPLICATION COMPLETED"
+            @config.checkpointed = result.last_seq
+            @saveConfig (err) =>
+                return callback err if err
+                @updateIndex callback
 
     syncContacts: (callback) ->
         async.parallel [

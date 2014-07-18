@@ -21,15 +21,13 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
 
     # search use temporary view
     search: (options) ->
-        regexp = new RegExp @query, 'i'
-        map = (doc, emit) ->
-            if doc.docType in ['Folder', 'File'] and regexp.test doc.name
-                emit doc._id, doc
+        callback = @resetFromPouch.bind this, options
         params =
+            query: @query
+            fields: ['name']
             include_docs: true
 
-        callback = @resetFromPouch.bind this, options
-        app.replicator.db.query map, params, callback
+        app.replicator.db.search params, callback
 
     # fetch use
     fetch: (options) ->
