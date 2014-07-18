@@ -7,6 +7,8 @@ module.exports =
 
         window.app = this
 
+        window.t = (x) -> x
+
         @polyglot = new Polyglot()
         try
             locales = require 'locales/'+ @locale
