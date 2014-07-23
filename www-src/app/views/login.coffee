@@ -1,5 +1,4 @@
 BaseView = require '../lib/base_view'
-urlparse = require '../lib/url'
 
 module.exports = class LoginView extends BaseView
 
@@ -24,7 +23,12 @@ module.exports = class LoginView extends BaseView
 
         # keep only the hostname
         if url[0..3] is 'http'
-            @$('#input-url').val url = urlparse(url).hostname
+            url = url.replace('https://', '').replace('http://', '')
+            @$('#input-url').val url
+
+        # remove trailing slash
+        if url[url.length-1] is '/'
+            @$('#input-url').val url = url[..-2]
 
         config =
             cozyURL: url
@@ -34,17 +38,19 @@ module.exports = class LoginView extends BaseView
         $('#btn-save').text 'registering ...'
         # register on cozy's server
         app.replicator.registerRemote config, (err) =>
-            return @displayError err.message if err
+            return @displayError t err.message if err
 
             onProgress = (percent) ->
                 $('#btn-save').text 'downloading hierarchy ' + parseInt(percent * 100) + '%'
 
             # first replication to fetch hierarchy
             app.replicator.initialReplication onProgress, (err) =>
-                return @displayError err.message if err
+                console.log err.stack if err
+                return @displayError t err.message if err
 
                 $('#footer').text 'replication complete'
-                app.router.navigate 'folder/', trigger: true
+                app.isFirstRun = true
+                app.router.navigate 'config', trigger: true
 
 
     displayError: (text, field) ->

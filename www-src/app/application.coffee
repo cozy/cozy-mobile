@@ -1,4 +1,4 @@
-Replicator = require './lib/replicator'
+Replicator = require './replicator/main'
 LayoutView = require './views/layout'
 
 module.exports =
@@ -7,13 +7,9 @@ module.exports =
 
         window.app = this
 
-        window.t = (x) -> x
-
         @polyglot = new Polyglot()
-        try
-            locales = require 'locales/'+ @locale
-        catch e
-            locales = require 'locales/en'
+        locales = try require 'locales/'+ @locale
+        catch e then require 'locales/en'
 
         @polyglot.extend locales
         window.t = @polyglot.t.bind @polyglot
@@ -21,10 +17,10 @@ module.exports =
         Router = require 'router'
         @router = new Router()
 
+        @replicator = new Replicator()
         @layout = new LayoutView()
         $('body').empty().append @layout.render().$el
 
-        @replicator = new Replicator()
         @replicator.init (err, config) =>
             console.log err.stack if err
             return alert err.message if err

@@ -1,5 +1,6 @@
-# This view is reponsible to handle ionic complexities :
+# This view is responsible to handle ionic complexities :
 # - scrolling
+# - PullToRefresh
 # - sliding transitions
 
 BaseView = require '../lib/base_view'
@@ -19,6 +20,28 @@ module.exports = class Layout extends BaseView
         document.addEventListener "searchbutton", @onSearchButtonClicked, false
         document.addEventListener "backbutton", @onBackButtonClicked, false
 
+        @listenTo app.replicator, 'change:inSync change:inBackup', =>
+
+            inSync = app.replicator.get('inSync')
+            inBackup = app.replicator.get('inBackup')
+            @spinner.toggle inSync or inBackup
+            @refresher.toggleClass 'refreshing', inSync
+
+        OpEvents = 'change:inBackup change:backup_step change:backup_step_done'
+        @listenTo app.replicator, OpEvents, _.debounce =>
+            step = app.replicator.get 'backup_step'
+            if step
+                text = t step
+                if app.replicator.get 'backup_step_done'
+                    text += ": #{app.replicator.get 'backup_step_done'}"
+                    text += "/ #{app.replicator.get 'backup_step_total'}"
+                @backupIndicator.text(text).parent().show()
+                @viewsPlaceholder.addClass 'has-subheader'
+            else
+                @backupIndicator.parent().hide()
+                @viewsPlaceholder.removeClass 'has-subheader'
+
+        , 100
 
     afterRender: ->
         @menu = new Menu()
@@ -27,12 +50,16 @@ module.exports = class Layout extends BaseView
 
         @container = @$('#container')
         @viewsPlaceholder = @$('#viewsPlaceholder')
-        @viewsBlock = $('<div class="scroll"></div>')
-
-        @viewsPlaceholder.append @viewsBlock
+        @viewsBlock = @viewsPlaceholder.find('.scroll')
+        @refresher = @viewsBlock.find('.scroll-refresher')
 
         @backButton = @container.find '#btn-back'
         @menuButton = @container.find '#btn-menu'
+        @spinner = @container.find '#headerSpinner'
+        @spinner.hide()
+        @title = @container.find '#title'
+        @backupIndicator = @container.find '#backupIndicator'
+        @backupIndicator.parent().hide()
 
         @ionicContainer = new ionic.views.SideMenuContent
             el: @container[0]
@@ -48,6 +75,20 @@ module.exports = class Layout extends BaseView
         @ionicScroll = new ionic.views.Scroll
             el: @viewsPlaceholder[0]
 
+        @ionicScroll.activatePullToRefresh 50,
+            onActive = =>
+                @refresher.addClass 'active'
+                console.log "ON ACTIVE"
+
+            onClose = =>
+                console.log "ON CLOSE"
+                @refresher.removeClass 'active'
+
+            onStart = =>
+                # hide immediately, the header spinner is enough
+                @ionicScroll.finishPullToRefresh()
+                app.replicator.sync (err) =>
+                    alert err if err
 
     closeMenu: =>
         @controller.toggleLeft false
@@ -56,6 +97,9 @@ module.exports = class Layout extends BaseView
         @backButton.attr 'href', href
         @backButton.removeClass 'ion-home ion-ios7-arrow-back'
         @backButton.addClass 'ion-' + icon
+
+    setTitle: (text) =>
+        @title.text text
 
     transitionTo: (view, type) ->
         @closeMenu()
@@ -68,7 +112,7 @@ module.exports = class Layout extends BaseView
 
         if type is 'none' # no animation
             @currentView?.remove()
-            @viewsBlock.empty().append $next
+            @viewsBlock.append $next
             @ionicScroll.hintResize()
             @currentView = view
         else

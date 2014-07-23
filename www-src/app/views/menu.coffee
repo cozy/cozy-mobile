@@ -6,28 +6,47 @@ module.exports = class Menu extends BaseView
     className: 'menu menu-left'
     template: require '../templates/menu'
     events:
-        'click #refresher': 'refresh'
-        'click #refreshContacts': 'refreshContacts'
+        'click #syncButton': 'sync'
+        'click #backupButton': 'backup'
         'click #btn-search': 'doSearch'
         'click a.item': 'closeMenu'
         'keydown #search-input': 'doSearchIfEnter'
 
-    refresh: ->
-        @$('#refresher i').removeClass('ion-loop').addClass('ion-looping')
-        event.stopImmediatePropagation()
+    setLooping = (btn, looping) ->
+        oldIcon = if looping then 'ion-loop' else 'ion-looping'
+        newIcon = if looping then 'ion-looping' else 'ion-loop'
+        btn.find('i').removeClass(oldIcon).addClass(newIcon)
+
+    afterRender: ->
+        @syncButton = @$ '#syncButton'
+        @backupButton = @$ '#backupButton'
+
+        @listenTo app.replicator, 'change:inSync', =>
+            setLooping @syncButton, app.replicator.get 'inSync'
+
+        @listenTo app.replicator, 'change:inBackup', =>
+            setLooping @backupButton, app.replicator.get 'inBackup'
+
+        setLooping @syncButton, app.replicator.get 'inSync'
+        setLooping @backupButton, app.replicator.get 'inBackup'
+
+
+    sync: ->
+        return if app.replicator.get 'inSync'
+        app.layout.closeMenu()
         app.replicator.sync (err) ->
             alert err if err
             app.layout.currentView?.collection?.fetch()
-            @$('#refresher i').removeClass('ion-looping').addClass('ion-loop')
             app.layout.closeMenu()
 
-    refreshContacts: ->
-        app.replicator.syncContacts (err) ->
-            console.log "SYNC DONE"
-            return alert err if err
-            app.replicator.replicateContacts (err) ->
-                alert err if err
-                console.log "REPLICATION DONE"
+    backup: ->
+        return if app.replicator.get 'inBackup'
+        app.layout.closeMenu()
+        app.replicator.backup (err) ->
+            alert err if err
+            app.layout.currentView?.collection?.fetch()
+            app.layout.closeMenu()
+
 
     doSearchIfEnter: (event) => @doSearch() if event.which is 13
     doSearch: ->

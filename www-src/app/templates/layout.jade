@@ -1,9 +1,21 @@
 #container.pane
   .bar.bar-header.bar-calm
     a#btn-menu.button.button-icon.icon.ion-navicon-round
-    h1.title Cozy Files
+    a#headerSpinner.button.button-icon.icon.ion-looping
+    h1#title.title Cozy Files
+  .bar.bar-subheader.bar-calm
+    h2#backupIndicator.title
 
   #viewsPlaceholder.scroll-content.has-header.has-footer
+    .scroll
+        .scroll-refresher
+            .ionic-refresher-content
+                .icon-pulling
+                    i.icon.ion-arrow-down-c
+                    = t('pull to sync')
+                .icon-refreshing
+                    i.icon.ion-loading-d
+                    = t('syncing')
 
 
   .bar.bar-footer

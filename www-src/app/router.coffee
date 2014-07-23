@@ -16,9 +16,12 @@ module.exports = class Router extends Backbone.Router
         $('#btn-menu, #btn-back').show()
         if path is null
             app.layout.setBackButton '#folder/', 'home'
+            app.layout.setTitle t 'home'
         else
-            backpath = '#folder/' + path.split('/')[0..-2].join '/'
+            parts = path.split('/')
+            backpath = '#folder/' + parts[0..-2].join '/'
             app.layout.setBackButton backpath, 'ios7-arrow-back'
+            app.layout.setTitle parts[parts.length-1]
 
         cacheOrPrepare path, (err, collection) =>
             return alert err if err
@@ -27,13 +30,16 @@ module.exports = class Router extends Backbone.Router
     search: (query) ->
         $('#btn-menu, #btn-back').show()
         app.layout.setBackButton '#folder/', 'home'
+        app.layout.setTitle t('search') + query
 
         collection = new FolderCollection [], query: query
+        @display new FolderView {collection}
         collection.search
-            onError: (err) => alert(err)
+            onError: (err) =>
+                console.log err.stack
+                alert(err)
             onSuccess: =>
                 $('#search-input').blur() # close keyboard
-                @display new FolderView {collection}
 
     login: ->
         $('#btn-menu, #btn-back').hide()
@@ -41,6 +47,7 @@ module.exports = class Router extends Backbone.Router
 
     config: ->
         $('#btn-back').hide()
+        app.layout.setTitle t 'config'
         @display new ConfigView()
 
     display: (view) ->

@@ -1,17 +1,25 @@
+DOWNLOADS_FOLDER = 'cozy-downloads'
 
-splitCallback = (callback) ->
-    return [
-        onSuccess = (x) -> callback null, x
-        onError = (err) -> callback err
-    ]
+basic = require '../lib/basic'
+module.exports = fs = {}
 
-
-
-module.exports.initialize = (callback) ->
+getFileSystem = (callback) ->
     onSuccess = (fs) -> callback null, fs
     onError = (err) -> callback err
     __chromeSafe() if window.isBrowserDebugging # flag for developpement in browser
     window.requestFileSystem LocalFileSystem.PERSISTENT, 0, onSuccess, onError
+
+
+module.exports.initialize = (callback) ->
+    getFileSystem (err, filesystem) =>
+        return callback err if err
+        window.FileTransfer.fs = filesystem
+        fs.getOrCreateSubFolder filesystem.root, DOWNLOADS_FOLDER, (err, downloads) =>
+            return callback err if err
+            fs.getChildren downloads, (err, children) =>
+                return callback err if err
+                callback null, downloads, children
+
 
 module.exports.delete = (entry, callback) ->
     onSuccess = -> callback null
@@ -62,16 +70,15 @@ module.exports.fileFromEntry = (entry, callback) ->
     entry.file onSuccess, onError
 
 module.exports.contentFromFile = (file, callback) ->
-    [onSuccess, onError] = splitCallback callback
     reader = new FileReader()
-    reader.onerror = onError
-    reader.onload = -> onSuccess reader.result
+    reader.onerror = callback
+    reader.onload = -> callback null, reader.result
     reader.readAsArrayBuffer file
 
 module.exports.getFileFromPath = (path, callback) ->
-    module.exports.entryFromPath path, (err, entry) ->
+    fs.entryFromPath path, (err, entry) ->
         return callback err if err
-        module.exports.fileFromEntry entry, callback
+        fs.fileFromEntry entry, callback
 
 module.exports.metadataFromEntry = (entry, callback) ->
     onSuccess = (file) -> callback null, file
@@ -79,10 +86,7 @@ module.exports.metadataFromEntry = (entry, callback) ->
     entry.getMetadata onSuccess, onError
 
 
-module.exports.download = (options, progressback, callback) ->
-    headers = options.headers
-    url = options.from
-    local = options.to
+module.exports.download = (url, path, auth, progressback, callback) ->
 
     errors = [
         'An error happened (UNKNOWN)',
@@ -100,7 +104,9 @@ module.exports.download = (options, progressback, callback) ->
         if e.lengthComputable then progressback e.loaded, e.total
         else progressback 3, 10 #@TODO, better aproximation
 
-    ft.download url, local, onSuccess, onError, true, {headers}
+    headers = Authorization: basic auth
+
+    ft.download url, path, onSuccess, onError, true, {headers}
 
 
 # various patches to debug in chrome
@@ -111,6 +117,8 @@ __chromeSafe = ->
         navigator.webkitPersistentStorage.requestQuota size, (granted) ->
             window.webkitRequestFileSystem type, granted, onSuccess, onError
         , onError
+
+    window.
 
 
     window.FileTransfer = class FileTransfer

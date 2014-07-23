@@ -38,7 +38,7 @@ module.exports = class FolderLineView extends BaseView
 
     onClick: (event) =>
         return true if $(event.target).closest('.cache-indicator').length
-        if @model.get('docType') is 'Folder'
+        if @model.isFolder()
             path = @model.get('path') + '/' + @model.get('name')
             app.router.navigate "#folder#{path}", trigger: true
         else
@@ -67,7 +67,7 @@ module.exports = class FolderLineView extends BaseView
         @displayProgress()
         onprogress = (done, total) => @updateProgress done / total
 
-        if @model.get('docType') is 'Folder'
+        if @model.isFolder()
             app.replicator.getBinaryFolder @model.attributes, after, onprogress
         else
             app.replicator.getBinary @model.attributes, after, onprogress
@@ -79,7 +79,7 @@ module.exports = class FolderLineView extends BaseView
             else @model.set incache: false
             @render()
 
-        if @model.get('docType') is 'Folder'
+        if @model.isFolder()
             app.replicator.removeLocalFolder @model.attributes, after
         else
             app.replicator.removeLocal @model.attributes, after
@@ -88,4 +88,5 @@ module.exports = class FolderLineView extends BaseView
         @model.set incache: true
 
     onError: (e) =>
+        @hideProgress()
         alert(e)

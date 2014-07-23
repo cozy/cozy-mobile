@@ -30,5 +30,5 @@ b64_enc = (data) ->
 
     return out
 
-module.exports = (user, pass) ->
-    'Basic ' + b64_enc(user + ':' + pass)
+module.exports = basic = (auth) ->
+    'Basic ' + b64_enc auth.username + ':' + auth.password

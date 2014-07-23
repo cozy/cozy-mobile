@@ -4,3 +4,6 @@ module.exports = class File extends Backbone.Model
 
     defaults: ->
         incache: 'loading'
+
+    isFolder: ->
+        @get('docType')?.toLowerCase() is 'folder'

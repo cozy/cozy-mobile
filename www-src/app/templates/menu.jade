@@ -9,16 +9,18 @@
 
     a.item.item-icon-left(href="#folder/")
         i.icon.ion-home
-        | Home
+        = t('home')
 
     a.item.item-icon-left(href="#config")
         i.icon.ion-wrench
-        | Config
+        = t('config')
 
-    a#refresher.item.item-icon-left
+    a#syncButton.item.item-icon-left
         i.icon.ion-loop
-        | Refresh
+        = t('sync')
 
-    a#refreshContacts.item.item-icon-left
+    a#backupButton.item.item-icon-left
         i.icon.ion-loop
-        | Refresh Contacts
+        = t('backup')
+
+

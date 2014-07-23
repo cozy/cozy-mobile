@@ -2,26 +2,57 @@ BaseView = require '../lib/base_view'
 
 module.exports = class ConfigView extends BaseView
 
-    template: -> """
-        <button id="redbtn" class="button button-block button-assertive">Reset</button>
-        <p>This will erase all cozy-files generated data on your device.</p>
-    """
+    template: require '../templates/config'
 
     events: ->
-        'click #redbtn': 'redBtn'
+        'tap #configDone': 'configDone'
+        'tap #redbtn': 'redBtn'
+        'change #contactSyncCheck': 'saveChanges'
+        'change #imageSyncCheck': 'saveChanges'
+        'change #wifiSyncCheck': 'saveChanges'
 
+    getRenderData: ->
+        config = app.replicator.config
+        lastSync = @formatDate config?.lastSync
+        lastBackup = @formatDate config?.lastBackup
+        firstRun = app.isFirstRun
+
+        return _.extend {}, config, {lastSync, lastBackup, firstRun}
+
+    # format a object as a readable date string
+    # return t('never') if undefined
+    formatDate: (date) ->
+        unless date then return t 'never'
+        else
+            date = new Date(date) unless date instanceof Date
+            return date.toDateString() + ' ' + date.toTimeString()
+
+    # only happens after the first config (post install)
+    configDone: ->
+        # start the first contact & pictures backup
+        app.replicator.backup (err) ->
+            alert err if err
+            console.log "pics & contacts synced"
+
+        # go to home
+        app.isFirstRun = false
+        app.router.navigate 'folder/', trigger: true
+
+    # confirm, destroy the DB, force refresh the page (show login form)
     redBtn: ->
-        if confirm "Are you sure ?"
+        if confirm t "Are you sure ?"
+            #@TODO delete device on remote ?
             app.replicator.destroyDB (err) =>
-                return @displayError err.message, '#redbtn' if err
-
-                $('#redbtn').text 'DONE'
+                return alert err.message if err
+                $('#redbtn').text t 'done'
                 window.location.reload(true);
 
-    displayError: (text, field) ->
-        @error.remove() if @error
-        @error = $('<div>').addClass('button button-full button-energized')
-        @error.text text
-        @$(field).before @error
-
-
+    # save config changes in local pouchdb
+    # prevent simultaneous changes by disabling checkboxes
+    saveChanges: (e) ->
+        @$('#contactSyncCheck, #imageSyncCheck, #wifiSyncCheck').prop 'disabled', true
+        app.replicator.config.syncContacts = @$('#contactSyncCheck').is ':checked'
+        app.replicator.config.syncImages = @$('#imageSyncCheck').is ':checked'
+        app.replicator.config.syncOnWifi = @$('#wifiSyncCheck').is ':checked'
+        app.replicator.saveConfig ->
+            @$('#contactSyncCheck, #imageSyncCheck, #wifiSyncCheck').prop 'disabled', false
