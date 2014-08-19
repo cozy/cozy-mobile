@@ -7,6 +7,7 @@ plugins = [
     "https://github.com/brodysoft/Cordova-SQLitePlugin"
     "https://git-wip-us.apache.org/repos/asf/cordova-plugin-file.git"
     "https://git-wip-us.apache.org/repos/asf/cordova-plugin-file-transfer.git"
+    "https://github.com/aenario/cordova-images-browser"
 ]
 
 platforms = ['ios', 'android']
