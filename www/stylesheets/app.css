@@ -6291,6 +6291,9 @@ a.button {
   -ms-transition: all ease-in-out 250ms;
   transition: all ease-in-out 250ms;
 }
+.button.button-calm {
+  background-color: #34a6ff;
+}
 .bar.bar-calm {
   background-color: #34a6ff;
   border-color: #008af6;
