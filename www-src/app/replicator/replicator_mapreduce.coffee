@@ -7,6 +7,15 @@ createOrUpdateDesign = (db, design, callback) ->
             design._rev = existing._rev if existing
             db.put design, callback
 
+PathToBinaryDesignDoc =
+    _id: '_design/PathToBinary'
+    version: 1
+    views:
+        'PathToBinary':
+            map: Object.toString.apply (doc) ->
+                if doc.docType?.toLowerCase() is 'file'
+                    emit doc.path + '/' + doc.name, doc.binary?.file?.id
+
 FilesAndFolderDesignDoc =
     _id: '_design/FilesAndFolder'
     version: 1
@@ -38,5 +47,6 @@ module.exports = (db, contactsDB, callback) ->
     async.series [
         (cb) -> createOrUpdateDesign db, FilesAndFolderDesignDoc, cb
         (cb) -> createOrUpdateDesign db, LocalPathDesignDoc, cb
+        (cb) -> createOrUpdateDesign db, PathToBinaryDesignDoc, cb
         (cb) -> createOrUpdateDesign contactsDB, ContactsByLocalIdDesignDoc, cb
     ], callback

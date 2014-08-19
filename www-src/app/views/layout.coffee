@@ -34,7 +34,7 @@ module.exports = class Layout extends BaseView
                 text = t step
                 if app.replicator.get 'backup_step_done'
                     text += ": #{app.replicator.get 'backup_step_done'}"
-                    text += "/ #{app.replicator.get 'backup_step_total'}"
+                    text += "/#{app.replicator.get 'backup_step_total'}"
                 @backupIndicator.text(text).parent().show()
                 @viewsPlaceholder.addClass 'has-subheader'
             else
@@ -90,6 +90,11 @@ module.exports = class Layout extends BaseView
                 app.replicator.sync (err) =>
                     alert err if err
 
+    togglePullToRefresh: (activated) =>
+        #@TODO, make sure this isnt called while PTR visible
+        @refresher.toggle activated
+        @ionicScroll.__refreshHeight = if activated then 50 else null
+
     closeMenu: =>
         @controller.toggleLeft false
 
@@ -101,9 +106,13 @@ module.exports = class Layout extends BaseView
     setTitle: (text) =>
         @title.text text
 
-    transitionTo: (view, type) ->
+    transitionTo: (view) ->
         @closeMenu()
         $next = view.render().$el
+
+        # prevent PTR on config
+        ptrEnabled = view instanceof FolderView
+        @togglePullToRefresh ptrEnabled
 
         if @currentView instanceof FolderView and view instanceof FolderView
             type = if @currentView.isParentOf(view) then 'left' else 'right'
@@ -132,6 +141,7 @@ module.exports = class Layout extends BaseView
             $next.one transitionend, _.once =>
                 @currentView.remove()
                 @currentView = view
+                @ionicScroll.scrollTo 0, 0, true, null
 
     onMenuButtonClicked: =>
         @menu.reset()

@@ -14,8 +14,13 @@ module.exports = class FolderLineView extends BaseView
     initialize: =>
         @listenTo @model, 'change', @render
 
+    getRenderData: ->
+        _.extend super, isFolder: @model.isFolder()
+
     afterRender: =>
         @$el[0].dataset.folderid = @model.get('_id')
+        if @model.isDeviceFolder
+            @$('.ion-folder').css color: '#34a6ff'
 
     setCacheIcon: (klass) =>
         icon = @$('.cache-indicator')
@@ -24,69 +29,81 @@ module.exports = class FolderLineView extends BaseView
         @parent?.ionicView?.clearDragEffects()
 
     displayProgress: =>
+        @downloading = true
         @hideProgress()
+        @setCacheIcon 'ion-looping'
         @progresscontainer = $('<div class="item-progress"></div>')
             .append @progressbar = $('<div class="item-progress-bar"></div>')
 
         @progresscontainer.appendTo @$el
 
-    hideProgress: =>
+    hideProgress: (err, incache) =>
+        @downloading = false
+        if err then alert err
+
+        incache = app.replicator.fileInFileSystem
+
+        if incache? and incache isnt @model.get 'incache'
+            @model.set {incache}
+
         @progresscontainer?.remove()
 
-    updateProgress: (percent) =>
-        @progressbar?.css 'width', (100 * percent) + '%'
+    updateProgress: (done, total) =>
+        @progressbar?.css 'width', (100 * done / total) + '%'
 
     onClick: (event) =>
+        # ignore .cache-indicator click
+        # they are handled by folder.coffee#displaySlider
         return true if $(event.target).closest('.cache-indicator').length
+        return true if @downloading
+
         if @model.isFolder()
             path = @model.get('path') + '/' + @model.get('name')
             app.router.navigate "#folder#{path}", trigger: true
-        else
-            @displayProgress()
+            return true
 
-            onprogress = (done, total) => @updateProgress done / total
+        # else, the model is a file, we get its binary and open it
+        @displayProgress()
+        app.replicator.getBinary @model.attributes, @updateProgress, (err, url) =>
+            @hideProgress()
+            return alert err if err
+            @model.set incache: true
 
-            onload = (err, url) =>
-                @hideProgress()
-                return @onError err if err
-                ExternalFileUtil.openWith url, '', undefined, @afterOpen, @onError
-
-
-            app.replicator.getBinary @model.attributes, onload, onprogress
+            # let android open the file
+            app.backFromOpen = true
+            ExternalFileUtil.openWith url, '', undefined,
+                (success) -> , # do nothing
+                (err) ->
+                    if 0 is err?.indexOf 'No Activity found'
+                        err = t 'no activity found'
+                    alert err
+                    console.log err
 
     addToCache: =>
-        @setCacheIcon 'ion-looping'
-
-
-        after = (err) =>
-            @hideProgress()
-            if err then alert err
-            else @model.set incache: true
-            @render()
+        return true if @downloading
 
         @displayProgress()
-        onprogress = (done, total) => @updateProgress done / total
+        onadded = (err) =>
+            @hideProgress()
+            return alert err if err
+            @model.set incache: true
+
 
         if @model.isFolder()
-            app.replicator.getBinaryFolder @model.attributes, after, onprogress
+            app.replicator.getBinaryFolder @model.attributes, @updateProgress, onadded
         else
-            app.replicator.getBinary @model.attributes, after, onprogress
+            app.replicator.getBinary @model.attributes, @updateProgress, onadded
 
     removeFromCache: =>
-        @setCacheIcon 'ion-looping'
-        after = (err) =>
-            if err then alert err
-            else @model.set incache: false
-            @render()
+        return true if @downloading
+
+        @displayProgress()
+        onremoved = (err) =>
+            @hideProgress()
+            return alert err if err
+            @model.set incache: false
 
         if @model.isFolder()
-            app.replicator.removeLocalFolder @model.attributes, after
+            app.replicator.removeLocalFolder @model.attributes, onremoved
         else
-            app.replicator.removeLocal @model.attributes, after
-
-    afterOpen: =>
-        @model.set incache: true
-
-    onError: (e) =>
-        @hideProgress()
-        alert(e)
+            app.replicator.removeLocal @model.attributes, onremoved

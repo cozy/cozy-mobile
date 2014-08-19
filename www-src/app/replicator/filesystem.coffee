@@ -9,15 +9,26 @@ getFileSystem = (callback) ->
     __chromeSafe() if window.isBrowserDebugging # flag for developpement in browser
     window.requestFileSystem LocalFileSystem.PERSISTENT, 0, onSuccess, onError
 
+readable = (err) ->
+    for name, code of FileError when code is err.code
+        return new Error name.replace('_ERR', '').replace('_', ' ')
+
+    return new Error JSON.stringify err
 
 module.exports.initialize = (callback) ->
     getFileSystem (err, filesystem) =>
-        return callback err if err
+        return callback readable err if err
         window.FileTransfer.fs = filesystem
         fs.getOrCreateSubFolder filesystem.root, DOWNLOADS_FOLDER, (err, downloads) =>
-            return callback err if err
+            return callback readable err if err
+
+            # prevent android from adding the download folders to the gallery
+            downloads.getFile '.nomedia', {create: true, exclusive: false},
+                -> console.log "NOMEDIA FILE CREATED"
+                -> console.log "NOMEDIA FILE NOT CREATED"
+
             fs.getChildren downloads, (err, children) =>
-                return callback err if err
+                return callback readable err if err
                 callback null, downloads, children
 
 
@@ -39,7 +50,13 @@ module.exports.getDirectory = (parent, name, callback) ->
 module.exports.getOrCreateSubFolder = (parent, name, callback) ->
     onSuccess = (entry) -> callback null, entry
     onError = (err) -> callback err
-    parent.getDirectory name, {create: true}, onSuccess, onError
+    parent.getDirectory name, {create: true}, onSuccess, (err) ->
+        return callback err if err.code isnt FileError.PATH_EXISTS_ERR
+        parent.getDirectory name, {}, onSuccess, (err) ->
+            return callback err if err.code isnt FileError.NOT_FOUND_ERR
+            # directory exists, but cant be open
+            return new Error t 'filesystem bug error'
+
 
 module.exports.getChildren = (directory, callback) ->
     # assume we are using cordova-file-plugin and call reader only once
@@ -86,7 +103,7 @@ module.exports.metadataFromEntry = (entry, callback) ->
     entry.getMetadata onSuccess, onError
 
 
-module.exports.download = (url, path, auth, progressback, callback) ->
+module.exports.download = (options, progressback, callback) ->
 
     errors = [
         'An error happened (UNKNOWN)',
@@ -95,6 +112,12 @@ module.exports.download = (url, path, auth, progressback, callback) ->
         'This file isnt available offline',
         'ABORTED'
     ]
+
+
+    options =
+
+    {url, path, auth} = options
+    url = encodeURI url
 
     onSuccess = (entry) -> callback null, entry
     onError = (err) -> callback new Error errors[err.code]

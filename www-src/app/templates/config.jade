@@ -2,8 +2,9 @@
 
     .item.item-divider= t('phone2cozy title')
 
-    .item.item-checkbox= t('contacts sync label')
-        label.checkbox: input#contactSyncCheck(type="checkbox", checked=syncContacts)
+    if locale == 'digidisk'
+        .item.item-checkbox= t('contacts sync label')
+            label.checkbox: input#contactSyncCheck(type="checkbox", checked=syncContacts)
 
     .item.item-checkbox= t('images sync label')
         label.checkbox: input#imageSyncCheck(type="checkbox", checked=syncImages)
@@ -26,7 +27,9 @@
 
         .item.item-divider= t('about')
 
-        .item Cozy mobile v0.0.4
+        .item= t('synchronized with') + cozyURL
+        .item= t('device name') + ' : ' + deviceName
+        .item= t('app name') + ' v0.0.5'
 
         .item.item-divider= t('reset')
 

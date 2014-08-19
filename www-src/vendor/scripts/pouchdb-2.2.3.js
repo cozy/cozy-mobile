@@ -2906,8 +2906,9 @@ function WebSqlPouch(opts, callback) {
   var idRequests = [];
   var docCount = -1; // cache sqlite count(*) for performance
   var encoding;
-
+  // console.log('openDB before' + name);
   var db = openDB(name, POUCH_VERSION, name, POUCH_SIZE);
+  // console.log('openDB after' + name);
   if (!db) {
     return callback(errors.UNKNOWN_ERROR);
   } else if (typeof db.readTransaction !== 'function') {

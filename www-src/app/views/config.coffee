@@ -12,12 +12,14 @@ module.exports = class ConfigView extends BaseView
         'change #wifiSyncCheck': 'saveChanges'
 
     getRenderData: ->
-        config = app.replicator.config
-        lastSync = @formatDate config?.lastSync
-        lastBackup = @formatDate config?.lastBackup
-        firstRun = app.isFirstRun
+        config = app.replicator.config.toJSON()
 
-        return _.extend {}, config, {lastSync, lastBackup, firstRun}
+        return _.extend {},
+            config,
+            lastSync: @formatDate config?.lastSync
+            lastBackup: @formatDate config?.lastBackup
+            firstRun: app.isFirstRun
+            locale: app.locale
 
     # format a object as a readable date string
     # return t('never') if undefined
@@ -51,8 +53,9 @@ module.exports = class ConfigView extends BaseView
     # prevent simultaneous changes by disabling checkboxes
     saveChanges: (e) ->
         @$('#contactSyncCheck, #imageSyncCheck, #wifiSyncCheck').prop 'disabled', true
-        app.replicator.config.syncContacts = @$('#contactSyncCheck').is ':checked'
-        app.replicator.config.syncImages = @$('#imageSyncCheck').is ':checked'
-        app.replicator.config.syncOnWifi = @$('#wifiSyncCheck').is ':checked'
-        app.replicator.saveConfig ->
+        app.replicator.config.save
+            syncContacts: @$('#contactSyncCheck').is ':checked'
+            syncImages: @$('#imageSyncCheck').is ':checked'
+            syncOnWifi: @$('#wifiSyncCheck').is ':checked'
+        , ->
             @$('#contactSyncCheck, #imageSyncCheck, #wifiSyncCheck').prop 'disabled', false

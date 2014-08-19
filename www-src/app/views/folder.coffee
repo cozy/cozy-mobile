@@ -11,9 +11,13 @@ module.exports = class FolderView extends CollectionView
 
     isParentOf: (otherFolderView) ->
         return true if @collection.path is null #root
-        return false if @collection.path is undefined #search
+        return false if @collection.isSearch()
         return false unless otherFolderView.collection.path
         return -1 isnt otherFolderView.collection.path.indexOf @collection.path
+
+    initialize: ->
+        super
+        @listenTo @collection, 'sync', @onChange
 
     afterRender: ->
         @ionicView?.destroy()
@@ -25,26 +29,25 @@ module.exports = class FolderView extends CollectionView
                 # prevent menu from opening
                 e.stopPropagation()
 
-        @collection.fetchAdditional()
-
-    onChange: ->
+    onChange: =>
+        @$('#empty-message').remove()
         if _.size(@views) is 0
 
-            message = if @collection.path is undefined
-                'no results'
-            else
-                'this folder is empty'
+            message = if @collection.notloaded then 'loading'
+            else if @collection.isSearch() then 'no results'
+            else 'this folder is empty'
 
             $('<li class="item" id="empty-message">')
-            .text(message)
+            .text(t(message))
             .appendTo @$el
-
-
-        else @$('#empty-message').remove()
 
     appendView: (view) =>
         super
         view.parent = this
+
+    remove: =>
+        super
+        @collection.cancelFetchAdditional()
 
     displaySlider: (event) =>
         console.log "DISPLAY SLIDER"

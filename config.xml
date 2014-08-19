@@ -1,20 +1,27 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget android-versionCode="4"
-    android-versionName="0.0.4"
+<widget android-versionCode="5"
+    android-versionName="0.0.5"
     id="io.cozy.files-client"
-    version="0.0.4"
+    version="0.0.5"
     xmlns="http://www.w3.org/ns/widgets"
     xmlns:cdv="http://cordova.apache.org/ns/1.0">
 
-    <name>Cozy-Files</name>
-    <description>Sync files from cozy files</description>
+    <name>Cozy Cloud</name>
+    <description>Sync files from your cozycloud</description>
+    <!-- <name>Cozy-files</name>
+    <description>Sync files from cozy files</description> -->
     <author email="contact@cozycloud.cc" href="http://cozy.io">Cozy Cloud</author>
+    <preference name="Orientation" value="portrait" />
     <content src="index.html"/>
     <platform name="android">
         <icon density="ldpi" src="res/icons/icon-36-ldpi.png"/>
         <icon density="mdpi" src="res/icons/icon-48-mdpi.png"/>
         <icon density="hdpi" src="res/icons/icon-72-hdpi.png"/>
         <icon density="xhdpi" src="res/icons/icon-96-xhdpi.png"/>
+        <!-- <icon density="ldpi" src="res/icons-dd/icon.png"/>
+        <icon density="mdpi" src="res/icons-dd/icon.png"/>
+        <icon density="hdpi" src="res/icons-dd/icon.png"/>
+        <icon density="xhdpi" src="res/icons-dd/icon.png"/> -->
     </platform>
     <platform name="ios">
         <!-- iPhone / iPod Touch -->

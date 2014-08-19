@@ -23,23 +23,24 @@ module.exports = class Router extends Backbone.Router
             app.layout.setBackButton backpath, 'ios7-arrow-back'
             app.layout.setTitle parts[parts.length-1]
 
-        cacheOrPrepare path, (err, collection) =>
-            return alert err if err
-            @display new FolderView {collection}
+        collection = new FolderCollection [], path: path
+        @display new FolderView {collection},
+        collection.fetch()
+        collection.once 'fullsync', => @trigger 'collectionfetched'
 
     search: (query) ->
         $('#btn-menu, #btn-back').show()
         app.layout.setBackButton '#folder/', 'home'
-        app.layout.setTitle t('search') + query
+        app.layout.setTitle t('search') + ' "' + query + '"'
 
         collection = new FolderCollection [], query: query
         @display new FolderView {collection}
-        collection.search
-            onError: (err) =>
+        collection.search (err) =>
+            if err
                 console.log err.stack
-                alert(err)
-            onSuccess: =>
-                $('#search-input').blur() # close keyboard
+                return alert(err)
+
+            $('#search-input').blur() # close keyboard
 
     login: ->
         $('#btn-menu, #btn-back').hide()
@@ -51,70 +52,13 @@ module.exports = class Router extends Backbone.Router
         @display new ConfigView()
 
     display: (view) ->
-        if @mainView instanceof FolderView and view instanceof FolderView
-            direction = if @mainView.isParentOf(view) then 'left' else 'right'
-        else
-            direction = 'none'
+        app.layout.transitionTo view
 
-        app.layout.transitionTo view, direction
+    forceRefresh: ->
+        col = app.layout.currentView?.collection
+        if col?.path is null then path = ''
+        else if col?.path isnt undefined then path = col.path
+        else return
 
-
-    # we cache collection fetching for better performance
-    #
-    bustCache: (path) ->
-        path = path.substr 1
-        console.log "BUST #{path} #{cache[path]}"
-        delete cache[path]
-        setTimeout cacheChildren.bind(null, null, [path]), 10
-
-    cache = {}
-    timeouts = {}
-
-
-    cacheChildren = (collection, array) ->
-        # first run, empty cache and transform collection in array of path
-        if collection
-            cache = {}
-            array = collection.filter (model) ->
-                model.get('docType')?.toLowerCase?() is 'folder'
-            array = array.map (model) ->
-                (model.get('path') + '/' + model.get('name')).substr 1
-
-            parent = (collection.path or '/fake').split('/')[0..-2].join('/')
-            array.push parent
-
-        # first & next runs
-        if array.length is 0
-            return # all done
-
-        # shift, prefetch, next
-        path = array.shift()
-        collection = new FolderCollection [], path: path
-        collection.fetch
-            onError: (err) =>
-                # don't handle err
-                console.log err
-                cacheChildren null, array
-            onSuccess: =>
-                cache[path] = collection
-                cacheChildren null, array
-
-    cacheOrPrepare = (path, callback) ->
-
-        path = "" unless path
-
-        if incache = cache[path]
-            setTimeout cacheChildren.bind(null, incache), 10
-            return callback null, incache
-
-        console.log 'CACHE MISS'
-
-        collection = new FolderCollection [], path: path
-        collection.fetch
-            onError: (err) => callback err
-            onSuccess: =>
-                callback null, collection
-                # next tick, do not freeze UI
-                setTimeout cacheChildren.bind(null, collection), 10
-
-
+        delete FolderCollection.cache[path]
+        col.fetch()

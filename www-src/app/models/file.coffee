@@ -5,5 +5,14 @@ module.exports = class File extends Backbone.Model
     defaults: ->
         incache: 'loading'
 
+    initialize: ->
+        @isDeviceFolder = @isFolder() and
+        @wholePath() is app.replicator.config.get('deviceName')
+
     isFolder: ->
         @get('docType')?.toLowerCase() is 'folder'
+
+    wholePath: ->
+        name = @get('name')
+        return if path = @get('path') then "#{path.slice(1)}/#{name}"
+        else name

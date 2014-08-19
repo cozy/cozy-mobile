@@ -13,22 +13,25 @@ fs = require './filesystem'
 module.exports =
 
     # wrapper around _backup to maintain the state of inBackup
-    backup: (callback) ->
+    backup: (callback = ->) ->
         return callback null if @get 'inBackup'
         @set 'inBackup', true
-        @set 'backup_step', 'preparing'
+        @set 'backup_step', null
+        @liveReplication?.cancel()
         @_backup (err) =>
             @set 'backup_step', null
             @set 'inBackup', false
+            @startRealtime()
             return callback err if err
-            @config.lastBackup = new Date().toString()
-            @saveConfig callback
+            @config.save lastBackup: new Date().toString(), (err) =>
+                callback null
 
 
     _backup: (callback) ->
-        DeviceStatus.checkReadyForSync (err, ready) =>
+        DeviceStatus.checkReadyForSync (err, ready, msg) =>
+            console.log "SYNC STATUS", err, ready, msg
             return callback err if err
-            return callback new Error('not ready for sync') unless ready
+            return callback new Error(t msg) unless ready
             console.log "WE ARE READY FOR SYNC"
 
             @syncPictures (err) =>
@@ -38,7 +41,7 @@ module.exports =
 
 
     syncContacts: (callback) ->
-        return callback null unless @config.syncContacts
+        return callback null unless @config.get 'syncContacts'
 
         console.log "SYNC CONTACTS"
         @set 'backup_step', 'contacts_scan'
@@ -106,7 +109,10 @@ module.exports =
                 ids = _.map dbCache, (doc) -> doc.id
                 @set 'backup_step', 'contacts_sync'
                 @set 'backup_step_total', ids.length
-                replication = @contactsDB.replicate.to @remote, doc_ids: ids
+
+                replication = @contactsDB.replicate.to @config.remote,
+                    since: 0, doc_ids: ids
+
                 replication.on 'error', callback
                 replication.on 'change', (e) =>
                     @set 'backup_step_done', e.last_seq
@@ -116,19 +122,21 @@ module.exports =
                     @contactsDB.query 'ContactsByLocalId', {}, ->
 
 
+
     syncPictures: (callback) ->
-        return callback null unless @config.syncImages
+        return callback null unless @config.get 'syncImages'
 
         console.log "SYNC PICTURES"
         @set 'backup_step', 'pictures_sync'
         @set 'backup_step_done', null
-        async.parallel [
+        async.series [
+            @ensureDeviceFolder.bind this
             ImagesBrowser.getImagesList
             (cb) => @db.query 'LocalPath', {}, cb
         ], (err, results) =>
 
             return callback err if err
-            [images, rows: dbImages] = results
+            [_, images, rows: dbImages] = results
 
             console.log "SYNC IMAGES : #{images.length} #{dbImages.length}"
 
@@ -138,7 +146,7 @@ module.exports =
 
             processed = 0
             @set 'backup_step_total', images.length
-
+            # images = images[0..10]
             async.eachSeries images, (path, cb) =>
                 @set 'backup_step_done', processed++
 
@@ -155,7 +163,7 @@ module.exports =
                     console.log "UPLOADING #{path}"
                     @uploadPicture path, (err) ->
                         console.log "ERROR #{path} #{err}" if err
-                        cb null
+                        setTimeout cb, 1
 
             , callback
 
@@ -173,15 +181,15 @@ module.exports =
 
 
     createBinary: (blob, mime, callback) ->
-        @remote.post docType: 'Binary', (err, doc) =>
+        @config.remote.post docType: 'Binary', (err, doc) =>
             return callback err if err
             return callback new Error('cant create binary') unless doc.ok
 
-            @remote.putAttachment doc.id, 'file', doc.rev, blob, mime, (err, doc) =>
+            @config.remote.putAttachment doc.id, 'file', doc.rev, blob, mime, (err, doc) =>
                 return callback err if err
                 return callback new Error('cant attach') unless doc.ok
                 # see ./main#createRemotePouchInstance
-                delete @host.headers['Content-Type']
+                delete @config.remoteHostObject.headers['Content-Type']
                 callback null, doc
 
     createFile: (cordovaFile, localPath, binaryDoc, callback) ->
@@ -190,17 +198,17 @@ module.exports =
             docType          : 'File'
             localPath        : localPath
             name             : cordovaFile.name
-            path             : '/' + @config.deviceName
+            path             : '/' + @config.get 'deviceName'
             class            : @fileClassFromMime cordovaFile.type
             lastModification : new Date(cordovaFile.lastModified).toISOString()
             creationDate     : new Date(cordovaFile.lastModified).toISOString()
             size             : cordovaFile.size
-            tags             : ['uploaded-from-' + @config.deviceName]
+            tags             : ['uploaded-from-' + @config.get 'deviceName']
             binary: file:
                 id: binaryDoc.id
                 rev: binaryDoc.rev
 
-        @remote.post dbFile, (err, created) =>
+        @config.remote.post dbFile, (err, created) =>
             return callback err if err
             return callback new Error('cant create file') unless created.ok
 
@@ -217,3 +225,38 @@ module.exports =
             when 'video' then "video"
             when 'text', 'application' then "document"
             else "file"
+
+    ensureDeviceFolder: (callback) ->
+
+        options =
+            key: ''
+            include_docs: true
+
+        @db.query 'FilesAndFolder', options, (err, results) =>
+            return callback err if err
+
+            deviceName = @config.get 'deviceName'
+            exists = results.rows.some (row) ->
+                row.doc.name is deviceName and
+                row.doc.docType?.toLowerCase() is 'folder'
+
+            console.log "DEVICE FOLDER EXISTS #{exists}"
+
+            return callback null if exists
+
+            console.log "MAKING ONE"
+
+            # no device folder, lets make it
+            folder =
+                docType          : 'Folder'
+                name             : deviceName
+                path             : ''
+                lastModification : new Date().toISOString()
+                creationDate     : new Date().toISOString()
+                tags             : []
+
+            @config.remote.post folder, (err, res) ->
+                return callback err if err
+                folder._id = res.id
+                folder._rev = res.rev
+                @db.put folder, callback

@@ -13,8 +13,8 @@ module.exports = class Menu extends BaseView
         'keydown #search-input': 'doSearchIfEnter'
 
     setLooping = (btn, looping) ->
-        oldIcon = if looping then 'ion-loop' else 'ion-looping'
-        newIcon = if looping then 'ion-looping' else 'ion-loop'
+        oldIcon = if looping then 'ion-ios7-cloud-upload-outline' else 'ion-looping'
+        newIcon = if looping then 'ion-looping' else 'ion-ios7-cloud-upload-outline'
         btn.find('i').removeClass(oldIcon).addClass(newIcon)
 
     afterRender: ->
@@ -30,22 +30,23 @@ module.exports = class Menu extends BaseView
         setLooping @syncButton, app.replicator.get 'inSync'
         setLooping @backupButton, app.replicator.get 'inBackup'
 
+    closeMenu: -> app.layout.closeMenu()
 
     sync: ->
         return if app.replicator.get 'inSync'
         app.layout.closeMenu()
         app.replicator.sync (err) ->
+            console.log err, err.stack if err
             alert err if err
             app.layout.currentView?.collection?.fetch()
-            app.layout.closeMenu()
 
     backup: ->
         return if app.replicator.get 'inBackup'
         app.layout.closeMenu()
         app.replicator.backup (err) ->
+            console.log err, err.stack if err
             alert err if err
             app.layout.currentView?.collection?.fetch()
-            app.layout.closeMenu()
 
 
     doSearchIfEnter: (event) => @doSearch() if event.which is 13
@@ -56,4 +57,4 @@ module.exports = class Menu extends BaseView
         app.router.navigate '#search/' + val, trigger: true
 
     reset: ->
-        @$('#search-input').val('')
+        @$('#search-input').blur().val('')

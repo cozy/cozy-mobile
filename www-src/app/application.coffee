@@ -7,6 +7,9 @@ module.exports =
 
         window.app = this
 
+
+        @locale = 'en'
+
         @polyglot = new Polyglot()
         locales = try require 'locales/'+ @locale
         catch e then require 'locales/en'
@@ -22,13 +25,25 @@ module.exports =
         $('body').empty().append @layout.render().$el
 
         @replicator.init (err, config) =>
-            console.log err.stack if err
-            return alert err.message if err
+            if err
+                console.log err, err.stack
+                return alert err.message or err
 
             Backbone.history.start()
 
-            if config
+            if config.remote
                 @router.navigate 'folder/', trigger: true
+                @router.once 'collectionfetched', =>
+                    app.replicator.startRealtime()
+
+                    app.replicator.backup()
+                    document.addEventListener "resume", =>
+                        console.log "RESUME EVENT"
+                        if app.backFromOpen
+                            app.backFromOpen = false
+                        else
+                            app.replicator.backup()
+                    , false
             else
                 @router.navigate 'login', trigger: true
 

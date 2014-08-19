@@ -1,7 +1,7 @@
 request = require '../lib/request'
 fs = require './filesystem'
-basic = require '../lib/basic'
 makeDesignDocs = require './replicator_mapreduce'
+ReplicatorConfig = require './replicator_config'
 DBNAME = "cozy-files.db"
 DBCONTACTS = "cozy-contacts.db"
 DBOPTIONS = if window.isBrowserDebugging then {} else adapter: 'websql'
@@ -14,6 +14,10 @@ module.exports = class Replicator extends Backbone.Model
 
     # backup functions (contacts & images) are in replicator_backups
     _.extend Replicator.prototype, require './replicator_backups'
+
+    defaults: ->
+        inSync: false
+        inBackup: false
 
     destroyDB: (callback) ->
         @db.destroy (err) =>
@@ -31,37 +35,8 @@ module.exports = class Replicator extends Backbone.Model
             @contactsDB = new PouchDB DBCONTACTS, DBOPTIONS
             makeDesignDocs @db, @contactsDB, (err) =>
                 return callback err if err
-                @db.get 'localconfig', (err, config) =>
-                    if err
-                        callback null, null
-                    else
-                        @config = config
-                        @remote = @createRemotePouchInstance()
-                        console.log @config.fullRemoteURL
-                        console.log @config.deviceId
-                        console.log @config.checkpointed
-                        callback null, config
-
-    createRemotePouchInstance: ->
-        # This is ugly because we extract a reference to
-        # the host object to monkeypatch pouchdb#2517
-        # @TODO fix me when fixed upstream
-        # https://github.com/pouchdb/pouchdb/issues/2517
-
-        @host =
-            remote: true
-            protocol: 'https'
-            host: @config.cozyURL
-            port: 443
-            path: ''
-            db: 'cozy'
-            headers: Authorization: basic @config.auth
-
-        options =
-            name: @config.fullRemoteURL
-            getHost: => @host
-
-        new PouchDB options
+                @config = new ReplicatorConfig(this)
+                @config.fetch callback
 
     getDbFilesOfFolder: (folder, callback) ->
         path = folder.path + '/' + folder.name
@@ -95,36 +70,17 @@ module.exports = class Replicator extends Backbone.Model
             else if response.statusCode is 400
                 callback new Error('device name already exist')
             else
-                config.password = body.password
-                config.deviceId = body.id
-                config.syncContacts = false
-                config.syncImages = true
-                config.syncOnWifi = true
-                config.auth =
-                    username: config.deviceName
-                    password: config.password
+                _.extend config,
+                    password: body.password
+                    deviceId: body.id
+                    auth:
+                        username: config.deviceName
+                        password: body.password
+                    fullRemoteURL:
+                        "https://#{config.deviceName}:#{body.password}" +
+                        "@#{config.cozyURL}/cozy"
 
-                config.fullRemoteURL =
-                    "https://#{config.deviceName}:#{config.password}" +
-                    "@#{config.cozyURL}/cozy"
-
-                @config = config
-                @remote = new PouchDB @config.fullRemoteURL
-                @config._id = 'localconfig'
-                @saveConfig callback
-
-    saveConfig: (callback) ->
-        @db.put @config, (err, result) =>
-            return callback err if err
-            unless result.ok
-                msg = "Cant save config"
-                msg += JSON.stringify @config
-                msg += JSON.stringify result
-                return callback new Error msg
-
-            @config._id = result.id
-            @config._rev = result.rev
-            callback null
+                @config.save config, callback
 
     updateIndex: (callback) ->
         # build the search index
@@ -142,54 +98,61 @@ module.exports = class Replicator extends Backbone.Model
 
 
     initialReplication: (progressback, callback) ->
-        url = "#{@config.fullRemoteURL}/_changes?descending=true&limit=1"
-        auth = @config.auth
         progressback 0
-        request.get {url, auth, json: true}, (err, res, body) =>
+        options = @config.makeUrl '/_changes?descending=true&limit=1'
+        request.get options, (err, res, body) =>
             return callback err if err
 
             # we store last_seq before copying files & folder
             # to avoid losing changes occuring during replicatation
             last_seq = body.last_seq
-            progressback 1/4
+            progressback 1/5
             async.series [
+                # get files and folders from the remote
                 (cb) => @copyView 'file', cb
-                (cb) => progressback(2/4) and cb null
+                (cb) => progressback(2/5) and cb null
                 (cb) => @copyView 'folder', cb
-                (cb) => progressback(3/4) and cb null
-                (cb) =>
-                    @config.checkpointed = last_seq
-                    @saveConfig cb
-            ], (err) ->
+                (cb) => progressback(3/5) and cb null
+                # save the last_seq we fetched above
+                (cb) => @config.save checkpointed: last_seq, cb
+                (cb) => progressback(4/5) and cb null
+                # build the initial state of FilesAndFolder view index
+                (cb) => @db.query 'FilesAndFolder', {}, cb
+            ], (err) =>
                 callback err
                 # updateIndex In background
                 @updateIndex -> console.log "Index built"
 
     copyView: (model, callback) ->
-        url = "#{@config.fullRemoteURL}/_design/#{model}/_view/all/"
-        auth = @config.auth
-        request.get {url, auth, json:true}, (err, res, body) =>
+        options = @config.makeUrl "/_design/#{model}/_view/all/"
+        request.get options, (err, res, body) =>
             return callback err if err
+            return callback null unless body.rows?.length
 
-            docs = body.rows.map (row) -> row.value
+            docs = body.rows?.map (row) -> row.value
             @db.bulkDocs docs, callback
 
+    fileInFileSystem: (file) =>
+        @cache.some (entry) -> entry.name is file.binary.file.id
 
-    binaryInCache: (binary_id) =>
-        @cache.some (entry) -> entry.name is binary_id
+    folderInFileSystem: (path, callback) =>
+        options =
+            startkey: path
+            endkey: path + '\uffff'
 
-    folderInCache: (folder, callback) =>
-        @getDbFilesOfFolder folder, (err, files) =>
+        fsCacheFolder = @cache.map (entry) -> entry.name
+
+        @db.query 'PathToBinary', options, (err, results) ->
             return callback err if err
-            # a folder is in cache if all its children are in cache
-            callback null, _.every files, (file) =>
-                @binaryInCache file.binary.file.id
+            return callback null, null if results.rows.length is 0
+            callback null, _.every results.rows, (row) ->
+                row.value in fsCacheFolder
 
-    getBinary: (model, callback, progressback) ->
+    getBinary: (model, progressback, callback) ->
         binary_id = model.binary.file.id
 
         fs.getOrCreateSubFolder @downloads, binary_id, (err, binfolder) =>
-            return callback err if err
+            return callback err if err and err.code isnt FileError.PATH_EXISTS_ERR
             unless model.name
                 return callback new Error('no model name :' + JSON.stringify(model))
 
@@ -197,11 +160,10 @@ module.exports = class Replicator extends Backbone.Model
                 return callback null, entry.toURL() if entry
 
                 # getFile failed, let's download
-                url = encodeURI "https://#{@config.cozyURL}/cozy/#{binary_id}/file"
-                path = binfolder.toURL() + '/' + model.name
-                auth = @config.auth
+                options = @config.makeUrl "/#{binary_id}/file"
+                options.path = binfolder.toURL() + '/' + model.name
 
-                fs.download url, path, auth, progressback, (err, entry) =>
+                fs.download options, progressback, (err, entry) =>
                     if err
                         # failed to download
                         fs.delete binfolder, (delerr) ->
@@ -211,7 +173,7 @@ module.exports = class Replicator extends Backbone.Model
                         @cache.push binfolder
                         callback null, entry.toURL()
 
-    getBinaryFolder: (folder, callback, progressback) ->
+    getBinaryFolder: (folder, progressback, callback) ->
         @getDbFilesOfFolder folder, (err, files) =>
             return callback err if err
 
@@ -220,7 +182,7 @@ module.exports = class Replicator extends Backbone.Model
             fs.freeSpace (err, available) =>
                 return callback err if err
                 if totalSize > available * 1024 # available is in KB
-                    alert 'There is not enough disk space, try download sub-folders.'
+                    alert t 'not enough space'
                     callback null
                 else
 
@@ -237,11 +199,8 @@ module.exports = class Replicator extends Backbone.Model
                     async.eachLimit files, 5, (file, cb) =>
                         console.log "DOWNLOAD #{file.name}"
                         pb = reportProgress.bind null, file._id
-                        @getBinary file, cb, pb
-                    , (err) ->
-                        return callback err if err
-                        app.router.bustCache(folder.path + '/' + folder.name)
-                        callback()
+                        @getBinary file, pb, cb
+                    , callback
 
 
     removeLocal: (model, callback) ->
@@ -264,14 +223,12 @@ module.exports = class Replicator extends Backbone.Model
 
             async.eachSeries files, (file, cb) =>
                 @removeLocal file, cb
-            , (err) ->
-                return callback err if err
-                app.router.bustCache(folder.path + '/' + folder.name)
-                callback()
+            , callback
 
     # wrapper around _sync to maintain the state of inSync
     sync: (callback) ->
         return callback null if @get 'inSync'
+        console.log "SYNC CALLED"
         @set 'inSync', true
         @_sync (err) =>
             @set 'inSync', false
@@ -281,24 +238,66 @@ module.exports = class Replicator extends Backbone.Model
     _sync: (callback) ->
         console.log "BEGIN SYNC"
 
-        replication = @db.replicate.from @remote,
+        @liveReplication?.cancel()
+
+        replication = @db.replicate.from @config.remote,
             batch_size: 50
             batches_limit: 5
-            filter: "#{@config.deviceId}/filter"
-            since: @config.checkpointed
+            filter: @config.makeFilterName()
+            since: @config.get 'checkpointed'
 
         # replication.on 'change', (info) ->
         #     console.log "change #{JSON.stringify(info)}"
 
         replication.once 'error', (err) ->
-            console.log "THIS HAPPENS #{JSON.stringify(err)} #{err.stack}"
+            console.log "REPLICATOR ERRROR #{JSON.stringify(err)} #{err.stack}"
             callback err
 
         replication.once 'complete', (result) =>
             console.log "REPLICATION COMPLETED"
-            @config.checkpointed = result.last_seq
-            @saveConfig (err) =>
-                console.log "CONFIG SAVED"
+            @config.save checkpointed: result.last_seq, (err) =>
                 callback err
+                app.router.forceRefresh()
                 # updateIndex In background
-                @updateIndex ->
+                @updateIndex =>
+                    @startRealtime()
+
+    # realtime
+    # start from the last checkpointed value
+    # smaller batches to limit memory usage
+    # if there is an error, we keep trying
+    #    with exponential backoff 2^x s (max 1min)
+    #
+    realtimeBackupCoef = 1
+    startRealtime: =>
+        return if @liveReplication
+        console.log 'REALTIME START'
+        @liveReplication = @db.replicate.from @config.remote,
+            batch_size: 50
+            batches_limit: 5
+            filter: @config.makeFilterName()
+            since: @config.get 'checkpointed'
+            continuous: true
+
+        @liveReplication.on 'change', (e) =>
+            realtimeBackupCoef = 1
+            @set 'inSync', true
+        @liveReplication.on 'uptodate', (e) =>
+            realtimeBackupCoef = 1
+            app.router.forceRefresh()
+            @set 'inSync', false
+            # @TODO : save last_seq ?
+            console.log "UPTODATE", e
+        @liveReplication.once 'complete', (e) =>
+            console.log "LIVE REPLICATION CANCELLED"
+            @set 'inSync', false
+            @liveReplication = null
+
+        @liveReplication.once 'error', (e) =>
+            # debugger;
+            console.log "THIS HAPPENS"
+            @liveReplication = null
+            realtimeBackupCoef++ if realtimeBackupCoef < 6
+            timeout = 1000 * (1 << realtimeBackupCoef)
+            console.log "REALTIME BROKE, TRY AGAIN IN #{timeout} #{e.toString()}"
+            setTimeout @startRealtime, timeout

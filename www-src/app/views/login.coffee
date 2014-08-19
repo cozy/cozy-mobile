@@ -35,20 +35,20 @@ module.exports = class LoginView extends BaseView
             password: pass
             deviceName: device
 
-        $('#btn-save').text 'registering ...'
+        $('#btn-save').text t 'registering'
         # register on cozy's server
         app.replicator.registerRemote config, (err) =>
             return @displayError t err.message if err
 
             onProgress = (percent) ->
-                $('#btn-save').text 'downloading hierarchy ' + parseInt(percent * 100) + '%'
+                $('#btn-save').text t('downloading hierarchy') + parseInt(percent * 100) + '%'
 
             # first replication to fetch hierarchy
             app.replicator.initialReplication onProgress, (err) =>
                 console.log err.stack if err
                 return @displayError t err.message if err
 
-                $('#footer').text 'replication complete'
+                $('#footer').text t 'replication complete'
                 app.isFirstRun = true
                 app.router.navigate 'config', trigger: true
 

@@ -2,16 +2,16 @@
 
 .item-content
 
-    if model.docType == 'Folder'
+    if isFolder
         i.icon.ion-folder
     else
         i.icon.ion-document
     span= model.name
 
-    if model.docType == 'Folder'
+    if isFolder
         i.icon.ion-chevron-right
     else if model.incache
-        i.cache-indicator.icon.ion-ios7-download-outline
+        i.cache-indicator.icon.ion-iphone
     else
         i.cache-indicator.icon.ion-ios7-cloud-download-outline
 
@@ -19,10 +19,10 @@
 .item-options.invisible
     if model.incache == 'loading'
         .button
-            | Loading
+            = t('loading')
     else if model.incache
         .button.uncache
-            | Remove local
+            = t('remove local')
     else
         .button.download
-            | Download
+            = t('download')
