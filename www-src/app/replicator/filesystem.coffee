@@ -141,8 +141,7 @@ __chromeSafe = ->
             window.webkitRequestFileSystem type, granted, onSuccess, onError
         , onError
 
-    window.
-
+    window.ImagesBrowser = getImageList: -> []
 
     window.FileTransfer = class FileTransfer
         download: (url, local, onSuccess, onError, _, options) ->
