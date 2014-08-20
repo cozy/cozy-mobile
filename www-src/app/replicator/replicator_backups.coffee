@@ -255,7 +255,7 @@ module.exports =
                 creationDate     : new Date().toISOString()
                 tags             : []
 
-            @config.remote.post folder, (err, res) ->
+            @config.remote.post folder, (err, res) =>
                 return callback err if err
                 folder._id = res.id
                 folder._rev = res.rev
