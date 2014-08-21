@@ -32,7 +32,6 @@ module.exports =
     "save"                : "Save"
     "done"                : "Done"
     "confirm message"     : "Are you sure?"
-    "downloading hierarchy" : "Downloading hierarchy"
     "replication complete" : "Replication complete"
     "no activity found"   : """
         No application on phone for this kind of file.
@@ -72,7 +71,7 @@ module.exports =
     # -- end of setup
     "setup end"             : "End of setting"
     "wait message"          : "Please wait while the tree is being downloaded...%{progress}%"
-    "ready message"         : "The application is ready to use."
+    "ready message"         : "The application is ready to be used!"
     "waiting..."            : "Waiting..."
     "end"                   : "End"
 

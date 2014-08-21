@@ -10,6 +10,7 @@ plugins = {
     "io.cozy.cordova-images-browser": "https://github.com/aenario/cordova-images-browser"
     "org.apache.cordova.battery-status": "org.apache.cordova.battery-status"
     "org.apache.cordova.network-information": "https://git-wip-us.apache.org/repos/asf/cordova-plugin-network-information.git"
+    "org.apache.cordova.globalization": "org.apache.cordova.globalization"
 }
 
 platforms = ['ios', 'android']
