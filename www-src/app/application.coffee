@@ -7,6 +7,12 @@ module.exports =
 
         window.app = this
 
+        # Monkey patch for browser debugging
+        if window.isBrowserDebugging
+            window.navigator = window.navigator or {}
+            window.navigator.globalization = window.navigator.globalization or {}
+            window.navigator.globalization.getPreferredLanguage = (callback) -> callback value: 'fr-FR'
+
         navigator.globalization.getPreferredLanguage (properties) =>
             [@locale] = properties.value.split '-'
 
