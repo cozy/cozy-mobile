@@ -10,7 +10,6 @@ module.exports =
     "contacts sync label" : "Backup contacts"
     "images sync label"   : "Backup images"
     "wifi sync label"     : "Backup on Wifi only"
-    "config done"         : "Save and run first backup"
     "home"                : "Home"
     "about"               : "About"
     "last sync"           : "Last sync was : "
@@ -30,8 +29,9 @@ module.exports =
     "download"            : "Download"
     "sync"                : "Refresh"
     "backup"              : "Backup"
-    "save"                : "Login"
-    "registering"         : "Registering"
+    "save"                : "Save"
+    "done"                : "Done"
+    "confirm message"     : "Are you sure?"
     "downloading hierarchy" : "Downloading hierarchy"
     "replication complete" : "Replication complete"
     "no activity found"   : """
@@ -46,3 +46,33 @@ module.exports =
     "no wifi"  : """
         No Wifi, Backup cancelled.
     """
+
+    # fist connection wizard
+    # -- generic
+    "next"                  : "Next"
+    "back"                  : "Back"
+    "connection failure"    : "Connection failure"
+
+    # --- login
+    "setup 1/3"             : "Setup 1/3"
+    "password placeholder"  : "your secret password"
+    "authenticating..."     : "Authenticating..."
+
+    # -- device name picker
+    "setup 2/3"                 : "Setup 2/3"
+    "device name explanation"   : """
+        Choose a display name for this device so you can easily manage it from your Cozy.
+    """
+    "device name placeholder"   : "my-phone"
+    "registering..."            : "Registering..."
+
+    # -- backup configuration
+    "setup 3/3"             : "Setup 3/3"
+
+    # -- end of setup
+    "setup end"             : "End of setting"
+    "wait message"          : "Please wait while the tree is being downloaded...%{progress}%"
+    "ready message"         : "The application is ready to use."
+    "waiting..."            : "Waiting..."
+    "end"                   : "End"
+

@@ -7,9 +7,9 @@ module.exports = class ConfigView extends BaseView
     events: ->
         'tap #configDone': 'configDone'
         'tap #redbtn': 'redBtn'
-        'change #contactSyncCheck': 'saveChanges'
-        'change #imageSyncCheck': 'saveChanges'
-        'change #wifiSyncCheck': 'saveChanges'
+        'tap #contactSyncCheck': 'saveChanges'
+        'tap #imageSyncCheck': 'saveChanges'
+        'tap #wifiSyncCheck': 'saveChanges'
 
     getRenderData: ->
         config = app.replicator.config.toJSON()
@@ -31,18 +31,12 @@ module.exports = class ConfigView extends BaseView
 
     # only happens after the first config (post install)
     configDone: ->
-        # start the first contact & pictures backup
-        app.replicator.backup (err) ->
-            alert err if err
-            console.log "pics & contacts synced"
+        app.router.navigate 'first-sync', trigger: true
 
-        # go to home
-        app.isFirstRun = false
-        app.router.navigate 'folder/', trigger: true
 
     # confirm, destroy the DB, force refresh the page (show login form)
     redBtn: ->
-        if confirm t "Are you sure ?"
+        if confirm t 'confirm message'
             #@TODO delete device on remote ?
             app.replicator.destroyDB (err) =>
                 return alert err.message if err
@@ -51,11 +45,12 @@ module.exports = class ConfigView extends BaseView
 
     # save config changes in local pouchdb
     # prevent simultaneous changes by disabling checkboxes
-    saveChanges: (e) ->
+    saveChanges: ->
+
         @$('#contactSyncCheck, #imageSyncCheck, #wifiSyncCheck').prop 'disabled', true
         app.replicator.config.save
             syncContacts: @$('#contactSyncCheck').is ':checked'
             syncImages: @$('#imageSyncCheck').is ':checked'
             syncOnWifi: @$('#wifiSyncCheck').is ':checked'
-        , ->
+        , =>
             @$('#contactSyncCheck, #imageSyncCheck, #wifiSyncCheck').prop 'disabled', false

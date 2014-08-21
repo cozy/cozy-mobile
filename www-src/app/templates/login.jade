@@ -1,13 +1,12 @@
 //- config screen template
 
-label.item.item-input
-    span.input-label= t('cozy url')
-    input#input-url(type="text", placeholder="john.cozycloud.cc")
-label.item.item-input
-    span.input-label= t('cozy password')
-    input#input-pass(type="password", placeholder="cozy's password")
-label.item.item-input
-    span.input-label= t('device name')
-    input#input-device(type="text", placeholder="my-phone")
+.list
+    .card
+        label.item.item-input
+            span.input-label= t('cozy url')
+            input#input-url(type="text", placeholder="john.cozycloud.cc", value="#{defaultValue.cozyURL}")
+        label.item.item-input
+            span.input-label= t('cozy password')
+            input#input-pass(type="password", placeholder="#{t('password placeholder')}", value="#{defaultValue.password}")
 
-button#btn-save.button.button-block.button-balanced= t('save')
+        button#btn-save.button.button-block.button-balanced.item= t('next')

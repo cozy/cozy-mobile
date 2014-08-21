@@ -9,8 +9,8 @@ module.exports = class ReplicatorConfig extends Backbone.Model
         syncContacts: app.locale is 'digidisk'
         syncImages: true
         syncOnWifi: true
-        cozyURL: t 'None'
-        deviceName: t 'None'
+        cozyURL: ''
+        deviceName: ''
 
     fetch: (callback) ->
         @replicator.db.get 'localconfig', (err, config) =>

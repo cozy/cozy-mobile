@@ -82,6 +82,22 @@ module.exports = class Replicator extends Backbone.Model
 
                 @config.save config, callback
 
+    # pings the cozy to check the credentials without creating a device
+    checkCredentials: (config, callback) ->
+        request.post
+            uri: "https://#{config.cozyURL}/login"
+            json:
+                username: 'owner'
+                password: config.password
+        , (err, response, body) ->
+
+            if response?.statusCode isnt 200
+                error = err?.message or body.error or body.message
+            else
+                error = null
+
+            callback error
+
     updateIndex: (callback) ->
         # build the search index
         @db.search
@@ -97,8 +113,8 @@ module.exports = class Replicator extends Backbone.Model
                     callback null
 
 
-    initialReplication: (progressback, callback) ->
-        progressback 0
+    initialReplication: (callback) ->
+        @set 'initialReplicationRunning', 0
         options = @config.makeUrl '/_changes?descending=true&limit=1'
         request.get options, (err, res, body) =>
             return callback err if err
@@ -106,30 +122,33 @@ module.exports = class Replicator extends Backbone.Model
             # we store last_seq before copying files & folder
             # to avoid losing changes occuring during replicatation
             last_seq = body.last_seq
-            progressback 1/5
             async.series [
                 # get files and folders from the remote
                 (cb) => @copyView 'file', cb
-                (cb) => progressback(2/5) and cb null
+                (cb) => @set('initialReplicationRunning', 2/5) and cb null
                 (cb) => @copyView 'folder', cb
-                (cb) => progressback(3/5) and cb null
+                (cb) => @set('initialReplicationRunning', 3/5) and cb null
                 # save the last_seq we fetched above
                 (cb) => @config.save checkpointed: last_seq, cb
-                (cb) => progressback(4/5) and cb null
+                (cb) => @set('initialReplicationRunning', 4/5) and cb null
                 # build the initial state of FilesAndFolder view index
                 (cb) => @db.query 'FilesAndFolder', {}, cb
             ], (err) =>
+                console.log "end of inital replication #{Date.now()}"
+                @set 'initialReplicationRunning', 1
                 callback err
                 # updateIndex In background
                 @updateIndex -> console.log "Index built"
 
     copyView: (model, callback) ->
+        console.log "copyView #{Date.now()}"
         options = @config.makeUrl "/_design/#{model}/_view/all/"
         request.get options, (err, res, body) =>
             return callback err if err
             return callback null unless body.rows?.length
 
             docs = body.rows?.map (row) -> row.value
+            console.log "beforeBulkDocs #{Date.now()}"
             @db.bulkDocs docs, callback
 
     fileInFileSystem: (file) =>

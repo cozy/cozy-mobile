@@ -8,6 +8,10 @@ module.exports = class LoginView extends BaseView
     events: ->
         'click #btn-save': 'doSave'
 
+    getRenderData: ->
+        defaultValue = app.loginConfig  or cozyURL: '', password: ''
+        return {defaultValue}
+
     doSave: ->
         return null if @saving
         @saving = $('#btn-save').text()
@@ -15,10 +19,9 @@ module.exports = class LoginView extends BaseView
 
         url = @$('#input-url').val()
         pass = @$('#input-pass').val()
-        device = @$('#input-device').val()
 
         # check all fields filled
-        unless url and pass and device
+        unless url and pass
             return @displayError 'all fields are required'
 
         # keep only the hostname
@@ -33,31 +36,22 @@ module.exports = class LoginView extends BaseView
         config =
             cozyURL: url
             password: pass
-            deviceName: device
 
-        $('#btn-save').text t 'registering'
-        # register on cozy's server
-        app.replicator.registerRemote config, (err) =>
-            return @displayError t err.message if err
+        $('#btn-save').text t 'authenticating...'
+        app.replicator.checkCredentials config, (error) =>
 
-            onProgress = (percent) ->
-                $('#btn-save').text t('downloading hierarchy') + parseInt(percent * 100) + '%'
-
-            # first replication to fetch hierarchy
-            app.replicator.initialReplication onProgress, (err) =>
-                console.log err.stack if err
-                return @displayError t err.message if err
-
-                $('#footer').text t 'replication complete'
-                app.isFirstRun = true
-                app.router.navigate 'config', trigger: true
-
+            if error?
+                @displayError error
+            else
+                app.loginConfig = config
+                console.log 'check credentials done'
+                app.router.navigate 'device-name-picker', trigger: true
 
     displayError: (text, field) ->
         $('#btn-save').text @saving
         @saving = false
         @error.remove() if @error
-        text = 'Connection faillure' if ~text.indexOf('CORS request rejected')
+        text = t 'connection failure' if ~text.indexOf('CORS request rejected')
         @error = $('<div>').addClass('button button-full button-energized')
         @error.text text
         @$(field or '#btn-save').before @error
