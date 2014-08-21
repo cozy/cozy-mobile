@@ -2,18 +2,21 @@ fs     = require 'fs'
 {exec} = require 'child_process'
 async  = require './www-src/vendor/scripts/async'
 
-plugins = [
-    "https://github.com/aenario/cordova-external-file-open"
-    "https://github.com/brodysoft/Cordova-SQLitePlugin"
-    "https://git-wip-us.apache.org/repos/asf/cordova-plugin-file.git"
-    "https://git-wip-us.apache.org/repos/asf/cordova-plugin-file-transfer.git"
-    "https://github.com/aenario/cordova-images-browser"
-]
+plugins = {
+    "com.fgomiero.cordova.externafileutil": "https://github.com/aenario/cordova-external-file-open"
+    "com.brodysoft.sqlitePlugin": "https://github.com/brodysoft/Cordova-SQLitePlugin"
+    "org.apache.cordova.file": "https://git-wip-us.apache.org/repos/asf/cordova-plugin-file.git"
+    "org.apache.cordova.file-transfer": "https://git-wip-us.apache.org/repos/asf/cordova-plugin-file-transfer.git"
+    "io.cozy.cordova-images-browser": "https://github.com/aenario/cordova-images-browser"
+    "org.apache.cordova.battery-status": "org.apache.cordova.battery-status"
+    "org.apache.cordova.network-information": "https://git-wip-us.apache.org/repos/asf/cordova-plugin-network-information.git"
+}
 
 platforms = ['ios', 'android']
 
 installPlugins = (done) ->
-    async.eachSeries plugins, (plugin, cb) ->
+    async.eachSeries Object.keys(plugins), (plugin, cb) ->
+        plugin = plugins[plugin]
         console.log "installing plugin #{plugin} ..."
         command = 'cordova plugin add ' + plugin
         exec command, (err, stdout, stderr) ->
@@ -31,6 +34,18 @@ installPlatforms = (done) ->
             console.log stderr
             cb()
     , done
+
+uninstallPlugins = (done) ->
+    async.eachSeries Object.keys(plugins).reverse(), (plugin, cb) ->
+        console.log "uninstalling plugin #{plugin} ..."
+        command = 'cordova plugin rm ' + plugin
+        exec command, (err, stdout, stderr) ->
+            console.log stdout
+            console.log stderr
+            cb()
+    , done
+
+updatePlugins = (done) -> uninstallPlugins -> installPlugins done
 
 release = (done) ->
 
@@ -54,5 +69,6 @@ release = (done) ->
 
 
 task 'platforms', 'install cordova platforms', -> installPlatforms -> console.log "DONE"
-task 'plugins', 'install cordova platforms', -> installPlugins -> console.log "DONE"
+task 'plugins', 'install cordova plugins', -> installPlugins -> console.log "DONE"
+task 'plugins:update', 'update cordova plugins', -> updatePlugins -> console.log "DONE"
 task 'release', 'create the released apk', -> release -> console.log "DONE"
