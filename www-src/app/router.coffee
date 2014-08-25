@@ -20,7 +20,7 @@ module.exports = class Router extends Backbone.Router
         $('#btn-menu, #btn-back').show()
         if path is null
             app.layout.setBackButton '#folder/', 'home'
-            app.layout.setTitle t 'home'
+            app.layout.setTitle 'Cozy'
         else
             parts = path.split('/')
             backpath = '#folder/' + parts[0..-2].join '/'

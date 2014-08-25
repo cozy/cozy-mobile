@@ -127,7 +127,7 @@ module.exports =
         return callback null unless @config.get 'syncImages'
 
         console.log "SYNC PICTURES"
-        @set 'backup_step', 'pictures_sync'
+        @set 'backup_step', 'pictures_scan'
         @set 'backup_step_done', null
         async.series [
             @ensureDeviceFolder.bind this
@@ -144,28 +144,29 @@ module.exports =
 
             myDownloadFolder = @downloads.toURL().replace 'file://', ''
 
-            processed = 0
-            @set 'backup_step_total', images.length
-            # images = images[0..10]
-            async.eachSeries images, (path, cb) =>
-                @set 'backup_step_done', processed++
+            toUpload = []
 
-                console.log "IMAGE : #{path}"
-                if path in dbImages
-                    console.log "ALREADY IN DB #{path}"
-                    return cb null
+            # step 1 scan all images, find the new ones
+            async.eachSeries images, (path, cb) ->
 
-                else if myDownloadFolder in path
-                    console.log "IS IN MY DOWNLOADS"
-                    return cb null
+                unless path in dbImages or myDownloadFolder in path
+                    toUpload.push path
 
-                else
+                setTimeout cb, 1
+
+            , =>
+                # step 2 upload one by one
+                processed = 0
+                @set 'backup_step', 'pictures_sync'
+                @set 'backup_step_total', toUpload.length
+                async.eachSeries toUpload, (path, cb) =>
+                    @set 'backup_step_done', processed++
                     console.log "UPLOADING #{path}"
                     @uploadPicture path, (err) ->
                         console.log "ERROR #{path} #{err}" if err
                         setTimeout cb, 1
 
-            , callback
+                , callback
 
     uploadPicture: (path, callback) ->
         fs.getFileFromPath path, (err, file) =>

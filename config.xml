@@ -1,8 +1,8 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget android-versionCode="5"
-    android-versionName="0.0.5"
+<widget android-versionCode="7"
+    android-versionName="0.0.7"
     id="io.cozy.files-client"
-    version="0.0.5"
+    version="0.0.7"
     xmlns="http://www.w3.org/ns/widgets"
     xmlns:cdv="http://cordova.apache.org/ns/1.0">
 
@@ -14,10 +14,14 @@
     <preference name="Orientation" value="portrait" />
     <content src="index.html"/>
     <platform name="android">
-        <icon density="ldpi" src="res/icons/icon-36-ldpi.png"/>
+        <icon density="ldpi" src="res/icons/icon2.png"/>
+        <icon density="mdpi" src="res/icons/icon2.png"/>
+        <icon density="hdpi" src="res/icons/icon2.png"/>
+        <icon density="xhdpi" src="res/icons/icon2.png"/>
+        <!-- <icon density="ldpi" src="res/icons/icon-36-ldpi.png"/>
         <icon density="mdpi" src="res/icons/icon-48-mdpi.png"/>
         <icon density="hdpi" src="res/icons/icon-72-hdpi.png"/>
-        <icon density="xhdpi" src="res/icons/icon-96-xhdpi.png"/>
+        <icon density="xhdpi" src="res/icons/icon-96-xhdpi.png"/> -->
         <!-- <icon density="ldpi" src="res/icons-dd/icon.png"/>
         <icon density="mdpi" src="res/icons-dd/icon.png"/>
         <icon density="hdpi" src="res/icons-dd/icon.png"/>

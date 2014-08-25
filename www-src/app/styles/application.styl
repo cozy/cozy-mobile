@@ -20,7 +20,7 @@
     transition all ease-in-out 250ms
 
 // blue
-basecolor = #34A6FF
+basecolor = #3fbaf4
 basecolor-alpha = rgba(49, 156, 256, 0.5)
 
 // green
@@ -87,3 +87,25 @@ darkbase = basecolor - 20%
         position absolute
         height: 100%
         background-color basecolor-alpha
+
+#splash-screen
+    width: 100%
+
+#bar-header
+    border-bottom 5px solid basecolor
+
+#btn-menu
+    height: 44px
+    margin-left: -7px
+    margin-top: -5px
+    padding: 0px
+
+#title
+    text-align: left
+    padding-left: 60px
+    color: basecolor
+    font-size: 20px
+    margin-top: -2px
+
+#btn-menu:focus, #btn-menu:active, #btn-menu.activated
+    background-color: basecolor + 60%
