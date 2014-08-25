@@ -99,54 +99,66 @@ LayoutView = require('./views/layout');
 
 module.exports = {
   initialize: function() {
-    var Router, e, locales,
-      _this = this;
+    var _this = this;
 
     window.app = this;
-    this.locale = 'en';
-    this.polyglot = new Polyglot();
-    locales = (function() {
-      try {
-        return require('locales/' + this.locale);
-      } catch (_error) {
-        e = _error;
-        return require('locales/en');
-      }
-    }).call(this);
-    this.polyglot.extend(locales);
-    window.t = this.polyglot.t.bind(this.polyglot);
-    Router = require('router');
-    this.router = new Router();
-    this.replicator = new Replicator();
-    this.layout = new LayoutView();
-    $('body').empty().append(this.layout.render().$el);
-    return this.replicator.init(function(err, config) {
-      if (err) {
-        console.log(err, err.stack);
-        return alert(err.message || err);
-      }
-      Backbone.history.start();
-      if (config.remote) {
-        _this.router.navigate('folder/', {
-          trigger: true
+    if (window.isBrowserDebugging) {
+      window.navigator = window.navigator || {};
+      window.navigator.globalization = window.navigator.globalization || {};
+      window.navigator.globalization.getPreferredLanguage = function(callback) {
+        return callback({
+          value: 'fr-FR'
         });
-        return _this.router.once('collectionfetched', function() {
-          app.replicator.startRealtime();
-          app.replicator.backup();
-          return document.addEventListener("resume", function() {
-            console.log("RESUME EVENT");
-            if (app.backFromOpen) {
-              return app.backFromOpen = false;
-            } else {
-              return app.replicator.backup();
-            }
-          }, false);
-        });
-      } else {
-        return _this.router.navigate('login', {
-          trigger: true
-        });
-      }
+      };
+    }
+    return navigator.globalization.getPreferredLanguage(function(properties) {
+      var Router, e, locales;
+
+      _this.locale = properties.value.split('-')[0];
+      _this.polyglot = new Polyglot();
+      locales = (function() {
+        try {
+          return require('locales/' + this.locale);
+        } catch (_error) {
+          e = _error;
+          return require('locales/en');
+        }
+      }).call(_this);
+      _this.polyglot.extend(locales);
+      window.t = _this.polyglot.t.bind(_this.polyglot);
+      Router = require('router');
+      _this.router = new Router();
+      _this.replicator = new Replicator();
+      _this.layout = new LayoutView();
+      return _this.replicator.init(function(err, config) {
+        if (err) {
+          console.log(err, err.stack);
+          return alert(err.message || err);
+        }
+        $('body').empty().append(_this.layout.render().$el);
+        Backbone.history.start();
+        if (config.remote) {
+          _this.router.navigate('folder/', {
+            trigger: true
+          });
+          return _this.router.once('collectionfetched', function() {
+            app.replicator.startRealtime();
+            app.replicator.backup();
+            return document.addEventListener("resume", function() {
+              console.log("RESUME EVENT");
+              if (app.backFromOpen) {
+                return app.backFromOpen = false;
+              } else {
+                return app.replicator.backup();
+              }
+            }, false);
+          });
+        } else {
+          return _this.router.navigate('login', {
+            trigger: true
+          });
+        }
+      });
     });
   }
 };
@@ -1032,7 +1044,19 @@ module.exports = ViewCollection = (function(_super) {
   };
 
   ViewCollection.prototype.appendView = function(view) {
-    return this.$collectionEl.append(view.el);
+    var idx, modelAfter, viewAfter;
+
+    idx = this.collection.indexOf(view.model);
+    modelAfter = this.collection.at(idx + 1);
+    if (!modelAfter) {
+      return this.$collectionEl.append(view.el);
+    }
+    viewAfter = this.views[modelAfter.cid];
+    if (viewAfter) {
+      return viewAfter.$el.before(view.el);
+    } else {
+      return this.$collectionEl.append(view.el);
+    }
   };
 
   ViewCollection.prototype.initialize = function() {
@@ -1113,51 +1137,6 @@ module.exports = ViewCollection = (function(_super) {
 
 });
 
-;require.register("locales/digidisk", function(exports, require, module) {
-module.exports = {
-  "app name": "Digidisk mobile",
-  "cozy url": "Addresse Digidisk",
-  "cozy password": "Mot de Passe",
-  "device name": "Nom du device",
-  "search": "Recherche",
-  "config": "Config",
-  "never": "Jamais",
-  "phone2cozy title": "Sauvegarde téléphone",
-  "contacts sync label": "Sauvegarde contacts",
-  "images sync label": "Sauvegarde images",
-  "wifi sync label": "Sauvegarde en Wifi uniquement",
-  "config done": "Lancer première sauvegarde",
-  "home": "Accueil",
-  "about": "A propos",
-  "last sync": "Dernière synchro : ",
-  "last backup": "Sauvegardé : ",
-  "reset": "Reset",
-  "reset warning": "Cela supprimera toutes les données digidisk sur votre mobile.",
-  "pull to sync": "Tirer pour synchroniser",
-  "syncing": "En cours de synchro",
-  "contacts_scan": "Extraction des contacts",
-  "contacts_sync": "Sauvegarde des contacts",
-  "pictures_sync": "Sauvegarde des images",
-  "synchronized with": "Synchronisé avec ",
-  "this folder is empty": "Ce dossier est vide.",
-  "no results": "Pas de résultats",
-  "loading": "Chargement ...",
-  "remove local": "Supprimer du tel",
-  "download": "Télécharger",
-  "sync": "Rafraichir",
-  "backup": "Sauvegarde",
-  "save": "Login",
-  "registering": "Connection",
-  "downloading hierarchy": "Téléchargement metadonnées : ",
-  "replication complete": "Replication complète",
-  "no activity found": "Aucune application sur votre téléphone ne permet d'ouvrir ce type de fichier.",
-  "not enough space": "Il n'y a pas suffisament de place sur votre téléphone, supprimez des données du cache.",
-  "no battery": "La sauvegarde n'aura pas lieu car vous manquez de batterie.",
-  "no wifi": "La sauvegarde n'aura pas lieu car vous n'êtes pas en wifi."
-};
-
-});
-
 ;require.register("locales/en", function(exports, require, module) {
 module.exports = {
   "app name": "Cozy mobile",
@@ -1171,12 +1150,12 @@ module.exports = {
   "contacts sync label": "Backup contacts",
   "images sync label": "Backup images",
   "wifi sync label": "Backup on Wifi only",
-  "config done": "Save and run first backup",
   "home": "Home",
   "about": "About",
   "last sync": "Last sync was : ",
   "last backup": "Last was : ",
-  "reset": "Reset",
+  "reset title": "Reset",
+  "reset action": "Reset",
   "reset warning": "This will erase all cozy-generated data on your phone",
   "pull to sync": "Pull to sync",
   "syncing": "Syncing",
@@ -1191,14 +1170,30 @@ module.exports = {
   "download": "Download",
   "sync": "Refresh",
   "backup": "Backup",
-  "save": "Login",
-  "registering": "Registering",
-  "downloading hierarchy": "Downloading hierarchy",
+  "save": "Save",
+  "done": "Done",
+  "confirm message": "Are you sure?",
   "replication complete": "Replication complete",
   "no activity found": "No application on phone for this kind of file.",
   "not enough space": "Not enough disk space, remove some files from cache.",
   "no battery": "Not enough battery, Backup cancelled.",
-  "no wifi": "No Wifi, Backup cancelled."
+  "no wifi": "No Wifi, Backup cancelled.",
+  "next": "Next",
+  "back": "Back",
+  "connection failure": "Connection failure",
+  "setup 1/3": "Setup 1/3",
+  "password placeholder": "your secret password",
+  "authenticating...": "Authenticating...",
+  "setup 2/3": "Setup 2/3",
+  "device name explanation": "Choose a display name for this device so you can easily manage it from your Cozy.",
+  "device name placeholder": "my-phone",
+  "registering...": "Registering...",
+  "setup 3/3": "Setup 3/3",
+  "setup end": "End of setting",
+  "wait message": "Please wait while the tree is being downloaded...%{progress}%",
+  "ready message": "The application is ready to be used!",
+  "waiting...": "Waiting...",
+  "end": "End"
 };
 
 });
@@ -1208,34 +1203,58 @@ module.exports = {
   "app name": "Cozy mobile",
   "cozy url": "Addresse Cozy",
   "cozy password": "Mot de Passe",
-  "device name": "Nom du device",
+  "device name": "Nom du périphérique",
   "search": "Recherche",
-  "config": "Config",
+  "config": "Configuration",
   "never": "Jamais",
-  "phone2cozy title": "Backup téléphone",
-  "contacts sync label": "Backup contacts",
-  "images sync label": "Backup images",
-  "wifi sync label": "Backup uniquement en Wifi",
-  "config done": "Sauvegarder et lancer le premier backup",
+  "phone2cozy title": "Sauvegarde du téléphone",
+  "contacts sync label": "Sauvegarde des contacts",
+  "images sync label": "Sauvegarde des images du téléphone",
+  "wifi sync label": "Sauvegarde uniquement en Wifi",
   "home": "Accueil",
-  "about": "A propos",
+  "about": "À propos",
   "last sync": "Dernière synchro : ",
-  "last backup": "Dernier backup : ",
-  "reset": "Reset",
-  "reset warning": "Cela supprimera toutes les données digidisk sur votre mobile.",
+  "last backup": "Derniere sauvegarde : ",
+  "reset title": "Remise à zéro",
+  "reset action": "R.à.Z.",
+  "reset warning": "Cela supprimera toutes les données cozy sur votre mobile.",
   "pull to sync": "Tirer pour synchroniser",
-  "syncing": "En cours de synchro",
+  "syncing": "En cours de synchronisation",
   "contacts_scan": "Extraction des contacts",
   "contacts_sync": "Synchronisation des contacts",
   "pictures_sync": "Synchronisation des images",
-  "synchronized with": "Synchronizé avec ",
+  "synchronized with": "Synchronisé avec ",
   "this folder is empty": "Ce dossier est vide.",
   "no results": "Pas de résultats",
   "loading": "Chargement",
   "remove local": "Supprimer du tel",
   "download": "Télécharger",
-  "not enough space": "There is not enough disk space, try download sub-folders.",
-  "not ready for sync": "La réplication n'aura pas lieu car vous n'êtes pas en wifi."
+  "sync": "Rafraîchir",
+  "backup": "Sauvegarder",
+  "save": "Sauvegarder",
+  "done": "Fait",
+  "confirm message": "Êtes-vous sûr ?",
+  "replication complete": "Réplication complétée",
+  "no activity found": "Aucune application n'a été trouvé sur ce téléphone pour ce type de fichier.",
+  "not enough space": "Il n'y a pas suffisament d'espace disque sur votre mobile.",
+  "no battery": "La sauvegarde n'aura pas lieu car vous n'avez pas assez de batterie.",
+  "no wifi": "La sauvegarde n'aura pas lieu car vous n'êtes pas en wifi.",
+  "next": "Suivant",
+  "back": "Retour",
+  "connection failure": "Echec de la connexion",
+  "setup 1/3": "Configuration 1/3",
+  "password placeholder": "votre mot de passe secret",
+  "authenticating...": "Vérification des identifiants...",
+  "setup 2/3": "Configuration 2/3",
+  "device name explanation": "Choisissez un nom d'usage pour ce périphérique pour pouvoir le gérer facilement depuis votre Cozy.",
+  "device name placeholder": "mon-telephone",
+  "registering...": "Enregistrement...",
+  "setup 3/3": "Configuration 3/3",
+  "setup end": "Fin de la configuration",
+  "wait message": "Merci d'attendre pendant le téléchargement de l'arborescence...%{progress}%",
+  "ready message": "L'application est prête à être utilisée !",
+  "waiting...": "En attente...",
+  "end": "Fin"
 };
 
 });
@@ -1547,7 +1566,12 @@ __chromeSafe = function() {
       return window.webkitRequestFileSystem(type, granted, onSuccess, onError);
     }, onError);
   };
-  return window.window.FileTransfer = FileTransfer = (function() {
+  window.ImagesBrowser = {
+    getImageList: function() {
+      return [];
+    }
+  };
+  return window.FileTransfer = FileTransfer = (function() {
     function FileTransfer() {}
 
     FileTransfer.prototype.download = function(url, local, onSuccess, onError, _, options) {
@@ -1747,6 +1771,25 @@ module.exports = Replicator = (function(_super) {
     });
   };
 
+  Replicator.prototype.checkCredentials = function(config, callback) {
+    return request.post({
+      uri: "https://" + config.cozyURL + "/login",
+      json: {
+        username: 'owner',
+        password: config.password
+      }
+    }, function(err, response, body) {
+      var error;
+
+      if ((response != null ? response.statusCode : void 0) !== 200) {
+        error = (err != null ? err.message : void 0) || body.error || body.message;
+      } else {
+        error = null;
+      }
+      return callback(error);
+    });
+  };
+
   Replicator.prototype.updateIndex = function(callback) {
     var _this = this;
 
@@ -1766,11 +1809,11 @@ module.exports = Replicator = (function(_super) {
     });
   };
 
-  Replicator.prototype.initialReplication = function(progressback, callback) {
+  Replicator.prototype.initialReplication = function(callback) {
     var options,
       _this = this;
 
-    progressback(0);
+    this.set('initialReplicationRunning', 0);
     options = this.config.makeUrl('/_changes?descending=true&limit=1');
     return request.get(options, function(err, res, body) {
       var last_seq;
@@ -1779,26 +1822,27 @@ module.exports = Replicator = (function(_super) {
         return callback(err);
       }
       last_seq = body.last_seq;
-      progressback(1 / 5);
       return async.series([
         function(cb) {
           return _this.copyView('file', cb);
         }, function(cb) {
-          return progressback(2 / 5) && cb(null);
+          return _this.set('initialReplicationRunning', 2 / 5) && cb(null);
         }, function(cb) {
           return _this.copyView('folder', cb);
         }, function(cb) {
-          return progressback(3 / 5) && cb(null);
+          return _this.set('initialReplicationRunning', 3 / 5) && cb(null);
         }, function(cb) {
           return _this.config.save({
             checkpointed: last_seq
           }, cb);
         }, function(cb) {
-          return progressback(4 / 5) && cb(null);
+          return _this.set('initialReplicationRunning', 4 / 5) && cb(null);
         }, function(cb) {
           return _this.db.query('FilesAndFolder', {}, cb);
         }
       ], function(err) {
+        console.log("end of inital replication " + (Date.now()));
+        _this.set('initialReplicationRunning', 1);
         callback(err);
         return _this.updateIndex(function() {
           return console.log("Index built");
@@ -1811,6 +1855,7 @@ module.exports = Replicator = (function(_super) {
     var options,
       _this = this;
 
+    console.log("copyView " + (Date.now()));
     options = this.config.makeUrl("/_design/" + model + "/_view/all/");
     return request.get(options, function(err, res, body) {
       var docs, _ref1, _ref2;
@@ -1824,6 +1869,7 @@ module.exports = Replicator = (function(_super) {
       docs = (_ref2 = body.rows) != null ? _ref2.map(function(row) {
         return row.value;
       }) : void 0;
+      console.log("beforeBulkDocs " + (Date.now()));
       return _this.db.bulkDocs(docs, callback);
     });
   };
@@ -2235,14 +2281,14 @@ module.exports = {
       return callback(null);
     }
     console.log("SYNC PICTURES");
-    this.set('backup_step', 'pictures_sync');
+    this.set('backup_step', 'pictures_scan');
     this.set('backup_step_done', null);
     return async.series([
       this.ensureDeviceFolder.bind(this), ImagesBrowser.getImagesList, function(cb) {
         return _this.db.query('LocalPath', {}, cb);
       }
     ], function(err, results) {
-      var dbImages, images, myDownloadFolder, processed, _, _ref;
+      var dbImages, images, myDownloadFolder, toUpload, _, _ref;
 
       if (err) {
         return callback(err);
@@ -2253,18 +2299,20 @@ module.exports = {
         return row.key;
       });
       myDownloadFolder = _this.downloads.toURL().replace('file://', '');
-      processed = 0;
-      _this.set('backup_step_total', images.length);
+      toUpload = [];
       return async.eachSeries(images, function(path, cb) {
-        _this.set('backup_step_done', processed++);
-        console.log("IMAGE : " + path);
-        if (__indexOf.call(dbImages, path) >= 0) {
-          console.log("ALREADY IN DB " + path);
-          return cb(null);
-        } else if (__indexOf.call(path, myDownloadFolder) >= 0) {
-          console.log("IS IN MY DOWNLOADS");
-          return cb(null);
-        } else {
+        if (!(__indexOf.call(dbImages, path) >= 0 || __indexOf.call(path, myDownloadFolder) >= 0)) {
+          toUpload.push(path);
+        }
+        return setTimeout(cb, 1);
+      }, function() {
+        var processed;
+
+        processed = 0;
+        _this.set('backup_step', 'pictures_sync');
+        _this.set('backup_step_total', toUpload.length);
+        return async.eachSeries(toUpload, function(path, cb) {
+          _this.set('backup_step_done', processed++);
           console.log("UPLOADING " + path);
           return _this.uploadPicture(path, function(err) {
             if (err) {
@@ -2272,8 +2320,8 @@ module.exports = {
             }
             return setTimeout(cb, 1);
           });
-        }
-      }, callback);
+        }, callback);
+      });
     });
   },
   uploadPicture: function(path, callback) {
@@ -2407,7 +2455,7 @@ module.exports = {
         }
         folder._id = res.id;
         folder._rev = res.rev;
-        return this.db.put(folder, callback);
+        return _this.db.put(folder, callback);
       });
     });
   }
@@ -2437,8 +2485,8 @@ module.exports = ReplicatorConfig = (function(_super) {
       syncContacts: app.locale === 'digidisk',
       syncImages: true,
       syncOnWifi: true,
-      cozyURL: t('None'),
-      deviceName: t('None')
+      cozyURL: '',
+      deviceName: ''
     };
   };
 
@@ -2615,7 +2663,7 @@ module.exports = function(db, contactsDB, callback) {
 });
 
 ;require.register("router", function(exports, require, module) {
-var ConfigView, FolderCollection, FolderView, LoginView, Router, app, _ref,
+var ConfigView, DeviceNamePickerView, FirstSyncView, FolderCollection, FolderView, LoginView, Router, app, _ref,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -2624,6 +2672,10 @@ app = require('application');
 FolderView = require('./views/folder');
 
 LoginView = require('./views/login');
+
+DeviceNamePickerView = require('./views/device_name_picker');
+
+FirstSyncView = require('./views/first_sync');
 
 ConfigView = require('./views/config');
 
@@ -2641,6 +2693,8 @@ module.exports = Router = (function(_super) {
     'folder/*path': 'folder',
     'search/*query': 'search',
     'login': 'login',
+    'device-name-picker': 'deviceNamePicker',
+    'first-sync': 'firstSync',
     'config': 'config'
   };
 
@@ -2651,7 +2705,7 @@ module.exports = Router = (function(_super) {
     $('#btn-menu, #btn-back').show();
     if (path === null) {
       app.layout.setBackButton('#folder/', 'home');
-      app.layout.setTitle(t('home'));
+      app.layout.setTitle('Cozy');
     } else {
       parts = path.split('/');
       backpath = '#folder/' + parts.slice(0, -1).join('/');
@@ -2692,13 +2746,27 @@ module.exports = Router = (function(_super) {
   };
 
   Router.prototype.login = function() {
+    app.layout.setTitle(t('setup 1/3'));
     $('#btn-menu, #btn-back').hide();
     return this.display(new LoginView());
   };
 
+  Router.prototype.deviceNamePicker = function() {
+    app.layout.setTitle(t('setup 2/3'));
+    return this.display(new DeviceNamePickerView());
+  };
+
+  Router.prototype.firstSync = function() {
+    app.layout.setTitle(t('setup end'));
+    return this.display(new FirstSyncView());
+  };
+
   Router.prototype.config = function() {
+    var titleKey;
+
     $('#btn-back').hide();
-    app.layout.setTitle(t('config'));
+    titleKey = app.isFirstRun ? 'setup 3/3' : 'config';
+    app.layout.setTitle(t(titleKey));
     return this.display(new ConfigView());
   };
 
@@ -2759,8 +2827,8 @@ buf.push(attrs({ 'id':('wifiSyncCheck'), 'type':("checkbox"), 'checked':(syncOnW
 buf.push('/></label></div>');
 if ( firstRun)
 {
-buf.push('<div class="item"><button id="configDone" class="button button-block button-calm">');
-var __val__ = t('config done')
+buf.push('<div class="item"><button id="configDone" class="button button-block button-balanced">');
+var __val__ = t('next')
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</button></div>');
 }
@@ -2782,10 +2850,10 @@ buf.push('</div><div class="item">');
 var __val__ = t('app name') + ' v0.0.5'
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</div><div class="item item-divider">');
-var __val__ = t('reset')
+var __val__ = t('reset title')
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</div><div style="padding-left: 95px; white-space: normal;" class="item item-button-left"><button id="redbtn" class="button button-assertive">');
-var __val__ = t('reset')
+var __val__ = t('reset action')
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</button>');
 var __val__ = t('reset warning')
@@ -2793,6 +2861,50 @@ buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</div>');
 }
 buf.push('</div>');
+}
+return buf.join("");
+};
+});
+
+;require.register("templates/device_name_picker", function(exports, require, module) {
+module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
+attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
+var buf = [];
+with (locals || {}) {
+var interp;
+buf.push('<div id="deviceNamePicker" class="list"><div class="card"><div class="item item-text-wrap">');
+var __val__ = t('device name explanation')
+buf.push(escape(null == __val__ ? "" : __val__));
+buf.push('</div></div><div class="card"><label class="item item-input item-stacked-label"><span class="input-label">');
+var __val__ = t('device name')
+buf.push(escape(null == __val__ ? "" : __val__));
+buf.push('</span><input');
+buf.push(attrs({ 'id':('input-device'), 'type':("text"), 'placeholder':("" + (t('device name placeholder')) + "") }, {"type":true,"placeholder":true}));
+buf.push('/></label></div><div class="button-bar item-input"><button id="btn-back" class="button button-dark icon-left ion-chevron-left button-clear">');
+var __val__ = t('back')
+buf.push(escape(null == __val__ ? "" : __val__));
+buf.push('</button><button id="btn-save" class="button button-balanced">');
+var __val__ = t('next')
+buf.push(escape(null == __val__ ? "" : __val__));
+buf.push('</button></div></div>');
+}
+return buf.join("");
+};
+});
+
+;require.register("templates/first_sync", function(exports, require, module) {
+module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
+attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
+var buf = [];
+with (locals || {}) {
+var interp;
+buf.push('<div class="list"><div id="finishSync" class="card"><div class="progress item item-text-wrap">');
+var __val__ = messageText
+buf.push(escape(null == __val__ ? "" : __val__));
+buf.push('</div></div><div class="item-input"><button id="btn-end" class="button button-block button-balanced">');
+var __val__ = buttonText
+buf.push(escape(null == __val__ ? "" : __val__));
+buf.push('</button></div></div>');
 }
 return buf.join("");
 };
@@ -2863,7 +2975,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<div id="container" class="pane"><div class="bar bar-header bar-calm"><a id="btn-menu" class="button button-icon icon ion-navicon-round"></a><a id="headerSpinner" class="button button-icon icon ion-looping"></a><h1 id="title" class="title">Digidisk</h1></div><div class="bar bar-subheader bar-calm"><h2 id="backupIndicator" class="title"></h2></div><div id="viewsPlaceholder" class="scroll-content has-header has-footer"><div class="scroll"><div class="scroll-refresher"><div class="ionic-refresher-content"><div class="icon-pulling"><i class="icon ion-arrow-down-c"></i>');
+buf.push('<div id="container" class="pane"><div id="bar-header" class="bar bar-header"><a id="btn-menu" class="button button-icon"><img src="img/menu-icon-blue.png"/></a><h1 id="title" class="title">Loading</h1><a id="headerSpinner" class="button button-icon icon ion-looping"></a></div><div class="bar bar-subheader bar-calm"><h2 id="backupIndicator" class="title"></h2></div><div id="viewsPlaceholder" class="scroll-content has-header has-footer"><div class="scroll"><div class="scroll-refresher"><div class="ionic-refresher-content"><div class="icon-pulling"><i class="icon ion-arrow-down-c"></i>');
 var __val__ = t('pull to sync')
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</div><div class="icon-refreshing"><i class="icon ion-loading-d"></i>');
@@ -2881,19 +2993,20 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<label class="item item-input"><span class="input-label">');
+buf.push('<div class="list"><div class="card"><label class="item item-input"><span class="input-label">');
 var __val__ = t('cozy url')
 buf.push(escape(null == __val__ ? "" : __val__));
-buf.push('</span><input id="input-url" type="text" placeholder="john.cozycloud.cc"/></label><label class="item item-input"><span class="input-label">');
+buf.push('</span><input');
+buf.push(attrs({ 'id':('input-url'), 'type':("text"), 'placeholder':("john.cozycloud.cc"), 'value':("" + (defaultValue.cozyURL) + "") }, {"type":true,"placeholder":true,"value":true}));
+buf.push('/></label><label class="item item-input"><span class="input-label">');
 var __val__ = t('cozy password')
 buf.push(escape(null == __val__ ? "" : __val__));
-buf.push('</span><input id="input-pass" type="password" placeholder="cozy\'s password"/></label><label class="item item-input"><span class="input-label">');
-var __val__ = t('device name')
+buf.push('</span><input');
+buf.push(attrs({ 'id':('input-pass'), 'type':("password"), 'placeholder':("" + (t('password placeholder')) + ""), 'value':("" + (defaultValue.password) + "") }, {"type":true,"placeholder":true,"value":true}));
+buf.push('/></label><button id="btn-save" class="button button-block button-balanced item">');
+var __val__ = t('next')
 buf.push(escape(null == __val__ ? "" : __val__));
-buf.push('</span><input id="input-device" type="text" placeholder="my-phone"/></label><button id="btn-save" class="button button-block button-balanced">');
-var __val__ = t('save')
-buf.push(escape(null == __val__ ? "" : __val__));
-buf.push('</button>');
+buf.push('</button></div></div>');
 }
 return buf.join("");
 };
@@ -2939,13 +3052,15 @@ module.exports = ConfigView = (function(_super) {
 
   ConfigView.prototype.template = require('../templates/config');
 
+  ConfigView.prototype.menuEnabled = true;
+
   ConfigView.prototype.events = function() {
     return {
       'tap #configDone': 'configDone',
       'tap #redbtn': 'redBtn',
-      'change #contactSyncCheck': 'saveChanges',
-      'change #imageSyncCheck': 'saveChanges',
-      'change #wifiSyncCheck': 'saveChanges'
+      'tap #contactSyncCheck': 'saveChanges',
+      'tap #imageSyncCheck': 'saveChanges',
+      'tap #wifiSyncCheck': 'saveChanges'
     };
   };
 
@@ -2973,6 +3088,208 @@ module.exports = ConfigView = (function(_super) {
   };
 
   ConfigView.prototype.configDone = function() {
+    return app.router.navigate('first-sync', {
+      trigger: true
+    });
+  };
+
+  ConfigView.prototype.redBtn = function() {
+    var _this = this;
+
+    if (confirm(t('confirm message'))) {
+      return app.replicator.destroyDB(function(err) {
+        if (err) {
+          return alert(err.message);
+        }
+        $('#redbtn').text(t('done'));
+        return window.location.reload(true);
+      });
+    }
+  };
+
+  ConfigView.prototype.saveChanges = function() {
+    var _this = this;
+
+    this.$('#contactSyncCheck, #imageSyncCheck, #wifiSyncCheck').prop('disabled', true);
+    return app.replicator.config.save({
+      syncContacts: this.$('#contactSyncCheck').is(':checked'),
+      syncImages: this.$('#imageSyncCheck').is(':checked'),
+      syncOnWifi: this.$('#wifiSyncCheck').is(':checked')
+    }, function() {
+      return _this.$('#contactSyncCheck, #imageSyncCheck, #wifiSyncCheck').prop('disabled', false);
+    });
+  };
+
+  return ConfigView;
+
+})(BaseView);
+
+});
+
+;require.register("views/device_name_picker", function(exports, require, module) {
+var BaseView, DeviceNamePickerView, _ref,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+BaseView = require('../lib/base_view');
+
+module.exports = DeviceNamePickerView = (function(_super) {
+  __extends(DeviceNamePickerView, _super);
+
+  function DeviceNamePickerView() {
+    _ref = DeviceNamePickerView.__super__.constructor.apply(this, arguments);
+    return _ref;
+  }
+
+  DeviceNamePickerView.prototype.className = 'list';
+
+  DeviceNamePickerView.prototype.template = require('../templates/device_name_picker');
+
+  DeviceNamePickerView.prototype.events = function() {
+    return {
+      'click #btn-save': 'doSave',
+      'click #btn-back': 'doBack',
+      'keypress #input-device': 'blurIfEnter'
+    };
+  };
+
+  DeviceNamePickerView.prototype.doBack = function() {
+    return app.router.navigate('login', {
+      trigger: true
+    });
+  };
+
+  DeviceNamePickerView.prototype.blurIfEnter = function(e) {
+    if (e.keyCode === 13) {
+      return this.$('#input-device').blur();
+    }
+  };
+
+  DeviceNamePickerView.prototype.doSave = function() {
+    var config, device,
+      _this = this;
+
+    if (this.saving) {
+      return null;
+    }
+    this.saving = $('#btn-save').text();
+    if (this.error) {
+      this.error.remove();
+    }
+    device = this.$('#input-device').val();
+    if (!device) {
+      return this.displayError('all fields are required');
+    }
+    config = app.loginConfig;
+    config.deviceName = device;
+    $('#btn-save').text(t('registering...'));
+    return app.replicator.registerRemote(config, function(err) {
+      var noop;
+
+      if (err != null) {
+        return _this.displayError(err.message);
+      } else {
+        delete app.loginConfig;
+        app.isFirstRun = true;
+        console.log('starting first replication');
+        noop = function() {};
+        app.replicator.initialReplication(noop);
+        return app.router.navigate('config', {
+          trigger: true
+        });
+      }
+    });
+  };
+
+  DeviceNamePickerView.prototype.displayError = function(text, field) {
+    $('#btn-save').text(this.saving);
+    this.saving = false;
+    if (this.error) {
+      this.error.remove();
+    }
+    if (~text.indexOf('CORS request rejected')) {
+      text = t('connection failure');
+    }
+    this.error = $('<div>').addClass('button button-full button-energized');
+    this.error.text(text);
+    return this.$(field || 'label').after(this.error);
+  };
+
+  return DeviceNamePickerView;
+
+})(BaseView);
+
+});
+
+;require.register("views/first_sync", function(exports, require, module) {
+var BaseView, FirstSyncView, _ref,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+BaseView = require('../lib/base_view');
+
+module.exports = FirstSyncView = (function(_super) {
+  __extends(FirstSyncView, _super);
+
+  function FirstSyncView() {
+    _ref = FirstSyncView.__super__.constructor.apply(this, arguments);
+    return _ref;
+  }
+
+  FirstSyncView.prototype.className = 'list';
+
+  FirstSyncView.prototype.template = require('../templates/first_sync');
+
+  FirstSyncView.prototype.events = function() {
+    return {
+      'tap #btn-end': 'end'
+    };
+  };
+
+  FirstSyncView.prototype.getRenderData = function() {
+    var buttonText, messageText, percent;
+
+    percent = app.replicator.get('initialReplicationRunning') || 0;
+    if (percent && percent === 1) {
+      messageText = t('ready message');
+      buttonText = t('end');
+    } else {
+      messageText = t('wait message', {
+        progress: parseInt(percent * 100)
+      });
+      buttonText = t('waiting...');
+    }
+    return {
+      messageText: messageText,
+      buttonText: buttonText
+    };
+  };
+
+  FirstSyncView.prototype.initialize = function() {
+    return this.listenTo(app.replicator, 'change:initialReplicationRunning', this.onChange);
+  };
+
+  FirstSyncView.prototype.onChange = function(replicator) {
+    var percent;
+
+    percent = replicator.get('initialReplicationRunning');
+    percent = parseInt(percent * 100);
+    this.$('#finishSync .progress').text(t('wait message', {
+      progress: percent
+    }));
+    if (percent >= 100) {
+      return this.render();
+    }
+  };
+
+  FirstSyncView.prototype.end = function() {
+    var percent;
+
+    percent = parseInt(app.replicator.get('initialReplicationRunning'));
+    console.log("end " + percent);
+    if (percent !== 1) {
+      return;
+    }
     app.replicator.backup(function(err) {
       if (err) {
         alert(err);
@@ -2985,32 +3302,7 @@ module.exports = ConfigView = (function(_super) {
     });
   };
 
-  ConfigView.prototype.redBtn = function() {
-    var _this = this;
-
-    if (confirm(t("Are you sure ?"))) {
-      return app.replicator.destroyDB(function(err) {
-        if (err) {
-          return alert(err.message);
-        }
-        $('#redbtn').text(t('done'));
-        return window.location.reload(true);
-      });
-    }
-  };
-
-  ConfigView.prototype.saveChanges = function(e) {
-    this.$('#contactSyncCheck, #imageSyncCheck, #wifiSyncCheck').prop('disabled', true);
-    return app.replicator.config.save({
-      syncContacts: this.$('#contactSyncCheck').is(':checked'),
-      syncImages: this.$('#imageSyncCheck').is(':checked'),
-      syncOnWifi: this.$('#wifiSyncCheck').is(':checked')
-    }, function() {
-      return this.$('#contactSyncCheck, #imageSyncCheck, #wifiSyncCheck').prop('disabled', false);
-    });
-  };
-
-  return ConfigView;
+  return FirstSyncView;
 
 })(BaseView);
 
@@ -3038,6 +3330,10 @@ module.exports = FolderView = (function(_super) {
   FolderView.prototype.className = 'list';
 
   FolderView.prototype.itemview = require('./folder_line');
+
+  FolderView.prototype.pullToRefreshEnabled = true;
+
+  FolderView.prototype.menuEnabled = true;
 
   FolderView.prototype.events = function() {
     return {
@@ -3375,16 +3671,16 @@ module.exports = Layout = (function(_super) {
       var step, text;
 
       step = app.replicator.get('backup_step');
-      if (step) {
+      if (step && (step !== 'pictures_scan' && step !== 'contacts_scan')) {
         text = t(step);
         if (app.replicator.get('backup_step_done')) {
           text += ": " + (app.replicator.get('backup_step_done'));
           text += "/" + (app.replicator.get('backup_step_total'));
         }
-        _this.backupIndicator.text(text).parent().show();
+        _this.backupIndicator.text(text).parent().slideDown();
         return _this.viewsPlaceholder.addClass('has-subheader');
       } else {
-        _this.backupIndicator.parent().hide();
+        _this.backupIndicator.parent().slideUp();
         return _this.viewsPlaceholder.removeClass('has-subheader');
       }
     }, 100));
@@ -3440,6 +3736,7 @@ module.exports = Layout = (function(_super) {
 
   Layout.prototype.togglePullToRefresh = function(activated) {
     this.refresher.toggle(activated);
+    this.ionicScroll.options.bouncing = activated;
     return this.ionicScroll.__refreshHeight = activated ? 50 : null;
   };
 
@@ -3458,13 +3755,15 @@ module.exports = Layout = (function(_super) {
   };
 
   Layout.prototype.transitionTo = function(view) {
-    var $next, currClass, nextClass, ptrEnabled, transitionend, type, _ref1,
+    var $next, currClass, menuEnabled, nextClass, ptrEnabled, transitionend, type, _ref1,
       _this = this;
 
     this.closeMenu();
     $next = view.render().$el;
-    ptrEnabled = view instanceof FolderView;
+    ptrEnabled = (view.pullToRefreshEnabled != null) && view.pullToRefreshEnabled;
     this.togglePullToRefresh(ptrEnabled);
+    menuEnabled = (view.menuEnabled != null) && view.menuEnabled;
+    this.ionicMenu.setIsEnabled(menuEnabled);
     if (this.currentView instanceof FolderView && view instanceof FolderView) {
       type = this.currentView.isParentOf(view) ? 'left' : 'right';
     } else {
@@ -3543,8 +3842,20 @@ module.exports = LoginView = (function(_super) {
     };
   };
 
+  LoginView.prototype.getRenderData = function() {
+    var defaultValue;
+
+    defaultValue = app.loginConfig || {
+      cozyURL: '',
+      password: ''
+    };
+    return {
+      defaultValue: defaultValue
+    };
+  };
+
   LoginView.prototype.doSave = function() {
-    var config, device, pass, url,
+    var config, pass, url,
       _this = this;
 
     if (this.saving) {
@@ -3556,8 +3867,7 @@ module.exports = LoginView = (function(_super) {
     }
     url = this.$('#input-url').val();
     pass = this.$('#input-pass').val();
-    device = this.$('#input-device').val();
-    if (!(url && pass && device)) {
+    if (!(url && pass)) {
       return this.displayError('all fields are required');
     }
     if (url.slice(0, 4) === 'http') {
@@ -3569,32 +3879,19 @@ module.exports = LoginView = (function(_super) {
     }
     config = {
       cozyURL: url,
-      password: pass,
-      deviceName: device
+      password: pass
     };
-    $('#btn-save').text(t('registering'));
-    return app.replicator.registerRemote(config, function(err) {
-      var onProgress;
-
-      if (err) {
-        return _this.displayError(t(err.message));
-      }
-      onProgress = function(percent) {
-        return $('#btn-save').text(t('downloading hierarchy') + parseInt(percent * 100) + '%');
-      };
-      return app.replicator.initialReplication(onProgress, function(err) {
-        if (err) {
-          console.log(err.stack);
-        }
-        if (err) {
-          return _this.displayError(t(err.message));
-        }
-        $('#footer').text(t('replication complete'));
-        app.isFirstRun = true;
-        return app.router.navigate('config', {
+    $('#btn-save').text(t('authenticating...'));
+    return app.replicator.checkCredentials(config, function(error) {
+      if (error != null) {
+        return _this.displayError(error);
+      } else {
+        app.loginConfig = config;
+        console.log('check credentials done');
+        return app.router.navigate('device-name-picker', {
           trigger: true
         });
-      });
+      }
     });
   };
 
@@ -3605,7 +3902,7 @@ module.exports = LoginView = (function(_super) {
       this.error.remove();
     }
     if (~text.indexOf('CORS request rejected')) {
-      text = 'Connection faillure';
+      text = t('connection failure');
     }
     this.error = $('<div>').addClass('button button-full button-energized');
     this.error.text(text);
