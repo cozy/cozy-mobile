@@ -30,15 +30,15 @@ module.exports = class Layout extends BaseView
         OpEvents = 'change:inBackup change:backup_step change:backup_step_done'
         @listenTo app.replicator, OpEvents, _.debounce =>
             step = app.replicator.get 'backup_step'
-            if step
+            if step and step not in ['pictures_scan', 'contacts_scan']
                 text = t step
                 if app.replicator.get 'backup_step_done'
                     text += ": #{app.replicator.get 'backup_step_done'}"
                     text += "/#{app.replicator.get 'backup_step_total'}"
-                @backupIndicator.text(text).parent().show()
+                @backupIndicator.text(text).parent().slideDown()
                 @viewsPlaceholder.addClass 'has-subheader'
             else
-                @backupIndicator.parent().hide()
+                @backupIndicator.parent().slideUp()
                 @viewsPlaceholder.removeClass 'has-subheader'
 
         , 100
@@ -93,6 +93,7 @@ module.exports = class Layout extends BaseView
     togglePullToRefresh: (activated) =>
         #@TODO, make sure this isnt called while PTR visible
         @refresher.toggle activated
+        @ionicScroll.options.bouncing = activated
         @ionicScroll.__refreshHeight = if activated then 50 else null
 
     closeMenu: =>
@@ -110,9 +111,13 @@ module.exports = class Layout extends BaseView
         @closeMenu()
         $next = view.render().$el
 
-        # prevent PTR on config
-        ptrEnabled = view instanceof FolderView
+        # prevent PTR on config & login
+        ptrEnabled = view.pullToRefreshEnabled? and view.pullToRefreshEnabled
         @togglePullToRefresh ptrEnabled
+
+        # prevent menu on login
+        menuEnabled = view.menuEnabled? and view.menuEnabled
+        @ionicMenu.setIsEnabled menuEnabled
 
         if @currentView instanceof FolderView and view instanceof FolderView
             type = if @currentView.isParentOf(view) then 'left' else 'right'

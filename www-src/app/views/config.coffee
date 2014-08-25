@@ -4,6 +4,8 @@ module.exports = class ConfigView extends BaseView
 
     template: require '../templates/config'
 
+    menuEnabled: true
+
     events: ->
         'tap #configDone': 'configDone'
         'tap #redbtn': 'redBtn'
