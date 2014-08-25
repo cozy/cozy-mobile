@@ -31,7 +31,13 @@ module.exports = class ViewCollection extends BaseView
 
     # can be overriden if we want to place the subviews somewhere else
     appendView: (view) ->
-        @$collectionEl.append view.el
+        idx = @collection.indexOf view.model
+        modelAfter = @collection.at idx + 1
+        return @$collectionEl.append(view.el) unless modelAfter
+
+        viewAfter = @views[modelAfter.cid]
+        if viewAfter then viewAfter.$el.before view.el
+        else @$collectionEl.append(view.el)
 
     # bind listeners to the collection
     initialize: ->
