@@ -28,13 +28,13 @@ module.exports =
 
             @replicator = new Replicator()
             @layout = new LayoutView()
-            $('body').empty().append @layout.render().$el
 
             @replicator.init (err, config) =>
                 if err
                     console.log err, err.stack
                     return alert err.message or err
 
+                $('body').empty().append @layout.render().$el
                 Backbone.history.start()
 
                 if config.remote
