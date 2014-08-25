@@ -1,8 +1,8 @@
 module.exports =
     "app name"            : "Cozy mobile"
-    "cozy url"            : "Addresse Cozy"
-    "cozy password"       : "Mot de Passe"
-    "device name"         : "Nom du périphérique"
+    "cozy url"            : "Adresse Cozy"
+    "cozy password"       : "Mot de passe"
+    "device name"         : "Nom de l'appareil"
     "search"              : "Recherche"
     "config"              : "Configuration"
     "never"               : "Jamais"
@@ -26,7 +26,7 @@ module.exports =
     "this folder is empty": "Ce dossier est vide."
     "no results"          : "Pas de résultats"
     "loading"             : "Chargement"
-    "remove local"        : "Supprimer du tel"
+    "remove local"        : "Supprimer du tél."
     "download"            : "Télécharger"
     "sync"                : "Rafraîchir"
     "backup"              : "Sauvegarder"
@@ -75,4 +75,3 @@ module.exports =
     "ready message"         : "L'application est prête à être utilisée !"
     "waiting..."            : "En attente..."
     "end"                   : "Fin"
-
