@@ -8,9 +8,13 @@ module.exports = class DeviceNamePickerView extends BaseView
     events: ->
         'click #btn-save': 'doSave'
         'click #btn-back': 'doBack'
+        'keypress #input-device': 'blurIfEnter'
 
     doBack: ->
         app.router.navigate 'login', trigger: true
+
+    blurIfEnter: (e) ->
+        @$('#input-device').blur() if e.keyCode is 13
 
     doSave: ->
         return null if @saving
