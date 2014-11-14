@@ -16,6 +16,7 @@ PathToBinaryDesignDoc =
                 if doc.docType?.toLowerCase() is 'file'
                     emit doc.path + '/' + doc.name, doc.binary?.file?.id
 
+
 FilesAndFolderDesignDoc =
     _id: '_design/FilesAndFolder'
     version: 1
@@ -23,7 +24,7 @@ FilesAndFolderDesignDoc =
         'FilesAndFolder':
             map: Object.toString.apply (doc) ->
                 if doc.docType?.toLowerCase() in ['file', 'folder']
-                    emit doc.path
+                    emit [doc.path, doc.name.toLowerCase()]
 
 LocalPathDesignDoc =
     _id: '_design/LocalPath'
