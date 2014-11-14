@@ -9,6 +9,7 @@ module.exports = class ConfigView extends BaseView
     events: ->
         'tap #configDone': 'configDone'
         'tap #redbtn': 'redBtn'
+        'tap #synchrobtn': 'synchroBtn'
         'tap #contactSyncCheck': 'saveChanges'
         'tap #imageSyncCheck': 'saveChanges'
         'tap #wifiSyncCheck': 'saveChanges'
@@ -44,6 +45,15 @@ module.exports = class ConfigView extends BaseView
                 return alert err.message if err
                 $('#redbtn').text t 'done'
                 window.location.reload(true);
+
+    # confirm, destroy the DB, force refresh the page (show login form)
+    synchroBtn: ->
+        if confirm t 'confirm message'
+            #@TODO delete device on remote ?
+            app.replicator.resetSynchro (err) =>
+                return alert err.message if err
+                app.router.navigate 'first-sync', trigger: true
+
 
     # save config changes in local pouchdb
     # prevent simultaneous changes by disabling checkboxes
