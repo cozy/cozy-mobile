@@ -4,6 +4,7 @@ makeDesignDocs = require './replicator_mapreduce'
 ReplicatorConfig = require './replicator_config'
 DBNAME = "cozy-files.db"
 DBCONTACTS = "cozy-contacts.db"
+DBPHOTOS = "cozy-photos.db"
 DBOPTIONS = if window.isBrowserDebugging then {} else adapter: 'websql'
 
 #Replicator extends Model to watch/set inBackup, inSync
@@ -40,7 +41,8 @@ module.exports = class Replicator extends Backbone.Model
             @cache = cache
             @db = new PouchDB DBNAME, DBOPTIONS
             @contactsDB = new PouchDB DBCONTACTS, DBOPTIONS
-            makeDesignDocs @db, @contactsDB, (err) =>
+            @photosDB = new PouchDB DBPHOTOS, DBOPTIONS
+            makeDesignDocs @db, @contactsDB, @photosDB, (err) =>
                 return callback err if err
                 @config = new ReplicatorConfig(this)
                 @config.fetch callback

@@ -43,11 +43,31 @@ ContactsByLocalIdDesignDoc =
                 if doc.docType?.toLowerCase() is 'contact' and doc.localId
                     emit doc.localId, [doc.localVersion, doc._rev]
 
-module.exports = (db, contactsDB, callback) ->
+PhotosByLocalIdDesignDoc =
+    _id: '_design/PhotosByLocalId'
+    version: 1
+    views:
+        'PhotosByLocalId':
+            map: Object.toString.apply (doc) ->
+                if doc.docType?.toLowerCase() is 'photo'
+                    emit doc.localId
+
+DevicesByLocalIdDesignDoc =
+    _id: '_design/DevicesByLocalId'
+    version: 2
+    views:
+        'DevicesByLocalId':
+            map: Object.toString.apply (doc) ->
+                if doc.docType?.toLowerCase() is 'device'
+                    emit doc.localId, doc
+
+module.exports = (db, contactsDB, photosDB, callback) ->
 
     async.series [
         (cb) -> createOrUpdateDesign db, FilesAndFolderDesignDoc, cb
         (cb) -> createOrUpdateDesign db, LocalPathDesignDoc, cb
         (cb) -> createOrUpdateDesign db, PathToBinaryDesignDoc, cb
         (cb) -> createOrUpdateDesign contactsDB, ContactsByLocalIdDesignDoc, cb
+        (cb) -> createOrUpdateDesign photosDB, PhotosByLocalIdDesignDoc, cb
+        (cb) -> createOrUpdateDesign photosDB, DevicesByLocalIdDesignDoc, cb
     ], callback

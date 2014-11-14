@@ -1582,7 +1582,7 @@ __chromeSafe = function() {
 });
 
 require.register("replicator/main", function(exports, require, module) {
-var DBCONTACTS, DBNAME, DBOPTIONS, Replicator, ReplicatorConfig, fs, makeDesignDocs, request,
+var DBCONTACTS, DBNAME, DBOPTIONS, DBPHOTOS, Replicator, ReplicatorConfig, fs, makeDesignDocs, request,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
@@ -1599,6 +1599,8 @@ ReplicatorConfig = require('./replicator_config');
 DBNAME = "cozy-files.db";
 
 DBCONTACTS = "cozy-contacts.db";
+
+DBPHOTOS = "cozy-photos.db";
 
 DBOPTIONS = window.isBrowserDebugging ? {} : {
   adapter: 'websql'
@@ -1666,7 +1668,8 @@ module.exports = Replicator = (function(_super) {
         _this.cache = cache;
         _this.db = new PouchDB(DBNAME, DBOPTIONS);
         _this.contactsDB = new PouchDB(DBCONTACTS, DBOPTIONS);
-        return makeDesignDocs(_this.db, _this.contactsDB, function(err) {
+        _this.photosDB = new PouchDB(DBPHOTOS, DBOPTIONS);
+        return makeDesignDocs(_this.db, _this.contactsDB, _this.photosDB, function(err) {
           if (err) {
             return callback(err);
           }
@@ -2252,16 +2255,16 @@ module.exports = {
     return async.series([
       this.ensureDeviceFolder.bind(this), ImagesBrowser.getImagesList, (function(_this) {
         return function(cb) {
-          return _this.db.query('LocalPath', {}, cb);
+          return _this.photosDB.query('PhotosByLocalId', {}, cb);
         };
       })(this)
     ], (function(_this) {
       return function(err, results) {
-        var dbImages, images, myDownloadFolder, toUpload, _, _ref;
+        var dbImages, device, images, myDownloadFolder, toUpload, _ref;
         if (err) {
           return callback(err);
         }
-        _ = results[0], images = results[1], (_ref = results[2], dbImages = _ref.rows);
+        device = results[0], images = results[1], (_ref = results[2], dbImages = _ref.rows);
         console.log("SYNC IMAGES : " + images.length + " " + dbImages.length);
         dbImages = dbImages.map(function(row) {
           return row.key;
@@ -2269,7 +2272,7 @@ module.exports = {
         myDownloadFolder = _this.downloads.toURL().replace('file://', '');
         toUpload = [];
         return async.eachSeries(images, function(path, cb) {
-          if (!(__indexOf.call(dbImages, path) >= 0 || __indexOf.call(path, myDownloadFolder) >= 0)) {
+          if (__indexOf.call(dbImages, path) < 0) {
             toUpload.push(path);
           }
           return setTimeout(cb, 1);
@@ -2281,7 +2284,7 @@ module.exports = {
           return async.eachSeries(toUpload, function(path, cb) {
             _this.set('backup_step_done', processed++);
             console.log("UPLOADING " + path);
-            return _this.uploadPicture(path, function(err) {
+            return _this.uploadPicture(path, device, function(err) {
               if (err) {
                 console.log("ERROR " + path + " " + err);
               }
@@ -2292,7 +2295,7 @@ module.exports = {
       };
     })(this));
   },
-  uploadPicture: function(path, callback) {
+  uploadPicture: function(path, device, callback) {
     return fs.getFileFromPath(path, (function(_this) {
       return function(err, file) {
         if (err) {
@@ -2306,7 +2309,12 @@ module.exports = {
             if (err) {
               return callback(err);
             }
-            return _this.createFile(file, path, bin, callback);
+            return _this.createFile(file, path, bin, device, function(err, res) {
+              if (err) {
+                return callback(err);
+              }
+              return _this.createPhoto(path, callback);
+            });
           });
         });
       };
@@ -2336,13 +2344,13 @@ module.exports = {
       };
     })(this));
   },
-  createFile: function(cordovaFile, localPath, binaryDoc, callback) {
+  createFile: function(cordovaFile, localPath, binaryDoc, device, callback) {
     var dbFile;
     dbFile = {
       docType: 'File',
       localPath: localPath,
       name: cordovaFile.name,
-      path: '/' + this.config.get('deviceName'),
+      path: device.path + '/' + device.name,
       "class": this.fileClassFromMime(cordovaFile.type),
       lastModification: new Date(cordovaFile.lastModified).toISOString(),
       creationDate: new Date(cordovaFile.lastModified).toISOString(),
@@ -2355,19 +2363,15 @@ module.exports = {
         }
       }
     };
-    return this.config.remote.post(dbFile, (function(_this) {
-      return function(err, created) {
-        if (err) {
-          return callback(err);
-        }
-        if (!created.ok) {
-          return callback(new Error('cant create file'));
-        }
-        dbFile._id = created.id;
-        dbFile._rev = created.rev;
-        return _this.db.put(dbFile, callback);
-      };
-    })(this));
+    return this.config.remote.post(dbFile, callback);
+  },
+  createPhoto: function(localPath, callback) {
+    var dbPhoto;
+    dbPhoto = {
+      docType: 'Photo',
+      localId: localPath
+    };
+    return this.photosDB.post(dbPhoto, callback);
   },
   fileClassFromMime: function(type) {
     switch (type.split('/')[0]) {
@@ -2385,43 +2389,55 @@ module.exports = {
     }
   },
   ensureDeviceFolder: function(callback) {
-    var options;
-    options = {
-      key: ['', this.config.get('deviceName')],
-      include_docs: true
-    };
-    return this.db.query('FilesAndFolder', options, (function(_this) {
-      return function(err, results) {
-        var deviceName, exists, folder;
-        if (err) {
-          return callback(err);
-        }
-        deviceName = _this.config.get('deviceName');
-        exists = results.rows.some(function(row) {
-          var _ref;
-          return row.doc.name === deviceName && ((_ref = row.doc.docType) != null ? _ref.toLowerCase() : void 0) === 'folder';
-        });
-        console.log("DEVICE FOLDER EXISTS " + exists);
-        if (exists) {
-          return callback(null);
-        }
+    var createNew;
+    createNew = (function(_this) {
+      return function() {
+        var folder;
         console.log("MAKING ONE");
         folder = {
           docType: 'Folder',
-          name: deviceName,
+          name: _this.config.get('deviceName'),
           path: '',
           lastModification: new Date().toISOString(),
           creationDate: new Date().toISOString(),
           tags: []
         };
         return _this.config.remote.post(folder, function(err, res) {
-          if (err) {
-            return callback(err);
-          }
-          folder._id = res.id;
-          folder._rev = res.rev;
-          return _this.db.put(folder, callback);
+          var dbDevice;
+          dbDevice = {
+            docType: 'Device',
+            localId: res.id
+          };
+          return _this.photosDB.post(dbDevice, function(err, res) {
+            if (err) {
+              return callback(err);
+            }
+            return callback(null, folder);
+          });
         });
+      };
+    })(this);
+    return this.photosDB.query('DevicesByLocalId', {}, (function(_this) {
+      return function(err, results) {
+        var device;
+        if (err) {
+          return callback(err);
+        }
+        if (results.rows.length > 0) {
+          device = results.rows[0];
+          return _this.db.get(device.key, function(err, res) {
+            if (err != null) {
+              createNew();
+              return this.photosDB.remove(device.value);
+            } else {
+              console.log("DEVICE FOLDER EXISTS");
+              console.log(res);
+              return callback(null, res);
+            }
+          });
+        } else {
+          return createNew();
+        }
       };
     })(this));
   }
@@ -2527,7 +2543,7 @@ module.exports = ReplicatorConfig = (function(_super) {
 });
 
 require.register("replicator/replicator_mapreduce", function(exports, require, module) {
-var ContactsByLocalIdDesignDoc, FilesAndFolderDesignDoc, LocalPathDesignDoc, PathToBinaryDesignDoc, createOrUpdateDesign;
+var ContactsByLocalIdDesignDoc, DevicesByLocalIdDesignDoc, FilesAndFolderDesignDoc, LocalPathDesignDoc, PathToBinaryDesignDoc, PhotosByLocalIdDesignDoc, createOrUpdateDesign;
 
 createOrUpdateDesign = function(db, design, callback) {
   return db.get(design._id, (function(_this) {
@@ -2604,7 +2620,37 @@ ContactsByLocalIdDesignDoc = {
   }
 };
 
-module.exports = function(db, contactsDB, callback) {
+PhotosByLocalIdDesignDoc = {
+  _id: '_design/PhotosByLocalId',
+  version: 1,
+  views: {
+    'PhotosByLocalId': {
+      map: Object.toString.apply(function(doc) {
+        var _ref;
+        if (((_ref = doc.docType) != null ? _ref.toLowerCase() : void 0) === 'photo') {
+          return emit(doc.localId);
+        }
+      })
+    }
+  }
+};
+
+DevicesByLocalIdDesignDoc = {
+  _id: '_design/DevicesByLocalId',
+  version: 2,
+  views: {
+    'DevicesByLocalId': {
+      map: Object.toString.apply(function(doc) {
+        var _ref;
+        if (((_ref = doc.docType) != null ? _ref.toLowerCase() : void 0) === 'device') {
+          return emit(doc.localId, doc);
+        }
+      })
+    }
+  }
+};
+
+module.exports = function(db, contactsDB, photosDB, callback) {
   return async.series([
     function(cb) {
       return createOrUpdateDesign(db, FilesAndFolderDesignDoc, cb);
@@ -2614,6 +2660,10 @@ module.exports = function(db, contactsDB, callback) {
       return createOrUpdateDesign(db, PathToBinaryDesignDoc, cb);
     }, function(cb) {
       return createOrUpdateDesign(contactsDB, ContactsByLocalIdDesignDoc, cb);
+    }, function(cb) {
+      return createOrUpdateDesign(photosDB, PhotosByLocalIdDesignDoc, cb);
+    }, function(cb) {
+      return createOrUpdateDesign(photosDB, DevicesByLocalIdDesignDoc, cb);
     }
   ], callback);
 };
