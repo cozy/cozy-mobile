@@ -230,7 +230,7 @@ module.exports =
     ensureDeviceFolder: (callback) ->
 
         options =
-            key: ''
+            key: ['', @config.get 'deviceName']
             include_docs: true
 
         @db.query 'FilesAndFolder', options, (err, results) =>
