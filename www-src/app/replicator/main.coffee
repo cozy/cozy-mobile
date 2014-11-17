@@ -122,13 +122,13 @@ module.exports = class Replicator extends Backbone.Model
                     callback null
 
     initialReplication: (callback) ->
-        @set 'initialReplicationRunning', 0
+        @set 'initialReplicationRunning', -2
         async.series [
             # Force checkpoint to 0
             (cb) => @config.save checkpointed: 0, cb
-            (cb) => @set('initialReplicationRunning', 1/10) and cb null
+            (cb) => @set('initialReplicationRunning', -1/10) and cb null
             # First sync
-            (cb) => @_sync cb, true
+            (cb) => @sync cb, true
             (cb) => @set('initialReplicationRunning', 9/10) and cb null
             # build the initial state of FilesAndFolder view index
             (cb) => @db.query 'FilesAndFolder', {}, cb
@@ -233,11 +233,11 @@ module.exports = class Replicator extends Backbone.Model
             , callback
 
     # wrapper around _sync to maintain the state of inSync
-    sync: (callback) ->
+    sync: (callback, force=false) ->
         return callback null if @get 'inSync'
         console.log "SYNC CALLED"
         @set 'inSync', true
-        @_sync (err) =>
+        @_sync force, (err) =>
             @set 'inSync', false
             callback err
 
@@ -246,7 +246,7 @@ module.exports = class Replicator extends Backbone.Model
     #    * first replication
     #    * replication at each start
     #    * replication force byu user
-    _sync: (callback, force=false) ->
+    _sync: (force, callback) ->
         console.log "BEGIN SYNC"
         total_count = 0
         @liveReplication?.cancel()
@@ -275,7 +275,7 @@ module.exports = class Replicator extends Backbone.Model
             if force
                 @db.info (err, info) =>
                     console.log "LOCAL DOCUMENTS : #{info.doc_count - 4} / #{total_count}"
-                    progress = 1 / 10 + (4 / 5) * ((info.doc_count - 4) / total_count)
+                    progress = (9 / 10) * ((info.doc_count - 4) / total_count)
                     @set('initialReplicationRunning', progress)
 
         replication.once 'error', (err) ->

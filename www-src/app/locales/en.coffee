@@ -73,7 +73,10 @@ module.exports =
 
     # -- end of setup
     "setup end"             : "End of setting"
-    "wait message"          : "Please wait while the tree is being downloaded...%{progress}%"
+    "wait message device"   : "Device configuration..."
+    "wait message cozy"     : "Browser files stored in your cozy ..."
+    "wait message"          : "Please wait while the tree is being downloaded. It can take several minutes...%{progress}%"
+    "wait message display"  : "Files preparation..."
     "ready message"         : "The application is ready to be used!"
     "waiting..."            : "Waiting..."
     "end"                   : "End"

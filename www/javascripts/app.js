@@ -1167,7 +1167,10 @@ module.exports = {
   "registering...": "Registering...",
   "setup 3/3": "Setup 3/3",
   "setup end": "End of setting",
-  "wait message": "Please wait while the tree is being downloaded...%{progress}%",
+  "wait message device": "Device configuration...",
+  "wait message cozy": "Browser files stored in your cozy ...",
+  "wait message": "Please wait while the tree is being downloaded. It can take several minutes...%{progress}%",
+  "wait message display": "Files preparation...",
   "ready message": "The application is ready to be used!",
   "waiting...": "Waiting...",
   "end": "End"
@@ -1230,7 +1233,10 @@ module.exports = {
   "registering...": "Enregistrement...",
   "setup 3/3": "Configuration 3/3",
   "setup end": "Fin de la configuration",
-  "wait message": "Merci d'attendre pendant le téléchargement de l'arborescence...%{progress}%",
+  "wait message device": "Enregistrement du device...",
+  "wait message cozy": "Parcours des fichiers présents dans votre cozy ...",
+  "wait message": "Merci d'attendre pendant le téléchargement de l'arborescence.\nCela peut prendre plusieurs minutes...\n           %{progress}%",
+  "wait message display": "Préparation des fichiers...",
   "ready message": "L'application est prête à être utilisée !",
   "waiting...": "En attente...",
   "end": "Fin"
@@ -1779,7 +1785,7 @@ module.exports = Replicator = (function(_super) {
   };
 
   Replicator.prototype.initialReplication = function(callback) {
-    this.set('initialReplicationRunning', 0);
+    this.set('initialReplicationRunning', -2);
     return async.series([
       (function(_this) {
         return function(cb) {
@@ -1789,11 +1795,11 @@ module.exports = Replicator = (function(_super) {
         };
       })(this), (function(_this) {
         return function(cb) {
-          return _this.set('initialReplicationRunning', 1 / 10) && cb(null);
+          return _this.set('initialReplicationRunning', -1 / 10) && cb(null);
         };
       })(this), (function(_this) {
         return function(cb) {
-          return _this._sync(cb, true);
+          return _this.sync(cb, true);
         };
       })(this), (function(_this) {
         return function(cb) {
@@ -1961,13 +1967,16 @@ module.exports = Replicator = (function(_super) {
     })(this));
   };
 
-  Replicator.prototype.sync = function(callback) {
+  Replicator.prototype.sync = function(callback, force) {
+    if (force == null) {
+      force = false;
+    }
     if (this.get('inSync')) {
       return callback(null);
     }
     console.log("SYNC CALLED");
     this.set('inSync', true);
-    return this._sync((function(_this) {
+    return this._sync(force, (function(_this) {
       return function(err) {
         _this.set('inSync', false);
         return callback(err);
@@ -1975,11 +1984,8 @@ module.exports = Replicator = (function(_super) {
     })(this));
   };
 
-  Replicator.prototype._sync = function(callback, force) {
+  Replicator.prototype._sync = function(force, callback) {
     var checkpoint, options, replication, total_count, _ref;
-    if (force == null) {
-      force = false;
-    }
     console.log("BEGIN SYNC");
     total_count = 0;
     if ((_ref = this.liveReplication) != null) {
@@ -2015,7 +2021,7 @@ module.exports = Replicator = (function(_super) {
           return _this.db.info(function(err, info) {
             var progress;
             console.log("LOCAL DOCUMENTS : " + (info.doc_count - 4) + " / " + total_count);
-            progress = 1 / 10 + (4 / 5) * ((info.doc_count - 4) / total_count);
+            progress = (9 / 10) * ((info.doc_count - 4) / total_count);
             return _this.set('initialReplicationRunning', progress);
           });
         }
@@ -3282,9 +3288,18 @@ module.exports = FirstSyncView = (function(_super) {
     if (percent && percent === 1) {
       messageText = t('ready message');
       buttonText = t('end');
+    } else if (percent < -1) {
+      messageText = t('wait message device');
+      buttonText = t('waiting...');
+    } else if (percent < 0) {
+      messageText = t('wait message cozy');
+      buttonText = t('waiting...');
+    } else if (percent === 0.90) {
+      messageText = t('wait message display');
+      buttonText = t('waiting...');
     } else {
       messageText = t('wait message', {
-        progress: parseInt(percent * 100)
+        progress: 5 + parseInt(percent * 100)
       });
       buttonText = t('waiting...');
     }
@@ -3301,11 +3316,14 @@ module.exports = FirstSyncView = (function(_super) {
   FirstSyncView.prototype.onChange = function(replicator) {
     var percent;
     percent = replicator.get('initialReplicationRunning');
-    percent = parseInt(percent * 100);
-    this.$('#finishSync .progress').text(t('wait message', {
-      progress: percent
-    }));
-    if (percent >= 100) {
+    if (percent === 0.90) {
+      this.$('#finishSync .progress').text(t('wait message display'));
+    } else {
+      this.$('#finishSync .progress').text(t('wait message', {
+        progress: 5 + parseInt(percent * 100)
+      }));
+    }
+    if (percent >= 1) {
       return this.render();
     }
   };
@@ -3739,6 +3757,8 @@ module.exports = Layout = (function(_super) {
     this.ionicScroll = new ionic.views.Scroll({
       el: this.viewsPlaceholder[0]
     });
+    this.ionicScroll.scrollTo(1, 0, true, null);
+    this.ionicScroll.scrollTo(0, 0, true, null);
     return this.ionicScroll.activatePullToRefresh(50, onActive = (function(_this) {
       return function() {
         _this.refresher.addClass('active');

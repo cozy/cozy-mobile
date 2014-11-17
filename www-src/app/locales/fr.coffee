@@ -73,7 +73,12 @@ module.exports =
 
     # -- end of setup
     "setup end"             : "Fin de la configuration"
-    "wait message"          : "Merci d'attendre pendant le téléchargement de l'arborescence...%{progress}%"
+    "wait message device"   : "Enregistrement du device..."
+    "wait message cozy"     : "Parcours des fichiers présents dans votre cozy ..."
+    "wait message"          : """Merci d'attendre pendant le téléchargement de l'arborescence.
+                                Cela peut prendre plusieurs minutes...
+                                           %{progress}%"""
+    "wait message display"  : "Préparation des fichiers..."
     "ready message"         : "L'application est prête à être utilisée !"
     "waiting..."            : "En attente..."
     "end"                   : "Fin"
