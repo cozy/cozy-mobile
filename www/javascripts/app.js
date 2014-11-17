@@ -2583,8 +2583,11 @@ FilesAndFolderDesignDoc = {
     'FilesAndFolder': {
       map: Object.toString.apply(function(doc) {
         var _ref, _ref1;
-        if ((_ref = (_ref1 = doc.docType) != null ? _ref1.toLowerCase() : void 0) === 'file' || _ref === 'folder') {
-          return emit([doc.path, doc.name.toLowerCase()]);
+        if (((_ref = doc.docType) != null ? _ref.toLowerCase() : void 0) === 'file') {
+          emit([doc.path, '2_' + doc.name.toLowerCase()]);
+        }
+        if (((_ref1 = doc.docType) != null ? _ref1.toLowerCase() : void 0) === 'folder') {
+          return emit([doc.path, '1_' + doc.name.toLowerCase()]);
         }
       })
     }
