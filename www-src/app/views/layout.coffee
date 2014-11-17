@@ -75,6 +75,10 @@ module.exports = class Layout extends BaseView
         @ionicScroll = new ionic.views.Scroll
             el: @viewsPlaceholder[0]
 
+        # Force scroll to display tree
+        @ionicScroll.scrollTo 1, 0, true, null
+        @ionicScroll.scrollTo 0, 0, true, null
+
         @ionicScroll.activatePullToRefresh 50,
             onActive = =>
                 @refresher.addClass 'active'
