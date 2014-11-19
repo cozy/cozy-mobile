@@ -31,6 +31,7 @@ module.exports = class FolderView extends CollectionView
             _handleDrag: (e) ->
                 ionic.views.ListView::_handleDrag.apply this, arguments
                 # prevent menu from opening
+                e.preventDefault()
                 e.stopPropagation()
 
     onChange: =>

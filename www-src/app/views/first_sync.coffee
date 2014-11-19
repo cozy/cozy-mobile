@@ -11,12 +11,20 @@ module.exports = class FirstSyncView extends BaseView
     getRenderData: ->
 
         percent = app.replicator.get('initialReplicationRunning') or 0
-
         if percent and percent is 1
             messageText = t 'ready message'
             buttonText = t 'end'
+        else if percent < -1
+            messageText = t 'wait message device'
+            buttonText = t 'waiting...'
+        else if percent < 0
+            messageText = t 'wait message cozy'
+            buttonText = t 'waiting...'
+        else if percent is 0.90
+            messageText = t 'wait message display'
+            buttonText = t 'waiting...'
         else
-            messageText = t 'wait message', progress: parseInt(percent * 100)
+            messageText = t 'wait message', progress: 5 + parseInt(percent * 100)
             buttonText = t 'waiting...'
 
         return {messageText, buttonText}
@@ -26,10 +34,12 @@ module.exports = class FirstSyncView extends BaseView
 
     onChange: (replicator) ->
         percent = replicator.get 'initialReplicationRunning'
-        percent = parseInt percent * 100
-        @$('#finishSync .progress').text t 'wait message', progress: percent
+        if percent is 0.90
+            @$('#finishSync .progress').text t 'wait message display'
+        else
+            @$('#finishSync .progress').text t 'wait message', progress: 5 + parseInt(percent * 100)
 
-        @render() if percent >= 100
+        @render() if percent >= 1
 
     end: ->
         percent = parseInt(app.replicator.get('initialReplicationRunning'))

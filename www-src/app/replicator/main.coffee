@@ -4,6 +4,7 @@ makeDesignDocs = require './replicator_mapreduce'
 ReplicatorConfig = require './replicator_config'
 DBNAME = "cozy-files.db"
 DBCONTACTS = "cozy-contacts.db"
+DBPHOTOS = "cozy-photos.db"
 DBOPTIONS = if window.isBrowserDebugging then {} else adapter: 'websql'
 
 #Replicator extends Model to watch/set inBackup, inSync
@@ -26,6 +27,13 @@ module.exports = class Replicator extends Backbone.Model
                 return callback err if err
                 fs.rmrf @downloads, callback
 
+    resetSynchro: (callback) ->
+        console.log "resetSynchro"
+        @set 'inSync', true
+        @_sync true, (err) =>
+            @set 'inSync', false
+            callback err
+
     init: (callback) ->
         fs.initialize (err, downloads, cache) =>
             return callback err if err
@@ -33,7 +41,8 @@ module.exports = class Replicator extends Backbone.Model
             @cache = cache
             @db = new PouchDB DBNAME, DBOPTIONS
             @contactsDB = new PouchDB DBCONTACTS, DBOPTIONS
-            makeDesignDocs @db, @contactsDB, (err) =>
+            @photosDB = new PouchDB DBPHOTOS, DBOPTIONS
+            makeDesignDocs @db, @contactsDB, @photosDB, (err) =>
                 return callback err if err
                 @config = new ReplicatorConfig(this)
                 @config.fetch callback
@@ -112,44 +121,23 @@ module.exports = class Replicator extends Backbone.Model
                 @db.query 'LocalPath', {}, ->
                     callback null
 
-
     initialReplication: (callback) ->
-        @set 'initialReplicationRunning', 0
-        options = @config.makeUrl '/_changes?descending=true&limit=1'
-        request.get options, (err, res, body) =>
-            return callback err if err
-
-            # we store last_seq before copying files & folder
-            # to avoid losing changes occuring during replicatation
-            last_seq = body.last_seq
-            async.series [
-                # get files and folders from the remote
-                (cb) => @copyView 'file', cb
-                (cb) => @set('initialReplicationRunning', 2/5) and cb null
-                (cb) => @copyView 'folder', cb
-                (cb) => @set('initialReplicationRunning', 3/5) and cb null
-                # save the last_seq we fetched above
-                (cb) => @config.save checkpointed: last_seq, cb
-                (cb) => @set('initialReplicationRunning', 4/5) and cb null
-                # build the initial state of FilesAndFolder view index
-                (cb) => @db.query 'FilesAndFolder', {}, cb
-            ], (err) =>
-                console.log "end of inital replication #{Date.now()}"
-                @set 'initialReplicationRunning', 1
-                callback err
-                # updateIndex In background
-                @updateIndex -> console.log "Index built"
-
-    copyView: (model, callback) ->
-        console.log "copyView #{Date.now()}"
-        options = @config.makeUrl "/_design/#{model}/_view/all/"
-        request.get options, (err, res, body) =>
-            return callback err if err
-            return callback null unless body.rows?.length
-
-            docs = body.rows?.map (row) -> row.value
-            console.log "beforeBulkDocs #{Date.now()}"
-            @db.bulkDocs docs, callback
+        @set 'initialReplicationRunning', -2
+        async.series [
+            # Force checkpoint to 0
+            (cb) => @config.save checkpointed: 0, cb
+            (cb) => @set('initialReplicationRunning', -1/10) and cb null
+            # First sync
+            (cb) => @sync cb, true
+            (cb) => @set('initialReplicationRunning', 9/10) and cb null
+            # build the initial state of FilesAndFolder view index
+            (cb) => @db.query 'FilesAndFolder', {}, cb
+        ], (err) =>
+            console.log "end of inital replication #{Date.now()}"
+            @set 'initialReplicationRunning', 1
+            callback err
+            # updateIndex In background
+            @updateIndex -> console.log "Index built"
 
     fileInFileSystem: (file) =>
         @cache.some (entry) -> entry.name is file.binary.file.id
@@ -245,32 +233,53 @@ module.exports = class Replicator extends Backbone.Model
             , callback
 
     # wrapper around _sync to maintain the state of inSync
-    sync: (callback) ->
+    sync: (callback, force=false) ->
         return callback null if @get 'inSync'
         console.log "SYNC CALLED"
         @set 'inSync', true
-        @_sync (err) =>
+        @_sync force, (err) =>
             @set 'inSync', false
             callback err
 
-
-    _sync: (callback) ->
+    # One-shot replication
+    # Called for :
+    #    * first replication
+    #    * replication at each start
+    #    * replication force byu user
+    _sync: (force, callback) ->
         console.log "BEGIN SYNC"
-
+        total_count = 0
         @liveReplication?.cancel()
+        if not force
+            checkpoint = @config.get 'checkpointed'
+        else
+            checkpoint = 0
+            # Recover number of couments in cozy to inform user
+            # replication progression.
+            options = @config.makeUrl "/_design/file/_view/all/"
+            request.get options, (err, res, files) =>
+                options = @config.makeUrl "/_design/folder/_view/all/"
+                request.get options, (err, res, folders) =>
+                    total_count = files.total_rows + folders.total_rows
+                    console.log "TOTAL DOCUMENTS : #{total_count}"
 
         replication = @db.replicate.from @config.remote,
-            batch_size: 50
-            batches_limit: 5
-            filter: @config.makeFilterName()
-            since: @config.get 'checkpointed'
+            batch_size: 5
+            batches_limit: 1
+            filter: (doc) ->
+                doc.docType is 'Folder' or doc.docType is 'File'
+            live: false
+            since: checkpoint
 
-        # replication.on 'change', (info) ->
-        #     console.log "change #{JSON.stringify(info)}"
+        replication.on 'change', (change) =>
+            if force
+                @db.info (err, info) =>
+                    console.log "LOCAL DOCUMENTS : #{info.doc_count - 4} / #{total_count}"
+                    progress = (9 / 10) * ((info.doc_count - 4) / total_count)
+                    @set('initialReplicationRunning', progress)
 
         replication.once 'error', (err) ->
             console.log "REPLICATOR ERRROR #{JSON.stringify(err)} #{err.stack}"
-            callback err
 
         replication.once 'complete', (result) =>
             console.log "REPLICATION COMPLETED"
@@ -279,13 +288,14 @@ module.exports = class Replicator extends Backbone.Model
                 app.router.forceRefresh()
                 # updateIndex In background
                 @updateIndex =>
+                    console.log 'start Realtime'
                     @startRealtime()
 
     # realtime
     # start from the last checkpointed value
     # smaller batches to limit memory usage
     # if there is an error, we keep trying
-    #    with exponential backoff 2^x s (max 1min)
+    # with exponential backoff 2^x s (max 1min)
     #
     realtimeBackupCoef = 1
     startRealtime: =>
@@ -301,20 +311,20 @@ module.exports = class Replicator extends Backbone.Model
         @liveReplication.on 'change', (e) =>
             realtimeBackupCoef = 1
             @set 'inSync', true
+
         @liveReplication.on 'uptodate', (e) =>
             realtimeBackupCoef = 1
             app.router.forceRefresh()
             @set 'inSync', false
             # @TODO : save last_seq ?
             console.log "UPTODATE", e
+
         @liveReplication.once 'complete', (e) =>
             console.log "LIVE REPLICATION CANCELLED"
             @set 'inSync', false
             @liveReplication = null
 
         @liveReplication.once 'error', (e) =>
-            # debugger;
-            console.log "THIS HAPPENS"
             @liveReplication = null
             realtimeBackupCoef++ if realtimeBackupCoef < 6
             timeout = 1000 * (1 << realtimeBackupCoef)

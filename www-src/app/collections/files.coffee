@@ -10,19 +10,6 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
         @query = options.query
         @notloaded = true
 
-    comparator: (a, b) ->
-        return -1 if a.isDeviceFolder
-        return 1 if b.isDeviceFolder
-        atype = a.get('docType').toLowerCase()
-        btype = b.get('docType').toLowerCase()
-        aname = a.get('name').toLowerCase()
-        bname = b.get('name').toLowerCase()
-        return out = if atype < btype then 1
-        else   if atype > btype then -1
-        else   if aname > bname then 2
-        else   if aname < bname then -2
-        else 0
-
     isSearch: -> @path is undefined
 
     # search use temporary view
@@ -64,7 +51,8 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
 
     _fetch: (path, callback) ->
         params =
-            key: if path then '/' + path else ''
+            startkey: if path then ['/' + path] else ['']
+            endkey: if path then ['/' + path, {}] else ['', {}]
             include_docs: true
 
         app.replicator.db.query 'FilesAndFolder', params, callback
@@ -73,7 +61,7 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
 
         models = results.rows.map (row) ->
             doc = row.doc
-            if binary_id = doc.binary?.file.id
+            if binary_id = doc.binary?.file?.id
                 doc.incache = app.replicator.fileInFileSystem doc
             return doc
 
@@ -132,4 +120,3 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
                 return if @cancelled
                 FileAndFolderCollection.cache[path] = items unless err
                 @trigger 'fullsync'
-
