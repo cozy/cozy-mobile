@@ -1173,6 +1173,7 @@ module.exports = {
   "wait message display": "Files preparation...",
   "ready message": "The application is ready to be used!",
   "waiting...": "Waiting...",
+  "filesystem bug error": "File system bug error",
   "end": "End"
 };
 
@@ -1239,6 +1240,7 @@ module.exports = {
   "wait message display": "Préparation des fichiers...",
   "ready message": "L'application est prête à être utilisée !",
   "waiting...": "En attente...",
+  "filesystem bug error": "Erreur dans le système de fichier",
   "end": "Fin"
 };
 
@@ -1647,14 +1649,18 @@ module.exports = Replicator = (function(_super) {
           if (err) {
             return callback(err);
           }
-          return fs.rmrf(_this.downloads, callback);
+          return _this.photosDB.destroy(function(err) {
+            if (err) {
+              return callback(err);
+            }
+            return fs.rmrf(_this.downloads, callback);
+          });
         });
       };
     })(this));
   };
 
   Replicator.prototype.resetSynchro = function(callback) {
-    console.log("resetSynchro");
     this.set('inSync', true);
     return this._sync(true, (function(_this) {
       return function(err) {
@@ -2027,9 +2033,18 @@ module.exports = Replicator = (function(_super) {
         }
       };
     })(this));
-    replication.once('error', function(err) {
-      return console.log("REPLICATOR ERRROR " + (JSON.stringify(err)) + " " + err.stack);
-    });
+    replication.once('error', (function(_this) {
+      return function(err) {
+        var _ref1;
+        console.log("REPLICATOR ERRROR " + (JSON.stringify(err)) + " " + err.stack);
+        if (((err != null ? (_ref1 = err.result) != null ? _ref1.status : void 0 : void 0) != null) && err.result.status === 'aborted') {
+          if (replication != null) {
+            replication.cancel();
+          }
+          return _this._sync(force, callback);
+        }
+      };
+    })(this));
     return replication.once('complete', (function(_this) {
       return function(result) {
         console.log("REPLICATION COMPLETED");
@@ -2070,8 +2085,8 @@ module.exports = Replicator = (function(_super) {
     this.liveReplication.on('uptodate', (function(_this) {
       return function(e) {
         realtimeBackupCoef = 1;
-        app.router.forceRefresh();
         _this.set('inSync', false);
+        app.router.forceRefresh();
         return console.log("UPTODATE", e);
       };
     })(this));
@@ -2866,7 +2881,7 @@ buf.push('</div><div class="item">');
 var __val__ = t('device name') + ' : ' + deviceName
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</div><div class="item">');
-var __val__ = t('app name') + ' v0.0.5'
+var __val__ = t('app name') + ' v0.0.9'
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</div><div class="item item-divider">');
 var __val__ = t('reset title')
@@ -3774,7 +3789,7 @@ module.exports = Layout = (function(_super) {
         _this.ionicScroll.finishPullToRefresh();
         return app.replicator.sync(function(err) {
           if (err) {
-            return alert(err);
+            return console.log(err);
           }
         });
       };

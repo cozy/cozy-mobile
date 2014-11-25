@@ -25,10 +25,11 @@ module.exports = class Replicator extends Backbone.Model
             return callback err if err
             @contactsDB.destroy (err) =>
                 return callback err if err
-                fs.rmrf @downloads, callback
+                @photosDB.destroy (err) =>
+                    return callback err if err
+                    fs.rmrf @downloads, callback
 
     resetSynchro: (callback) ->
-        console.log "resetSynchro"
         @set 'inSync', true
         @_sync true, (err) =>
             @set 'inSync', false
@@ -278,8 +279,11 @@ module.exports = class Replicator extends Backbone.Model
                     progress = (9 / 10) * ((info.doc_count - 4) / total_count)
                     @set('initialReplicationRunning', progress)
 
-        replication.once 'error', (err) ->
+        replication.once 'error', (err) =>
             console.log "REPLICATOR ERRROR #{JSON.stringify(err)} #{err.stack}"
+            if err?.result?.status? and err.result.status is 'aborted'
+                replication?.cancel()
+                @_sync force, callback
 
         replication.once 'complete', (result) =>
             console.log "REPLICATION COMPLETED"
@@ -314,8 +318,8 @@ module.exports = class Replicator extends Backbone.Model
 
         @liveReplication.on 'uptodate', (e) =>
             realtimeBackupCoef = 1
-            app.router.forceRefresh()
             @set 'inSync', false
+            app.router.forceRefresh()
             # @TODO : save last_seq ?
             console.log "UPTODATE", e
 

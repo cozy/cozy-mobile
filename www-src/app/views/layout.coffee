@@ -92,7 +92,7 @@ module.exports = class Layout extends BaseView
                 # hide immediately, the header spinner is enough
                 @ionicScroll.finishPullToRefresh()
                 app.replicator.sync (err) =>
-                    alert err if err
+                    console.log err if err
 
     togglePullToRefresh: (activated) =>
         #@TODO, make sure this isnt called while PTR visible
