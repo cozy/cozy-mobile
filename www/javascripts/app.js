@@ -3884,7 +3884,8 @@ module.exports = LoginView = (function(_super) {
 
   LoginView.prototype.events = function() {
     return {
-      'click #btn-save': 'doSave'
+      'click #btn-save': 'doSave',
+      'click #input-pass': 'doComplete'
     };
   };
 
@@ -3897,6 +3898,17 @@ module.exports = LoginView = (function(_super) {
     return {
       defaultValue: defaultValue
     };
+  };
+
+  LoginView.prototype.doComplete = function() {
+    var url;
+    console.log("doComplete");
+    url = this.$('#input-url').val();
+    console.log(url.indexOf('.'));
+    if (url.indexOf('.') === -1) {
+      console.log(url + ".cozycloud.cc");
+      return this.$('#input-url').val(url + ".cozycloud.cc");
+    }
   };
 
   LoginView.prototype.doSave = function() {
