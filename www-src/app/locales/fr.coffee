@@ -81,4 +81,5 @@ module.exports =
     "wait message display"  : "Préparation des fichiers..."
     "ready message"         : "L'application est prête à être utilisée !"
     "waiting..."            : "En attente..."
+    "filesystem bug error"  : "Erreur dans le système de fichier"
     "end"                   : "Fin"

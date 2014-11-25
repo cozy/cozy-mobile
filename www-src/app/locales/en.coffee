@@ -79,5 +79,6 @@ module.exports =
     "wait message display"  : "Files preparation..."
     "ready message"         : "The application is ready to be used!"
     "waiting..."            : "Waiting..."
+    "filesystem bug error"  : "File system bug error"
     "end"                   : "End"
 
