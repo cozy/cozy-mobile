@@ -2590,10 +2590,10 @@ FilesAndFolderDesignDoc = {
       map: Object.toString.apply(function(doc) {
         var _ref, _ref1;
         if (((_ref = doc.docType) != null ? _ref.toLowerCase() : void 0) === 'file') {
-          emit([doc.path, '2_' + doc.name.toLowerCase()]);
+          emit([doc.path, '2_' + doc.name]);
         }
         if (((_ref1 = doc.docType) != null ? _ref1.toLowerCase() : void 0) === 'folder') {
-          return emit([doc.path, '1_' + doc.name.toLowerCase()]);
+          return emit([doc.path, '1_' + doc.name]);
         }
       })
     }
@@ -3022,7 +3022,7 @@ buf.push('<div class="list"><div class="card"><label class="item item-input"><sp
 var __val__ = t('cozy url')
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</span><input');
-buf.push(attrs({ 'id':('input-url'), 'type':("text"), 'placeholder':("john.cozycloud.cc"), 'value':("" + (defaultValue.cozyURL) + "") }, {"type":true,"placeholder":true,"value":true}));
+buf.push(attrs({ 'id':('input-url'), 'type':("url"), 'placeholder':("john.cozycloud.cc"), 'value':("" + (defaultValue.cozyURL) + "") }, {"type":true,"placeholder":true,"value":true}));
 buf.push('/></label><label class="item item-input"><span class="input-label">');
 var __val__ = t('cozy password')
 buf.push(escape(null == __val__ ? "" : __val__));
