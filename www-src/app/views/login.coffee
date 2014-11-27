@@ -7,10 +7,19 @@ module.exports = class LoginView extends BaseView
 
     events: ->
         'click #btn-save': 'doSave'
+        'click #input-pass': 'doComplete'
 
     getRenderData: ->
         defaultValue = app.loginConfig  or cozyURL: '', password: ''
         return {defaultValue}
+
+    doComplete: ->
+        console.log "doComplete"
+        url = @$('#input-url').val()
+        console.log url.indexOf('.')
+        if url.indexOf('.') is -1
+            console.log url + ".cozycloud.cc"
+            @$('#input-url').val url + ".cozycloud.cc"
 
     doSave: ->
         return null if @saving

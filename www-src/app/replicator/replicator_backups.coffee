@@ -132,11 +132,11 @@ module.exports =
         async.series [
             @ensureDeviceFolder.bind this
             ImagesBrowser.getImagesList
-            (cb) => @db.query 'LocalPath', {}, cb
+            (cb) => @photosDB.query 'PhotosByLocalId', {}, cb
         ], (err, results) =>
 
             return callback err if err
-            [_, images, rows: dbImages] = results
+            [device, images, rows: dbImages] = results
 
             console.log "SYNC IMAGES : #{images.length} #{dbImages.length}"
 
@@ -149,7 +149,7 @@ module.exports =
             # step 1 scan all images, find the new ones
             async.eachSeries images, (path, cb) ->
 
-                unless path in dbImages or myDownloadFolder in path
+                unless path in dbImages
                     toUpload.push path
 
                 setTimeout cb, 1
@@ -162,13 +162,13 @@ module.exports =
                 async.eachSeries toUpload, (path, cb) =>
                     @set 'backup_step_done', processed++
                     console.log "UPLOADING #{path}"
-                    @uploadPicture path, (err) ->
+                    @uploadPicture path, device, (err) ->
                         console.log "ERROR #{path} #{err}" if err
                         setTimeout cb, 1
 
                 , callback
 
-    uploadPicture: (path, callback) ->
+    uploadPicture: (path, device, callback) ->
         fs.getFileFromPath path, (err, file) =>
             return callback err if err
 
@@ -178,7 +178,10 @@ module.exports =
                 @createBinary content, file.type, (err, bin) =>
                     return callback err if err
 
-                    @createFile file, path, bin, callback
+                    @createFile file, path, bin, device, (err, res) =>
+                        return callback err if err
+
+                        @createPhoto path, callback
 
 
     createBinary: (blob, mime, callback) ->
@@ -193,13 +196,12 @@ module.exports =
                 delete @config.remoteHostObject.headers['Content-Type']
                 callback null, doc
 
-    createFile: (cordovaFile, localPath, binaryDoc, callback) ->
-
+    createFile: (cordovaFile, localPath, binaryDoc, device, callback) ->
         dbFile =
             docType          : 'File'
             localPath        : localPath
             name             : cordovaFile.name
-            path             : '/' + @config.get 'deviceName'
+            path             : device.path + '/' + device.name
             class            : @fileClassFromMime cordovaFile.type
             lastModification : new Date(cordovaFile.lastModified).toISOString()
             creationDate     : new Date(cordovaFile.lastModified).toISOString()
@@ -209,15 +211,13 @@ module.exports =
                 id: binaryDoc.id
                 rev: binaryDoc.rev
 
-        @config.remote.post dbFile, (err, created) =>
-            return callback err if err
-            return callback new Error('cant create file') unless created.ok
+        @config.remote.post dbFile, callback
 
-            dbFile._id = created.id
-            dbFile._rev = created.rev
-
-            # put it immediately in local db
-            @db.put dbFile, callback
+    createPhoto: (localPath, callback) ->
+        dbPhoto =
+            docType : 'Photo'
+            localId: localPath
+        @photosDB.post dbPhoto, callback
 
     fileClassFromMime: (type) ->
         return switch type.split('/')[0]
@@ -228,36 +228,35 @@ module.exports =
             else "file"
 
     ensureDeviceFolder: (callback) ->
-
-        options =
-            key: ''
-            include_docs: true
-
-        @db.query 'FilesAndFolder', options, (err, results) =>
-            return callback err if err
-
-            deviceName = @config.get 'deviceName'
-            exists = results.rows.some (row) ->
-                row.doc.name is deviceName and
-                row.doc.docType?.toLowerCase() is 'folder'
-
-            console.log "DEVICE FOLDER EXISTS #{exists}"
-
-            return callback null if exists
-
+        createNew = () =>
             console.log "MAKING ONE"
-
             # no device folder, lets make it
             folder =
                 docType          : 'Folder'
-                name             : deviceName
+                name             : @config.get 'deviceName'
                 path             : ''
                 lastModification : new Date().toISOString()
                 creationDate     : new Date().toISOString()
                 tags             : []
-
             @config.remote.post folder, (err, res) =>
-                return callback err if err
-                folder._id = res.id
-                folder._rev = res.rev
-                @db.put folder, callback
+                dbDevice =
+                    docType : 'Device'
+                    localId: res.id
+                @photosDB.post dbDevice, (err, res) ->
+                    return callback err if err
+                    callback null, folder
+
+        @photosDB.query 'DevicesByLocalId', {}, (err, results) =>
+            return callback err if err
+            if results.rows.length > 0
+                device = results.rows[0]
+                @db.get device.key, (err, res) ->
+                    if err?
+                        createNew()
+                        @photosDB.remove device.value
+                    else
+                        console.log "DEVICE FOLDER EXISTS"
+                        console.log res
+                        return callback null, res
+            else
+                createNew()

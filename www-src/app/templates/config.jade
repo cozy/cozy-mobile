@@ -29,9 +29,13 @@
 
         .item= t('synchronized with') + cozyURL
         .item= t('device name') + ' : ' + deviceName
-        .item= t('app name') + ' v0.0.5'
+        .item= t('app name') + ' v0.0.9'
 
         .item.item-divider= t('reset title')
+
+        .item.item-button-left(style="padding-left: 95px; white-space: normal;")
+            button#synchrobtn.button.button-assertive= t('retry synchro')
+            = t('synchro warning')
 
         .item.item-button-left(style="padding-left: 95px; white-space: normal;")
             button#redbtn.button.button-assertive= t('reset action')

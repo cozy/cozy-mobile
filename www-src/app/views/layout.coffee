@@ -75,6 +75,10 @@ module.exports = class Layout extends BaseView
         @ionicScroll = new ionic.views.Scroll
             el: @viewsPlaceholder[0]
 
+        # Force scroll to display tree
+        @ionicScroll.scrollTo 1, 0, true, null
+        @ionicScroll.scrollTo 0, 0, true, null
+
         @ionicScroll.activatePullToRefresh 50,
             onActive = =>
                 @refresher.addClass 'active'
@@ -88,7 +92,7 @@ module.exports = class Layout extends BaseView
                 # hide immediately, the header spinner is enough
                 @ionicScroll.finishPullToRefresh()
                 app.replicator.sync (err) =>
-                    alert err if err
+                    console.log err if err
 
     togglePullToRefresh: (activated) =>
         #@TODO, make sure this isnt called while PTR visible

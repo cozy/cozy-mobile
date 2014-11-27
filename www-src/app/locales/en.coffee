@@ -16,7 +16,9 @@ module.exports =
     "last backup"         : "Last was : "
     "reset title"         : "Reset"
     "reset action"        : "Reset"
-    "reset warning"       : "This will erase all cozy-generated data on your phone"
+    "retry synchro"       : "Synchro"
+    "synchro warning"     : "This start a replication from the beginning. It can take long time."
+    "reset warning"       : "This will erase all cozy-generated data on your phone."
     "pull to sync"        : "Pull to sync"
     "syncing"             : "Syncing"
     "contacts_scan"       : "Scanning contacts for changes"
@@ -71,8 +73,12 @@ module.exports =
 
     # -- end of setup
     "setup end"             : "End of setting"
-    "wait message"          : "Please wait while the tree is being downloaded...%{progress}%"
+    "wait message device"   : "Device configuration..."
+    "wait message cozy"     : "Browser files stored in your cozy ..."
+    "wait message"          : "Please wait while the tree is being downloaded. It can take several minutes...%{progress}%"
+    "wait message display"  : "Files preparation..."
     "ready message"         : "The application is ready to be used!"
     "waiting..."            : "Waiting..."
+    "filesystem bug error"  : "File system bug error"
     "end"                   : "End"
 

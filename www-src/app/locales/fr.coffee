@@ -15,8 +15,10 @@ module.exports =
     "last sync"           : "Dernière synchro : "
     "last backup"         : "Derniere sauvegarde : "
     "reset title"         : "Remise à zéro"
-    "reset action"               : "R.à.Z."
-    "reset warning"       : "Cela supprimera toutes les données cozy sur votre mobile."
+    "reset action"        : "R.à.Z"
+    "retry synchro"       : "Sync"
+    "synchro warning"     : "Cela relancera une synchronisation depuis le début. Cela peut prendre du temps."
+    "reset warning"       : "Cela supprimera toutes les données cozy sur votre mobile (dont votre device)."
     "pull to sync"        : "Tirer pour synchroniser"
     "syncing"             : "En cours de synchronisation"
     "contacts_scan"       : "Extraction des contacts"
@@ -71,7 +73,13 @@ module.exports =
 
     # -- end of setup
     "setup end"             : "Fin de la configuration"
-    "wait message"          : "Merci d'attendre pendant le téléchargement de l'arborescence...%{progress}%"
+    "wait message device"   : "Enregistrement du device..."
+    "wait message cozy"     : "Parcours des fichiers présents dans votre cozy ..."
+    "wait message"          : """Merci d'attendre pendant le téléchargement de l'arborescence.
+                                Cela peut prendre plusieurs minutes...
+                                           %{progress}%"""
+    "wait message display"  : "Préparation des fichiers..."
     "ready message"         : "L'application est prête à être utilisée !"
     "waiting..."            : "En attente..."
+    "filesystem bug error"  : "Erreur dans le système de fichier"
     "end"                   : "Fin"
