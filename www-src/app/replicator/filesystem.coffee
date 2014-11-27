@@ -55,7 +55,7 @@ module.exports.getOrCreateSubFolder = (parent, name, callback) ->
         parent.getDirectory name, {}, onSuccess, (err) ->
             return callback err if err.code isnt FileError.NOT_FOUND_ERR
             # directory exists, but cant be open
-            return new Error t 'filesystem bug error'
+            return callback new Error t 'filesystem bug error'
 
 
 module.exports.getChildren = (directory, callback) ->
