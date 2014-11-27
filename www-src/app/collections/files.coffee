@@ -12,6 +12,18 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
 
     isSearch: -> @path is undefined
 
+    comparator: (file1, file2) ->
+        if file1.get('docType').toLowerCase() is 'folder' and
+            file2.get('docType').toLowerCase() is 'file'
+                return -1
+        else if file2.get('docType').toLowerCase() is 'folder' and
+            file1.get('docType').toLowerCase() is 'file'
+                return 1
+        else if file1.get('name').toLowerCase() < file2.get('name').toLowerCase()
+            return -1
+        else
+            return 1
+
     # search use temporary view
     search: (callback) ->
         params =
@@ -58,11 +70,11 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
         app.replicator.db.query 'FilesAndFolder', params, callback
 
     slowReset: (results, callback) ->
-
         models = results.rows.map (row) ->
             doc = row.doc
             if binary_id = doc.binary?.file?.id
                 doc.incache = app.replicator.fileInFileSystem doc
+                doc.version = app.replicator.fileVersion doc
             return doc
 
         #immediately reset 10 models (fill view)
