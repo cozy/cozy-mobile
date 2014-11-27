@@ -6315,6 +6315,9 @@ a.button {
 .cache-indicator {
   color: #bdbdbd;
 }
+.cache-indicator-version {
+  color: #fe8800;
+}
 .icon.ion-chevron-right {
   left: auto;
 }

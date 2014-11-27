@@ -192,6 +192,18 @@ module.exports = FileAndFolderCollection = (function(_super) {
     return this.path === void 0;
   };
 
+  FileAndFolderCollection.prototype.comparator = function(file1, file2) {
+    if (file1.get('docType').toLowerCase() === 'folder' && file2.get('docType').toLowerCase() === 'file') {
+      return -1;
+    } else if (file2.get('docType').toLowerCase() === 'folder' && file1.get('docType').toLowerCase() === 'file') {
+      return 1;
+    } else if (file1.get('name').toLowerCase() < file2.get('name').toLowerCase()) {
+      return -1;
+    } else {
+      return 1;
+    }
+  };
+
   FileAndFolderCollection.prototype.search = function(callback) {
     var params;
     params = {
@@ -266,6 +278,7 @@ module.exports = FileAndFolderCollection = (function(_super) {
       doc = row.doc;
       if (binary_id = (_ref = doc.binary) != null ? (_ref1 = _ref.file) != null ? _ref1.id : void 0 : void 0) {
         doc.incache = app.replicator.fileInFileSystem(doc);
+        doc.version = app.replicator.fileVersion(doc);
       }
       return doc;
     });
@@ -1262,7 +1275,8 @@ module.exports = File = (function(_super) {
 
   File.prototype.defaults = function() {
     return {
-      incache: 'loading'
+      incache: 'loading',
+      version: false
     };
   };
 
@@ -1406,7 +1420,7 @@ module.exports.getOrCreateSubFolder = function(parent, name, callback) {
       if (err.code !== FileError.NOT_FOUND_ERR) {
         return callback(err);
       }
-      return new Error(t('filesystem bug error'));
+      return callback(new Error(t('filesystem bug error')));
     });
   });
 };
@@ -1622,6 +1636,7 @@ module.exports = Replicator = (function(_super) {
   function Replicator() {
     this.startRealtime = __bind(this.startRealtime, this);
     this.folderInFileSystem = __bind(this.folderInFileSystem, this);
+    this.fileVersion = __bind(this.fileVersion, this);
     this.fileInFileSystem = __bind(this.fileInFileSystem, this);
     return Replicator.__super__.constructor.apply(this, arguments);
   }
@@ -1830,7 +1845,13 @@ module.exports = Replicator = (function(_super) {
 
   Replicator.prototype.fileInFileSystem = function(file) {
     return this.cache.some(function(entry) {
-      return entry.name === file.binary.file.id;
+      return entry.name.indexOf(file.binary.file.id) !== -1;
+    });
+  };
+
+  Replicator.prototype.fileVersion = function(file) {
+    return this.cache.some(function(entry) {
+      return entry.name === file.binary.file.id + '-' + file.binary.file.rev;
     });
   };
 
@@ -1858,9 +1879,10 @@ module.exports = Replicator = (function(_super) {
   };
 
   Replicator.prototype.getBinary = function(model, progressback, callback) {
-    var binary_id;
+    var binary_id, binary_rev;
     binary_id = model.binary.file.id;
-    return fs.getOrCreateSubFolder(this.downloads, binary_id, (function(_this) {
+    binary_rev = model.binary.file.rev;
+    return fs.getOrCreateSubFolder(this.downloads, binary_id + '-' + binary_rev, (function(_this) {
       return function(err, binfolder) {
         if (err && err.code !== FileError.PATH_EXISTS_ERR) {
           return callback(err);
@@ -1876,13 +1898,29 @@ module.exports = Replicator = (function(_super) {
           options = _this.config.makeUrl("/" + binary_id + "/file");
           options.path = binfolder.toURL() + '/' + model.name;
           return fs.download(options, progressback, function(err, entry) {
-            if (err) {
+            var found;
+            if (((err != null ? err.message : void 0) != null) && err.message === "This file isnt available offline" && _this.fileInFileSystem(model)) {
+              found = false;
+              _this.cache.some(function(entry) {
+                if (entry.name.indexOf(binary_id) !== -1) {
+                  found = true;
+                  console.log(entry);
+                  console.log(entry.toURL());
+                  return callback(null, entry.toURL() + '/' + model.name);
+                }
+              });
+              if (!found) {
+                return callback(err);
+              }
+            } else if (err) {
               return fs["delete"](binfolder, function(delerr) {
                 return callback(err);
               });
             } else {
               _this.cache.push(binfolder);
-              return callback(null, entry.toURL());
+              console.log(entry.toURL());
+              callback(null, entry.toURL());
+              return _this.removeAllLocal(binary_id, binary_rev);
             }
           });
         });
@@ -1933,12 +1971,41 @@ module.exports = Replicator = (function(_super) {
     })(this));
   };
 
+  Replicator.prototype.removeAllLocal = function(id, rev) {
+    return this.cache.some((function(_this) {
+      return function(entry) {
+        if (entry.name.indexOf(id) !== -1 && entry.name !== id + '-' + rev) {
+          return fs.getDirectory(_this.downloads, entry.name, function(err, binfolder) {
+            if (err) {
+              return callback(err);
+            }
+            return fs.rmrf(binfolder, function(err) {
+              var currentEntry, index, _i, _len, _ref, _results;
+              _ref = _this.cache;
+              _results = [];
+              for (index = _i = 0, _len = _ref.length; _i < _len; index = ++_i) {
+                currentEntry = _ref[index];
+                if (!(currentEntry.name === entry.name)) {
+                  continue;
+                }
+                _this.cache.splice(index, 1);
+                break;
+              }
+              return _results;
+            });
+          });
+        }
+      };
+    })(this));
+  };
+
   Replicator.prototype.removeLocal = function(model, callback) {
-    var binary_id;
+    var binary_id, binary_rev;
     binary_id = model.binary.file.id;
+    binary_rev = model.binary.file.rev;
     console.log("REMOVE LOCAL");
     console.log(binary_id);
-    return fs.getDirectory(this.downloads, binary_id, (function(_this) {
+    return fs.getDirectory(this.downloads, binary_id + '-' + binary_rev, (function(_this) {
       return function(err, binfolder) {
         if (err) {
           return callback(err);
@@ -1948,7 +2015,7 @@ module.exports = Replicator = (function(_super) {
           _ref = _this.cache;
           for (index = _i = 0, _len = _ref.length; _i < _len; index = ++_i) {
             entry = _ref[index];
-            if (!(entry.name === binary_id)) {
+            if (!(entry.name === binary_id + '-' + binary_rev)) {
               continue;
             }
             _this.cache.splice(index, 1);
@@ -2094,7 +2161,8 @@ module.exports = Replicator = (function(_super) {
       return function(e) {
         console.log("LIVE REPLICATION CANCELLED");
         _this.set('inSync', false);
-        return _this.liveReplication = null;
+        _this.liveReplication = null;
+        return _this.startRealtime();
       };
     })(this));
     return this.liveReplication.once('error', (function(_this) {
@@ -2973,9 +3041,13 @@ if ( isFolder)
 {
 buf.push('<i class="icon ion-chevron-right"></i>');
 }
-else if ( model.incache)
+else if ( model.incache && model.version)
 {
 buf.push('<i class="cache-indicator icon ion-iphone"></i>');
+}
+else if ( model.incache)
+{
+buf.push('<i class="cache-indicator-version icon ion-iphone"></i>');
 }
 else
 {
@@ -3562,15 +3634,21 @@ module.exports = FolderLineView = (function(_super) {
   };
 
   FolderLineView.prototype.hideProgress = function(err, incache) {
-    var _ref;
+    var version, _ref;
     this.downloading = false;
     if (err) {
       alert(err);
     }
     incache = app.replicator.fileInFileSystem;
+    version = app.replicator.fileVersion;
     if ((incache != null) && incache !== this.model.get('incache')) {
       this.model.set({
         incache: incache
+      });
+    }
+    if ((version != null) && version !== this.model.get('version')) {
+      this.model.set({
+        version: version
       });
     }
     return (_ref = this.progresscontainer) != null ? _ref.remove() : void 0;
@@ -3606,6 +3684,9 @@ module.exports = FolderLineView = (function(_super) {
         _this.model.set({
           incache: true
         });
+        _this.model.set({
+          version: app.replicator.fileVersion(_this.model.attributes)
+        });
         app.backFromOpen = true;
         return ExternalFileUtil.openWith(url, '', void 0, function(success) {}, function(err) {
           if (0 === (err != null ? err.indexOf('No Activity found') : void 0)) {
@@ -3630,8 +3711,11 @@ module.exports = FolderLineView = (function(_super) {
         if (err) {
           return alert(err);
         }
-        return _this.model.set({
+        _this.model.set({
           incache: true
+        });
+        return _this.model.set({
+          version: app.replicator.fileVersion(_this.model.attributes)
         });
       };
     })(this);

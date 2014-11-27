@@ -43,8 +43,13 @@ module.exports = class FolderLineView extends BaseView
 
         incache = app.replicator.fileInFileSystem
 
+        version = app.replicator.fileVersion
+
         if incache? and incache isnt @model.get 'incache'
             @model.set {incache}
+
+        if version? and version isnt @model.get 'version'
+            @model.set {version}
 
         @progresscontainer?.remove()
 
@@ -68,6 +73,7 @@ module.exports = class FolderLineView extends BaseView
             @hideProgress()
             return alert err if err
             @model.set incache: true
+            @model.set version: app.replicator.fileVersion @model.attributes
 
             # let android open the file
             app.backFromOpen = true
@@ -87,7 +93,7 @@ module.exports = class FolderLineView extends BaseView
             @hideProgress()
             return alert err if err
             @model.set incache: true
-
+            @model.set version: app.replicator.fileVersion @model.attributes
 
         if @model.isFolder()
             app.replicator.getBinaryFolder @model.attributes, @updateProgress, onadded

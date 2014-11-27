@@ -4,6 +4,7 @@ module.exports = class File extends Backbone.Model
 
     defaults: ->
         incache: 'loading'
+        version: false
 
     initialize: ->
         @isDeviceFolder = @isFolder() and

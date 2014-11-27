@@ -141,7 +141,12 @@ module.exports = class Replicator extends Backbone.Model
             @updateIndex -> console.log "Index built"
 
     fileInFileSystem: (file) =>
-        @cache.some (entry) -> entry.name is file.binary.file.id
+        @cache.some (entry) ->
+            entry.name.indexOf(file.binary.file.id) isnt -1
+
+    fileVersion: (file) =>
+        @cache.some (entry) ->
+            entry.name is file.binary.file.id + '-' + file.binary.file.rev
 
     folderInFileSystem: (path, callback) =>
         options =
@@ -158,8 +163,8 @@ module.exports = class Replicator extends Backbone.Model
 
     getBinary: (model, progressback, callback) ->
         binary_id = model.binary.file.id
-
-        fs.getOrCreateSubFolder @downloads, binary_id, (err, binfolder) =>
+        binary_rev = model.binary.file.rev
+        fs.getOrCreateSubFolder @downloads, binary_id + '-' + binary_rev, (err, binfolder) =>
             return callback err if err and err.code isnt FileError.PATH_EXISTS_ERR
             unless model.name
                 return callback new Error('no model name :' + JSON.stringify(model))
@@ -172,14 +177,27 @@ module.exports = class Replicator extends Backbone.Model
                 options.path = binfolder.toURL() + '/' + model.name
 
                 fs.download options, progressback, (err, entry) =>
-                    if err
+                    if err?.message? and err.message is "This file isnt available offline" and
+                        @fileInFileSystem model
+                            found = false
+                            @cache.some (entry) ->
+                                if entry.name.indexOf(binary_id) isnt -1
+                                    found = true
+                                    console.log entry
+                                    console.log entry.toURL()
+                                    callback null, entry.toURL() + '/' + model.name
+                            if not found
+                                callback err
+                    else if err
                         # failed to download
                         fs.delete binfolder, (delerr) ->
                             #@TODO handle delerr
                             callback err
                     else
                         @cache.push binfolder
+                        console.log entry.toURL()
                         callback null, entry.toURL()
+                        @removeAllLocal binary_id, binary_rev
 
     getBinaryFolder: (folder, progressback, callback) ->
         @getDbFilesOfFolder folder, (err, files) =>
@@ -210,17 +228,29 @@ module.exports = class Replicator extends Backbone.Model
                         @getBinary file, pb, cb
                     , callback
 
+    removeAllLocal: (id, rev) ->
+        @cache.some (entry) =>
+            if entry.name.indexOf(id) isnt -1 and
+                entry.name isnt id + '-' + rev
+                    fs.getDirectory @downloads, entry.name, (err, binfolder) =>
+                        return callback err if err
+                        fs.rmrf binfolder, (err) =>
+                            # remove from @cache
+                            for currentEntry, index in @cache when currentEntry.name is entry.name
+                                @cache.splice index, 1
+                                break
 
     removeLocal: (model, callback) ->
         binary_id = model.binary.file.id
+        binary_rev = model.binary.file.rev
         console.log "REMOVE LOCAL"
         console.log binary_id
 
-        fs.getDirectory @downloads, binary_id, (err, binfolder) =>
+        fs.getDirectory @downloads, binary_id + '-' + binary_rev, (err, binfolder) =>
             return callback err if err
             fs.rmrf binfolder, (err) =>
                 # remove from @cache
-                for entry, index in @cache when entry.name is binary_id
+                for entry, index in @cache when entry.name is binary_id + '-' + binary_rev
                     @cache.splice index, 1
                     break
                 callback null
@@ -327,6 +357,7 @@ module.exports = class Replicator extends Backbone.Model
             console.log "LIVE REPLICATION CANCELLED"
             @set 'inSync', false
             @liveReplication = null
+            @startRealtime()
 
         @liveReplication.once 'error', (e) =>
             @liveReplication = null
