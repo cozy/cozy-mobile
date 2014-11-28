@@ -505,6 +505,7 @@ update = function() {
 };
 
 module.exports.checkReadyForSync = function(callback) {
+  console.log("check ready for sync");
   if (readyForSync != null) {
     callback(null, readyForSync, readyForSyncMsg);
   } else if (window.isBrowserDebugging) {
@@ -1172,7 +1173,7 @@ module.exports = {
   "back": "Back",
   "connection failure": "Connection failure",
   "setup 1/3": "Setup 1/3",
-  "password placeholder": "your secret password",
+  "password placeholder": "your password",
   "authenticating...": "Authenticating...",
   "setup 2/3": "Setup 2/3",
   "device name explanation": "Choose a display name for this device so you can easily manage it from your Cozy.",
@@ -1186,7 +1187,7 @@ module.exports = {
   "wait message display": "Files preparation...",
   "ready message": "The application is ready to be used!",
   "waiting...": "Waiting...",
-  "filesystem bug error": "File system bug error",
+  "filesystem bug error": "File system bug error. Try to restart your phone.",
   "end": "End"
 };
 
@@ -1239,7 +1240,7 @@ module.exports = {
   "back": "Retour",
   "connection failure": "Echec de la connexion",
   "setup 1/3": "Configuration 1/3",
-  "password placeholder": "votre mot de passe secret",
+  "password placeholder": "votre mot de passe",
   "authenticating...": "Vérification des identifiants...",
   "setup 2/3": "Configuration 2/3",
   "device name explanation": "Choisissez un nom d'usage pour ce périphérique pour pouvoir le gérer facilement depuis votre Cozy.",
@@ -1248,12 +1249,12 @@ module.exports = {
   "setup 3/3": "Configuration 3/3",
   "setup end": "Fin de la configuration",
   "wait message device": "Enregistrement du device...",
-  "wait message cozy": "Parcours des fichiers présents dans votre cozy ...",
-  "wait message": "Merci d'attendre pendant le téléchargement de l'arborescence.\nCela peut prendre plusieurs minutes...\n           %{progress}%",
+  "wait message cozy": "Parcours des fichiers présents dans votre cozy. Cela peut prendre plusieurs minutes...",
+  "wait message": "Merci de patienter pendant le téléchargement de la liste des fichiers.\nCela peut prendre plusieurs minutes...\n           %{progress}%",
   "wait message display": "Préparation des fichiers...",
   "ready message": "L'application est prête à être utilisée !",
   "waiting...": "En attente...",
-  "filesystem bug error": "Erreur dans le système de fichier",
+  "filesystem bug error": "Erreur dans le système de fichier. Essayez de redémarrer votre téléphone",
   "end": "Fin"
 };
 
@@ -1688,6 +1689,8 @@ module.exports = Replicator = (function(_super) {
   Replicator.prototype.init = function(callback) {
     return fs.initialize((function(_this) {
       return function(err, downloads, cache) {
+        console.log("err1");
+        console.log(err);
         if (err) {
           return callback(err);
         }
@@ -1697,6 +1700,8 @@ module.exports = Replicator = (function(_super) {
         _this.contactsDB = new PouchDB(DBCONTACTS, DBOPTIONS);
         _this.photosDB = new PouchDB(DBPHOTOS, DBOPTIONS);
         return makeDesignDocs(_this.db, _this.contactsDB, _this.photosDB, function(err) {
+          console.log('err2');
+          console.log(err);
           if (err) {
             return callback(err);
           }
@@ -2478,7 +2483,18 @@ module.exports = {
     }
   },
   ensureDeviceFolder: function(callback) {
-    var createNew;
+    var createNew, findDevice;
+    findDevice = (function(_this) {
+      return function(id, callback) {
+        return _this.db.get(id, function(err, res) {
+          if (err == null) {
+            return callback();
+          } else {
+            return findDevice(id, callback);
+          }
+        });
+      };
+    })(this);
     createNew = (function(_this) {
       return function() {
         var folder;
@@ -2498,10 +2514,13 @@ module.exports = {
             localId: res.id
           };
           return _this.photosDB.post(dbDevice, function(err, res) {
-            if (err) {
-              return callback(err);
-            }
-            return callback(null, folder);
+            app.replicator.startRealtime();
+            return findDevice(dbDevice.localId, function() {
+              if (err) {
+                return callback(err);
+              }
+              return callback(null, folder);
+            });
           });
         });
       };
@@ -2596,7 +2615,7 @@ module.exports = ReplicatorConfig = (function(_super) {
     return {
       json: true,
       auth: this.get('auth'),
-      url: 'https://' + this.get('cozyURL') + '/cozy' + path
+      url: 'http://' + this.get('cozyURL') + '/cozy' + path
     };
   };
 
@@ -2611,9 +2630,9 @@ module.exports = ReplicatorConfig = (function(_super) {
         return function() {
           return _this.remoteHostObject = {
             remote: true,
-            protocol: 'https',
+            protocol: 'http',
             host: _this.get('cozyURL'),
-            port: 443,
+            port: 9104,
             path: '',
             db: 'cozy',
             headers: {
@@ -2949,7 +2968,7 @@ buf.push('</div><div class="item">');
 var __val__ = t('device name') + ' : ' + deviceName
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</div><div class="item">');
-var __val__ = t('app name') + ' v0.0.9'
+var __val__ = t('app name') + ' v 0.1.0'
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</div><div class="item item-divider">');
 var __val__ = t('reset title')
