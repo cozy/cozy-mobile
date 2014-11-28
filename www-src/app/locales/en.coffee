@@ -57,7 +57,7 @@ module.exports =
 
     # --- login
     "setup 1/3"             : "Setup 1/3"
-    "password placeholder"  : "your secret password"
+    "password placeholder"  : "your password"
     "authenticating..."     : "Authenticating..."
 
     # -- device name picker
@@ -79,6 +79,6 @@ module.exports =
     "wait message display"  : "Files preparation..."
     "ready message"         : "The application is ready to be used!"
     "waiting..."            : "Waiting..."
-    "filesystem bug error"  : "File system bug error"
+    "filesystem bug error"  : "File system bug error. Try to restart your phone."
     "end"                   : "End"
 

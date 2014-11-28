@@ -57,7 +57,7 @@ module.exports =
 
     # --- login
     "setup 1/3"             : "Configuration 1/3"
-    "password placeholder"  : "votre mot de passe secret"
+    "password placeholder"  : "votre mot de passe"
     "authenticating..."     : "Vérification des identifiants..."
 
     # -- device name picker
@@ -74,12 +74,12 @@ module.exports =
     # -- end of setup
     "setup end"             : "Fin de la configuration"
     "wait message device"   : "Enregistrement du device..."
-    "wait message cozy"     : "Parcours des fichiers présents dans votre cozy ..."
-    "wait message"          : """Merci d'attendre pendant le téléchargement de l'arborescence.
+    "wait message cozy"     : "Parcours des fichiers présents dans votre cozy. Cela peut prendre plusieurs minutes..."
+    "wait message"          : """Merci de patienter pendant le téléchargement de la liste des fichiers.
                                 Cela peut prendre plusieurs minutes...
                                            %{progress}%"""
     "wait message display"  : "Préparation des fichiers..."
     "ready message"         : "L'application est prête à être utilisée !"
     "waiting..."            : "En attente..."
-    "filesystem bug error"  : "Erreur dans le système de fichier"
+    "filesystem bug error"  : "Erreur dans le système de fichier. Essayez de redémarrer votre téléphone"
     "end"                   : "Fin"
