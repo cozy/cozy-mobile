@@ -1,12 +1,12 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget android-versionCode="7"
-    android-versionName="0.0.7"
+<widget android-versionCode="10"
+    android-versionName="0.1.0"
     id="io.cozy.files-client"
-    version="0.0.7"
+    version="0.1.0"
     xmlns="http://www.w3.org/ns/widgets"
     xmlns:cdv="http://cordova.apache.org/ns/1.0">
 
-    <name>Cozy Cloud</name>
+    <name>Cozy</name>
     <description>Sync files from your cozycloud</description>
     <!-- <name>Cozy-files</name>
     <description>Sync files from cozy files</description> -->

@@ -14,11 +14,8 @@ module.exports = class LoginView extends BaseView
         return {defaultValue}
 
     doComplete: ->
-        console.log "doComplete"
         url = @$('#input-url').val()
-        console.log url.indexOf('.')
-        if url.indexOf('.') is -1
-            console.log url + ".cozycloud.cc"
+        if url.indexOf('.') is -1 and url.length > 0
             @$('#input-url').val url + ".cozycloud.cc"
 
     doSave: ->

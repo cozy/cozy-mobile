@@ -192,6 +192,18 @@ module.exports = FileAndFolderCollection = (function(_super) {
     return this.path === void 0;
   };
 
+  FileAndFolderCollection.prototype.comparator = function(file1, file2) {
+    if (file1.get('docType').toLowerCase() === 'folder' && file2.get('docType').toLowerCase() === 'file') {
+      return -1;
+    } else if (file2.get('docType').toLowerCase() === 'folder' && file1.get('docType').toLowerCase() === 'file') {
+      return 1;
+    } else if (file1.get('name').toLowerCase() < file2.get('name').toLowerCase()) {
+      return -1;
+    } else {
+      return 1;
+    }
+  };
+
   FileAndFolderCollection.prototype.search = function(callback) {
     var params;
     params = {
@@ -266,6 +278,7 @@ module.exports = FileAndFolderCollection = (function(_super) {
       doc = row.doc;
       if (binary_id = (_ref = doc.binary) != null ? (_ref1 = _ref.file) != null ? _ref1.id : void 0 : void 0) {
         doc.incache = app.replicator.fileInFileSystem(doc);
+        doc.version = app.replicator.fileVersion(doc);
       }
       return doc;
     });
@@ -492,6 +505,7 @@ update = function() {
 };
 
 module.exports.checkReadyForSync = function(callback) {
+  var timeout;
   if (readyForSync != null) {
     callback(null, readyForSync, readyForSyncMsg);
   } else if (window.isBrowserDebugging) {
@@ -500,10 +514,23 @@ module.exports.checkReadyForSync = function(callback) {
     callbacks.push(callback);
   }
   if (!initialized) {
+    timeout = true;
+    setTimeout((function(_this) {
+      return function() {
+        if (timeout) {
+          timeout = false;
+          initialized = false;
+          return callback(null, true);
+        }
+      };
+    })(this), 4 * 1000);
     window.addEventListener('batterystatus', (function(_this) {
       return function(newStatus) {
-        battery = newStatus;
-        return update();
+        if (timeout) {
+          timeout = false;
+          battery = newStatus;
+          return update();
+        }
       };
     })(this), false);
     app.replicator.config.on('change:syncOnWifi', update);
@@ -1117,7 +1144,8 @@ module.exports = {
   "app name": "Cozy mobile",
   "cozy url": "Cozy's domain",
   "cozy password": "Cozy's password",
-  "device name": "Name this device",
+  "name device": "Name this device",
+  "device name": "Device name",
   "search": "search",
   "config": "Config",
   "never": "Never",
@@ -1131,8 +1159,8 @@ module.exports = {
   "last backup": "Last was : ",
   "reset title": "Reset",
   "reset action": "Reset",
-  "retry synchro": "Synchro",
-  "synchro warning": "This start a replication from the beginning. It can take long time.",
+  "retry synchro": "Sync",
+  "synchro warning": "This start a replication from the beginning. It can take a long time.",
   "reset warning": "This will erase all cozy-generated data on your phone.",
   "pull to sync": "Pull to sync",
   "syncing": "Syncing",
@@ -1159,7 +1187,7 @@ module.exports = {
   "back": "Back",
   "connection failure": "Connection failure",
   "setup 1/3": "Setup 1/3",
-  "password placeholder": "your secret password",
+  "password placeholder": "your password",
   "authenticating...": "Authenticating...",
   "setup 2/3": "Setup 2/3",
   "device name explanation": "Choose a display name for this device so you can easily manage it from your Cozy.",
@@ -1168,12 +1196,12 @@ module.exports = {
   "setup 3/3": "Setup 3/3",
   "setup end": "End of setting",
   "wait message device": "Device configuration...",
-  "wait message cozy": "Browser files stored in your cozy ...",
+  "wait message cozy": "Browsing files stored in your cozy ...",
   "wait message": "Please wait while the tree is being downloaded. It can take several minutes...%{progress}%",
   "wait message display": "Files preparation...",
   "ready message": "The application is ready to be used!",
   "waiting...": "Waiting...",
-  "filesystem bug error": "File system bug error",
+  "filesystem bug error": "File system bug error. Try to restart your phone.",
   "end": "End"
 };
 
@@ -1185,6 +1213,7 @@ module.exports = {
   "cozy url": "Adresse Cozy",
   "cozy password": "Mot de passe",
   "device name": "Nom de l'appareil",
+  "name device": "Nom de l'appareil",
   "search": "Recherche",
   "config": "Configuration",
   "never": "Jamais",
@@ -1226,7 +1255,7 @@ module.exports = {
   "back": "Retour",
   "connection failure": "Echec de la connexion",
   "setup 1/3": "Configuration 1/3",
-  "password placeholder": "votre mot de passe secret",
+  "password placeholder": "votre mot de passe",
   "authenticating...": "Vérification des identifiants...",
   "setup 2/3": "Configuration 2/3",
   "device name explanation": "Choisissez un nom d'usage pour ce périphérique pour pouvoir le gérer facilement depuis votre Cozy.",
@@ -1235,12 +1264,12 @@ module.exports = {
   "setup 3/3": "Configuration 3/3",
   "setup end": "Fin de la configuration",
   "wait message device": "Enregistrement du device...",
-  "wait message cozy": "Parcours des fichiers présents dans votre cozy ...",
-  "wait message": "Merci d'attendre pendant le téléchargement de l'arborescence.\nCela peut prendre plusieurs minutes...\n           %{progress}%",
+  "wait message cozy": "Parcours des fichiers présents dans votre cozy. Cela peut prendre plusieurs minutes...",
+  "wait message": "Merci de patienter pendant le téléchargement de la liste des fichiers.\nCela peut prendre plusieurs minutes...\n           %{progress}%",
   "wait message display": "Préparation des fichiers...",
   "ready message": "L'application est prête à être utilisée !",
   "waiting...": "En attente...",
-  "filesystem bug error": "Erreur dans le système de fichier",
+  "filesystem bug error": "Erreur dans le système de fichier. Essayez de redémarrer votre téléphone",
   "end": "Fin"
 };
 
@@ -1262,7 +1291,8 @@ module.exports = File = (function(_super) {
 
   File.prototype.defaults = function() {
     return {
-      incache: 'loading'
+      incache: 'loading',
+      version: false
     };
   };
 
@@ -1406,7 +1436,7 @@ module.exports.getOrCreateSubFolder = function(parent, name, callback) {
       if (err.code !== FileError.NOT_FOUND_ERR) {
         return callback(err);
       }
-      return new Error(t('filesystem bug error'));
+      return callback(new Error(t('filesystem bug error')));
     });
   });
 };
@@ -1622,6 +1652,7 @@ module.exports = Replicator = (function(_super) {
   function Replicator() {
     this.startRealtime = __bind(this.startRealtime, this);
     this.folderInFileSystem = __bind(this.folderInFileSystem, this);
+    this.fileVersion = __bind(this.fileVersion, this);
     this.fileInFileSystem = __bind(this.fileInFileSystem, this);
     return Replicator.__super__.constructor.apply(this, arguments);
   }
@@ -1830,7 +1861,13 @@ module.exports = Replicator = (function(_super) {
 
   Replicator.prototype.fileInFileSystem = function(file) {
     return this.cache.some(function(entry) {
-      return entry.name === file.binary.file.id;
+      return entry.name.indexOf(file.binary.file.id) !== -1;
+    });
+  };
+
+  Replicator.prototype.fileVersion = function(file) {
+    return this.cache.some(function(entry) {
+      return entry.name === file.binary.file.id + '-' + file.binary.file.rev;
     });
   };
 
@@ -1858,9 +1895,10 @@ module.exports = Replicator = (function(_super) {
   };
 
   Replicator.prototype.getBinary = function(model, progressback, callback) {
-    var binary_id;
+    var binary_id, binary_rev;
     binary_id = model.binary.file.id;
-    return fs.getOrCreateSubFolder(this.downloads, binary_id, (function(_this) {
+    binary_rev = model.binary.file.rev;
+    return fs.getOrCreateSubFolder(this.downloads, binary_id + '-' + binary_rev, (function(_this) {
       return function(err, binfolder) {
         if (err && err.code !== FileError.PATH_EXISTS_ERR) {
           return callback(err);
@@ -1876,13 +1914,29 @@ module.exports = Replicator = (function(_super) {
           options = _this.config.makeUrl("/" + binary_id + "/file");
           options.path = binfolder.toURL() + '/' + model.name;
           return fs.download(options, progressback, function(err, entry) {
-            if (err) {
+            var found;
+            if (((err != null ? err.message : void 0) != null) && err.message === "This file isnt available offline" && _this.fileInFileSystem(model)) {
+              found = false;
+              _this.cache.some(function(entry) {
+                if (entry.name.indexOf(binary_id) !== -1) {
+                  found = true;
+                  console.log(entry);
+                  console.log(entry.toURL());
+                  return callback(null, entry.toURL() + '/' + model.name);
+                }
+              });
+              if (!found) {
+                return callback(err);
+              }
+            } else if (err) {
               return fs["delete"](binfolder, function(delerr) {
                 return callback(err);
               });
             } else {
               _this.cache.push(binfolder);
-              return callback(null, entry.toURL());
+              console.log(entry.toURL());
+              callback(null, entry.toURL());
+              return _this.removeAllLocal(binary_id, binary_rev);
             }
           });
         });
@@ -1933,12 +1987,41 @@ module.exports = Replicator = (function(_super) {
     })(this));
   };
 
+  Replicator.prototype.removeAllLocal = function(id, rev) {
+    return this.cache.some((function(_this) {
+      return function(entry) {
+        if (entry.name.indexOf(id) !== -1 && entry.name !== id + '-' + rev) {
+          return fs.getDirectory(_this.downloads, entry.name, function(err, binfolder) {
+            if (err) {
+              return callback(err);
+            }
+            return fs.rmrf(binfolder, function(err) {
+              var currentEntry, index, _i, _len, _ref, _results;
+              _ref = _this.cache;
+              _results = [];
+              for (index = _i = 0, _len = _ref.length; _i < _len; index = ++_i) {
+                currentEntry = _ref[index];
+                if (!(currentEntry.name === entry.name)) {
+                  continue;
+                }
+                _this.cache.splice(index, 1);
+                break;
+              }
+              return _results;
+            });
+          });
+        }
+      };
+    })(this));
+  };
+
   Replicator.prototype.removeLocal = function(model, callback) {
-    var binary_id;
+    var binary_id, binary_rev;
     binary_id = model.binary.file.id;
+    binary_rev = model.binary.file.rev;
     console.log("REMOVE LOCAL");
     console.log(binary_id);
-    return fs.getDirectory(this.downloads, binary_id, (function(_this) {
+    return fs.getDirectory(this.downloads, binary_id + '-' + binary_rev, (function(_this) {
       return function(err, binfolder) {
         if (err) {
           return callback(err);
@@ -1948,7 +2031,7 @@ module.exports = Replicator = (function(_super) {
           _ref = _this.cache;
           for (index = _i = 0, _len = _ref.length; _i < _len; index = ++_i) {
             entry = _ref[index];
-            if (!(entry.name === binary_id)) {
+            if (!(entry.name === binary_id + '-' + binary_rev)) {
               continue;
             }
             _this.cache.splice(index, 1);
@@ -2094,7 +2177,8 @@ module.exports = Replicator = (function(_super) {
       return function(e) {
         console.log("LIVE REPLICATION CANCELLED");
         _this.set('inSync', false);
-        return _this.liveReplication = null;
+        _this.liveReplication = null;
+        return _this.startRealtime();
       };
     })(this));
     return this.liveReplication.once('error', (function(_this) {
@@ -2410,7 +2494,18 @@ module.exports = {
     }
   },
   ensureDeviceFolder: function(callback) {
-    var createNew;
+    var createNew, findDevice;
+    findDevice = (function(_this) {
+      return function(id, callback) {
+        return _this.db.get(id, function(err, res) {
+          if (err == null) {
+            return callback();
+          } else {
+            return findDevice(id, callback);
+          }
+        });
+      };
+    })(this);
     createNew = (function(_this) {
       return function() {
         var folder;
@@ -2430,10 +2525,13 @@ module.exports = {
             localId: res.id
           };
           return _this.photosDB.post(dbDevice, function(err, res) {
-            if (err) {
-              return callback(err);
-            }
-            return callback(null, folder);
+            app.replicator.startRealtime();
+            return findDevice(dbDevice.localId, function() {
+              if (err) {
+                return callback(err);
+              }
+              return callback(null, folder);
+            });
           });
         });
       };
@@ -2881,7 +2979,7 @@ buf.push('</div><div class="item">');
 var __val__ = t('device name') + ' : ' + deviceName
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</div><div class="item">');
-var __val__ = t('app name') + ' v0.0.9'
+var __val__ = t('app name') + ' v 0.1.0'
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</div><div class="item item-divider">');
 var __val__ = t('reset title')
@@ -2916,7 +3014,7 @@ buf.push('<div id="deviceNamePicker" class="list"><div class="card"><div class="
 var __val__ = t('device name explanation')
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</div></div><div class="card"><label class="item item-input item-stacked-label"><span class="input-label">');
-var __val__ = t('device name')
+var __val__ = t('name device')
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</span><input');
 buf.push(attrs({ 'id':('input-device'), 'type':("text"), 'placeholder':("" + (t('device name placeholder')) + "") }, {"type":true,"placeholder":true}));
@@ -2973,9 +3071,13 @@ if ( isFolder)
 {
 buf.push('<i class="icon ion-chevron-right"></i>');
 }
-else if ( model.incache)
+else if ( model.incache && model.version)
 {
 buf.push('<i class="cache-indicator icon ion-iphone"></i>');
+}
+else if ( model.incache)
+{
+buf.push('<i class="cache-indicator-version icon ion-iphone"></i>');
 }
 else
 {
@@ -3562,15 +3664,21 @@ module.exports = FolderLineView = (function(_super) {
   };
 
   FolderLineView.prototype.hideProgress = function(err, incache) {
-    var _ref;
+    var version, _ref;
     this.downloading = false;
     if (err) {
       alert(err);
     }
     incache = app.replicator.fileInFileSystem;
+    version = app.replicator.fileVersion;
     if ((incache != null) && incache !== this.model.get('incache')) {
       this.model.set({
         incache: incache
+      });
+    }
+    if ((version != null) && version !== this.model.get('version')) {
+      this.model.set({
+        version: version
       });
     }
     return (_ref = this.progresscontainer) != null ? _ref.remove() : void 0;
@@ -3606,6 +3714,9 @@ module.exports = FolderLineView = (function(_super) {
         _this.model.set({
           incache: true
         });
+        _this.model.set({
+          version: app.replicator.fileVersion(_this.model.attributes)
+        });
         app.backFromOpen = true;
         return ExternalFileUtil.openWith(url, '', void 0, function(success) {}, function(err) {
           if (0 === (err != null ? err.indexOf('No Activity found') : void 0)) {
@@ -3630,8 +3741,11 @@ module.exports = FolderLineView = (function(_super) {
         if (err) {
           return alert(err);
         }
-        return _this.model.set({
+        _this.model.set({
           incache: true
+        });
+        return _this.model.set({
+          version: app.replicator.fileVersion(_this.model.attributes)
         });
       };
     })(this);
@@ -3917,11 +4031,8 @@ module.exports = LoginView = (function(_super) {
 
   LoginView.prototype.doComplete = function() {
     var url;
-    console.log("doComplete");
     url = this.$('#input-url').val();
-    console.log(url.indexOf('.'));
-    if (url.indexOf('.') === -1) {
-      console.log(url + ".cozycloud.cc");
+    if (url.indexOf('.') === -1 && url.length > 0) {
       return this.$('#input-url').val(url + ".cozycloud.cc");
     }
   };

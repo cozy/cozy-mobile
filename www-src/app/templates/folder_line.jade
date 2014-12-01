@@ -10,8 +10,10 @@
 
     if isFolder
         i.icon.ion-chevron-right
-    else if model.incache
+    else if model.incache && model.version
         i.cache-indicator.icon.ion-iphone
+    else if model.incache
+        i.cache-indicator-version.icon.ion-iphone
     else
         i.cache-indicator.icon.ion-ios7-cloud-download-outline
 

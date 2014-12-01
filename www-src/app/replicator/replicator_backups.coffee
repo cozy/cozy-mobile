@@ -228,6 +228,13 @@ module.exports =
             else "file"
 
     ensureDeviceFolder: (callback) ->
+        findDevice = (id, callback) =>
+            @db.get id, (err, res) ->
+                if not err?
+                    callback()
+                else
+                    findDevice id, callback
+
         createNew = () =>
             console.log "MAKING ONE"
             # no device folder, lets make it
@@ -242,9 +249,12 @@ module.exports =
                 dbDevice =
                     docType : 'Device'
                     localId: res.id
-                @photosDB.post dbDevice, (err, res) ->
-                    return callback err if err
-                    callback null, folder
+                @photosDB.post dbDevice, (err, res) =>
+                    app.replicator.startRealtime()
+                    # Wait to receive folder in local database
+                    findDevice dbDevice.localId, () ->
+                        return callback err if err
+                        callback null, folder
 
         @photosDB.query 'DevicesByLocalId', {}, (err, results) =>
             return callback err if err
