@@ -24,17 +24,27 @@ update = ->
     callbackWaiting null, true
 
 module.exports.checkReadyForSync = (callback) ->
-    if readyForSync? then callback null, readyForSync, readyForSyncMsg
-    else if window.isBrowserDebugging then callback null, true
-    else callbacks.push callback
-
+    if readyForSync?
+        callback null, readyForSync, readyForSyncMsg
+    else if window.isBrowserDebugging
+        callback null, true
+    else
+        callbacks.push callback
     unless initialized
+        timeout = true
+        setTimeout () =>
+            if timeout
+                timeout = false
+                initialized = false
+                callback null, true
+        , 4 * 1000
         window.addEventListener 'batterystatus', (newStatus) =>
-            battery = newStatus
-            update()
+            if timeout
+                timeout = false
+                battery = newStatus
+                update()
         , false
         app.replicator.config.on 'change:syncOnWifi', update
         initialized = true
-
 
 
