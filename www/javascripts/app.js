@@ -4031,11 +4031,8 @@ module.exports = LoginView = (function(_super) {
 
   LoginView.prototype.doComplete = function() {
     var url;
-    console.log("doComplete");
     url = this.$('#input-url').val();
-    console.log(url.indexOf('.'));
-    if (url.indexOf('.') === -1) {
-      console.log(url + ".cozycloud.cc");
+    if (url.indexOf('.') === -1 && url.length > 0) {
       return this.$('#input-url').val(url + ".cozycloud.cc");
     }
   };
