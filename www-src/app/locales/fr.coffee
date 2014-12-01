@@ -3,6 +3,7 @@ module.exports =
     "cozy url"            : "Adresse Cozy"
     "cozy password"       : "Mot de passe"
     "device name"         : "Nom de l'appareil"
+    "name device"         : "Nom de l'appareil"
     "search"              : "Recherche"
     "config"              : "Configuration"
     "never"               : "Jamais"

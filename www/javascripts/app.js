@@ -1144,7 +1144,8 @@ module.exports = {
   "app name": "Cozy mobile",
   "cozy url": "Cozy's domain",
   "cozy password": "Cozy's password",
-  "device name": "Name this device",
+  "name device": "Name this device",
+  "device name": "Device name",
   "search": "search",
   "config": "Config",
   "never": "Never",
@@ -1158,8 +1159,8 @@ module.exports = {
   "last backup": "Last was : ",
   "reset title": "Reset",
   "reset action": "Reset",
-  "retry synchro": "Synchro",
-  "synchro warning": "This start a replication from the beginning. It can take long time.",
+  "retry synchro": "Sync",
+  "synchro warning": "This start a replication from the beginning. It can take a long time.",
   "reset warning": "This will erase all cozy-generated data on your phone.",
   "pull to sync": "Pull to sync",
   "syncing": "Syncing",
@@ -1195,7 +1196,7 @@ module.exports = {
   "setup 3/3": "Setup 3/3",
   "setup end": "End of setting",
   "wait message device": "Device configuration...",
-  "wait message cozy": "Browser files stored in your cozy ...",
+  "wait message cozy": "Browsing files stored in your cozy ...",
   "wait message": "Please wait while the tree is being downloaded. It can take several minutes...%{progress}%",
   "wait message display": "Files preparation...",
   "ready message": "The application is ready to be used!",
@@ -1212,6 +1213,7 @@ module.exports = {
   "cozy url": "Adresse Cozy",
   "cozy password": "Mot de passe",
   "device name": "Nom de l'appareil",
+  "name device": "Nom de l'appareil",
   "search": "Recherche",
   "config": "Configuration",
   "never": "Jamais",
@@ -3012,7 +3014,7 @@ buf.push('<div id="deviceNamePicker" class="list"><div class="card"><div class="
 var __val__ = t('device name explanation')
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</div></div><div class="card"><label class="item item-input item-stacked-label"><span class="input-label">');
-var __val__ = t('device name')
+var __val__ = t('name device')
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</span><input');
 buf.push(attrs({ 'id':('input-device'), 'type':("text"), 'placeholder':("" + (t('device name placeholder')) + "") }, {"type":true,"placeholder":true}));
