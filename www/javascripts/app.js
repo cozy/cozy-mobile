@@ -505,7 +505,7 @@ update = function() {
 };
 
 module.exports.checkReadyForSync = function(callback) {
-  console.log("check ready for sync");
+  var timeout;
   if (readyForSync != null) {
     callback(null, readyForSync, readyForSyncMsg);
   } else if (window.isBrowserDebugging) {
@@ -514,10 +514,23 @@ module.exports.checkReadyForSync = function(callback) {
     callbacks.push(callback);
   }
   if (!initialized) {
+    timeout = true;
+    setTimeout((function(_this) {
+      return function() {
+        if (timeout) {
+          timeout = false;
+          initialized = false;
+          return callback(null, true);
+        }
+      };
+    })(this), 4 * 1000);
     window.addEventListener('batterystatus', (function(_this) {
       return function(newStatus) {
-        battery = newStatus;
-        return update();
+        if (timeout) {
+          timeout = false;
+          battery = newStatus;
+          return update();
+        }
       };
     })(this), false);
     app.replicator.config.on('change:syncOnWifi', update);
@@ -1689,8 +1702,6 @@ module.exports = Replicator = (function(_super) {
   Replicator.prototype.init = function(callback) {
     return fs.initialize((function(_this) {
       return function(err, downloads, cache) {
-        console.log("err1");
-        console.log(err);
         if (err) {
           return callback(err);
         }
@@ -1700,8 +1711,6 @@ module.exports = Replicator = (function(_super) {
         _this.contactsDB = new PouchDB(DBCONTACTS, DBOPTIONS);
         _this.photosDB = new PouchDB(DBPHOTOS, DBOPTIONS);
         return makeDesignDocs(_this.db, _this.contactsDB, _this.photosDB, function(err) {
-          console.log('err2');
-          console.log(err);
           if (err) {
             return callback(err);
           }
@@ -2615,7 +2624,7 @@ module.exports = ReplicatorConfig = (function(_super) {
     return {
       json: true,
       auth: this.get('auth'),
-      url: 'http://' + this.get('cozyURL') + '/cozy' + path
+      url: 'https://' + this.get('cozyURL') + '/cozy' + path
     };
   };
 
@@ -2630,9 +2639,9 @@ module.exports = ReplicatorConfig = (function(_super) {
         return function() {
           return _this.remoteHostObject = {
             remote: true,
-            protocol: 'http',
+            protocol: 'https',
             host: _this.get('cozyURL'),
-            port: 9104,
+            port: 443,
             path: '',
             db: 'cozy',
             headers: {
