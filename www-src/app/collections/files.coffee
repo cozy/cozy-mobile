@@ -12,18 +12,6 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
 
     isSearch: -> @path is undefined
 
-    comparator: (file1, file2) ->
-        if file1.get('docType').toLowerCase() is 'folder' and
-            file2.get('docType').toLowerCase() is 'file'
-                return -1
-        else if file2.get('docType').toLowerCase() is 'folder' and
-            file1.get('docType').toLowerCase() is 'file'
-                return 1
-        else if file1.get('name').toLowerCase() < file2.get('name').toLowerCase()
-            return -1
-        else
-            return 1
-
     # search use temporary view
     search: (callback) ->
         params =

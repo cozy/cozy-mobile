@@ -23,10 +23,11 @@ FilesAndFolderDesignDoc =
     views:
         'FilesAndFolder':
             map: Object.toString.apply (doc) ->
-                if doc.docType?.toLowerCase() is 'file'
-                    emit [doc.path, '2_' + doc.name]
-                if doc.docType?.toLowerCase() is 'folder'
-                    emit [doc.path, '1_' + doc.name]
+                if doc.name?
+                    if doc.docType?.toLowerCase() is 'file'
+                        emit [doc.path, '2_' + doc.name.toLowerCase()]
+                    if doc.docType?.toLowerCase() is 'folder'
+                        emit [doc.path, '1_' + doc.name.toLowerCase()]
 
 LocalPathDesignDoc =
     _id: '_design/LocalPath'
