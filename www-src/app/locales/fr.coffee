@@ -75,11 +75,9 @@ module.exports =
     # -- end of setup
     "setup end"             : "Fin de la configuration"
     "wait message device"   : "Enregistrement du device..."
-    "wait message cozy"     : "Parcours des fichiers présents dans votre cozy. Cela peut prendre plusieurs minutes..."
-    "wait message"          : """Merci de patienter pendant le téléchargement de la liste des fichiers.
-                                Cela peut prendre plusieurs minutes...
-                                           %{progress}%"""
-    "wait message display"  : "Préparation des fichiers..."
+    "message step 0"        : "Etape 1/3 : Synchronisation des fichiers."
+    "message step 1"        : "Etape 2/3 : Synchronisation des dossiers."
+    "message step 2"        : "Etape 3/3 : Préparations des documents."
     "ready message"         : "L'application est prête à être utilisée !"
     "waiting..."            : "En attente..."
     "filesystem bug error"  : "Erreur dans le système de fichier. Essayez de redémarrer votre téléphone"

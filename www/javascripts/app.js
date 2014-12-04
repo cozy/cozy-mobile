@@ -192,18 +192,6 @@ module.exports = FileAndFolderCollection = (function(_super) {
     return this.path === void 0;
   };
 
-  FileAndFolderCollection.prototype.comparator = function(file1, file2) {
-    if (file1.get('docType').toLowerCase() === 'folder' && file2.get('docType').toLowerCase() === 'file') {
-      return -1;
-    } else if (file2.get('docType').toLowerCase() === 'folder' && file1.get('docType').toLowerCase() === 'file') {
-      return 1;
-    } else if (file1.get('name').toLowerCase() < file2.get('name').toLowerCase()) {
-      return -1;
-    } else {
-      return 1;
-    }
-  };
-
   FileAndFolderCollection.prototype.search = function(callback) {
     var params;
     params = {
@@ -1195,10 +1183,10 @@ module.exports = {
   "registering...": "Registering...",
   "setup 3/3": "Setup 3/3",
   "setup end": "End of setting",
+  "message step 0": "Step 1/3: Files synchronization.",
+  "message step 1": "Step 2/3: Folders synchronization.",
+  "message step 2": "Step 3/3: Documents preparation.",
   "wait message device": "Device configuration...",
-  "wait message cozy": "Browsing files stored in your cozy ...",
-  "wait message": "Please wait while the tree is being downloaded. It can take several minutes...%{progress}%",
-  "wait message display": "Files preparation...",
   "ready message": "The application is ready to be used!",
   "waiting...": "Waiting...",
   "filesystem bug error": "File system bug error. Try to restart your phone.",
@@ -1264,9 +1252,9 @@ module.exports = {
   "setup 3/3": "Configuration 3/3",
   "setup end": "Fin de la configuration",
   "wait message device": "Enregistrement du device...",
-  "wait message cozy": "Parcours des fichiers présents dans votre cozy. Cela peut prendre plusieurs minutes...",
-  "wait message": "Merci de patienter pendant le téléchargement de la liste des fichiers.\nCela peut prendre plusieurs minutes...\n           %{progress}%",
-  "wait message display": "Préparation des fichiers...",
+  "message step 0": "Etape 1/3 : Synchronisation des fichiers.",
+  "message step 1": "Etape 2/3 : Synchronisation des dossiers.",
+  "message step 2": "Etape 3/3 : Préparations des documents.",
   "ready message": "L'application est prête à être utilisée !",
   "waiting...": "En attente...",
   "filesystem bug error": "Erreur dans le système de fichier. Essayez de redémarrer votre téléphone",
@@ -1692,13 +1680,7 @@ module.exports = Replicator = (function(_super) {
   };
 
   Replicator.prototype.resetSynchro = function(callback) {
-    this.set('inSync', true);
-    return this._sync(true, (function(_this) {
-      return function(err) {
-        _this.set('inSync', false);
-        return callback(err);
-      };
-    })(this));
+    return this.initialReplication(callback);
   };
 
   Replicator.prototype.init = function(callback) {
@@ -1822,39 +1804,66 @@ module.exports = Replicator = (function(_super) {
   };
 
   Replicator.prototype.initialReplication = function(callback) {
-    this.set('initialReplicationRunning', -2);
-    return async.series([
-      (function(_this) {
-        return function(cb) {
-          return _this.config.save({
-            checkpointed: 0
-          }, cb);
-        };
-      })(this), (function(_this) {
-        return function(cb) {
-          return _this.set('initialReplicationRunning', -1 / 10) && cb(null);
-        };
-      })(this), (function(_this) {
-        return function(cb) {
-          return _this.sync(cb, true);
-        };
-      })(this), (function(_this) {
-        return function(cb) {
-          return _this.set('initialReplicationRunning', 9 / 10) && cb(null);
-        };
-      })(this), (function(_this) {
-        return function(cb) {
-          return _this.db.query('FilesAndFolder', {}, cb);
-        };
-      })(this)
-    ], (function(_this) {
-      return function(err) {
-        console.log("end of inital replication " + (Date.now()));
-        _this.set('initialReplicationRunning', 1);
-        callback(err);
-        return _this.updateIndex(function() {
-          return console.log("Index built");
+    var options;
+    console.log("initialReplication");
+    this.set('initialReplicationStep', 0);
+    options = this.config.makeUrl('/_changes?descending=true&limit=1');
+    return request.get(options, (function(_this) {
+      return function(err, res, body) {
+        var last_seq;
+        if (err) {
+          return callback(err);
+        }
+        last_seq = body.last_seq;
+        return async.series([
+          function(cb) {
+            return _this.copyView('file', cb);
+          }, function(cb) {
+            return _this.set('initialReplicationStep', 1) && cb(null);
+          }, function(cb) {
+            return _this.copyView('folder', cb);
+          }, function(cb) {
+            return _this.set('initialReplicationStep', 2) && cb(null);
+          }, function(cb) {
+            return _this.config.save({
+              checkpointed: last_seq
+            }, cb);
+          }, function(cb) {
+            return _this.db.query('FilesAndFolder', {}, cb);
+          }
+        ], function(err) {
+          console.log("end of inital replication " + (Date.now()));
+          _this.set('initialReplicationStep', 3);
+          callback(err);
+          return _this.updateIndex(function() {
+            return console.log("Index built");
+          });
         });
+      };
+    })(this));
+  };
+
+  Replicator.prototype.copyView = function(model, callback) {
+    var options;
+    console.log("copyView " + (Date.now()));
+    options = this.config.makeUrl("/_design/" + model + "/_view/all/");
+    return request.get(options, (function(_this) {
+      return function(err, res, body) {
+        var _ref;
+        if (err) {
+          return callback(err);
+        }
+        if (!((_ref = body.rows) != null ? _ref.length : void 0)) {
+          return callback(null);
+        }
+        return async.eachSeries(body.rows, function(doc, cb) {
+          doc = doc.value;
+          return _this.db.put(doc, {
+            'new_edits': false
+          }, function(err, file) {
+            return cb();
+          });
+        }, callback);
       };
     })(this));
   };
@@ -2056,16 +2065,13 @@ module.exports = Replicator = (function(_super) {
     })(this));
   };
 
-  Replicator.prototype.sync = function(callback, force) {
-    if (force == null) {
-      force = false;
-    }
+  Replicator.prototype.sync = function(callback) {
     if (this.get('inSync')) {
       return callback(null);
     }
     console.log("SYNC CALLED");
     this.set('inSync', true);
-    return this._sync(force, (function(_this) {
+    return this._sync({}, (function(_this) {
       return function(err) {
         _this.set('inSync', false);
         return callback(err);
@@ -2073,49 +2079,26 @@ module.exports = Replicator = (function(_super) {
     })(this));
   };
 
-  Replicator.prototype._sync = function(force, callback) {
-    var checkpoint, options, replication, total_count, _ref;
+  Replicator.prototype._sync = function(options, callback) {
+    var checkpoint, replication, total_count, _ref;
     console.log("BEGIN SYNC");
     total_count = 0;
     if ((_ref = this.liveReplication) != null) {
       _ref.cancel();
     }
-    if (!force) {
-      checkpoint = this.config.get('checkpointed');
-    } else {
-      checkpoint = 0;
-      options = this.config.makeUrl("/_design/file/_view/all/");
-      request.get(options, (function(_this) {
-        return function(err, res, files) {
-          options = _this.config.makeUrl("/_design/folder/_view/all/");
-          return request.get(options, function(err, res, folders) {
-            total_count = files.total_rows + folders.total_rows;
-            return console.log("TOTAL DOCUMENTS : " + total_count);
-          });
-        };
-      })(this));
-    }
+    checkpoint = options.checkpoint || this.config.get('checkpointed');
     replication = this.db.replicate.from(this.config.remote, {
-      batch_size: 5,
-      batches_limit: 1,
+      batch_size: 20,
+      batches_limit: 5,
       filter: function(doc) {
         return doc.docType === 'Folder' || doc.docType === 'File';
       },
       live: false,
       since: checkpoint
     });
-    replication.on('change', (function(_this) {
-      return function(change) {
-        if (force) {
-          return _this.db.info(function(err, info) {
-            var progress;
-            console.log("LOCAL DOCUMENTS : " + (info.doc_count - 4) + " / " + total_count);
-            progress = (9 / 10) * ((info.doc_count - 4) / total_count);
-            return _this.set('initialReplicationRunning', progress);
-          });
-        }
-      };
-    })(this));
+    replication.on('change', function(change) {
+      return console.log("REPLICATION CHANGE : " + change);
+    });
     replication.once('error', (function(_this) {
       return function(err) {
         var _ref1;
@@ -2124,7 +2107,7 @@ module.exports = Replicator = (function(_super) {
           if (replication != null) {
             replication.cancel();
           }
-          return _this._sync(force, callback);
+          return _this._sync(options, callback);
         }
       };
     })(this));
@@ -2153,9 +2136,11 @@ module.exports = Replicator = (function(_super) {
     }
     console.log('REALTIME START');
     this.liveReplication = this.db.replicate.from(this.config.remote, {
-      batch_size: 50,
+      batch_size: 20,
       batches_limit: 5,
-      filter: this.config.makeFilterName(),
+      filter: function(doc) {
+        return doc.docType === 'Folder' || doc.docType === 'File';
+      },
       since: this.config.get('checkpointed'),
       continuous: true
     });
@@ -2702,11 +2687,13 @@ FilesAndFolderDesignDoc = {
     'FilesAndFolder': {
       map: Object.toString.apply(function(doc) {
         var _ref, _ref1;
-        if (((_ref = doc.docType) != null ? _ref.toLowerCase() : void 0) === 'file') {
-          emit([doc.path, '2_' + doc.name]);
-        }
-        if (((_ref1 = doc.docType) != null ? _ref1.toLowerCase() : void 0) === 'folder') {
-          return emit([doc.path, '1_' + doc.name]);
+        if (doc.name != null) {
+          if (((_ref = doc.docType) != null ? _ref.toLowerCase() : void 0) === 'file') {
+            emit([doc.path, '2_' + doc.name.toLowerCase()]);
+          }
+          if (((_ref1 = doc.docType) != null ? _ref1.toLowerCase() : void 0) === 'folder') {
+            return emit([doc.path, '1_' + doc.name.toLowerCase()]);
+          }
         }
       })
     }
@@ -3400,24 +3387,14 @@ module.exports = FirstSyncView = (function(_super) {
   };
 
   FirstSyncView.prototype.getRenderData = function() {
-    var buttonText, messageText, percent;
-    percent = app.replicator.get('initialReplicationRunning') || 0;
-    if (percent && percent === 1) {
+    var buttonText, messageText, step;
+    step = app.replicator.get('initialReplicationStep');
+    console.log("onChange : " + step);
+    if (step === 3) {
       messageText = t('ready message');
       buttonText = t('end');
-    } else if (percent < -1) {
-      messageText = t('wait message device');
-      buttonText = t('waiting...');
-    } else if (percent < 0) {
-      messageText = t('wait message cozy');
-      buttonText = t('waiting...');
-    } else if (percent === 0.90) {
-      messageText = t('wait message display');
-      buttonText = t('waiting...');
     } else {
-      messageText = t('wait message', {
-        progress: 5 + parseInt(percent * 100)
-      });
+      messageText = t("message step " + step);
       buttonText = t('waiting...');
     }
     return {
@@ -3427,29 +3404,21 @@ module.exports = FirstSyncView = (function(_super) {
   };
 
   FirstSyncView.prototype.initialize = function() {
-    return this.listenTo(app.replicator, 'change:initialReplicationRunning', this.onChange);
+    return this.listenTo(app.replicator, 'change:initialReplicationStep', this.onChange);
   };
 
   FirstSyncView.prototype.onChange = function(replicator) {
-    var percent;
-    percent = replicator.get('initialReplicationRunning');
-    if (percent === 0.90) {
-      this.$('#finishSync .progress').text(t('wait message display'));
-    } else {
-      this.$('#finishSync .progress').text(t('wait message', {
-        progress: 5 + parseInt(percent * 100)
-      }));
-    }
-    if (percent >= 1) {
-      return this.render();
-    }
+    var step;
+    step = replicator.get('initialReplicationStep');
+    this.$('#finishSync .progress').text(t("message step " + step));
+    return (this.render() === step && step === 3);
   };
 
   FirstSyncView.prototype.end = function() {
-    var percent;
-    percent = parseInt(app.replicator.get('initialReplicationRunning'));
-    console.log("end " + percent);
-    if (percent !== 1) {
+    var step;
+    step = parseInt(app.replicator.get('initialReplicationStep'));
+    console.log("end " + step);
+    if (step !== 3) {
       return;
     }
     app.replicator.backup(function(err) {

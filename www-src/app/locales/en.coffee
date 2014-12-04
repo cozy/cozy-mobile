@@ -74,10 +74,10 @@ module.exports =
 
     # -- end of setup
     "setup end"             : "End of setting"
+    "message step 0"        : "Step 1/3: Files synchronization."
+    "message step 1"        : "Step 2/3: Folders synchronization."
+    "message step 2"        : "Step 3/3: Documents preparation."
     "wait message device"   : "Device configuration..."
-    "wait message cozy"     : "Browsing files stored in your cozy ..."
-    "wait message"          : "Please wait while the tree is being downloaded. It can take several minutes...%{progress}%"
-    "wait message display"  : "Files preparation..."
     "ready message"         : "The application is ready to be used!"
     "waiting..."            : "Waiting..."
     "filesystem bug error"  : "File system bug error. Try to restart your phone."

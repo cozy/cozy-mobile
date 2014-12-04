@@ -30,10 +30,8 @@ module.exports = class Replicator extends Backbone.Model
                     fs.rmrf @downloads, callback
 
     resetSynchro: (callback) ->
-        @set 'inSync', true
-        @_sync true, (err) =>
-            @set 'inSync', false
-            callback err
+        # remove all files/folders then call initialReplication
+        @initialReplication callback
 
     init: (callback) ->
         fs.initialize (err, downloads, cache) =>
@@ -123,22 +121,44 @@ module.exports = class Replicator extends Backbone.Model
                     callback null
 
     initialReplication: (callback) ->
-        @set 'initialReplicationRunning', -2
-        async.series [
-            # Force checkpoint to 0
-            (cb) => @config.save checkpointed: 0, cb
-            (cb) => @set('initialReplicationRunning', -1/10) and cb null
-            # First sync
-            (cb) => @sync cb, true
-            (cb) => @set('initialReplicationRunning', 9/10) and cb null
-            # build the initial state of FilesAndFolder view index
-            (cb) => @db.query 'FilesAndFolder', {}, cb
-        ], (err) =>
-            console.log "end of inital replication #{Date.now()}"
-            @set 'initialReplicationRunning', 1
-            callback err
-            # updateIndex In background
-            @updateIndex -> console.log "Index built"
+        console.log "initialReplication"
+        @set 'initialReplicationStep', 0
+        options = @config.makeUrl '/_changes?descending=true&limit=1'
+        request.get options, (err, res, body) =>
+            return callback err if err
+            # we store last_seq before copying files & folder
+            # to avoid losing changes occuring during replicatation
+            last_seq = body.last_seq
+            async.series [
+                # Force checkpoint to 0
+                (cb) => @copyView 'file', cb
+                #(cb) => @config.save checkpointed: 0, cb
+                (cb) => @set('initialReplicationStep', 1) and cb null
+                (cb) => @copyView 'folder', cb
+                (cb) => @set('initialReplicationStep', 2) and cb null
+                # Save last sequences
+                (cb) => @config.save checkpointed: last_seq, cb
+                # build the initial state of FilesAndFolder view index
+                (cb) => @db.query 'FilesAndFolder', {}, cb
+            ], (err) =>
+                console.log "end of inital replication #{Date.now()}"
+                @set 'initialReplicationStep', 3
+                callback err
+                # updateIndex In background
+                @updateIndex -> console.log "Index built"
+
+
+    copyView: (model, callback) ->
+        console.log "copyView #{Date.now()}"
+        options = @config.makeUrl "/_design/#{model}/_view/all/"
+        request.get options, (err, res, body) =>
+            return callback err if err
+            return callback null unless body.rows?.length
+            async.eachSeries body.rows, (doc, cb) =>
+                doc = doc.value
+                @db.put doc, 'new_edits':false, (err, file) =>
+                    cb()
+            , callback
 
     fileInFileSystem: (file) =>
         @cache.some (entry) ->
@@ -264,11 +284,11 @@ module.exports = class Replicator extends Backbone.Model
             , callback
 
     # wrapper around _sync to maintain the state of inSync
-    sync: (callback, force=false) ->
+    sync: (callback) ->
         return callback null if @get 'inSync'
         console.log "SYNC CALLED"
         @set 'inSync', true
-        @_sync force, (err) =>
+        @_sync {}, (err) =>
             @set 'inSync', false
             callback err
 
@@ -277,43 +297,28 @@ module.exports = class Replicator extends Backbone.Model
     #    * first replication
     #    * replication at each start
     #    * replication force byu user
-    _sync: (force, callback) ->
+    _sync: (options, callback) ->
         console.log "BEGIN SYNC"
         total_count = 0
         @liveReplication?.cancel()
-        if not force
-            checkpoint = @config.get 'checkpointed'
-        else
-            checkpoint = 0
-            # Recover number of couments in cozy to inform user
-            # replication progression.
-            options = @config.makeUrl "/_design/file/_view/all/"
-            request.get options, (err, res, files) =>
-                options = @config.makeUrl "/_design/folder/_view/all/"
-                request.get options, (err, res, folders) =>
-                    total_count = files.total_rows + folders.total_rows
-                    console.log "TOTAL DOCUMENTS : #{total_count}"
+        checkpoint = options.checkpoint or @config.get 'checkpointed'
 
         replication = @db.replicate.from @config.remote,
-            batch_size: 5
-            batches_limit: 1
+            batch_size: 20
+            batches_limit: 5
             filter: (doc) ->
                 doc.docType is 'Folder' or doc.docType is 'File'
             live: false
             since: checkpoint
 
-        replication.on 'change', (change) =>
-            if force
-                @db.info (err, info) =>
-                    console.log "LOCAL DOCUMENTS : #{info.doc_count - 4} / #{total_count}"
-                    progress = (9 / 10) * ((info.doc_count - 4) / total_count)
-                    @set('initialReplicationRunning', progress)
+        replication.on 'change', (change) ->
+            console.log "REPLICATION CHANGE : #{change}"
 
         replication.once 'error', (err) =>
             console.log "REPLICATOR ERRROR #{JSON.stringify(err)} #{err.stack}"
             if err?.result?.status? and err.result.status is 'aborted'
                 replication?.cancel()
-                @_sync force, callback
+                @_sync options, callback
 
         replication.once 'complete', (result) =>
             console.log "REPLICATION COMPLETED"
@@ -336,9 +341,10 @@ module.exports = class Replicator extends Backbone.Model
         return if @liveReplication
         console.log 'REALTIME START'
         @liveReplication = @db.replicate.from @config.remote,
-            batch_size: 50
+            batch_size: 20
             batches_limit: 5
-            filter: @config.makeFilterName()
+            filter: (doc) ->
+                doc.docType is 'Folder' or doc.docType is 'File'
             since: @config.get 'checkpointed'
             continuous: true
 

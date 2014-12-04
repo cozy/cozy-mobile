@@ -8,43 +8,31 @@ module.exports = class FirstSyncView extends BaseView
     events: ->
         'tap #btn-end': 'end'
 
-    getRenderData: ->
+    getRenderData: () ->
+        step = app.replicator.get 'initialReplicationStep'
+        console.log "onChange : #{step}"
 
-        percent = app.replicator.get('initialReplicationRunning') or 0
-        if percent and percent is 1
+        if step is 3
             messageText = t 'ready message'
             buttonText = t 'end'
-        else if percent < -1
-            messageText = t 'wait message device'
-            buttonText = t 'waiting...'
-        else if percent < 0
-            messageText = t 'wait message cozy'
-            buttonText = t 'waiting...'
-        else if percent is 0.90
-            messageText = t 'wait message display'
-            buttonText = t 'waiting...'
         else
-            messageText = t 'wait message', progress: 5 + parseInt(percent * 100)
+            messageText = t "message step #{step}"
             buttonText = t 'waiting...'
-
+        #@render()
         return {messageText, buttonText}
 
     initialize: ->
-        @listenTo app.replicator, 'change:initialReplicationRunning', @onChange
+        @listenTo app.replicator, 'change:initialReplicationStep', @onChange
 
     onChange: (replicator) ->
-        percent = replicator.get 'initialReplicationRunning'
-        if percent is 0.90
-            @$('#finishSync .progress').text t 'wait message display'
-        else
-            @$('#finishSync .progress').text t 'wait message', progress: 5 + parseInt(percent * 100)
-
-        @render() if percent >= 1
+        step = replicator.get 'initialReplicationStep'
+        @$('#finishSync .progress').text t "message step #{step}"
+        @render() is step is 3
 
     end: ->
-        percent = parseInt(app.replicator.get('initialReplicationRunning'))
-        console.log "end #{percent}"
-        return if percent isnt 1
+        step = parseInt(app.replicator.get('initialReplicationStep'))
+        console.log "end #{step}"
+        return if step isnt 3
 
         # start the first contact & pictures backup
         app.replicator.backup (err) ->
