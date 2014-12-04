@@ -2966,7 +2966,7 @@ buf.push('</div><div class="item">');
 var __val__ = t('device name') + ' : ' + deviceName
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</div><div class="item">');
-var __val__ = t('app name') + ' v 0.1.0'
+var __val__ = t('app name') + ' v 0.1.1'
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</div><div class="item item-divider">');
 var __val__ = t('reset title')
