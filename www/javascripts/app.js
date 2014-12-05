@@ -2492,8 +2492,11 @@ module.exports = {
       };
     })(this);
     createNew = (function(_this) {
-      return function() {
-        var folder;
+      return function(number) {
+        var folder, options;
+        if (number == null) {
+          number = 0;
+        }
         console.log("MAKING ONE");
         folder = {
           docType: 'Folder',
@@ -2503,21 +2506,33 @@ module.exports = {
           creationDate: new Date().toISOString(),
           tags: []
         };
-        return _this.config.remote.post(folder, function(err, res) {
-          var dbDevice;
-          dbDevice = {
-            docType: 'Device',
-            localId: res.id
-          };
-          return _this.photosDB.post(dbDevice, function(err, res) {
-            app.replicator.startRealtime();
-            return findDevice(dbDevice.localId, function() {
-              if (err) {
-                return callback(err);
-              }
-              return callback(null, folder);
+        if (number !== 0) {
+          folder.name = _this.config.get('deviceName') + '-' + number;
+        }
+        options = {
+          key: ['', "1_" + (folder.name.toLowerCase())]
+        };
+        return _this.db.query('FilesAndFolder', options, function(err, folders) {
+          if (folders.rows.length === 0) {
+            return _this.config.remote.post(folder, function(err, res) {
+              var dbDevice;
+              dbDevice = {
+                docType: 'Device',
+                localId: res.id
+              };
+              return _this.photosDB.post(dbDevice, function(err, res) {
+                app.replicator.startRealtime();
+                return findDevice(dbDevice.localId, function() {
+                  if (err) {
+                    return callback(err);
+                  }
+                  return callback(null, folder);
+                });
+              });
             });
-          });
+          } else {
+            return createNew(number + 1);
+          }
         });
       };
     })(this);
@@ -3608,12 +3623,7 @@ module.exports = FolderLineView = (function(_super) {
   };
 
   FolderLineView.prototype.afterRender = function() {
-    this.$el[0].dataset.folderid = this.model.get('_id');
-    if (this.model.isDeviceFolder) {
-      return this.$('.ion-folder').css({
-        color: '#34a6ff'
-      });
-    }
+    return this.$el[0].dataset.folderid = this.model.get('_id');
   };
 
   FolderLineView.prototype.setCacheIcon = function(klass) {

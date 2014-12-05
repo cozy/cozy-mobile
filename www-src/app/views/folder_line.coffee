@@ -19,8 +19,6 @@ module.exports = class FolderLineView extends BaseView
 
     afterRender: =>
         @$el[0].dataset.folderid = @model.get('_id')
-        if @model.isDeviceFolder
-            @$('.ion-folder').css color: '#34a6ff'
 
     setCacheIcon: (klass) =>
         icon = @$('.cache-indicator')

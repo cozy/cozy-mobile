@@ -235,7 +235,7 @@ module.exports =
                 else
                     findDevice id, callback
 
-        createNew = () =>
+        createNew = (number=0) =>
             console.log "MAKING ONE"
             # no device folder, lets make it
             folder =
@@ -245,16 +245,24 @@ module.exports =
                 lastModification : new Date().toISOString()
                 creationDate     : new Date().toISOString()
                 tags             : []
-            @config.remote.post folder, (err, res) =>
-                dbDevice =
-                    docType : 'Device'
-                    localId: res.id
-                @photosDB.post dbDevice, (err, res) =>
-                    app.replicator.startRealtime()
-                    # Wait to receive folder in local database
-                    findDevice dbDevice.localId, () ->
-                        return callback err if err
-                        callback null, folder
+            if number isnt 0
+                folder.name = @config.get('deviceName') + '-' + number
+            options =
+                key: ['', "1_#{folder.name.toLowerCase()}"]
+            @db.query 'FilesAndFolder', options, (err, folders) =>
+                if folders.rows.length is 0
+                    @config.remote.post folder, (err, res) =>
+                        dbDevice =
+                            docType : 'Device'
+                            localId: res.id
+                        @photosDB.post dbDevice, (err, res) =>
+                            app.replicator.startRealtime()
+                            # Wait to receive folder in local database
+                            findDevice dbDevice.localId, () ->
+                                return callback err if err
+                                callback null, folder
+                else
+                    createNew(number + 1)
 
         @photosDB.query 'DevicesByLocalId', {}, (err, results) =>
             return callback err if err
