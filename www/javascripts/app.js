@@ -3019,7 +3019,7 @@ buf.push('</div></div><div class="card"><label class="item item-input item-stack
 var __val__ = t('name device')
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</span><input');
-buf.push(attrs({ 'id':('input-device'), 'type':("text"), 'placeholder':("" + (t('device name placeholder')) + "") }, {"type":true,"placeholder":true}));
+buf.push(attrs({ 'id':('input-device'), 'type':("text"), 'value':("" + (t('device name placeholder')) + "") }, {"type":true,"value":true}));
 buf.push('/></label></div><div class="button-bar item-input"><button id="btn-back" class="button button-dark icon-left ion-chevron-left button-clear">');
 var __val__ = t('back')
 buf.push(escape(null == __val__ ? "" : __val__));
@@ -3304,7 +3304,8 @@ module.exports = DeviceNamePickerView = (function(_super) {
 
   DeviceNamePickerView.prototype.events = function() {
     return {
-      'click #btn-save': 'doSave',
+      'blur #input-device': 'onCompleteDefaultValue',
+      'focus #input-device': 'onRemoveDefaultValue',
       'click #btn-back': 'doBack',
       'keypress #input-device': 'blurIfEnter'
     };
@@ -3355,6 +3356,22 @@ module.exports = DeviceNamePickerView = (function(_super) {
         }
       };
     })(this));
+  };
+
+  DeviceNamePickerView.prototype.onCompleteDefaultValue = function() {
+    var device;
+    device = this.$('#input-device').val();
+    if (device === '') {
+      return this.$('#input-device').val(t('device name placeholder'));
+    }
+  };
+
+  DeviceNamePickerView.prototype.onRemoveDefaultValue = function() {
+    var device;
+    device = this.$('#input-device').val();
+    if (device === t('device name placeholder')) {
+      return this.$('#input-device').val('');
+    }
   };
 
   DeviceNamePickerView.prototype.displayError = function(text, field) {
