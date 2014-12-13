@@ -1254,7 +1254,7 @@ module.exports = {
   "wait message device": "Enregistrement du device...",
   "message step 0": "Etape 1/3 : Synchronisation des fichiers.",
   "message step 1": "Etape 2/3 : Synchronisation des dossiers.",
-  "message step 2": "Etape 3/3 : Préparations des documents.",
+  "message step 2": "Etape 3/3 : Préparation des documents.",
   "ready message": "L'application est prête à être utilisée !",
   "waiting...": "En attente...",
   "filesystem bug error": "Erreur dans le système de fichier. Essayez de redémarrer votre téléphone",
