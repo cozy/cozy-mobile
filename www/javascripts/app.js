@@ -3119,7 +3119,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<div id="container" class="pane"><div id="bar-header" class="bar bar-header"><a id="btn-menu" class="button button-icon"><img src="img/menu-icon-blue.png"/></a><h1 id="title" class="title">Loading</h1><a id="headerSpinner" class="button button-icon icon ion-looping"></a></div><div class="bar bar-subheader bar-calm"><h2 id="backupIndicator" class="title"></h2></div><div id="viewsPlaceholder" class="scroll-content has-header has-footer"><div class="scroll"><div class="scroll-refresher"><div class="ionic-refresher-content"><div class="icon-pulling"><i class="icon ion-arrow-down-c"></i>');
+buf.push('<div id="container" class="pane"><div id="bar-header" class="bar bar-header"><a id="btn-menu" class="button button-icon"><img src="img/menu-icon-blue.png"/></a><h1 id="title" class="title">Loading</h1><a id="headerSpinner" class="button button-icon"><img src="img/spinner.svg" width="25"/></a></div><div class="bar bar-subheader bar-calm"><h2 id="backupIndicator" class="title"></h2></div><div id="viewsPlaceholder" class="scroll-content has-header has-footer"><div class="scroll"><div class="scroll-refresher"><div class="ionic-refresher-content"><div class="icon-pulling"><i class="icon ion-arrow-down-c"></i>');
 var __val__ = t('pull to sync')
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</div><div class="icon-refreshing"><i class="icon ion-loading-d"></i>');
@@ -3304,6 +3304,7 @@ module.exports = DeviceNamePickerView = (function(_super) {
 
   DeviceNamePickerView.prototype.events = function() {
     return {
+      'click #btn-save': 'doSave',
       'blur #input-device': 'onCompleteDefaultValue',
       'focus #input-device': 'onRemoveDefaultValue',
       'click #btn-back': 'doBack',

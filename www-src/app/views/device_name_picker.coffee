@@ -6,6 +6,7 @@ module.exports = class DeviceNamePickerView extends BaseView
     template: require '../templates/device_name_picker'
 
     events: ->
+        'click #btn-save': 'doSave'
         'blur #input-device': 'onCompleteDefaultValue'
         'focus #input-device': 'onRemoveDefaultValue'
         'click #btn-back': 'doBack'
