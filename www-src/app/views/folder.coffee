@@ -10,8 +10,8 @@ module.exports = class FolderView extends CollectionView
     menuEnabled: true
 
     events: ->
-        'tap .cache-indicator': 'displaySlider'
-        'hold .item': 'displaySlider'
+        #'tap .cache-indicator': 'displaySlider'
+        #'hold .item': 'displaySlider'
 
     isParentOf: (otherFolderView) ->
         return true if @collection.path is null #root

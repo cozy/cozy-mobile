@@ -3160,13 +3160,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<div id="container" class="pane"><div id="bar-header" class="bar bar-header"><a id="btn-menu" class="button button-icon"><img src="img/menu-icon-blue.png"/></a><h1 id="title" class="title">Loading</h1><a id="headerSpinner" class="button button-icon"><img src="img/spinner.svg" width="25"/></a></div><div class="bar bar-subheader bar-calm"><h2 id="backupIndicator" class="title"></h2></div><div id="viewsPlaceholder" class="scroll-content has-header has-footer"><div class="scroll"><div class="scroll-refresher"><div class="ionic-refresher-content"><div class="icon-pulling"><i class="icon ion-arrow-down-c"></i>');
-var __val__ = t('pull to sync')
-buf.push(escape(null == __val__ ? "" : __val__));
-buf.push('</div><div class="icon-refreshing"><i class="icon ion-loading-d"></i>');
-var __val__ = t('syncing')
-buf.push(escape(null == __val__ ? "" : __val__));
-buf.push('</div></div></div></div></div><div class="bar bar-footer"><a id="btn-back" class="button button-icon icon ion-ios7-arrow-back"></a></div></div>');
+buf.push('<div id="container" class="pane"><div id="bar-header" class="bar bar-header"><a id="btn-menu" class="button button-icon"><img src="img/menu-icon-blue.png"/></a><h1 id="title" class="title">Loading</h1><a id="headerSpinner" class="button button-icon"><img src="img/spinner.svg" width="25"/></a></div><div class="bar bar-subheader bar-calm"><h2 id="backupIndicator" class="title"></h2></div><div id="viewsPlaceholder" class="scroll-content has-header has-footer"><div class="scroll"><div class="scroll-refresher"><div class="ionic-refresher-content"></div></div></div></div><div class="bar bar-footer"><a id="btn-back" class="button button-icon icon ion-ios7-arrow-back"></a></div></div>');
 }
 return buf.join("");
 };
@@ -3540,12 +3534,7 @@ module.exports = FolderView = (function(_super) {
 
   FolderView.prototype.menuEnabled = true;
 
-  FolderView.prototype.events = function() {
-    return {
-      'tap .cache-indicator': 'displaySlider',
-      'hold .item': 'displaySlider'
-    };
-  };
+  FolderView.prototype.events = function() {};
 
   FolderView.prototype.isParentOf = function(otherFolderView) {
     if (this.collection.path === null) {
@@ -3865,11 +3854,10 @@ module.exports = Layout = (function(_super) {
   };
 
   Layout.prototype.initialize = function() {
-    var OpEvents;
     document.addEventListener("menubutton", this.onMenuButtonClicked, false);
     document.addEventListener("searchbutton", this.onSearchButtonClicked, false);
     document.addEventListener("backbutton", this.onBackButtonClicked, false);
-    this.listenTo(app.replicator, 'change:inSync change:inBackup', (function(_this) {
+    return this.listenTo(app.replicator, 'change:inSync change:inBackup', (function(_this) {
       return function() {
         var inBackup, inSync;
         inSync = app.replicator.get('inSync');
@@ -3878,29 +3866,26 @@ module.exports = Layout = (function(_super) {
         return _this.refresher.toggleClass('refreshing', inSync);
       };
     })(this));
-    OpEvents = 'change:inBackup change:backup_step change:backup_step_done';
-    return this.listenTo(app.replicator, OpEvents, _.debounce((function(_this) {
-      return function() {
-        var step, text;
-        step = app.replicator.get('backup_step');
-        if (step && (step !== 'pictures_scan' && step !== 'contacts_scan')) {
-          text = t(step);
-          if (app.replicator.get('backup_step_done')) {
-            text += ": " + (app.replicator.get('backup_step_done'));
-            text += "/" + (app.replicator.get('backup_step_total'));
-          }
-          _this.backupIndicator.text(text).parent().slideDown();
-          return _this.viewsPlaceholder.addClass('has-subheader');
-        } else {
-          _this.backupIndicator.parent().slideUp();
-          return _this.viewsPlaceholder.removeClass('has-subheader');
-        }
-      };
-    })(this), 100));
+
+    /*OpEvents = 'change:inBackup change:backup_step change:backup_step_done'
+    @listenTo app.replicator, OpEvents, _.debounce =>
+        step = app.replicator.get 'backup_step'
+        if step and step not in ['pictures_scan', 'contacts_scan']
+            text = t step
+            if app.replicator.get 'backup_step_done'
+                text += ": #{app.replicator.get 'backup_step_done'}"
+                text += "/#{app.replicator.get 'backup_step_total'}"
+            @backupIndicator.text(text).parent().slideDown()
+            @viewsPlaceholder.addClass 'has-subheader'
+        else
+            @backupIndicator.parent().slideUp()
+            @viewsPlaceholder.removeClass 'has-subheader'
+    
+    , 100
+     */
   };
 
   Layout.prototype.afterRender = function() {
-    var onActive, onClose, onStart;
     this.menu = new Menu();
     this.menu.render();
     this.$el.append(this.menu.$el);
@@ -3930,27 +3915,23 @@ module.exports = Layout = (function(_super) {
       el: this.viewsPlaceholder[0]
     });
     this.ionicScroll.scrollTo(1, 0, true, null);
-    this.ionicScroll.scrollTo(0, 0, true, null);
-    return this.ionicScroll.activatePullToRefresh(50, onActive = (function(_this) {
-      return function() {
-        _this.refresher.addClass('active');
-        return console.log("ON ACTIVE");
-      };
-    })(this), onClose = (function(_this) {
-      return function() {
-        console.log("ON CLOSE");
-        return _this.refresher.removeClass('active');
-      };
-    })(this), onStart = (function(_this) {
-      return function() {
-        _this.ionicScroll.finishPullToRefresh();
-        return app.replicator.sync(function(err) {
-          if (err) {
-            return console.log(err);
-          }
-        });
-      };
-    })(this));
+    return this.ionicScroll.scrollTo(0, 0, true, null);
+
+    /*@ionicScroll.activatePullToRefresh 50,
+        onActive = =>
+            @refresher.addClass 'active'
+            console.log "ON ACTIVE"
+    
+        onClose = =>
+            console.log "ON CLOSE"
+            @refresher.removeClass 'active'
+    
+        onStart = =>
+             * hide immediately, the header spinner is enough
+            @ionicScroll.finishPullToRefresh()
+            app.replicator.sync (err) =>
+                console.log err if err
+     */
   };
 
   Layout.prototype.togglePullToRefresh = function(activated) {

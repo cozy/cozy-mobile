@@ -27,7 +27,7 @@ module.exports = class Layout extends BaseView
             @spinner.toggle inSync or inBackup
             @refresher.toggleClass 'refreshing', inSync
 
-        OpEvents = 'change:inBackup change:backup_step change:backup_step_done'
+        ###OpEvents = 'change:inBackup change:backup_step change:backup_step_done'
         @listenTo app.replicator, OpEvents, _.debounce =>
             step = app.replicator.get 'backup_step'
             if step and step not in ['pictures_scan', 'contacts_scan']
@@ -41,7 +41,7 @@ module.exports = class Layout extends BaseView
                 @backupIndicator.parent().slideUp()
                 @viewsPlaceholder.removeClass 'has-subheader'
 
-        , 100
+        , 100###
 
     afterRender: ->
         @menu = new Menu()
@@ -79,7 +79,7 @@ module.exports = class Layout extends BaseView
         @ionicScroll.scrollTo 1, 0, true, null
         @ionicScroll.scrollTo 0, 0, true, null
 
-        @ionicScroll.activatePullToRefresh 50,
+        ###@ionicScroll.activatePullToRefresh 50,
             onActive = =>
                 @refresher.addClass 'active'
                 console.log "ON ACTIVE"
@@ -92,7 +92,7 @@ module.exports = class Layout extends BaseView
                 # hide immediately, the header spinner is enough
                 @ionicScroll.finishPullToRefresh()
                 app.replicator.sync (err) =>
-                    console.log err if err
+                    console.log err if err ###
 
     togglePullToRefresh: (activated) =>
         #@TODO, make sure this isnt called while PTR visible
