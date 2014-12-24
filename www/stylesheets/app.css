@@ -6318,8 +6318,17 @@ a.button {
 .cache-indicator-version {
   color: #fe8800;
 }
+.cache-indicator img {
+  width: 25px;
+}
 .icon.ion-chevron-right {
   left: auto;
+}
+img.backup {
+  left: 9px;
+  width: 30px;
+  bottom: 9px;
+  position: absolute;
 }
 .icon.ion-chevron-right + .cache-indicator {
   left: auto;
