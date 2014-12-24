@@ -26,7 +26,6 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
 
     # fetch use
     fetch: (_callback = ->) ->
-
         callback = (err) =>
             @notloaded = false
             @trigger 'sync'
@@ -42,11 +41,27 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
 
         console.log "CACHE MISS " + cacheKey
 
-        @_fetch @path, (err, items) =>
-            return callback err if err
-            @slowReset items, (err) =>
-                @fetchAdditional() unless err
-                callback err
+
+        if @path is app.replicator.config.get('deviceName')
+            params =
+                endkey: if @path then ['/' + @path] else ['']
+                startkey: if @path then ['/' + @path, {}] else ['', {}]
+                include_docs: true
+                descending: true
+
+            app.replicator.db.query 'Pictures', params, (err, items) =>
+                return callback err if err
+                @slowReset items, (err) =>
+                    @fetchAdditional() unless err
+                    callback err
+
+        else
+
+            @_fetch @path, (err, items) =>
+                return callback err if err
+                @slowReset items, (err) =>
+                    @fetchAdditional() unless err
+                    callback err
 
 
     _fetch: (path, callback) ->
