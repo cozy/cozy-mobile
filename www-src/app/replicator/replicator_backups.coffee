@@ -206,7 +206,7 @@ module.exports =
             lastModification : new Date(cordovaFile.lastModified).toISOString()
             creationDate     : new Date(cordovaFile.lastModified).toISOString()
             size             : cordovaFile.size
-            tags             : ['uploaded-from-' + @config.get 'deviceName']
+            tags             : ['from-' + @config.get 'deviceName']
             binary: file:
                 id: binaryDoc.id
                 rev: binaryDoc.rev
