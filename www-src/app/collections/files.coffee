@@ -40,37 +40,29 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
                 callback err
 
         console.log "CACHE MISS " + cacheKey
-
-
-        if @path is app.replicator.config.get('deviceName')
-            params =
-                endkey: if @path then ['/' + @path] else ['']
-                startkey: if @path then ['/' + @path, {}] else ['', {}]
-                include_docs: true
-                descending: true
-
-            app.replicator.db.query 'Pictures', params, (err, items) =>
-                return callback err if err
-                @slowReset items, (err) =>
-                    @fetchAdditional() unless err
-                    callback err
-
-        else
-
-            @_fetch @path, (err, items) =>
-                return callback err if err
-                @slowReset items, (err) =>
-                    @fetchAdditional() unless err
-                    callback err
+        @_fetch @path, (err, items) =>
+            return callback err if err
+            @slowReset items, (err) =>
+                @fetchAdditional() unless err
+                callback err
 
 
     _fetch: (path, callback) ->
-        params =
-            startkey: if path then ['/' + path] else ['']
-            endkey: if path then ['/' + path, {}] else ['', {}]
-            include_docs: true
+        if path is app.replicator.config.get('deviceName')
+            params =
+                endkey: if path then ['/' + path] else ['']
+                startkey: if path then ['/' + path, {}] else ['', {}]
+                include_docs: true
+                descending: true
+            view = 'Pictures'
+        else
+            params =
+                startkey: if path then ['/' + path] else ['']
+                endkey: if path then ['/' + path, {}] else ['', {}]
+                include_docs: true
+            view = 'FilesAndFolder'
 
-        app.replicator.db.query 'FilesAndFolder', params, callback
+        app.replicator.db.query view, params, callback
 
     slowReset: (results, callback) ->
         models = results.rows.map (row) ->
