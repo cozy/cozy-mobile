@@ -35,6 +35,7 @@ module.exports =
     "backup"              : "Backup"
     "save"                : "Save"
     "done"                : "Done"
+    "photos"              : "Photos from devices"
     "confirm message"     : "Are you sure?"
     "replication complete" : "Replication complete"
     "no activity found"   : """

@@ -132,30 +132,45 @@ module.exports =
         async.series [
             @ensureDeviceFolder.bind this
             ImagesBrowser.getImagesList
-            (cb) => @photosDB.query 'PhotosByLocalId', {}, cb
+            (callback) => @photosDB.query 'PhotosByLocalId', {}, callback
+            (cb) => @db.query 'FilesAndFolder',
+                {
+                    startkey: ['/' + t 'photos']
+                    endkey: ['/' + t('photos'), {}]
+                    include_docs: true
+                } , cb
         ], (err, results) =>
-
             return callback err if err
-            [device, images, rows: dbImages] = results
-
-            console.log "SYNC IMAGES : #{images.length} #{dbImages.length}"
+            [device, images, rows: dbImages, dbPictures] = results
 
             dbImages = dbImages.map (row) -> row.key
+            dbPictures = dbPictures.rows.map (row) -> row.doc.name
 
             myDownloadFolder = @downloads.toURL().replace 'file://', ''
 
             toUpload = []
 
             # step 1 scan all images, find the new ones
-            async.eachSeries images, (path, cb) ->
+            async.eachSeries images, (path, cb) =>
+                #Check if pictures is in dbImages
+                if path in dbImages
+                    cb()
+                else
+                    # Check if pictures is already present (old installation)
+                    fs.getFileFromPath path, (err, file) =>
+                        #console.log file
+                        if file.name in dbPictures
+                            # Add photo in local database
+                            @createPhoto path
+                        else
+                            # Create file
+                            toUpload.push path
+                        setTimeout cb, 1
 
-                unless path in dbImages
-                    toUpload.push path
-
-                setTimeout cb, 1
 
             , =>
                 # step 2 upload one by one
+                console.log "SYNC IMAGES : #{images.length} #{toUpload.length}"
                 processed = 0
                 @set 'backup_step', 'pictures_sync'
                 @set 'backup_step_total', toUpload.length
@@ -201,7 +216,7 @@ module.exports =
             docType          : 'File'
             localPath        : localPath
             name             : cordovaFile.name
-            path             : device.path + '/' + device.name
+            path             : "/" + t('photos')
             class            : @fileClassFromMime cordovaFile.type
             lastModification : new Date(cordovaFile.lastModified).toISOString()
             creationDate     : new Date(cordovaFile.lastModified).toISOString()
@@ -235,46 +250,33 @@ module.exports =
                 else
                     findDevice id, callback
 
-        createNew = (number=0) =>
+        createNew = () =>
             console.log "MAKING ONE"
             # no device folder, lets make it
             folder =
                 docType          : 'Folder'
-                name             : @config.get 'deviceName'
+                name             : t 'photos'
                 path             : ''
                 lastModification : new Date().toISOString()
                 creationDate     : new Date().toISOString()
                 tags             : []
-            if number isnt 0
-                folder.name = @config.get('deviceName') + '-' + number
             options =
                 key: ['', "1_#{folder.name.toLowerCase()}"]
-            @db.query 'FilesAndFolder', options, (err, folders) =>
-                if folders.rows.length is 0
-                    @config.remote.post folder, (err, res) =>
-                        dbDevice =
-                            docType : 'Device'
-                            localId: res.id
-                        @photosDB.post dbDevice, (err, res) =>
-                            app.replicator.startRealtime()
-                            # Wait to receive folder in local database
-                            findDevice dbDevice.localId, () ->
-                                return callback err if err
-                                callback null, folder
-                else
-                    createNew(number + 1)
+            @config.remote.post folder, (err, res) =>
+                app.replicator.startRealtime()
+                # Wait to receive folder in local database
+                findDevice res.id, () ->
+                    return callback err if err
+                    callback null, folder
 
-        @photosDB.query 'DevicesByLocalId', {}, (err, results) =>
+        @db.query 'FilesAndFolder', key: ['', "1_#{t('photos').toLowerCase()}"], (err, results) =>
             return callback err if err
             if results.rows.length > 0
                 device = results.rows[0]
-                @db.get device.key, (err, res) ->
-                    if err?
-                        createNew()
-                        @photosDB.remove device.value
-                    else
-                        console.log "DEVICE FOLDER EXISTS"
-                        console.log res
-                        return callback null, res
+                if err?
+                    createNew()
+                else
+                    console.log "DEVICE FOLDER EXISTS"
+                    return callback null, device
             else
                 createNew()

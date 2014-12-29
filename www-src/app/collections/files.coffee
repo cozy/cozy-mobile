@@ -48,7 +48,7 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
 
 
     _fetch: (path, callback) ->
-        if path is app.replicator.config.get('deviceName')
+        if path is t 'photos'
             params =
                 endkey: if path then ['/' + path] else ['']
                 startkey: if path then ['/' + path, {}] else ['', {}]

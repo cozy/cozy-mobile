@@ -251,7 +251,7 @@ module.exports = FileAndFolderCollection = (function(_super) {
 
   FileAndFolderCollection.prototype._fetch = function(path, callback) {
     var params, view;
-    if (path === app.replicator.config.get('deviceName')) {
+    if (path === t('photos')) {
       params = {
         endkey: path ? ['/' + path] : [''],
         startkey: path ? ['/' + path, {}] : ['', {}],
@@ -1176,6 +1176,7 @@ module.exports = {
   "backup": "Backup",
   "save": "Save",
   "done": "Done",
+  "photos": "Photos from devices",
   "confirm message": "Are you sure?",
   "replication complete": "Replication complete",
   "no activity found": "No application on phone for this kind of file.",
@@ -1244,6 +1245,7 @@ module.exports = {
   "backup": "Sauvegarder",
   "save": "Sauvegarder",
   "done": "Fait",
+  "photos": "Appareil photo",
   "confirm message": "Êtes-vous sûr ?",
   "replication complete": "Réplication complétée",
   "no activity found": "Aucune application n'a été trouvé sur ce téléphone pour ce type de fichier.",
@@ -2355,30 +2357,50 @@ module.exports = {
     this.set('backup_step_done', null);
     return async.series([
       this.ensureDeviceFolder.bind(this), ImagesBrowser.getImagesList, (function(_this) {
+        return function(callback) {
+          return _this.photosDB.query('PhotosByLocalId', {}, callback);
+        };
+      })(this), (function(_this) {
         return function(cb) {
-          return _this.photosDB.query('PhotosByLocalId', {}, cb);
+          return _this.db.query('FilesAndFolder', {
+            startkey: ['/' + t('photos')],
+            endkey: ['/' + t('photos'), {}],
+            include_docs: true
+          }, cb);
         };
       })(this)
     ], (function(_this) {
       return function(err, results) {
-        var dbImages, device, images, myDownloadFolder, toUpload, _ref;
+        var dbImages, dbPictures, device, images, myDownloadFolder, toUpload, _ref;
         if (err) {
           return callback(err);
         }
-        device = results[0], images = results[1], (_ref = results[2], dbImages = _ref.rows);
-        console.log("SYNC IMAGES : " + images.length + " " + dbImages.length);
+        device = results[0], images = results[1], (_ref = results[2], dbImages = _ref.rows), dbPictures = results[3];
         dbImages = dbImages.map(function(row) {
           return row.key;
+        });
+        dbPictures = dbPictures.rows.map(function(row) {
+          return row.doc.name;
         });
         myDownloadFolder = _this.downloads.toURL().replace('file://', '');
         toUpload = [];
         return async.eachSeries(images, function(path, cb) {
-          if (__indexOf.call(dbImages, path) < 0) {
-            toUpload.push(path);
+          if (__indexOf.call(dbImages, path) >= 0) {
+            return cb();
+          } else {
+            return fs.getFileFromPath(path, function(err, file) {
+              var _ref1;
+              if (_ref1 = file.name, __indexOf.call(dbPictures, _ref1) >= 0) {
+                _this.createPhoto(path);
+              } else {
+                toUpload.push(path);
+              }
+              return setTimeout(cb, 1);
+            });
           }
-          return setTimeout(cb, 1);
         }, function() {
           var processed;
+          console.log("SYNC IMAGES : " + images.length + " " + toUpload.length);
           processed = 0;
           _this.set('backup_step', 'pictures_sync');
           _this.set('backup_step_total', toUpload.length);
@@ -2451,7 +2473,7 @@ module.exports = {
       docType: 'File',
       localPath: localPath,
       name: cordovaFile.name,
-      path: device.path + '/' + device.name,
+      path: "/" + t('photos'),
       "class": this.fileClassFromMime(cordovaFile.type),
       lastModification: new Date(cordovaFile.lastModified).toISOString(),
       creationDate: new Date(cordovaFile.lastModified).toISOString(),
@@ -2503,51 +2525,34 @@ module.exports = {
       };
     })(this);
     createNew = (function(_this) {
-      return function(number) {
+      return function() {
         var folder, options;
-        if (number == null) {
-          number = 0;
-        }
         console.log("MAKING ONE");
         folder = {
           docType: 'Folder',
-          name: _this.config.get('deviceName'),
+          name: t('photos'),
           path: '',
           lastModification: new Date().toISOString(),
           creationDate: new Date().toISOString(),
           tags: []
         };
-        if (number !== 0) {
-          folder.name = _this.config.get('deviceName') + '-' + number;
-        }
         options = {
           key: ['', "1_" + (folder.name.toLowerCase())]
         };
-        return _this.db.query('FilesAndFolder', options, function(err, folders) {
-          if (folders.rows.length === 0) {
-            return _this.config.remote.post(folder, function(err, res) {
-              var dbDevice;
-              dbDevice = {
-                docType: 'Device',
-                localId: res.id
-              };
-              return _this.photosDB.post(dbDevice, function(err, res) {
-                app.replicator.startRealtime();
-                return findDevice(dbDevice.localId, function() {
-                  if (err) {
-                    return callback(err);
-                  }
-                  return callback(null, folder);
-                });
-              });
-            });
-          } else {
-            return createNew(number + 1);
-          }
+        return _this.config.remote.post(folder, function(err, res) {
+          app.replicator.startRealtime();
+          return findDevice(res.id, function() {
+            if (err) {
+              return callback(err);
+            }
+            return callback(null, folder);
+          });
         });
       };
     })(this);
-    return this.photosDB.query('DevicesByLocalId', {}, (function(_this) {
+    return this.db.query('FilesAndFolder', {
+      key: ['', "1_" + (t('photos').toLowerCase())]
+    }, (function(_this) {
       return function(err, results) {
         var device;
         if (err) {
@@ -2555,16 +2560,12 @@ module.exports = {
         }
         if (results.rows.length > 0) {
           device = results.rows[0];
-          return _this.db.get(device.key, function(err, res) {
-            if (err != null) {
-              createNew();
-              return this.photosDB.remove(device.value);
-            } else {
-              console.log("DEVICE FOLDER EXISTS");
-              console.log(res);
-              return callback(null, res);
-            }
-          });
+          if (err != null) {
+            return createNew();
+          } else {
+            console.log("DEVICE FOLDER EXISTS");
+            return callback(null, device);
+          }
         } else {
           return createNew();
         }
