@@ -6294,6 +6294,12 @@ a.button {
 .button.button-calm {
   background-color: #3fbaf4;
 }
+#close-menu {
+  width: 100%;
+  border: none;
+  line-height: 48px;
+  font-size: 17px;
+}
 .bar.bar-calm {
   background-color: #3fbaf4;
   border-color: #0da2e8;

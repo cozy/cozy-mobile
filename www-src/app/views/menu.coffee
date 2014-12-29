@@ -6,6 +6,7 @@ module.exports = class Menu extends BaseView
     className: 'menu menu-left'
     template: require '../templates/menu'
     events:
+        'click #close-menu': 'closeMenu'
         'click #syncButton': 'backup'
         'click #btn-search': 'doSearch'
         'click a.item': 'closeMenu'

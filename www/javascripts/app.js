@@ -3197,7 +3197,10 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<div class="bar bar-header bar-dark"><h1 class="title">Menu</h1></div><div class="content has-header"><div class="item item-input-inset"><label class="item-input-wrapper"><input');
+buf.push('<div class="bar bar-header bar-dark"><h1 class="title"><a id="close-menu" class="button">');
+var __val__ = 'Menu'
+buf.push(escape(null == __val__ ? "" : __val__));
+buf.push('</a></h1></div><div class="content has-header"><div class="item item-input-inset"><label class="item-input-wrapper"><input');
 buf.push(attrs({ 'id':('search-input'), 'type':("text"), 'placeholder':(t("search")) }, {"type":true,"placeholder":true}));
 buf.push('/></label><a id="btn-search" class="button button-icon icon ion-search"></a></div><a href="#folder/" class="item item-icon-left"><i class="icon ion-home"></i>');
 var __val__ = t('home')
@@ -4145,6 +4148,7 @@ module.exports = Menu = (function(_super) {
   Menu.prototype.template = require('../templates/menu');
 
   Menu.prototype.events = {
+    'click #close-menu': 'closeMenu',
     'click #syncButton': 'backup',
     'click #btn-search': 'doSearch',
     'click a.item': 'closeMenu',
