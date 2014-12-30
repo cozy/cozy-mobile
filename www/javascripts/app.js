@@ -142,13 +142,28 @@ module.exports = {
             return _this.router.once('collectionfetched', function() {
               app.replicator.startRealtime();
               app.replicator.backup();
-              return document.addEventListener("resume", function() {
+              document.addEventListener("resume", function() {
                 console.log("RESUME EVENT");
                 if (app.backFromOpen) {
                   return app.backFromOpen = false;
                 } else {
                   return app.replicator.backup();
                 }
+              }, false);
+              document.addEventListener('offline', function() {
+                var device_status;
+                device_status = require('./lib/device_status');
+                return device_status.update();
+              }, false);
+              return document.addEventListener('online', function() {
+                var backup, device_status;
+                device_status = require('./lib/device_status');
+                device_status.update();
+                backup = function() {
+                  app.replicator.backup(true);
+                  return window.removeEventListener('realtime:onChange', backup, false);
+                };
+                return window.addEventListener('realtime:onChange', backup, false);
               }, false);
             });
           } else {
@@ -490,14 +505,15 @@ callbackWaiting = function(err, ready, msg) {
   return callbacks = [];
 };
 
-update = function() {
+module.exports.update = update = function() {
   if (battery == null) {
     return;
   }
   if (!(battery.level > 20 || battery.isPlugged)) {
     return callbackWaiting(null, false, 'no battery');
   }
-  if (app.replicator.config.get('syncOnWifi') && !navigator.connection.type === Connection.WIFI) {
+  if (app.replicator.config.get('syncOnWifi') && (!(navigator.connection.type === Connection.WIFI))) {
+    console.log('no wifi');
     return callbackWaiting(null, false, 'no wifi');
   }
   return callbackWaiting(null, true);
@@ -1720,11 +1736,11 @@ module.exports = Replicator = (function(_super) {
 
   Replicator.prototype.getDbFilesOfFolder = function(folder, callback) {
     var options, path;
-    path = folder.path + '/' + folder.name;
+    path = folder.path;
     options = {
-      include_docs: true,
-      startkey: path,
-      endkey: path + '\uffff'
+      startkey: path ? ['/' + path] : [''],
+      endkey: path ? ['/' + path, {}] : ['', {}],
+      include_docs: true
     };
     return this.db.query('FilesAndFolder', options, function(err, results) {
       var docs, files;
@@ -1882,15 +1898,19 @@ module.exports = Replicator = (function(_super) {
   };
 
   Replicator.prototype.fileInFileSystem = function(file) {
-    return this.cache.some(function(entry) {
-      return entry.name.indexOf(file.binary.file.id) !== -1;
-    });
+    if (file.docType.toLowerCase() === 'file') {
+      return this.cache.some(function(entry) {
+        return entry.name.indexOf(file.binary.file.id) !== -1;
+      });
+    }
   };
 
   Replicator.prototype.fileVersion = function(file) {
-    return this.cache.some(function(entry) {
-      return entry.name === file.binary.file.id + '-' + file.binary.file.rev;
-    });
+    if (file.docType.toLowerCase() === 'file') {
+      return this.cache.some(function(entry) {
+        return entry.name === file.binary.file.id + '-' + file.binary.file.rev;
+      });
+    }
   };
 
   Replicator.prototype.folderInFileSystem = function(path, callback) {
@@ -2159,7 +2179,10 @@ module.exports = Replicator = (function(_super) {
     });
     this.liveReplication.on('change', (function(_this) {
       return function(e) {
+        var event;
         realtimeBackupCoef = 1;
+        event = new Event('realtime:onChange');
+        window.dispatchEvent(event);
         return _this.set('inSync', true);
       };
     })(this));
@@ -2208,8 +2231,11 @@ DeviceStatus = require('../lib/device_status');
 fs = require('./filesystem');
 
 module.exports = {
-  backup: function(callback) {
+  backup: function(force, callback) {
     var _ref;
+    if (force == null) {
+      force = false;
+    }
     if (callback == null) {
       callback = function() {};
     }
@@ -2221,7 +2247,7 @@ module.exports = {
     if ((_ref = this.liveReplication) != null) {
       _ref.cancel();
     }
-    return this._backup((function(_this) {
+    return this._backup(force, (function(_this) {
       return function(err) {
         _this.set('backup_step', null);
         _this.set('inBackup', false);
@@ -2237,7 +2263,7 @@ module.exports = {
       };
     })(this));
   },
-  _backup: function(callback) {
+  _backup: function(force, callback) {
     return DeviceStatus.checkReadyForSync((function(_this) {
       return function(err, ready, msg) {
         console.log("SYNC STATUS", err, ready, msg);
@@ -2248,7 +2274,7 @@ module.exports = {
           return callback(new Error(t(msg)));
         }
         console.log("WE ARE READY FOR SYNC");
-        return _this.syncPictures(function(err) {
+        return _this.syncPictures(force, function(err) {
           if (err) {
             return callback(err);
           }
@@ -2348,7 +2374,7 @@ module.exports = {
       };
     })(this));
   },
-  syncPictures: function(callback) {
+  syncPictures: function(force, callback) {
     if (!this.config.get('syncImages')) {
       return callback(null);
     }

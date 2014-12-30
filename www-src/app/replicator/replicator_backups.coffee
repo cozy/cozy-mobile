@@ -13,12 +13,12 @@ fs = require './filesystem'
 module.exports =
 
     # wrapper around _backup to maintain the state of inBackup
-    backup: (callback = ->) ->
+    backup: (force=false, callback = ->) ->
         return callback null if @get 'inBackup'
         @set 'inBackup', true
         @set 'backup_step', null
         @liveReplication?.cancel()
-        @_backup (err) =>
+        @_backup force, (err) =>
             @set 'backup_step', null
             @set 'inBackup', false
             @startRealtime()
@@ -27,14 +27,14 @@ module.exports =
                 callback null
 
 
-    _backup: (callback) ->
+    _backup: (force, callback) ->
         DeviceStatus.checkReadyForSync (err, ready, msg) =>
             console.log "SYNC STATUS", err, ready, msg
             return callback err if err
             return callback new Error(t msg) unless ready
             console.log "WE ARE READY FOR SYNC"
 
-            @syncPictures (err) =>
+            @syncPictures force, (err) =>
                 return callback err if err
                 @syncContacts (err) =>
                     callback err
@@ -123,7 +123,7 @@ module.exports =
 
 
 
-    syncPictures: (callback) ->
+    syncPictures: (force, callback) ->
         return callback null unless @config.get 'syncImages'
 
         console.log "SYNC PICTURES"
@@ -177,10 +177,9 @@ module.exports =
                 async.eachSeries toUpload, (path, cb) =>
                     @set 'backup_step_done', processed++
                     console.log "UPLOADING #{path}"
-                    @uploadPicture path, device, (err) ->
+                    @uploadPicture path, device, (err) =>
                         console.log "ERROR #{path} #{err}" if err
                         setTimeout cb, 1
-
                 , callback
 
     uploadPicture: (path, device, callback) ->

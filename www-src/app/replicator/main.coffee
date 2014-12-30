@@ -47,11 +47,11 @@ module.exports = class Replicator extends Backbone.Model
                 @config.fetch callback
 
     getDbFilesOfFolder: (folder, callback) ->
-        path = folder.path + '/' + folder.name
+        path = folder.path
         options =
+            startkey: if path then ['/' + path] else ['']
+            endkey: if path then ['/' + path, {}] else ['', {}]
             include_docs: true
-            startkey: path
-            endkey: path + '\uffff'
 
         @db.query 'FilesAndFolder', options, (err, results) ->
             return callback err if err
@@ -161,12 +161,15 @@ module.exports = class Replicator extends Backbone.Model
             , callback
 
     fileInFileSystem: (file) =>
-        @cache.some (entry) ->
-            entry.name.indexOf(file.binary.file.id) isnt -1
+        if file.docType.toLowerCase() is 'file'
+            @cache.some (entry) ->
+                entry.name.indexOf(file.binary.file.id) isnt -1
 
     fileVersion: (file) =>
-        @cache.some (entry) ->
-            entry.name is file.binary.file.id + '-' + file.binary.file.rev
+        if file.docType.toLowerCase() is 'file'
+            @cache.some (entry) ->
+                entry.name is file.binary.file.id + '-' + file.binary.file.rev
+
 
     folderInFileSystem: (path, callback) =>
         options =
@@ -350,6 +353,8 @@ module.exports = class Replicator extends Backbone.Model
 
         @liveReplication.on 'change', (e) =>
             realtimeBackupCoef = 1
+            event = new Event 'realtime:onChange'
+            window.dispatchEvent event
             @set 'inSync', true
 
         @liveReplication.on 'uptodate', (e) =>

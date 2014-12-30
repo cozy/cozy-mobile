@@ -11,15 +11,15 @@ callbackWaiting = (err, ready, msg) ->
     callback err, ready, msg  for callback in callbacks
     callbacks = []
 
-update = ->
+module.exports.update = update = ->
     return unless battery?
 
     unless (battery.level > 20 or battery.isPlugged)
         return callbackWaiting null, false, 'no battery'
-
     if app.replicator.config.get('syncOnWifi') and
-    not navigator.connection.type is Connection.WIFI
-        return callbackWaiting null, false, 'no wifi'
+        (not (navigator.connection.type is Connection.WIFI))
+            console.log 'no wifi'
+            return callbackWaiting null, false, 'no wifi'
 
     callbackWaiting null, true
 
@@ -46,5 +46,4 @@ module.exports.checkReadyForSync = (callback) ->
         , false
         app.replicator.config.on 'change:syncOnWifi', update
         initialized = true
-
 
