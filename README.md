@@ -4,7 +4,8 @@ This is the native mobile client for Cozy.
 
 ## Install
 
-Get it from the app store or the play store.
+Get it from the play store.
+Or head over to the [Releases page](https://github.com/cozy-labs/cozy-mobile/releases)
 
 ## Built with
 - cordova
