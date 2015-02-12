@@ -28,7 +28,7 @@ module.exports = class LoginView extends BaseView
 
         # check all fields filled
         unless url and pass
-            return @displayError 'all fields are required'
+            return @displayError t 'all fields are required'
 
         # keep only the hostname
         if url[0..3] is 'http'

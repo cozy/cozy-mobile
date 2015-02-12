@@ -84,3 +84,8 @@ module.exports =
     "filesystem bug error"  : "File system bug error. Try to restart your phone."
     "end"                   : "End"
 
+    # Errors
+    "all fields are required" : "All fields are required"
+    "cozy need patch"       : "Cozy need patch"
+    "wrong password"        : "Incorrect password"
+    "device name already exist" : "Device name already exist"

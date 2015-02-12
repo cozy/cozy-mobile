@@ -19,7 +19,7 @@ module.exports =
     "reset action"        : "R.à.Z"
     "retry synchro"       : "Sync"
     "synchro warning"     : "Cela relancera une synchronisation depuis le début. Cela peut prendre du temps."
-    "reset warning"       : "Cela supprimera toutes les données cozy sur votre mobile (dont votre device)."
+    "reset warning"       : "Cela supprimera toutes les données cozy sur votre mobile (dont votre appareil)."
     "pull to sync"        : "Tirer pour synchroniser"
     "syncing"             : "En cours de synchronisation"
     "contacts_scan"       : "Extraction des contacts"
@@ -83,3 +83,9 @@ module.exports =
     "waiting..."            : "En attente..."
     "filesystem bug error"  : "Erreur dans le système de fichier. Essayez de redémarrer votre téléphone"
     "end"                   : "Fin"
+
+    # Errors
+    "all fields are required" : "Tous les champs sont obligatoires"
+    "cozy need patch"       : "Cozy a besoin d'un corretif"
+    "wrong password"        : "Mot de passe incorrect"
+    "device name already exist" : "Ce nom d'appareil existe déjà"

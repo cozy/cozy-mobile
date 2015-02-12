@@ -30,7 +30,7 @@ module.exports = class ConfigView extends BaseView
         unless date then return t 'never'
         else
             date = new Date(date) unless date instanceof Date
-            return date.toDateString() + ' ' + date.toTimeString()
+            return date.toLocaleDateString() + ' ' + date.toTimeString()
 
     # only happens after the first config (post install)
     configDone: ->
