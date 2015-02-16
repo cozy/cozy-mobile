@@ -100,6 +100,9 @@ module.exports = class Layout extends BaseView
         @ionicScroll.options.bouncing = activated
         @ionicScroll.__refreshHeight = if activated then 50 else null
 
+    isMenuOpen: =>
+        return @controller.isOpenLeft()
+
     closeMenu: =>
         @controller.toggleLeft false
 
@@ -161,6 +164,14 @@ module.exports = class Layout extends BaseView
         @$('#search-input').focus()
 
     onBackButtonClicked: (event) =>
-        app.router.navigate @backButton.attr('href'), trigger: true
-        event.preventDefault()
-        event.stopPropagation()
+        # close menu first
+        if @isMenuOpen()
+            @closeMenu()
+        # @TODO: window.history is more boilerpalte, but those hack works better.
+        else if location.href.indexOf('#folder/') is (location.href.length - 8)
+            navigator.app.exitApp()
+
+        else
+            app.router.navigate @backButton.attr('href'), trigger: true
+            event.preventDefault()
+            event.stopPropagation()
