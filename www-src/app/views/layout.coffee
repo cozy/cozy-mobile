@@ -6,6 +6,7 @@
 BaseView = require '../lib/base_view'
 FolderView = require './folder'
 Menu = require './menu'
+BreadcrumbsView = require './breadcrumbs'
 
 module.exports = class Layout extends BaseView
 
@@ -112,7 +113,17 @@ module.exports = class Layout extends BaseView
         @backButton.addClass 'ion-' + icon
 
     setTitle: (text) =>
+        @$('#breadcrumbs').remove()
+        # @breadcrumbs.hide()
         @title.text text
+        @title.show()
+
+    setBreadcrumbs: (path) ->
+        @$('#breadcrumbs').remove()
+        @title.hide()
+        breadcrumbsView = new BreadcrumbsView path: path
+        @title.after breadcrumbsView.render().$el
+        breadcrumbsView.scrollLeft()
 
     transitionTo: (view) ->
         @closeMenu()
@@ -167,6 +178,7 @@ module.exports = class Layout extends BaseView
         # close menu first
         if @isMenuOpen()
             @closeMenu()
+
         # @TODO: window.history is more boilerpalte, but those hack works better.
         else if location.href.indexOf('#folder/') is (location.href.length - 8)
             navigator.app.exitApp()

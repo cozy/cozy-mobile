@@ -112,7 +112,7 @@ img.backup
     width: 100%
 
 #bar-header
-    border-bottom 5px solid basecolor
+    border-bottom 3px solid basecolor
 
 #btn-menu
     height: 44px
@@ -129,3 +129,94 @@ img.backup
 
 #btn-menu:focus, #btn-menu:active, #btn-menu.activated
     background-color: basecolor + 60%
+
+#breadcrumbs
+    position relative
+    width 100%
+    height 30px
+    top 2px
+
+    #crumbs
+        position absolute
+        display inline-block
+        top 0px
+        left 28px
+        right 0px
+        overflow-x scroll
+        overflow-y hidden
+        height 30px
+
+    #crumbs::-webkit-scrollbar
+        display none
+
+    ul
+        margin-bottom 0px
+        padding-left 0
+        list-style none
+        display inline
+        white-space nowrap
+
+        li
+            display inline
+
+            a
+                &:after
+                    content ""
+                    border-top 15px solid transparent
+                    border-bottom 15px solid transparent
+                    border-left 15px solid basecolor
+                    position absolute
+                    right -15px
+                    top 0
+                    z-index 1
+                &:before
+                    content ""
+                    border-top 15px solid transparent
+                    border-bottom 15px solid transparent
+                    border-left 15px solid white
+                    position absolute
+                    left 0
+                    top 0
+
+            &:last-child
+                a
+                    padding-right 20px
+                    border-top-right-radius 10px
+                    border-bottom-right-radius 10px
+                    &:after
+                        display none
+
+    a    
+        line-height 30px
+
+        background basecolor
+        text-align center
+        padding 6px 5px 6px 22px
+        // padding 0 5px 0 22px
+        position relative
+        // margin 10px 5px 0 0
+        margin-right 3px
+        font-size 15px
+        text-decoration none
+        color #fff
+        
+        &:active
+            background actioncolor
+            &:after
+                border-left-color actioncolor
+
+    .home
+        padding-left: 10px
+        border-top-left-radius 10px
+        border-bottom-left-radius 10px
+        z-index 2
+
+        &:after
+            content ""
+            border-top 15px solid transparent
+            border-bottom 15px solid transparent
+            border-left 15px solid basecolor
+            position absolute
+            right -15px
+            top 0
+            z-index 2

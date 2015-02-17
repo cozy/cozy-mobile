@@ -17,15 +17,9 @@ module.exports = class Router extends Backbone.Router
         'config'                          : 'config'
 
     folder: (path) ->
-        $('#btn-menu, #btn-back').show()
-        if path is null
-            app.layout.setBackButton '#folder/', 'home'
-            app.layout.setTitle 'Cozy'
-        else
-            parts = path.split('/')
-            backpath = '#folder/' + parts[0..-2].join '/'
-            app.layout.setBackButton backpath, 'ios7-arrow-back'
-            app.layout.setTitle parts[parts.length-1]
+        $('#btn-menu').show()
+        $('#btn-back').hide()
+        app.layout.setBreadcrumbs path
 
         collection = new FolderCollection [], path: path
         @display new FolderView {collection},
@@ -33,7 +27,8 @@ module.exports = class Router extends Backbone.Router
         collection.once 'fullsync', => @trigger 'collectionfetched'
 
     search: (query) ->
-        $('#btn-menu, #btn-back').show()
+        $('#btn-menu').show()
+        $('#btn-back').hide()
         app.layout.setBackButton '#folder/', 'home'
         app.layout.setTitle t('search') + ' "' + query + '"'
 
