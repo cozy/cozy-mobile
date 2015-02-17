@@ -1,5 +1,7 @@
 .bar.bar-header.bar-dark
-    h1.title Menu
+    h1.title
+        a#close-menu.button()
+            = 'Menu'
 
 .content.has-header
     div.item.item-input-inset
@@ -15,12 +17,9 @@
         i.icon.ion-wrench
         = t('config')
 
-    //- a#syncButton.item.item-icon-left
-    //-     i.icon.ion-loop
-    //-     = t('sync')
+    a#syncButton.item.item-icon-left
+        img.backup(src="img/sync.png")
+        = t('sync')
 
-    a#backupButton.item.item-icon-left
-        i.icon.ion-ios7-cloud-upload-outline
-        = t('backup')
 
 

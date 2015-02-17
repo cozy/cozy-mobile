@@ -12,18 +12,6 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
 
     isSearch: -> @path is undefined
 
-    comparator: (file1, file2) ->
-        if file1.get('docType').toLowerCase() is 'folder' and
-            file2.get('docType').toLowerCase() is 'file'
-                return -1
-        else if file2.get('docType').toLowerCase() is 'folder' and
-            file1.get('docType').toLowerCase() is 'file'
-                return 1
-        else if file1.get('name').toLowerCase() < file2.get('name').toLowerCase()
-            return -1
-        else
-            return 1
-
     # search use temporary view
     search: (callback) ->
         params =
@@ -38,7 +26,6 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
 
     # fetch use
     fetch: (_callback = ->) ->
-
         callback = (err) =>
             @notloaded = false
             @trigger 'sync'
@@ -53,7 +40,6 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
                 callback err
 
         console.log "CACHE MISS " + cacheKey
-
         @_fetch @path, (err, items) =>
             return callback err if err
             @slowReset items, (err) =>
@@ -62,12 +48,21 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
 
 
     _fetch: (path, callback) ->
-        params =
-            startkey: if path then ['/' + path] else ['']
-            endkey: if path then ['/' + path, {}] else ['', {}]
-            include_docs: true
+        if path is t 'photos'
+            params =
+                endkey: if path then ['/' + path] else ['']
+                startkey: if path then ['/' + path, {}] else ['', {}]
+                include_docs: true
+                descending: true
+            view = 'Pictures'
+        else
+            params =
+                startkey: if path then ['/' + path] else ['']
+                endkey: if path then ['/' + path, {}] else ['', {}]
+                include_docs: true
+            view = 'FilesAndFolder'
 
-        app.replicator.db.query 'FilesAndFolder', params, callback
+        app.replicator.db.query view, params, callback
 
     slowReset: (results, callback) ->
         models = results.rows.map (row) ->

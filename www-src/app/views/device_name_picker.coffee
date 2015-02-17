@@ -7,6 +7,8 @@ module.exports = class DeviceNamePickerView extends BaseView
 
     events: ->
         'click #btn-save': 'doSave'
+        'blur #input-device': 'onCompleteDefaultValue'
+        'focus #input-device': 'onRemoveDefaultValue'
         'click #btn-back': 'doBack'
         'keypress #input-device': 'blurIfEnter'
 
@@ -43,6 +45,16 @@ module.exports = class DeviceNamePickerView extends BaseView
                 app.replicator.initialReplication noop
 
                 app.router.navigate 'config', trigger: true
+
+    onCompleteDefaultValue: ->
+        device = @$('#input-device').val()
+        if device is ''
+            @$('#input-device').val t('device name placeholder')
+
+    onRemoveDefaultValue: ->
+        device = @$('#input-device').val()
+        if device is t('device name placeholder')
+            @$('#input-device').val ''
 
     displayError: (text, field) ->
         $('#btn-save').text @saving

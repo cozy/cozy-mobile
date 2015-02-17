@@ -6,47 +6,36 @@ module.exports = class Menu extends BaseView
     className: 'menu menu-left'
     template: require '../templates/menu'
     events:
-        'click #syncButton': 'sync'
-        'click #backupButton': 'backup'
+        'click #close-menu': 'closeMenu'
+        'click #syncButton': 'backup'
         'click #btn-search': 'doSearch'
         'click a.item': 'closeMenu'
         'keydown #search-input': 'doSearchIfEnter'
 
-    setLooping = (btn, looping) ->
-        oldIcon = if looping then 'ion-ios7-cloud-upload-outline' else 'ion-looping'
-        newIcon = if looping then 'ion-looping' else 'ion-ios7-cloud-upload-outline'
-        btn.find('i').removeClass(oldIcon).addClass(newIcon)
 
     afterRender: ->
         @syncButton = @$ '#syncButton'
         @backupButton = @$ '#backupButton'
 
-        @listenTo app.replicator, 'change:inSync', =>
-            setLooping @syncButton, app.replicator.get 'inSync'
-
-        @listenTo app.replicator, 'change:inBackup', =>
-            setLooping @backupButton, app.replicator.get 'inBackup'
-
-        setLooping @syncButton, app.replicator.get 'inSync'
-        setLooping @backupButton, app.replicator.get 'inBackup'
-
     closeMenu: -> app.layout.closeMenu()
 
     sync: ->
         return if app.replicator.get 'inSync'
-        app.layout.closeMenu()
         app.replicator.sync (err) ->
             console.log err, err.stack if err
             alert err if err
             app.layout.currentView?.collection?.fetch()
 
     backup: ->
-        return if app.replicator.get 'inBackup'
         app.layout.closeMenu()
-        app.replicator.backup (err) ->
-            console.log err, err.stack if err
-            alert err if err
-            app.layout.currentView?.collection?.fetch()
+        if app.replicator.get 'inBackup'
+            @sync()
+        else
+            app.replicator.backup (err) =>
+                console.log err, err.stack if err
+                alert err if err
+                app.layout.currentView?.collection?.fetch()
+                @sync()
 
 
     doSearchIfEnter: (event) => @doSearch() if event.which is 13

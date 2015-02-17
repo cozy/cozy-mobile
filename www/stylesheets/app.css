@@ -6294,6 +6294,12 @@ a.button {
 .button.button-calm {
   background-color: #3fbaf4;
 }
+#close-menu {
+  width: 100%;
+  border: none;
+  line-height: 48px;
+  font-size: 17px;
+}
 .bar.bar-calm {
   background-color: #3fbaf4;
   border-color: #0da2e8;
@@ -6318,8 +6324,17 @@ a.button {
 .cache-indicator-version {
   color: #fe8800;
 }
+.cache-indicator img {
+  width: 25px;
+}
 .icon.ion-chevron-right {
   left: auto;
+}
+img.backup {
+  left: 9px;
+  width: 30px;
+  bottom: 9px;
+  position: absolute;
 }
 .icon.ion-chevron-right + .cache-indicator {
   left: auto;

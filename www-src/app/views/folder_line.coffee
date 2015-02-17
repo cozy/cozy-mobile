@@ -25,13 +25,14 @@ module.exports = class FolderLineView extends BaseView
     setCacheIcon: (klass) =>
         icon = @$('.cache-indicator')
         icon.removeClass('ion-warning ion-looping ion-ios7-cloud-download-outline')
-        icon.removeClass('ion-ios7-download-outline').addClass klass
+        icon.removeClass('ion-ios7-download-outline')
+        icon.append klass
         @parent?.ionicView?.clearDragEffects()
 
     displayProgress: =>
         @downloading = true
-        @hideProgress()
-        @setCacheIcon 'ion-looping'
+        #@hideProgress()
+        @setCacheIcon '<img src="img/spinner.svg"></img>'
         @progresscontainer = $('<div class="item-progress"></div>')
             .append @progressbar = $('<div class="item-progress-bar"></div>')
 

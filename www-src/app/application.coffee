@@ -50,6 +50,18 @@ module.exports =
                             else
                                 app.replicator.backup()
                         , false
+                        document.addEventListener 'offline', ->
+                            device_status = require './lib/device_status'
+                            device_status.update()
+                        , false
+                        document.addEventListener 'online', ->
+                            device_status = require './lib/device_status'
+                            device_status.update()
+                            backup = () ->
+                                app.replicator.backup(true)
+                                window.removeEventListener 'realtime:onChange', backup, false
+                            window.addEventListener 'realtime:onChange', backup, false
+                        , false
                 else
                     @router.navigate 'login', trigger: true
 
