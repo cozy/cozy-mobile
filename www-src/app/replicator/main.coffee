@@ -206,8 +206,6 @@ module.exports = class Replicator extends Backbone.Model
                             @cache.some (entry) ->
                                 if entry.name.indexOf(binary_id) isnt -1
                                     found = true
-                                    console.log entry
-                                    console.log entry.toURL()
                                     callback null, entry.toURL() + '/' + model.name
                             if not found
                                 callback err
@@ -218,7 +216,6 @@ module.exports = class Replicator extends Backbone.Model
                             callback err
                     else
                         @cache.push binfolder
-                        console.log entry.toURL()
                         callback null, entry.toURL()
                         @removeAllLocal binary_id, binary_rev
 

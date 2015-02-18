@@ -90,3 +90,8 @@ module.exports =
     "cozy need patch"       : "Cozy need patch"
     "wrong password"        : "Incorrect password"
     "device name already exist" : "Device name already exist"
+    "An error happened (UNKNOWN)": "An error occured."
+    "An error happened (NOT FOUND)": "An error occured (not found)."
+    "An error happened (INVALID URL)": "An error occured (invalid url)."
+    "This file isnt available offline": "This file isn't available offline."
+    "ABORTED"               :  "The procedure was aborted."

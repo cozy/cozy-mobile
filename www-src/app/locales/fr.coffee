@@ -90,3 +90,8 @@ module.exports =
     "cozy need patch"       : "Cozy a besoin d'un corretif"
     "wrong password"        : "Mot de passe incorrect"
     "device name already exist" : "Ce nom d'appareil existe déjà"
+    "An error happened (UNKNOWN)": "Une erreur est survenue"
+    "An error happened (NOT FOUND)": "Une erreur est survenue (non trouvé)"
+    "An error happened (INVALID URL)": "Une erreur est survenue (url invalide)"
+    "This file isnt available offline": "Ce fichier n'est pas disponible hors ligne"
+    "ABORTED"               :  "La procédure a été interompu."
