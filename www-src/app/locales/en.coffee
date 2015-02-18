@@ -37,6 +37,7 @@ module.exports =
     "done"                : "Done"
     "photos"              : "Photos from devices"
     "confirm message"     : "Are you sure?"
+    "confirm exit message": "Do you want to Exit?"
     "replication complete" : "Replication complete"
     "no activity found"   : """
         No application on phone for this kind of file.

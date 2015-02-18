@@ -37,6 +37,7 @@ module.exports =
     "done"                : "Fait"
     "photos"              : "Appareils photo"
     "confirm message"     : "Êtes-vous sûr ?"
+    "confirm exit message": "Voulez-vous quitter l'application ?"
     "replication complete" : "Réplication complétée"
     "no activity found"   : """
         Aucune application n'a été trouvé sur ce téléphone pour ce type de fichier.

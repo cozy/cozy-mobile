@@ -179,11 +179,12 @@ module.exports = class Layout extends BaseView
         if @isMenuOpen()
             @closeMenu()
 
-        # @TODO: window.history is more boilerpalte, but those hack works better.
+        # @TODO: we could go further in history, but history.back() has
+        # strange behaviour near first screen
         else if location.href.indexOf('#folder/') is (location.href.length - 8)
-            navigator.app.exitApp()
+            if window.confirm t "confirm exit message"
+                navigator.app.exitApp()
 
         else
-            app.router.navigate @backButton.attr('href'), trigger: true
-            event.preventDefault()
-            event.stopPropagation()
+            # navigator.app.backHistory()
+            window.history.back()
