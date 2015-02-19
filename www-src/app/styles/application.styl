@@ -117,7 +117,7 @@ img.backup
 #btn-menu
     height: 44px
     margin-left: -7px
-    margin-top: -5px
+    margin-top: -3px
     padding: 0px
 
 #title
@@ -145,9 +145,19 @@ img.backup
         overflow-x scroll
         overflow-y hidden
         height 30px
+        z-index 0
 
     #crumbs::-webkit-scrollbar
         display none
+
+
+    #shadow
+        position absolute
+        width 10px
+        height 30px
+        right 0px
+        top 0px
+        background linear-gradient(left, rgba(0,0,0,0), white);
 
     ul
         margin-bottom 0px
@@ -160,6 +170,10 @@ img.backup
             display inline
 
             a
+                position relative
+                line-height 30px
+                padding 6px 5px 6px 22px
+
                 &:after
                     content ""
                     border-top 15px solid transparent
@@ -183,18 +197,14 @@ img.backup
                     padding-right 20px
                     border-top-right-radius 10px
                     border-bottom-right-radius 10px
+                    margin-right 10px
                     &:after
                         display none
 
-    a    
-        line-height 30px
-
+    a
         background basecolor
         text-align center
-        padding 6px 5px 6px 22px
-        // padding 0 5px 0 22px
-        position relative
-        // margin 10px 5px 0 0
+        
         margin-right 3px
         font-size 15px
         text-decoration none
@@ -206,17 +216,58 @@ img.backup
                 border-left-color actioncolor
 
     .home
-        padding-left: 10px
+        position absolute
+        height 30px
+        width 26px
+        padding 6px 0px 6px 10px
         border-top-left-radius 10px
         border-bottom-left-radius 10px
-        z-index 2
+        z-index 3
 
-        &:after
+    #truncated
+        position absolute
+        height 30px
+        width 36px
+
+        left 28px
+        line-height 30px
+        padding-left 16px
+        z-index 1
+    
+        &:before
             content ""
             border-top 15px solid transparent
             border-bottom 15px solid transparent
-            border-left 15px solid basecolor
+            border-left 15px solid white
             position absolute
-            right -15px
+            left 0
             top 0
-            z-index 2
+
+    .white-arrow
+        border-top 15px solid transparent
+        border-bottom 15px solid transparent
+        border-left 15px solid white
+        position absolute
+        width 15px
+        top 0
+        height 30px
+        z-index 1
+
+    .blue-arrow
+        border-top 15px solid transparent
+        border-bottom 15px solid transparent
+        border-left 15px solid basecolor
+        position absolute
+        width 16px
+        top 0
+        height 30px
+        z-index 2
+
+    .round
+        top 0
+        height 30px
+        position absolute
+        width 11px
+        border-top-right-radius 10px
+        border-bottom-right-radius 10px
+        background basecolor
