@@ -49,7 +49,7 @@ module.exports =
         Not enough battery, Backup cancelled.
     """
     "no wifi"  : """
-        No Wifi, Backup cancelled.
+        No connection, Backup cancelled.
     """
 
     # fist connection wizard

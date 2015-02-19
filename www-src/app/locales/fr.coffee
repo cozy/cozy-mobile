@@ -49,7 +49,7 @@ module.exports =
         La sauvegarde n'aura pas lieu car vous n'avez pas assez de batterie.
     """
     "no wifi"  : """
-        La sauvegarde n'aura pas lieu car vous n'êtes pas en wifi.
+        La sauvegarde n'aura pas lieu car vous n'avez pas de connexion internet.
     """
 
   # fist connection wizard

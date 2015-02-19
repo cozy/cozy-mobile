@@ -315,10 +315,12 @@ module.exports = class Replicator extends Backbone.Model
             console.log "REPLICATION CHANGE : #{change}"
 
         replication.once 'error', (err) =>
-            console.log "REPLICATOR ERRROR #{JSON.stringify(err)} #{err.stack}"
+            console.log "REPLICATOR ERROR #{JSON.stringify(err)} #{err.stack}"
             if err?.result?.status? and err.result.status is 'aborted'
                 replication?.cancel()
                 @_sync options, callback
+            else
+                callback err
 
         replication.once 'complete', (result) =>
             console.log "REPLICATION COMPLETED"
