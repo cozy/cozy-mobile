@@ -31,7 +31,6 @@ module.exports = class FolderLineView extends BaseView
 
     displayProgress: =>
         @downloading = true
-        #@hideProgress()
         @setCacheIcon '<img src="img/spinner.svg"></img>'
         @progresscontainer = $('<div class="item-progress"></div>')
             .append @progressbar = $('<div class="item-progress-bar"></div>')
@@ -42,9 +41,8 @@ module.exports = class FolderLineView extends BaseView
         @downloading = false
         if err then alert err
 
-        incache = app.replicator.fileInFileSystem
-
-        version = app.replicator.fileVersion
+        incache = app.replicator.fileInFileSystem @model.attributes
+        version = app.replicator.fileVersion @model.attributes
 
         if incache? and incache isnt @model.get 'incache'
             @model.set {incache}
@@ -53,9 +51,19 @@ module.exports = class FolderLineView extends BaseView
             @model.set {version}
 
         @progresscontainer?.remove()
+        @render()
 
     updateProgress: (done, total) =>
         @progressbar?.css 'width', (100 * done / total) + '%'
+
+    getOnDownloadedCallback: (callback) ->
+        callback = callback or ->
+        return (err, url) =>
+            @hideProgress()
+            return alert t(err.message) if err
+            @model.set incache: true
+            @model.set version: app.replicator.fileVersion @model.attributes
+            callback(err, url)
 
     onClick: (event) =>
         # ignore .cache-indicator click
@@ -70,12 +78,8 @@ module.exports = class FolderLineView extends BaseView
 
         # else, the model is a file, we get its binary and open it
         @displayProgress()
-        app.replicator.getBinary @model.attributes, @updateProgress, (err, url) =>
-            @hideProgress()
-            return alert err if err
-            @model.set incache: true
-            @model.set version: app.replicator.fileVersion @model.attributes
-
+        app.replicator.getBinary @model.attributes, @updateProgress, \
+          @getOnDownloadedCallback (err, url) =>
             # let android open the file
             app.backFromOpen = true
             ExternalFileUtil.openWith url, '', undefined,
@@ -90,16 +94,12 @@ module.exports = class FolderLineView extends BaseView
         return true if @downloading
 
         @displayProgress()
-        onadded = (err) =>
-            @hideProgress()
-            return alert err if err
-            @model.set incache: true
-            @model.set version: app.replicator.fileVersion @model.attributes
-
         if @model.isFolder()
-            app.replicator.getBinaryFolder @model.attributes, @updateProgress, onadded
+            app.replicator.getBinaryFolder @model.attributes, @updateProgress,\
+                @getOnDownloadedCallback()
         else
-            app.replicator.getBinary @model.attributes, @updateProgress, onadded
+            app.replicator.getBinary @model.attributes, @updateProgress, \
+                @getOnDownloadedCallback()
 
     removeFromCache: =>
         return true if @downloading

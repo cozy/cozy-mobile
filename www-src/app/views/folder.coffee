@@ -2,7 +2,6 @@ CollectionView = require '../lib/view_collection'
 
 module.exports = class FolderView extends CollectionView
 
-
     className: 'list'
     itemview: require './folder_line'
 
@@ -29,10 +28,12 @@ module.exports = class FolderView extends CollectionView
         @ionicView = new ionic.views.ListView
             el: @$el[0]
             _handleDrag: (e) ->
-                ionic.views.ListView::_handleDrag.apply this, arguments
-                # prevent menu from opening
-                e.preventDefault()
-                e.stopPropagation()
+                # unless menu is open or slide to right
+                unless app.layout.isMenuOpen() or e.gesture.deltaX > 0
+                    ionic.views.ListView::_handleDrag.apply this, arguments
+                    # prevent menu from opening
+                    e.preventDefault()
+                    e.stopPropagation()
 
     onChange: =>
         @$('#empty-message').remove()

@@ -6,6 +6,7 @@
 BaseView = require '../lib/base_view'
 FolderView = require './folder'
 Menu = require './menu'
+BreadcrumbsView = require './breadcrumbs'
 
 module.exports = class Layout extends BaseView
 
@@ -100,6 +101,9 @@ module.exports = class Layout extends BaseView
         @ionicScroll.options.bouncing = activated
         @ionicScroll.__refreshHeight = if activated then 50 else null
 
+    isMenuOpen: =>
+        return @controller.isOpenLeft()
+
     closeMenu: =>
         @controller.toggleLeft false
 
@@ -109,7 +113,17 @@ module.exports = class Layout extends BaseView
         @backButton.addClass 'ion-' + icon
 
     setTitle: (text) =>
+        @$('#breadcrumbs').remove()
+        # @breadcrumbs.hide()
         @title.text text
+        @title.show()
+
+    setBreadcrumbs: (path) ->
+        @$('#breadcrumbs').remove()
+        @title.hide()
+        breadcrumbsView = new BreadcrumbsView path: path
+        @title.after breadcrumbsView.render().$el
+        breadcrumbsView.scrollLeft()
 
     transitionTo: (view) ->
         @closeMenu()
@@ -161,6 +175,16 @@ module.exports = class Layout extends BaseView
         @$('#search-input').focus()
 
     onBackButtonClicked: (event) =>
-        app.router.navigate @backButton.attr('href'), trigger: true
-        event.preventDefault()
-        event.stopPropagation()
+        # close menu first
+        if @isMenuOpen()
+            @closeMenu()
+
+        # @TODO: we could go further in history, but history.back() has
+        # strange behaviour near first screen
+        else if location.href.indexOf('#folder/') is (location.href.length - 8)
+            if window.confirm t "confirm exit message"
+                navigator.app.exitApp()
+
+        else
+            # navigator.app.backHistory()
+            window.history.back()

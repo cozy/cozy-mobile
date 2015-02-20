@@ -37,6 +37,7 @@ module.exports =
     "done"                : "Done"
     "photos"              : "Photos from devices"
     "confirm message"     : "Are you sure?"
+    "confirm exit message": "Do you want to Exit?"
     "replication complete" : "Replication complete"
     "no activity found"   : """
         No application on phone for this kind of file.
@@ -49,6 +50,9 @@ module.exports =
     """
     "no wifi"  : """
         No Wifi, Backup cancelled.
+    """
+    "no connection"  : """
+        No connection, Backup cancelled.
     """
 
     # fist connection wizard
@@ -84,3 +88,13 @@ module.exports =
     "filesystem bug error"  : "File system bug error. Try to restart your phone."
     "end"                   : "End"
 
+    # Errors
+    "all fields are required" : "All fields are required"
+    "cozy need patch"       : "Cozy need patch"
+    "wrong password"        : "Incorrect password"
+    "device name already exist" : "Device name already exist"
+    "An error happened (UNKNOWN)": "An error occured."
+    "An error happened (NOT FOUND)": "An error occured (not found)."
+    "An error happened (INVALID URL)": "An error occured (invalid url)."
+    "This file isnt available offline": "This file isn't available offline."
+    "ABORTED"               :  "The procedure was aborted."

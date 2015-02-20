@@ -22,6 +22,7 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
         app.replicator.db.search params, (err, items) =>
             @slowReset items, (err) =>
                 @notloaded = false
+                @trigger 'sync'
                 callback err
 
     # fetch use
@@ -74,6 +75,10 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
 
         #immediately reset 10 models (fill view)
         @reset models.slice 0, 10
+
+        if models.length < 10
+            return callback null
+
         i = 0
         # then add 10 models every 10 ms (dont freeze UI)
         do nonBlockingAdd = =>

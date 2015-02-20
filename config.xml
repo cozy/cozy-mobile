@@ -11,7 +11,8 @@
     <!-- <name>Cozy-files</name>
     <description>Sync files from cozy files</description> -->
     <author email="contact@cozycloud.cc" href="http://cozy.io">Cozy Cloud</author>
-    <preference name="Orientation" value="portrait" />
+    <preference name="Orientation" value="default" />
+
     <content src="index.html"/>
     <platform name="android">
         <icon density="ldpi" src="res/icons/icon2.png"/>

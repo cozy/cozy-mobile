@@ -112,7 +112,7 @@ img.backup
     width: 100%
 
 #bar-header
-    border-bottom 5px solid basecolor
+    border-bottom 3px solid basecolor
 
 #btn-menu
     height: 44px
@@ -129,3 +129,145 @@ img.backup
 
 #btn-menu:focus, #btn-menu:active, #btn-menu.activated
     background-color: basecolor + 60%
+
+#breadcrumbs
+    position relative
+    width 100%
+    height 30px
+    top 2px
+
+    #crumbs
+        position absolute
+        display inline-block
+        top 0px
+        left 28px
+        right 0px
+        overflow-x scroll
+        overflow-y hidden
+        height 30px
+        z-index 0
+
+    #crumbs::-webkit-scrollbar
+        display none
+
+
+    #shadow
+        position absolute
+        width 10px
+        height 30px
+        right 0px
+        top 0px
+        background linear-gradient(left, rgba(0,0,0,0), white);
+
+    ul
+        margin-bottom 0px
+        padding-left 0
+        list-style none
+        display inline
+        white-space nowrap
+
+        li
+            display inline
+
+            a
+                position relative
+                line-height 30px
+                padding 6px 5px 6px 22px
+
+                &:after
+                    content ""
+                    border-top 15px solid transparent
+                    border-bottom 15px solid transparent
+                    border-left 15px solid basecolor
+                    position absolute
+                    right -15px
+                    top 0
+                    z-index 1
+                &:before
+                    content ""
+                    border-top 15px solid transparent
+                    border-bottom 15px solid transparent
+                    border-left 15px solid white
+                    position absolute
+                    left 0
+                    top 0
+
+            &:last-child
+                a
+                    padding-right 20px
+                    border-top-right-radius 10px
+                    border-bottom-right-radius 10px
+                    margin-right 10px
+                    &:after
+                        display none
+
+    a
+        background basecolor
+        text-align center
+        
+        margin-right 3px
+        font-size 15px
+        text-decoration none
+        color #fff
+        
+        &:active
+            background actioncolor
+            &:after
+                border-left-color actioncolor
+
+    .home
+        position absolute
+        height 30px
+        width 26px
+        padding 6px 0px 6px 10px
+        border-top-left-radius 10px
+        border-bottom-left-radius 10px
+        z-index 3
+
+    #truncated
+        position absolute
+        height 30px
+        width 36px
+
+        left 28px
+        line-height 30px
+        padding-left 16px
+        z-index 1
+    
+        &:before
+            content ""
+            border-top 15px solid transparent
+            border-bottom 15px solid transparent
+            border-left 15px solid white
+            position absolute
+            left 0
+            top 0
+
+    .white-arrow
+        border-top 15px solid transparent
+        border-bottom 15px solid transparent
+        border-left 15px solid white
+        position absolute
+        width 15px
+        top 0
+        height 30px
+        z-index 1
+
+    .blue-arrow
+        border-top 15px solid transparent
+        border-bottom 15px solid transparent
+        border-left 15px solid basecolor
+        position absolute
+        width 16px
+        top 0
+        height 30px
+        z-index 2
+
+    .round
+        top 0
+        height 30px
+        position absolute
+        width 11px
+        border-top-right-radius 10px
+        border-bottom-right-radius 10px
+        background basecolor

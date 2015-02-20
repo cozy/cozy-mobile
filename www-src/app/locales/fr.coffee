@@ -19,7 +19,7 @@ module.exports =
     "reset action"        : "R.à.Z"
     "retry synchro"       : "Sync"
     "synchro warning"     : "Cela relancera une synchronisation depuis le début. Cela peut prendre du temps."
-    "reset warning"       : "Cela supprimera toutes les données cozy sur votre mobile (dont votre device)."
+    "reset warning"       : "Cela supprimera toutes les données cozy sur votre mobile (dont votre appareil)."
     "pull to sync"        : "Tirer pour synchroniser"
     "syncing"             : "En cours de synchronisation"
     "contacts_scan"       : "Extraction des contacts"
@@ -37,6 +37,7 @@ module.exports =
     "done"                : "Fait"
     "photos"              : "Appareils photo"
     "confirm message"     : "Êtes-vous sûr ?"
+    "confirm exit message": "Voulez-vous quitter l'application ?"
     "replication complete" : "Réplication complétée"
     "no activity found"   : """
         Aucune application n'a été trouvé sur ce téléphone pour ce type de fichier.
@@ -49,6 +50,9 @@ module.exports =
     """
     "no wifi"  : """
         La sauvegarde n'aura pas lieu car vous n'êtes pas en wifi.
+    """
+    "no connection"  : """
+        La sauvegarde n'aura pas lieu car vous n'avez pas de connexion.
     """
 
   # fist connection wizard
@@ -83,3 +87,14 @@ module.exports =
     "waiting..."            : "En attente..."
     "filesystem bug error"  : "Erreur dans le système de fichier. Essayez de redémarrer votre téléphone"
     "end"                   : "Fin"
+
+    # Errors
+    "all fields are required" : "Tous les champs sont obligatoires"
+    "cozy need patch"       : "Cozy a besoin d'un corretif"
+    "wrong password"        : "Mot de passe incorrect"
+    "device name already exist" : "Ce nom d'appareil existe déjà"
+    "An error happened (UNKNOWN)": "Une erreur est survenue"
+    "An error happened (NOT FOUND)": "Une erreur est survenue (non trouvé)"
+    "An error happened (INVALID URL)": "Une erreur est survenue (url invalide)"
+    "This file isnt available offline": "Ce fichier n'est pas disponible hors ligne"
+    "ABORTED"               :  "La procédure a été interompu."
