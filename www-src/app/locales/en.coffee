@@ -49,6 +49,9 @@ module.exports =
         Not enough battery, Backup cancelled.
     """
     "no wifi"  : """
+        No Wifi, Backup cancelled.
+    """
+    "no connection"  : """
         No connection, Backup cancelled.
     """
 

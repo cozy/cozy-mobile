@@ -23,7 +23,8 @@ module.exports = class Menu extends BaseView
         return if app.replicator.get 'inSync'
         app.replicator.sync (err) ->
             console.log err, err.stack if err
-            alert err.message if err
+            if err
+                alert t if err.message? then err.message else "no connection"
             app.layout.currentView?.collection?.fetch()
 
     backup: ->
