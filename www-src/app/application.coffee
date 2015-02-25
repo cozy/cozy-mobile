@@ -5,6 +5,7 @@ module.exports =
 
     initialize: ->
 
+        console.log "window.app is application."
         window.app = this
 
         # Monkey patch for browser debugging
