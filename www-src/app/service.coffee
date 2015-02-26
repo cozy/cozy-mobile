@@ -26,17 +26,13 @@ module.exports = Service =
             @polyglot.extend locales
             window.t = @polyglot.t.bind @polyglot
 
-            #Router = require 'router'
-            #@router = new Router()
+            # Router = require 'router'
+            # @router = new Router()
+
+
 
             @replicator = new Replicator()
             #@layout = new LayoutView()
-
-            ##
-            #factory = cordova.require 'com.red_folder.phonegap.plugin.backgroundservice.BackgroundService'
-
-            #app.service = factory.create 'io.cozy.jsbackgroundservice.WebViewService'
-            ##
 
             @replicator.init (err, config) =>
                 if err
@@ -51,9 +47,13 @@ module.exports = Service =
                     #@router.once 'collectionfetched', =>
                         ##app.replicator.startRealtime()
 
+                        # TODO :
+                        notification = require('./views/notifications')
+                        @notificationManager = new notification()
+
                         app.replicator.backup false, ->
                             console.log "replication done"
-                            window.service.workDone()
+                            setTimeout window.service.workDone, 5000
 
                         # ## Test notification
                         # console.log window.plugin.notification.local.add

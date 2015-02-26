@@ -30,6 +30,10 @@ module.exports =
             @replicator = new Replicator()
             @layout = new LayoutView()
 
+            # # TODO :
+            # notification = require('./views/notifications')
+            # @notificationManager = new notification()
+
             @replicator.init (err, config) =>
                 if err
                     console.log err, err.stack
