@@ -4,8 +4,6 @@ LayoutView = require './views/layout'
 module.exports =
 
     initialize: ->
-
-        console.log "window.app is application."
         window.app = this
 
         # Monkey patch for browser debugging
@@ -13,6 +11,7 @@ module.exports =
             window.navigator = window.navigator or {}
             window.navigator.globalization = window.navigator.globalization or {}
             window.navigator.globalization.getPreferredLanguage = (callback) -> callback value: 'fr-FR'
+
 
         navigator.globalization.getPreferredLanguage (properties) =>
             [@locale] = properties.value.split '-'
@@ -30,10 +29,6 @@ module.exports =
             @replicator = new Replicator()
             @layout = new LayoutView()
 
-            # # TODO :
-            # notification = require('./views/notifications')
-            # @notificationManager = new notification()
-
             @replicator.init (err, config) =>
                 if err
                     console.log err, err.stack
@@ -43,6 +38,10 @@ module.exports =
                 Backbone.history.start()
 
                 if config.remote
+                    # TODO: run background service only if configured.
+                    # hide temporarly some concurrence problem
+                    window.JSBackgroundService.setRepeating()
+
                     @router.navigate 'folder/', trigger: true
                     @router.once 'collectionfetched', =>
                         app.replicator.startRealtime()

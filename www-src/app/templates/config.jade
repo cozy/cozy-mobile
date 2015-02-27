@@ -18,6 +18,8 @@
             button#configDone.button.button-block.button-balanced= t('next')
 
     else
+        .item.item-checkbox= t('daemon running label')
+            label.checkbox: input#daemonRunningCheck(type="checkbox", checked=daemonRunning)
 
         #doBackup.item.item-icon-left
             i.icon.ion-clock

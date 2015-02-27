@@ -13,6 +13,20 @@ module.exports = class ConfigView extends BaseView
         'tap #contactSyncCheck': 'saveChanges'
         'tap #imageSyncCheck': 'saveChanges'
         'tap #wifiSyncCheck': 'saveChanges'
+        'click #daemonRunningCheck' : 'toggleDaemon'
+
+    initialize: ->
+        @daemonRunning = false
+        @checkDaemonRunning()
+
+    checkDaemonRunning: ->
+        JSBackgroundService.isRepeating (err, isRepeating) =>
+            if err
+                console.log err.message
+                isRepeating = false
+
+            @daemonRunning = isRepeating
+            @render()
 
     getRenderData: ->
         config = app.replicator.config.toJSON()
@@ -23,6 +37,7 @@ module.exports = class ConfigView extends BaseView
             lastBackup: @formatDate config?.lastBackup
             firstRun: app.isFirstRun
             locale: app.locale
+            daemonRunning: @daemonRunning
 
     # format a object as a readable date string
     # return t('never') if undefined
@@ -65,3 +80,11 @@ module.exports = class ConfigView extends BaseView
             syncOnWifi: @$('#wifiSyncCheck').is ':checked'
         , =>
             @$('#contactSyncCheck, #imageSyncCheck, #wifiSyncCheck').prop 'disabled', false
+
+    toggleDaemon: ->
+        if @daemonRunning
+            window.JSBackgroundService.cancelRepeating()
+        else
+            window.JSBackgroundService.setRepeating()
+
+        @checkDaemonRunning()

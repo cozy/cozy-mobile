@@ -11,10 +11,6 @@ module.exports = class Menu extends BaseView
         'click #btn-search': 'doSearch'
         'click a.item': 'closeMenu'
         'keydown #search-input': 'doSearchIfEnter'
-        'click #startButton': 'startService'
-        'click #stopButton': 'stopService'
-
-
 
     afterRender: ->
         @syncButton = @$ '#syncButton'
@@ -43,19 +39,6 @@ module.exports = class Menu extends BaseView
 
                 app.layout.currentView?.collection?.fetch()
                 @sync()
-
-    startService: ->
-        JSBackgroundService.start (err) ->
-            console.log err
-            alert if err? then err.message else "service stoped"
-
-
-    stopService: ->
-        # = cordova.require 'JSBackgroundService'
-        JSBackgroundService.stop (err) ->
-            console.log err
-            alert if err? then err.message else "service stoped"
-
 
     doSearchIfEnter: (event) => @doSearch() if event.which is 13
     doSearch: ->

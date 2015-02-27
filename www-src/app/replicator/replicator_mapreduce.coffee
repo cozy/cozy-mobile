@@ -45,8 +45,7 @@ NotificationsForwardMobileDesignDoc =
     views:
         'NotificationsForwardMobile':
             map: Object.toString.apply (doc) ->
-                if doc.docType?.toLowerCase() is 'notification' and
-                   doc.forward_mobile is true
+                if doc.docType?.toLowerCase() is 'notification' #and doc.forward_mobile is true
                     emit doc._id
 
 LocalPathDesignDoc =
