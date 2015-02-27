@@ -58,7 +58,6 @@ module.exports = class ConfigView extends BaseView
     # save config changes in local pouchdb
     # prevent simultaneous changes by disabling checkboxes
     saveChanges: ->
-
         @$('#contactSyncCheck, #imageSyncCheck, #wifiSyncCheck').prop 'disabled', true
         app.replicator.config.save
             syncContacts: @$('#contactSyncCheck').is ':checked'

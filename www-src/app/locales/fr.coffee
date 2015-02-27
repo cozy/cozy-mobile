@@ -31,7 +31,7 @@ module.exports =
     "loading"             : "Chargement"
     "remove local"        : "Supprimer du tél."
     "download"            : "Télécharger"
-    "sync"                : "Rafraîchir"
+    "sync"                : "Synchroniser"
     "backup"              : "Sauvegarder"
     "save"                : "Sauvegarder"
     "done"                : "Fait"
