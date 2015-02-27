@@ -135,16 +135,13 @@ module.exports = class Replicator extends Backbone.Model
                 #(cb) => @config.save checkpointed: 0, cb
                 (cb) => @set('initialReplicationStep', 1) and cb null
                 (cb) => @copyView 'folder', cb
-                # TODO
                 (cb) => @copyView 'notification', cb
                 (cb) => @set('initialReplicationStep', 2) and cb null
-                # (cb) => @set('initialReplicationStep', 2) and cb null
                 # Save last sequences
                 (cb) => @config.save checkpointed: last_seq, cb
                 # build the initial state of FilesAndFolder view index
                 (cb) => @db.query 'FilesAndFolder', {}, cb
-                # TODO
-                (cb) => @db.query 'Notifications', {}, cb
+                (cb) => @db.query 'NotificationsForwardMobile', {}, cb
 
             ], (err) =>
                 console.log "end of inital replication #{Date.now()}"

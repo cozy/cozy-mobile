@@ -31,15 +31,17 @@ module.exports = Service =
                 console.log "Service - Replicator inited"
                 if err
                     console.log err, err.stack
-                    return alert err.message or err
+                    window.service.workDone()
 
                 if config.remote
                     notification = require('./views/notifications')
                     @notificationManager = new notification()
 
                     app.replicator.backup false, ->
-                        # TODO: give some time to finish and close things.
-                        setTimeout window.service.workDone, 5000
+                        # give some time to finish and close things.
+                        setTimeout window.service.workDone, 5 * 1000
+                else
+                    window.service.workDone()
 
 
 document.addEventListener 'deviceready', ->
