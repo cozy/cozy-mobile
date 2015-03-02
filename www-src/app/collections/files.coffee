@@ -31,20 +31,20 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
             @notloaded = false
             @trigger 'sync'
             _callback(err)
-
-        cacheKey = if @path is null then '' else @path
-        # console.log "IN CACHE " + JSON.stringify(cacheKey)
-        if cacheKey of FileAndFolderCollection.cache
-            items = FileAndFolderCollection.cache[cacheKey]
-            return @slowReset items, (err) =>
-                @fetchAdditional() unless err
-                callback err
-
-        console.log "CACHE MISS " + cacheKey
+        # unplug cache for testing.
+        # cacheKey = if @path is null then '' else @path
+        # # console.log "IN CACHE " + JSON.stringify(cacheKey)
+        # if cacheKey of FileAndFolderCollection.cache
+        #     items = FileAndFolderCollection.cache[cacheKey]
+        #     return @slowReset items, (err) =>
+        #         @fetchAdditional() unless err
+        #         callback err
+#
+#         console.log "CACHE MISS " + cacheKey
         @_fetch @path, (err, items) =>
             return callback err if err
             @slowReset items, (err) =>
-                @fetchAdditional() unless err
+                #@fetchAdditional() unless err
                 callback err
 
 

@@ -206,8 +206,6 @@ module.exports =
             @config.remote.putAttachment doc.id, 'file', doc.rev, blob, mime, (err, doc) =>
                 return callback err if err
                 return callback new Error('cant attach') unless doc.ok
-                # see ./main#createRemotePouchInstance
-                delete @config.remoteHostObject.headers['Content-Type']
                 callback null, doc
 
     createFile: (cordovaFile, localPath, binaryDoc, device, callback) ->

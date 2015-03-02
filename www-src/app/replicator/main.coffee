@@ -127,7 +127,7 @@ module.exports = class Replicator extends Backbone.Model
         request.get options, (err, res, body) =>
             return callback err if err
             # we store last_seq before copying files & folder
-            # to avoid losing changes occuring during replicatation
+            # to avoid losing changes occuring during replication
             last_seq = body.last_seq
             async.series [
                 # Force checkpoint to 0
@@ -303,7 +303,8 @@ module.exports = class Replicator extends Backbone.Model
         @liveReplication?.cancel()
         checkpoint = options.checkpoint or @config.get 'checkpointed'
 
-        replication = @db.replicate.from @config.remote,
+        # replication = @db.replicate.from @config.remote,
+        replication = @db.replicate.from @config.get('fullRemoteURL'),
             batch_size: 20
             batches_limit: 5
             filter: (doc) ->
@@ -342,7 +343,8 @@ module.exports = class Replicator extends Backbone.Model
     startRealtime: =>
         return if @liveReplication
         console.log 'REALTIME START'
-        @liveReplication = @db.replicate.from @config.remote,
+        # @liveReplication = @db.replicate.from @config.remote,
+        @liveReplication = @db.replicate.from @config.get('fullRemoteURL'),
             batch_size: 20
             batches_limit: 5
             filter: (doc) ->
