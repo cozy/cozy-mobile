@@ -296,15 +296,14 @@ module.exports = class Replicator extends Backbone.Model
     # Called for :
     #    * first replication
     #    * replication at each start
-    #    * replication force byu user
+    #    * replication force by user
     _sync: (options, callback) ->
         console.log "BEGIN SYNC"
         total_count = 0
         @liveReplication?.cancel()
         checkpoint = options.checkpoint or @config.get 'checkpointed'
 
-        # replication = @db.replicate.from @config.remote,
-        replication = @db.replicate.from @config.get('fullRemoteURL'),
+        replication = @db.replicate.from @config.remote,
             batch_size: 20
             batches_limit: 5
             filter: (doc) ->
@@ -330,8 +329,8 @@ module.exports = class Replicator extends Backbone.Model
                 app.router.forceRefresh()
                 # updateIndex In background
                 @updateIndex =>
-                    console.log 'start Realtime'
                     @startRealtime()
+
 
     # realtime
     # start from the last checkpointed value
@@ -343,8 +342,7 @@ module.exports = class Replicator extends Backbone.Model
     startRealtime: =>
         return if @liveReplication
         console.log 'REALTIME START'
-        # @liveReplication = @db.replicate.from @config.remote,
-        @liveReplication = @db.replicate.from @config.get('fullRemoteURL'),
+        @liveReplication = @db.replicate.from @config.remote,
             batch_size: 20
             batches_limit: 5
             filter: (doc) ->

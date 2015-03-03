@@ -137,14 +137,15 @@ module.exports =
                 {
                     startkey: ['/' + t 'photos']
                     endkey: ['/' + t('photos'), {}]
-                    include_docs: true
                 } , cb
         ], (err, results) =>
             return callback err if err
             [device, images, rows: dbImages, dbPictures] = results
 
             dbImages = dbImages.map (row) -> row.key
-            dbPictures = dbPictures.rows.map (row) -> row.doc.name
+            # We pick up the filename from the key to improve speed :
+            # query without include_doc are 100x faster
+            dbPictures = dbPictures.rows.map (row) -> row.key[1]?.slice 2
 
             myDownloadFolder = @downloads.toURL().replace 'file://', ''
 
@@ -158,8 +159,8 @@ module.exports =
                 else
                     # Check if pictures is already present (old installation)
                     fs.getFileFromPath path, (err, file) =>
-                        #console.log file
-                        if file.name in dbPictures
+                        # We test only on filename, case-insensitive
+                        if file.name?.toLowerCase() in dbPictures
                             # Add photo in local database
                             @createPhoto path
                         else

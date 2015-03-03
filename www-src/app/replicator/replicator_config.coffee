@@ -3,6 +3,7 @@ basic = require '../lib/basic'
 module.exports = class ReplicatorConfig extends Backbone.Model
     constructor: (@replicator) ->
         super null
+        @remote = null
     defaults: ->
         _id: 'localconfig'
         syncContacts: app.locale is 'digidisk'
@@ -15,6 +16,7 @@ module.exports = class ReplicatorConfig extends Backbone.Model
         @replicator.db.get 'localconfig', (err, config) =>
             if config
                 @set config
+                @remote = @createRemotePouchInstance()
 
             callback null, this
 
@@ -24,6 +26,7 @@ module.exports = class ReplicatorConfig extends Backbone.Model
             return callback err if err
             return callback new Error('cant save config') unless res.ok
             @set _rev: res.rev
+            @remote = @createRemotePouchInstance()
             callback? null, this
 
     makeUrl: (path) ->
@@ -32,3 +35,7 @@ module.exports = class ReplicatorConfig extends Backbone.Model
         url: 'https://' + @get('cozyURL') + '/cozy' + path
 
     makeFilterName: -> @get('deviceId') + '/filter'
+
+    createRemotePouchInstance: ->
+        new PouchDB
+            name: @get 'fullRemoteURL'
