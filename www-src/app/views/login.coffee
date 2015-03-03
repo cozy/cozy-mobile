@@ -61,5 +61,3 @@ module.exports = class LoginView extends BaseView
         @error = $('<div>').addClass('button button-full button-energized')
         @error.text text
         @$(field or '#btn-save').before @error
-
-

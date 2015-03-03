@@ -5,7 +5,6 @@ module.exports = class FolderView extends CollectionView
     className: 'list'
     itemview: require './folder_line'
 
-    pullToRefreshEnabled: true
     menuEnabled: true
 
     events: ->
