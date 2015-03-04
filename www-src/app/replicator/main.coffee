@@ -127,7 +127,7 @@ module.exports = class Replicator extends Backbone.Model
         request.get options, (err, res, body) =>
             return callback err if err
             # we store last_seq before copying files & folder
-            # to avoid losing changes occuring during replicatation
+            # to avoid losing changes occuring during replication
             last_seq = body.last_seq
             async.series [
                 # Force checkpoint to 0
@@ -296,7 +296,7 @@ module.exports = class Replicator extends Backbone.Model
     # Called for :
     #    * first replication
     #    * replication at each start
-    #    * replication force byu user
+    #    * replication force by user
     _sync: (options, callback) ->
         console.log "BEGIN SYNC"
         total_count = 0
@@ -329,8 +329,8 @@ module.exports = class Replicator extends Backbone.Model
                 app.router.forceRefresh()
                 # updateIndex In background
                 @updateIndex =>
-                    console.log 'start Realtime'
                     @startRealtime()
+
 
     # realtime
     # start from the last checkpointed value
