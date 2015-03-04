@@ -1,5 +1,6 @@
 Replicator = require './replicator/main'
 LayoutView = require './views/layout'
+ServiceManager = require './service/service_manager'
 
 module.exports =
 
@@ -29,18 +30,21 @@ module.exports =
             @replicator = new Replicator()
             @layout = new LayoutView()
 
+            @serviceManager = new ServiceManager()
+
             @replicator.init (err, config) =>
                 if err
                     console.log err, err.stack
                     return alert err.message or err
 
+
                 $('body').empty().append @layout.render().$el
                 Backbone.history.start()
 
                 if config.remote
-                    # TODO: run background service only if configured.
-                    # hide temporarly some concurrence problem
-                    window.JSBackgroundService.setRepeating()
+                    # Activate background service only if database is
+                    # configured.
+                    @serviceManager.activate()
 
                     @router.navigate 'folder/', trigger: true
                     @router.once 'collectionfetched', =>

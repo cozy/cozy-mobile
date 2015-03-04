@@ -20,7 +20,7 @@ module.exports = class Menu extends BaseView
 
     sync: ->
         return if app.replicator.get 'inSync'
-        app.replicator.sync (err) ->
+        app.replicator.sync {}, (err) ->
             console.log err, err.stack if err
             if err
                 alert t if err.message? then err.message else "no connection"
@@ -32,7 +32,7 @@ module.exports = class Menu extends BaseView
         if app.replicator.get 'inBackup'
             @sync()
         else
-            app.replicator.backup false, (err) =>
+            app.replicator.backup { force: false }, (err) =>
                 console.log err, err.stack if err
                 alert err.message if err
                 return if err

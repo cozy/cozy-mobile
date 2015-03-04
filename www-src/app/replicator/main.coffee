@@ -287,11 +287,11 @@ module.exports = class Replicator extends Backbone.Model
             , callback
 
     # wrapper around _sync to maintain the state of inSync
-    sync: (callback) ->
+    sync: (options, callback) ->
         return callback null if @get 'inSync'
         console.log "SYNC CALLED"
         @set 'inSync', true
-        @_sync {}, (err) =>
+        @_sync options, (err) =>
             @set 'inSync', false
             callback err
 
@@ -331,11 +331,12 @@ module.exports = class Replicator extends Backbone.Model
             console.log "REPLICATION COMPLETED"
             @config.save checkpointed: result.last_seq, (err) =>
                 callback err
-                app.router.forceRefresh()
-                # updateIndex In background
-                @updateIndex =>
-                    @startRealtime()
-
+                unless options.background
+                    app.router.forceRefresh()
+                    # updateIndex In background
+                    @updateIndex =>
+                        console.log 'start Realtime'
+                        @startRealtime()
 
     # realtime
     # start from the last checkpointed value

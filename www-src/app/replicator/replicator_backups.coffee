@@ -13,15 +13,18 @@ fs = require './filesystem'
 module.exports =
 
     # wrapper around _backup to maintain the state of inBackup
-    backup: (force=false, callback = ->) ->
+    backup: (options, callback = ->) ->
         return callback null if @get 'inBackup'
+
+        options = options or { force: false }
+
         @set 'inBackup', true
         @set 'backup_step', null
         @liveReplication?.cancel()
-        @_backup force, (err) =>
+        @_backup options.force, (err) =>
             @set 'backup_step', null
             @set 'inBackup', false
-            @startRealtime()
+            @startRealtime() unless options.background
             return callback err if err
             @config.save lastBackup: new Date().toString(), (err) =>
                 callback null

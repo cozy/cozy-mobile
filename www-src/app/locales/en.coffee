@@ -11,7 +11,7 @@ module.exports =
     "contacts sync label" : "Backup contacts"
     "images sync label"   : "Backup images"
     "wifi sync label"     : "Backup on Wifi only"
-    "daemon running label": "Background daemon is running"
+    "daemon running label": "Service activated"
     "home"                : "Home"
     "about"               : "About"
     "last sync"           : "Last sync was : "

@@ -44,4 +44,4 @@ module.exports = class FirstSyncView extends BaseView
         app.router.navigate 'folder/', trigger: true
 
         # Start background service.
-        window.JSBackgroundService.setRepeating()
+        app.serviceManager.activate()
