@@ -57,14 +57,19 @@ module.exports = class FolderView extends CollectionView
     displaySlider: (event) =>
         console.log "DISPLAY SLIDER"
         # simulate a drag effect on the line to display the hidden button
-        @ionicView.clearDragEffects()
         op = new ionic.SlideDrag(el: @ionicView.el, canSwipe: -> true)
         op.start target: event.target
-        dX = if op._currentDrag.startOffsetX is 0 then 0 - op._currentDrag.buttonsWidth
-        else op._currentDrag.buttonsWidth
-        op.end gesture:
-            deltaX: dX
-            direction: 'right'
-        ionic.requestAnimationFrame => @ionicView._lastDragOp = op
+
+        if op._currentDrag.startOffsetX is 0
+            # Button is actually hidden
+            op.end gesture:
+                deltaX: 0 - op._currentDrag.buttonsWidth
+                direction: 'right'
+            ionic.requestAnimationFrame => @ionicView._lastDragOp = op
+
+        else
+            # Hide button
+            @ionicView.clearDragEffects()
+
         event.preventDefault()
         event.stopPropagation()
