@@ -7,6 +7,8 @@ module.exports = class ServiceManager extends Backbone.Model
         daemonActivated: false
 
     initialize: ->
+        @listenTo app.replicator.config, "change:cozyNotifications", @toggle
+        @listenTo app.replicator.config, "change:syncImages", @listenNewPictures
         @checkActivated()
 
     isActivated: ->
@@ -31,8 +33,12 @@ module.exports = class ServiceManager extends Backbone.Model
             if err then return console.log err
             @checkActivated()
 
-    toggle: ->
-        if @get 'daemonActivated'
+    toggle: (config, activate) ->
+        if activate
             @deactivate()
         else
             @activate()
+
+    listenNewPictures: (config, listen) ->
+        window.JSBackgroundService.listenNewPictures listen, (err) ->
+            if err then return console.log err

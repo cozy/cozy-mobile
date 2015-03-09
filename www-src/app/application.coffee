@@ -30,13 +30,12 @@ module.exports =
             @replicator = new Replicator()
             @layout = new LayoutView()
 
-            @serviceManager = new ServiceManager()
-
             @replicator.init (err, config) =>
                 if err
                     console.log err, err.stack
                     return alert err.message or err
 
+                @serviceManager = new ServiceManager()
 
                 $('body').empty().append @layout.render().$el
                 Backbone.history.start()

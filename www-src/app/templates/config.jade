@@ -12,15 +12,15 @@
     .item.item-checkbox= t('wifi sync label')
         label.checkbox: input#wifiSyncCheck(type="checkbox", checked=syncOnWifi)
 
+    .item.item-checkbox= t('cozy notifications sync label')
+        label.checkbox: input#cozyNotificationsCheck(type="checkbox", checked=cozyNotifications)
+
     if firstRun
 
         .item
             button#configDone.button.button-block.button-balanced= t('next')
 
     else
-        .item.item-checkbox= t('daemon running label')
-            label.checkbox: input#daemonActivatedCheck(type="checkbox", checked=daemonActivated)
-
         #doBackup.item.item-icon-left
             i.icon.ion-clock
             span.text

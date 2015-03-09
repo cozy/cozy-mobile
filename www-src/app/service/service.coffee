@@ -39,19 +39,23 @@ module.exports = Service =
                     return window.service.workDone()
 
                 if config.remote
-                    # Activate notifications handling
+                    if config.get 'cozyNotifications'
+                        # Activate notifications handling
+                        @notificationManager = new Notifications()
 
-                    @notificationManager = new Notifications()
-
-
-                    app.replicator.backup { background: true }, (err) ->
-                        console.log 'backup finished'
-                        console.log err
+                    # Function which synchronizes pouch and delayed close.
+                    syncNQuit = (err) ->
                         app.replicator.sync { background: true }, (err) ->
-                            console.log 'sync finished'
-                            console.log err
+                            console.log err if err
                             # give some time to finish and close things.
                             setTimeout window.service.workDone, 5 * 1000
+
+                    if config.get 'syncImages'
+                        app.replicator.backup { background: true }, syncNQuit
+
+                    else if config.get 'cozyNotifications'
+                        syncNQuit()
+
                 else
                     window.service.workDone()
 
