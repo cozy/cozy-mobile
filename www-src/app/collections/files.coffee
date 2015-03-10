@@ -1,5 +1,7 @@
 File = require '../models/file'
 
+PAGE_LENGTH = 20
+
 module.exports = class FileAndFolderCollection extends Backbone.Collection
     model: File
 
@@ -26,43 +28,72 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
                 callback err
 
     # fetch use
-    fetch: (_callback = ->) ->
-        callback = (err) =>
+    fetch: (callback = ->) ->
+
+
+        @reset []
+        @offset = 0
+        # Speed optimisation :
+        # First, fetch ordered files ids: all at once;
+        # Then, load docs on demand.
+        @_fetchPathes @path, (err, results) =>
+            @inPathIds = results.rows.map (row) -> return row.id
+            @trigger 'fullsync'
+            @loadNextPage callback
+
+
+    loadNextPage: (_callback) ->
+        callback = (err, noMoreItems) =>
             @notloaded = false
             @trigger 'sync'
-            _callback(err)
+            _callback(err, noMoreItems)
 
-        @_fetch @path, (err, items) =>
+        @_fetchNextPageDocs (err, items) =>
             return callback err if err
-            @trigger 'fullsync'
-            @slowReset items, (err) =>
-                callback err
+            @offset += PAGE_LENGTH
 
+            models = @_rowsToModels items
+            noMoreItems = models.length < PAGE_LENGTH
 
-    _fetch: (path, callback) ->
+            @add models
+            callback err, noMoreItems
+
+    # Fetch all key and id for the specified path
+    _fetchPathes: (path, callback) ->
         if path is t 'photos'
             params =
                 endkey: if path then ['/' + path] else ['']
                 startkey: if path then ['/' + path, {}] else ['', {}]
-                include_docs: true
                 descending: true
             view = 'Pictures'
         else
             params =
                 startkey: if path then ['/' + path] else ['']
                 endkey: if path then ['/' + path, {}] else ['', {}]
-                include_docs: true
             view = 'FilesAndFolder'
 
         app.replicator.db.query view, params, callback
 
-    slowReset: (results, callback) ->
-        models = results.rows.map (row) ->
+    # Fetch the docs for the next files.
+    _fetchNextPageDocs: (callback) ->
+        ids = @inPathIds.slice @offset, @offset + PAGE_LENGTH
+
+        params =
+            keys: ids
+            include_docs: true
+
+        app.replicator.db.allDocs params, callback
+
+    _rowsToModels: (results) ->
+        return results.rows.map (row) ->
             doc = row.doc
             if binary_id = doc.binary?.file?.id
                 doc.incache = app.replicator.fileInFileSystem doc
                 doc.version = app.replicator.fileVersion doc
             return doc
+
+    slowReset: (results, callback) ->
+        models = @_rowsToModels results
 
         #immediately reset 10 models (fill view)
         @reset models.slice 0, 10
