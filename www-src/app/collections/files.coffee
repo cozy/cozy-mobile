@@ -29,17 +29,14 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
 
     # fetch use
     fetch: (callback = ->) ->
-
-
-        @reset []
         @offset = 0
         # Speed optimisation :
         # First, fetch ordered files ids: all at once;
         # Then, load docs on demand.
         @_fetchPathes @path, (err, results) =>
             @inPathIds = results.rows.map (row) -> return row.id
-            @trigger 'fullsync'
             @loadNextPage callback
+            @trigger 'fullsync'
 
 
     loadNextPage: (_callback) ->
@@ -50,13 +47,18 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
 
         @_fetchNextPageDocs (err, items) =>
             return callback err if err
-            @offset += PAGE_LENGTH
 
             models = @_rowsToModels items
-            noMoreItems = models.length < PAGE_LENGTH
+            @allPagesLoaded = models.length < PAGE_LENGTH
 
-            @add models
-            callback err, noMoreItems
+            if @offset is 0
+                @reset models
+            else
+                @add models
+
+            @offset += PAGE_LENGTH
+
+            callback err, @allPagesLoaded
 
     # Fetch all key and id for the specified path
     _fetchPathes: (path, callback) ->

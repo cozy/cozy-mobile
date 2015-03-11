@@ -64,6 +64,8 @@ module.exports = class FolderView extends CollectionView
                     e.stopPropagation()
 
     onChange: =>
+        app.layout.ionicScroll.resize()
+
         @$('#empty-message').remove()
         if _.size(@views) is 0
             message = if @collection.notloaded then 'loading'
@@ -73,6 +75,11 @@ module.exports = class FolderView extends CollectionView
             $('<li class="item" id="empty-message">')
             .text(t(message))
             .appendTo @$el
+
+        else unless @collection.allPagesLoaded
+            $('<li class="item" id="empty-message">')
+                .text(t('loading'))
+                .appendTo @$el
 
     appendView: (view) =>
         super
@@ -109,11 +116,11 @@ module.exports = class FolderView extends CollectionView
             @loadMore()
 
     loadMore: (callback) ->
-        if not @collection.notLoaded and not @isLoading and not @lastAlreadyLoaded
+        if not @collection.notLoaded and
+           not @isLoading and
+           not @collection.allPagesLoaded
             @isLoading = true
-            @collection.loadNextPage (err, noMoreEvents) =>
-                if noMoreEvents
-                    @lastAlreadyLoaded = true
+            @collection.loadNextPage (err) =>
 
                 @isLoading = false
                 callback?()
