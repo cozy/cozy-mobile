@@ -135,13 +135,14 @@ module.exports = class Replicator extends Backbone.Model
                 #(cb) => @config.save checkpointed: 0, cb
                 (cb) => @set('initialReplicationStep', 1) and cb null
                 (cb) => @copyView 'folder', cb
+                # TODO: it copies all notifications (persistent ones too).
                 (cb) => @copyView 'notification', cb
                 (cb) => @set('initialReplicationStep', 2) and cb null
                 # Save last sequences
                 (cb) => @config.save checkpointed: last_seq, cb
                 # build the initial state of FilesAndFolder view index
                 (cb) => @db.query 'FilesAndFolder', {}, cb
-                (cb) => @db.query 'NotificationsForwardMobile', {}, cb
+                (cb) => @db.query 'NotificationsTemporary', {}, cb
 
             ], (err) =>
                 console.log "end of inital replication #{Date.now()}"
@@ -310,9 +311,10 @@ module.exports = class Replicator extends Backbone.Model
             batch_size: 20
             batches_limit: 5
             filter: (doc) ->
+
                 return doc.docType is 'Folder' or
                     doc.docType is 'File' or
-                    doc.docType is 'Notification'
+                    doc.docType is 'Notification' and doc.type is 'temporary'
             live: false
             since: checkpoint
 
@@ -354,7 +356,7 @@ module.exports = class Replicator extends Backbone.Model
             filter: (doc) ->
                 return doc.docType is 'Folder' or
                     doc.docType is 'File' or
-                    doc.docType is 'Notification'
+                    doc.docType is 'Notification' and doc.type is 'temporary'
             since: @config.get 'checkpointed'
             continuous: true
 

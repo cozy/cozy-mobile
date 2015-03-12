@@ -39,13 +39,13 @@ PicturesDesignDoc =
                     if doc.docType?.toLowerCase() is 'file'
                         emit [doc.path, doc.lastModification]
 
-NotificationsForwardMobileDesignDoc =
-    _id: '_design/NotificationsForwardMobile'
+NotificationsTemporaryDesignDoc =
+    _id: '_design/NotificationsTemporary'
     version: 1
     views:
-        'NotificationsForwardMobile':
+        'NotificationsTemporary':
             map: Object.toString.apply (doc) ->
-                if doc.docType?.toLowerCase() is 'notification' #and doc.forward_mobile is true
+                if doc.docType?.toLowerCase() is 'notification' and doc.type is 'temporary'
                     emit doc._id
 
 LocalPathDesignDoc =
@@ -86,7 +86,7 @@ DevicesByLocalIdDesignDoc =
 module.exports = (db, contactsDB, photosDB, callback) ->
 
     async.series [
-        (cb) -> createOrUpdateDesign db, NotificationsForwardMobileDesignDoc, cb
+        (cb) -> createOrUpdateDesign db, NotificationsTemporaryDesignDoc, cb
         (cb) -> createOrUpdateDesign db, FilesAndFolderDesignDoc, cb
         (cb) -> createOrUpdateDesign db, PicturesDesignDoc, cb
         (cb) -> createOrUpdateDesign db, LocalPathDesignDoc, cb

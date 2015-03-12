@@ -23,7 +23,7 @@ module.exports = class ServiceManager extends Backbone.Model
             @set 'daemonActivated', isRepeating
 
 
-    activate: ->
+    activate: (repeatingPeriod) ->
         window.JSBackgroundService.setRepeating repeatingPeriod, (err) =>
             if err then return console.log err
             @checkActivated()

@@ -16,15 +16,15 @@ module.exports = class Notifications
             @fetch()
 
     fetch: =>
-        app.replicator.db.query 'NotificationsForwardMobile', { include_docs: true }, (err, notifications) =>
+        app.replicator.db.query 'NotificationsTemporary', { include_docs: true }, (err, notifications) =>
                 notifications.rows.forEach (notification) =>
                     @showNotification notification.doc
 
     # Delete doc in (locale) db.
     #
     # @TODO: may generate conflict between pouchDB and cozy's couchDB, with
-    # persistant notifcations (ie updated in couchDB). But current
-    # 'forward_to_mobile' notification aren't persistant.
+    # persistant notifcations (ie updated in couchDB). But currently only
+    # 'temporary' notifications are showed.
     markAsShown: (notification) =>
         app.replicator.db.remove notification, (err) ->
             if err
