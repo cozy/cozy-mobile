@@ -33,9 +33,10 @@ module.exports = class Menu extends BaseView
             @sync()
         else
             app.replicator.backup { force: false }, (err) =>
-                console.log err, err.stack if err
-                alert err.message if err
-                return if err
+                if err
+                    console.log err, err.stack
+                    alert t err.message
+                    return
 
                 app.layout.currentView?.collection?.fetch()
                 @sync()

@@ -307,14 +307,19 @@ module.exports = class Replicator extends Backbone.Model
         @liveReplication?.cancel()
         checkpoint = options.checkpoint or @config.get 'checkpointed'
 
-        replication = @db.replicate.from @config.remote,
-            batch_size: 20
-            batches_limit: 5
-            filter: (doc) ->
-
+        if options.notificationsOnly
+            filter = (doc) ->
+                return doc.docType is 'Notification' and doc.type is 'temporary'
+        else
+            filter = (doc) ->
                 return doc.docType is 'Folder' or
                     doc.docType is 'File' or
                     doc.docType is 'Notification' and doc.type is 'temporary'
+
+        replication = @db.replicate.from @config.remote,
+            batch_size: 20
+            batches_limit: 5
+            filter: filter
             live: false
             since: checkpoint
 

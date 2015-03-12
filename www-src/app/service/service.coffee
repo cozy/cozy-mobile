@@ -43,18 +43,32 @@ module.exports = Service =
                         # Activate notifications handling
                         @notificationManager = new Notifications()
 
-                    # Function which synchronizes pouch and delayed close.
-                    syncNQuit = (err) ->
-                        app.replicator.sync { background: true }, (err) ->
-                            console.log err if err
-                            # give some time to finish and close things.
-                            setTimeout window.service.workDone, 5 * 1000
+                    delayedQuit = (err) ->
+                        console.log err if err
+                        # give some time to finish and close things.
+                        setTimeout window.service.workDone, 5 * 1000
+
+                    syncNotifications = (err) ->
+                        if config.get 'cozyNotifications'
+                            app.replicator.sync
+                                background: true
+                                notificationsOnly: true
+                            , delayedQuit
+
+                        else
+                            delayedQuit()
 
                     if config.get 'syncImages'
-                        app.replicator.backup { background: true }, syncNQuit
+                        app.replicator.backup { background: true }, (err) ->
+                            if err and err.message is 'no wifi'
+                                syncNotifications()
 
-                    else if config.get 'cozyNotifications'
-                        syncNQuit()
+                            else
+                                app.replicator.sync {background: true}, delayedQuit
+
+                    else
+                        syncNotifications()
+
 
                 else
                     window.service.workDone()

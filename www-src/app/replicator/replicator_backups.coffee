@@ -34,7 +34,7 @@ module.exports =
         DeviceStatus.checkReadyForSync (err, ready, msg) =>
             console.log "SYNC STATUS", err, ready, msg
             return callback err if err
-            return callback new Error(t msg) unless ready
+            return callback new Error(msg) unless ready
             console.log "WE ARE READY FOR SYNC"
 
             @syncPictures force, (err) =>
