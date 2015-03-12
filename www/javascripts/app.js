@@ -226,7 +226,7 @@ module.exports = FileAndFolderCollection = (function(_super) {
   };
 
   FileAndFolderCollection.prototype.fetch = function(_callback) {
-    var cacheKey, callback, items;
+    var callback;
     if (_callback == null) {
       _callback = function() {};
     }
@@ -237,28 +237,13 @@ module.exports = FileAndFolderCollection = (function(_super) {
         return _callback(err);
       };
     })(this);
-    cacheKey = this.path === null ? '' : this.path;
-    if (cacheKey in FileAndFolderCollection.cache) {
-      items = FileAndFolderCollection.cache[cacheKey];
-      return this.slowReset(items, (function(_this) {
-        return function(err) {
-          if (!err) {
-            _this.fetchAdditional();
-          }
-          return callback(err);
-        };
-      })(this));
-    }
-    console.log("CACHE MISS " + cacheKey);
     return this._fetch(this.path, (function(_this) {
       return function(err, items) {
         if (err) {
           return callback(err);
         }
+        _this.trigger('fullsync');
         return _this.slowReset(items, function(err) {
-          if (!err) {
-            _this.fetchAdditional();
-          }
           return callback(err);
         });
       };
@@ -1272,7 +1257,7 @@ module.exports = {
   "loading": "Chargement",
   "remove local": "Supprimer du tél.",
   "download": "Télécharger",
-  "sync": "Rafraîchir",
+  "sync": "Synchroniser",
   "backup": "Sauvegarder",
   "save": "Sauvegarder",
   "done": "Fait",
@@ -2178,7 +2163,6 @@ module.exports = Replicator = (function(_super) {
           callback(err);
           app.router.forceRefresh();
           return _this.updateIndex(function() {
-            console.log('start Realtime');
             return _this.startRealtime();
           });
         });
@@ -2415,8 +2399,7 @@ module.exports = {
         return function(cb) {
           return _this.db.query('FilesAndFolder', {
             startkey: ['/' + t('photos')],
-            endkey: ['/' + t('photos'), {}],
-            include_docs: true
+            endkey: ['/' + t('photos'), {}]
           }, cb);
         };
       })(this)
@@ -2431,7 +2414,8 @@ module.exports = {
           return row.key;
         });
         dbPictures = dbPictures.rows.map(function(row) {
-          return row.doc.name;
+          var _ref1;
+          return (_ref1 = row.key[1]) != null ? _ref1.slice(2) : void 0;
         });
         myDownloadFolder = _this.downloads.toURL().replace('file://', '');
         toUpload = [];
@@ -2440,8 +2424,8 @@ module.exports = {
             return cb();
           } else {
             return fs.getFileFromPath(path, function(err, file) {
-              var _ref1;
-              if (_ref1 = file.name, __indexOf.call(dbPictures, _ref1) >= 0) {
+              var _ref1, _ref2;
+              if (_ref1 = (_ref2 = file.name) != null ? _ref2.toLowerCase() : void 0, __indexOf.call(dbPictures, _ref1) >= 0) {
                 _this.createPhoto(path);
               } else {
                 toUpload.push(path);
@@ -2512,7 +2496,6 @@ module.exports = {
           if (!doc.ok) {
             return callback(new Error('cant attach'));
           }
-          delete _this.config.remoteHostObject.headers['Content-Type'];
           return callback(null, doc);
         });
       };
@@ -2699,22 +2682,7 @@ module.exports = ReplicatorConfig = (function(_super) {
 
   ReplicatorConfig.prototype.createRemotePouchInstance = function() {
     return new PouchDB({
-      name: this.get('fullRemoteURL'),
-      getHost: (function(_this) {
-        return function() {
-          return _this.remoteHostObject = {
-            remote: true,
-            protocol: 'https',
-            host: _this.get('cozyURL'),
-            port: 443,
-            path: '',
-            db: 'cozy',
-            headers: {
-              Authorization: basic(_this.get('auth'))
-            }
-          };
-        };
-      })(this)
+      name: this.get('fullRemoteURL')
     });
   };
 
@@ -3083,7 +3051,7 @@ buf.push('</div><div class="item">');
 var __val__ = t('device name') + ' : ' + deviceName
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</div><div class="item">');
-var __val__ = t('app name') + ' v 0.1.2'
+var __val__ = t('app name') + ' v 0.1.3'
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</div><div class="item item-divider">');
 var __val__ = t('reset title')
@@ -3221,13 +3189,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<div id="container" class="pane"><div id="bar-header" class="bar bar-header"><a id="btn-menu" class="button button-icon"><img src="img/menu-icon.svg" width="58"/></a><h1 id="title" class="title">Loading</h1><div id="breadcrumbs"></div><a id="headerSpinner" class="button button-icon"><img src="img/spinner.svg" width="25"/></a></div><div class="bar bar-subheader bar-calm"><h2 id="backupIndicator" class="title"></h2></div><div id="viewsPlaceholder" class="scroll-content has-header has-footer"><div class="scroll"><div class="scroll-refresher"><div class="ionic-refresher-content"><div class="icon-pulling"><i class="icon ion-arrow-down-c"></i>');
-var __val__ = t('pull to sync')
-buf.push(escape(null == __val__ ? "" : __val__));
-buf.push('</div><div class="icon-refreshing"><i class="icon ion-loading-d"></i>');
-var __val__ = t('syncing')
-buf.push(escape(null == __val__ ? "" : __val__));
-buf.push('</div></div></div></div></div></div>');
+buf.push('<div id="container" class="pane"><div id="bar-header" class="bar bar-header"><a id="btn-menu" class="button button-icon"><img src="img/menu-icon.svg" width="58"/></a><h1 id="title" class="title">Loading</h1><div id="breadcrumbs"></div><a id="headerSpinner" class="button button-icon"><img src="img/spinner.svg" width="25"/></a></div><div class="bar bar-subheader bar-calm"><h2 id="backupIndicator" class="title"></h2></div><div id="viewsPlaceholder" class="scroll-content has-header"><div class="scroll"></div></div></div>');
 }
 return buf.join("");
 };
@@ -3702,8 +3664,6 @@ module.exports = FolderView = (function(_super) {
 
   FolderView.prototype.itemview = require('./folder_line');
 
-  FolderView.prototype.pullToRefreshEnabled = true;
-
   FolderView.prototype.menuEnabled = true;
 
   FolderView.prototype.events = function() {
@@ -3769,9 +3729,8 @@ module.exports = FolderView = (function(_super) {
   };
 
   FolderView.prototype.displaySlider = function(event) {
-    var dX, op;
+    var op;
     console.log("DISPLAY SLIDER");
-    this.ionicView.clearDragEffects();
     op = new ionic.SlideDrag({
       el: this.ionicView.el,
       canSwipe: function() {
@@ -3781,18 +3740,21 @@ module.exports = FolderView = (function(_super) {
     op.start({
       target: event.target
     });
-    dX = op._currentDrag.startOffsetX === 0 ? 0 - op._currentDrag.buttonsWidth : op._currentDrag.buttonsWidth;
-    op.end({
-      gesture: {
-        deltaX: dX,
-        direction: 'right'
-      }
-    });
-    ionic.requestAnimationFrame((function(_this) {
-      return function() {
-        return _this.ionicView._lastDragOp = op;
-      };
-    })(this));
+    if (op._currentDrag.startOffsetX === 0) {
+      op.end({
+        gesture: {
+          deltaX: 0 - op._currentDrag.buttonsWidth,
+          direction: 'right'
+        }
+      });
+      ionic.requestAnimationFrame((function(_this) {
+        return function() {
+          return _this.ionicView._lastDragOp = op;
+        };
+      })(this));
+    } else {
+      this.ionicView.clearDragEffects();
+    }
     event.preventDefault();
     return event.stopPropagation();
   };
@@ -4019,7 +3981,6 @@ module.exports = Layout = (function(_super) {
     this.setBackButton = __bind(this.setBackButton, this);
     this.closeMenu = __bind(this.closeMenu, this);
     this.isMenuOpen = __bind(this.isMenuOpen, this);
-    this.togglePullToRefresh = __bind(this.togglePullToRefresh, this);
     return Layout.__super__.constructor.apply(this, arguments);
   }
 
@@ -4042,8 +4003,7 @@ module.exports = Layout = (function(_super) {
         var inBackup, inSync;
         inSync = app.replicator.get('inSync');
         inBackup = app.replicator.get('inBackup');
-        _this.spinner.toggle(inSync || inBackup);
-        return _this.refresher.toggleClass('refreshing', inSync);
+        return _this.spinner.toggle(inSync || inBackup);
       };
     })(this));
     OpEvents = 'change:inBackup change:backup_step change:backup_step_done';
@@ -4068,14 +4028,12 @@ module.exports = Layout = (function(_super) {
   };
 
   Layout.prototype.afterRender = function() {
-    var onActive, onClose, onStart;
     this.menu = new Menu();
     this.menu.render();
     this.$el.append(this.menu.$el);
     this.container = this.$('#container');
     this.viewsPlaceholder = this.$('#viewsPlaceholder');
     this.viewsBlock = this.viewsPlaceholder.find('.scroll');
-    this.refresher = this.viewsBlock.find('.scroll-refresher');
     this.backButton = this.container.find('#btn-back');
     this.menuButton = this.container.find('#btn-menu');
     this.spinner = this.container.find('#headerSpinner');
@@ -4095,36 +4053,11 @@ module.exports = Layout = (function(_super) {
       left: this.ionicMenu
     });
     this.ionicScroll = new ionic.views.Scroll({
-      el: this.viewsPlaceholder[0]
+      el: this.viewsPlaceholder[0],
+      bouncing: false
     });
     this.ionicScroll.scrollTo(1, 0, true, null);
-    this.ionicScroll.scrollTo(0, 0, true, null);
-    return this.ionicScroll.activatePullToRefresh(50, onActive = (function(_this) {
-      return function() {
-        _this.refresher.addClass('active');
-        return console.log("ON ACTIVE");
-      };
-    })(this), onClose = (function(_this) {
-      return function() {
-        console.log("ON CLOSE");
-        return _this.refresher.removeClass('active');
-      };
-    })(this), onStart = (function(_this) {
-      return function() {
-        _this.ionicScroll.finishPullToRefresh();
-        return app.replicator.sync(function(err) {
-          if (err) {
-            return console.log(err);
-          }
-        });
-      };
-    })(this));
-  };
-
-  Layout.prototype.togglePullToRefresh = function(activated) {
-    this.refresher.toggle(activated);
-    this.ionicScroll.options.bouncing = activated;
-    return this.ionicScroll.__refreshHeight = activated ? 50 : null;
+    return this.ionicScroll.scrollTo(0, 0, true, null);
   };
 
   Layout.prototype.isMenuOpen = function() {
@@ -4159,11 +4092,9 @@ module.exports = Layout = (function(_super) {
   };
 
   Layout.prototype.transitionTo = function(view) {
-    var $next, currClass, menuEnabled, nextClass, ptrEnabled, transitionend, type, _ref;
+    var $next, currClass, menuEnabled, nextClass, transitionend, type, _ref;
     this.closeMenu();
     $next = view.render().$el;
-    ptrEnabled = (view.pullToRefreshEnabled != null) && view.pullToRefreshEnabled;
-    this.togglePullToRefresh(ptrEnabled);
     menuEnabled = (view.menuEnabled != null) && view.menuEnabled;
     this.ionicMenu.setIsEnabled(menuEnabled);
     if (this.currentView instanceof FolderView && view instanceof FolderView) {
