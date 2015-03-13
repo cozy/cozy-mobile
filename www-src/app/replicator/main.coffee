@@ -169,6 +169,11 @@ module.exports = class Replicator extends Backbone.Model
 
 
         handleResponse = (err, res, body) =>
+
+            if not err and res.status > 399
+                console.log res
+                err = new Error res.status
+
             return callback err if err
             return callback null unless body.rows?.length
             async.eachSeries body.rows, (doc, cb) =>

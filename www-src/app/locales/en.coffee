@@ -99,3 +99,4 @@ module.exports =
     "An error happened (INVALID URL)": "An error occured (invalid url)."
     "This file isnt available offline": "This file isn't available offline."
     "ABORTED"               :  "The procedure was aborted."
+    "photo folder not replicated yet" : "Initialization not finished yet."

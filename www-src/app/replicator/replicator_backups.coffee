@@ -1,5 +1,6 @@
 DeviceStatus = require '../lib/device_status'
 fs = require './filesystem'
+request = require '../lib/request'
 
 
 # This files contains all replicator functions liked to backup
@@ -274,10 +275,17 @@ module.exports =
             return callback err if err
             if results.rows.length > 0
                 device = results.rows[0]
-                if err?
-                    createNew()
-                else
-                    console.log "DEVICE FOLDER EXISTS"
-                    return callback null, device
+                console.log "DEVICE FOLDER EXISTS"
+                return callback null, device
             else
-                createNew()
+                # TODO : relies on byFullPath folder view of cozy-file !
+                query = '/_design/folder/_view/byfullpath/?' +
+                    "key=\"/#{t('photos')}\""
+
+                request.get @config.makeUrl(query), (err, res, body) ->
+                    return callback err if err
+                    if body?.rows?.length is 0
+                        createNew()
+                    else
+                        # already exist remote, but not locally...
+                        callback new Error 'photo folder not replicated yet'
