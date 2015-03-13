@@ -26,18 +26,48 @@ module.exports = class FolderView extends CollectionView
         super
         @ionicView = new ionic.views.ListView
             el: @$el[0]
-            _handleDrag: (e) ->
+            _handleDrag: (e) =>
+
+                # Avoid floating feeling during scroll:
+                # scroll vertically OR horizontally but not both.
+                gesture = e.gesture
+                if gesture.direction is 'up'
+                    gesture.deltaX = 0
+                    gesture.angle = -90
+                    gesture.distance = -1 * gesture.deltaY
+                    gesture.velocityX = 0
+                else if gesture.direction is 'down'
+                    gesture.deltaX = 0
+                    gesture.angle = 90
+                    gesture.distance = gesture.deltaY
+                    gesture.velocityX = 0
+
+                else if gesture.direction is 'left'
+                    gesture.deltaY = 0
+                    gesture.angle = 180
+                    gesture.distance = gesture.deltaX
+                    gesture.velocityY = 0
+
+                else if gesture.direction is 'right'
+                    gesture.deltaY = 0
+                    gesture.angle = 0
+                    gesture.distance = gesture.deltaX
+                    gesture.velocityY = 0
+
+                @checkScroll()
+
                 # unless menu is open or slide to right
                 unless app.layout.isMenuOpen() or e.gesture.deltaX > 0
-                    ionic.views.ListView::_handleDrag.apply this, arguments
+                    ionic.views.ListView::_handleDrag.apply @ionicView, arguments
                     # prevent menu from opening
                     e.preventDefault()
                     e.stopPropagation()
 
     onChange: =>
+        app.layout.ionicScroll.resize()
+
         @$('#empty-message').remove()
         if _.size(@views) is 0
-
             message = if @collection.notloaded then 'loading'
             else if @collection.isSearch() then 'no results'
             else 'this folder is empty'
@@ -45,6 +75,11 @@ module.exports = class FolderView extends CollectionView
             $('<li class="item" id="empty-message">')
             .text(t(message))
             .appendTo @$el
+
+        else unless @collection.allPagesLoaded
+            $('<li class="item" id="empty-message">')
+                .text(t('loading'))
+                .appendTo @$el
 
     appendView: (view) =>
         super
@@ -73,3 +108,19 @@ module.exports = class FolderView extends CollectionView
 
         event.preventDefault()
         event.stopPropagation()
+
+
+    checkScroll: =>
+        triggerPoint = $('#viewsPlaceholder').height() * 2
+        if app.layout.ionicScroll.getValues().top + triggerPoint > app.layout.ionicScroll.getScrollMax().top
+            @loadMore()
+
+    loadMore: (callback) ->
+        if not @collection.notLoaded and
+           not @isLoading and
+           not @collection.allPagesLoaded
+            @isLoading = true
+            @collection.loadNextPage (err) =>
+
+                @isLoading = false
+                callback?()
