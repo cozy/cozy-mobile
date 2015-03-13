@@ -30,8 +30,12 @@ module.exports = class Replicator extends Backbone.Model
                     fs.rmrf @downloads, callback
 
     resetSynchro: (callback) ->
+        @liveReplication?.cancel()
         # remove all files/folders then call initialReplication
-        @initialReplication callback
+        @initialReplication (err) =>
+            @startRealtime()
+            callback err
+
 
     init: (callback) ->
         fs.initialize (err, downloads, cache) =>
@@ -154,8 +158,17 @@ module.exports = class Replicator extends Backbone.Model
 
     copyView: (model, callback) ->
         console.log "copyView #{Date.now()}"
-        options = @config.makeUrl "/_design/#{model}/_view/all/"
-        request.get options, (err, res, body) =>
+
+        # To get around case problems and various cozy's generations,
+        # try view _view/files-all, if it doesn't exist, use _view/all.
+        if model in ['file', 'folder']
+            options = @config.makeUrl "/_design/#{model}/_view/files-all/"
+            options2 = @config.makeUrl "/_design/#{model}/_view/all/"
+        else
+            options = @config.makeUrl "/_design/#{model}/_view/all/"
+
+
+        handleResponse = (err, res, body) =>
             return callback err if err
             return callback null unless body.rows?.length
             async.eachSeries body.rows, (doc, cb) =>
@@ -163,6 +176,14 @@ module.exports = class Replicator extends Backbone.Model
                 @db.put doc, 'new_edits':false, (err, file) =>
                     cb()
             , callback
+
+        request.get options, (err, res, body) ->
+            if res.status is 404 and model in ['file', 'folder']
+                request.get options2, handleResponse
+
+            else
+                handleResponse(err, res, body)
+
 
     fileInFileSystem: (file) =>
         if file.docType.toLowerCase() is 'file'
@@ -309,12 +330,14 @@ module.exports = class Replicator extends Backbone.Model
 
         if options.notificationsOnly
             filter = (doc) ->
-                return doc.docType is 'Notification' and doc.type is 'temporary'
+                return doc.docType?.toLowerCase() is 'notification' and
+                    doc.type?.toLowerCase() is 'temporary'
         else
             filter = (doc) ->
-                return doc.docType is 'Folder' or
-                    doc.docType is 'File' or
-                    doc.docType is 'Notification' and doc.type is 'temporary'
+                return doc.docType?.toLowerCase() is 'folder' or
+                    doc.docType?.toLowerCase() is 'file' or
+                    doc.docType?.toLowerCase() is 'notification' and
+                        doc.type?.toLowerCase() is 'temporary'
 
         replication = @db.replicate.from @config.remote,
             batch_size: 20
@@ -359,9 +382,10 @@ module.exports = class Replicator extends Backbone.Model
             batch_size: 20
             batches_limit: 5
             filter: (doc) ->
-                return doc.docType is 'Folder' or
-                    doc.docType is 'File' or
-                    doc.docType is 'Notification' and doc.type is 'temporary'
+                return doc.docType?.toLowerCase() is 'folder' or
+                    doc.docType?.toLowerCase() is 'file' or
+                    doc.docType?.toLowerCase() is 'notification' and
+                        doc.type?.toLowerCase() is 'temporary'
             since: @config.get 'checkpointed'
             continuous: true
 
