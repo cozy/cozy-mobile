@@ -9,6 +9,7 @@ module.exports = class ReplicatorConfig extends Backbone.Model
         syncContacts: app.locale is 'digidisk'
         syncImages: true
         syncOnWifi: true
+        cozyNotifications: true
         cozyURL: ''
         deviceName: ''
 

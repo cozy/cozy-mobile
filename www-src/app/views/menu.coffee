@@ -12,7 +12,6 @@ module.exports = class Menu extends BaseView
         'click a.item': 'closeMenu'
         'keydown #search-input': 'doSearchIfEnter'
 
-
     afterRender: ->
         @syncButton = @$ '#syncButton'
         @backupButton = @$ '#backupButton'
@@ -21,7 +20,7 @@ module.exports = class Menu extends BaseView
 
     sync: ->
         return if app.replicator.get 'inSync'
-        app.replicator.sync (err) ->
+        app.replicator.sync {}, (err) ->
             console.log err, err.stack if err
             if err
                 alert t if err.message? then err.message else "no connection"
@@ -33,14 +32,14 @@ module.exports = class Menu extends BaseView
         if app.replicator.get 'inBackup'
             @sync()
         else
-            app.replicator.backup false, (err) =>
-                console.log err, err.stack if err
-                alert err.message if err
-                return if err
+            app.replicator.backup { force: false }, (err) =>
+                if err
+                    console.log err, err.stack
+                    alert t err.message
+                    return
 
                 app.layout.currentView?.collection?.fetch()
                 @sync()
-
 
     doSearchIfEnter: (event) => @doSearch() if event.which is 13
     doSearch: ->

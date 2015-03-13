@@ -11,6 +11,7 @@ module.exports =
     "contacts sync label" : "Backup contacts"
     "images sync label"   : "Backup images"
     "wifi sync label"     : "Backup on Wifi only"
+    "cozy notifications sync label": "Sync Cozy notifications"
     "home"                : "Home"
     "about"               : "About"
     "last sync"           : "Last sync was : "
@@ -98,3 +99,4 @@ module.exports =
     "An error happened (INVALID URL)": "An error occured (invalid url)."
     "This file isnt available offline": "This file isn't available offline."
     "ABORTED"               :  "The procedure was aborted."
+    "photo folder not replicated yet" : "Initialization not finished yet."

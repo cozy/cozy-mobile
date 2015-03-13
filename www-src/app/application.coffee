@@ -1,10 +1,10 @@
 Replicator = require './replicator/main'
 LayoutView = require './views/layout'
+ServiceManager = require './service/service_manager'
 
 module.exports =
 
     initialize: ->
-
         window.app = this
 
         # Monkey patch for browser debugging
@@ -12,6 +12,7 @@ module.exports =
             window.navigator = window.navigator or {}
             window.navigator.globalization = window.navigator.globalization or {}
             window.navigator.globalization.getPreferredLanguage = (callback) -> callback value: 'fr-FR'
+
 
         navigator.globalization.getPreferredLanguage (properties) =>
             [@locale] = properties.value.split '-'
@@ -34,10 +35,16 @@ module.exports =
                     console.log err, err.stack
                     return alert err.message or err
 
+                @serviceManager = new ServiceManager()
+
                 $('body').empty().append @layout.render().$el
                 Backbone.history.start()
 
                 if config.remote
+                    # Activate background service only if database is
+                    # configured.
+                    @serviceManager.activate()
+
                     @router.navigate 'folder/', trigger: true
                     @router.once 'collectionfetched', =>
                         app.replicator.startRealtime()

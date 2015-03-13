@@ -13,6 +13,7 @@ module.exports = class ConfigView extends BaseView
         'tap #contactSyncCheck': 'saveChanges'
         'tap #imageSyncCheck': 'saveChanges'
         'tap #wifiSyncCheck': 'saveChanges'
+        'tap #cozyNotificationsCheck' : 'saveChanges'
 
     getRenderData: ->
         config = app.replicator.config.toJSON()
@@ -58,10 +59,15 @@ module.exports = class ConfigView extends BaseView
     # save config changes in local pouchdb
     # prevent simultaneous changes by disabling checkboxes
     saveChanges: ->
-        @$('#contactSyncCheck, #imageSyncCheck, #wifiSyncCheck').prop 'disabled', true
+        checkboxes = @$ '#contactSyncCheck, #imageSyncCheck,' +
+                        '#wifiSyncCheck, #cozyNotificationsCheck'
+        checkboxes.prop 'disabled', true
+
         app.replicator.config.save
             syncContacts: @$('#contactSyncCheck').is ':checked'
             syncImages: @$('#imageSyncCheck').is ':checked'
             syncOnWifi: @$('#wifiSyncCheck').is ':checked'
-        , =>
-            @$('#contactSyncCheck, #imageSyncCheck, #wifiSyncCheck').prop 'disabled', false
+            cozyNotifications: @$('#cozyNotificationsCheck').is ':checked'
+
+        , ->
+            checkboxes.prop 'disabled', false

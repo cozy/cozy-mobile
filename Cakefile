@@ -8,9 +8,12 @@ plugins = {
     "org.apache.cordova.file": "https://git-wip-us.apache.org/repos/asf/cordova-plugin-file.git"
     "org.apache.cordova.file-transfer": "https://git-wip-us.apache.org/repos/asf/cordova-plugin-file-transfer.git"
     "io.cozy.cordova-images-browser": "https://github.com/aenario/cordova-images-browser"
+    "io.cozy.jsbackgroundservice": "https://github.com/jacquarg/cordova-jsbackgroundservice"
+    "io.cozy.jsbgservice-newpicture": "https://github.com/jacquarg/cordova-jsbgservice-newpicture"
     "org.apache.cordova.battery-status": "org.apache.cordova.battery-status"
     "org.apache.cordova.network-information": "https://git-wip-us.apache.org/repos/asf/cordova-plugin-network-information.git"
     "org.apache.cordova.globalization": "org.apache.cordova.globalization"
+    "de.appplant.cordova.plugin.local-notification": "de.appplant.cordova.plugin.local-notification"
 }
 
 platforms = ['ios', 'android']

@@ -30,8 +30,12 @@ module.exports = class Replicator extends Backbone.Model
                     fs.rmrf @downloads, callback
 
     resetSynchro: (callback) ->
+        @liveReplication?.cancel()
         # remove all files/folders then call initialReplication
-        @initialReplication callback
+        @initialReplication (err) =>
+            @startRealtime()
+            callback err
+
 
     init: (callback) ->
         fs.initialize (err, downloads, cache) =>
@@ -135,11 +139,15 @@ module.exports = class Replicator extends Backbone.Model
                 #(cb) => @config.save checkpointed: 0, cb
                 (cb) => @set('initialReplicationStep', 1) and cb null
                 (cb) => @copyView 'folder', cb
+                # TODO: it copies all notifications (persistent ones too).
+                (cb) => @copyView 'notification', cb
                 (cb) => @set('initialReplicationStep', 2) and cb null
                 # Save last sequences
                 (cb) => @config.save checkpointed: last_seq, cb
                 # build the initial state of FilesAndFolder view index
                 (cb) => @db.query 'FilesAndFolder', {}, cb
+                (cb) => @db.query 'NotificationsTemporary', {}, cb
+
             ], (err) =>
                 console.log "end of inital replication #{Date.now()}"
                 @set 'initialReplicationStep', 3
@@ -150,8 +158,22 @@ module.exports = class Replicator extends Backbone.Model
 
     copyView: (model, callback) ->
         console.log "copyView #{Date.now()}"
-        options = @config.makeUrl "/_design/#{model}/_view/all/"
-        request.get options, (err, res, body) =>
+
+        # To get around case problems and various cozy's generations,
+        # try view _view/files-all, if it doesn't exist, use _view/all.
+        if model in ['file', 'folder']
+            options = @config.makeUrl "/_design/#{model}/_view/files-all/"
+            options2 = @config.makeUrl "/_design/#{model}/_view/all/"
+        else
+            options = @config.makeUrl "/_design/#{model}/_view/all/"
+
+
+        handleResponse = (err, res, body) =>
+
+            if not err and res.status > 399
+                console.log res
+                err = new Error res.status
+
             return callback err if err
             return callback null unless body.rows?.length
             async.eachSeries body.rows, (doc, cb) =>
@@ -159,6 +181,14 @@ module.exports = class Replicator extends Backbone.Model
                 @db.put doc, 'new_edits':false, (err, file) =>
                     cb()
             , callback
+
+        request.get options, (err, res, body) ->
+            if res.status is 404 and model in ['file', 'folder']
+                request.get options2, handleResponse
+
+            else
+                handleResponse(err, res, body)
+
 
     fileInFileSystem: (file) =>
         if file.docType.toLowerCase() is 'file'
@@ -284,11 +314,11 @@ module.exports = class Replicator extends Backbone.Model
             , callback
 
     # wrapper around _sync to maintain the state of inSync
-    sync: (callback) ->
+    sync: (options, callback) ->
         return callback null if @get 'inSync'
         console.log "SYNC CALLED"
         @set 'inSync', true
-        @_sync {}, (err) =>
+        @_sync options, (err) =>
             @set 'inSync', false
             callback err
 
@@ -303,11 +333,21 @@ module.exports = class Replicator extends Backbone.Model
         @liveReplication?.cancel()
         checkpoint = options.checkpoint or @config.get 'checkpointed'
 
+        if options.notificationsOnly
+            filter = (doc) ->
+                return doc.docType?.toLowerCase() is 'notification' and
+                    doc.type?.toLowerCase() is 'temporary'
+        else
+            filter = (doc) ->
+                return doc.docType?.toLowerCase() is 'folder' or
+                    doc.docType?.toLowerCase() is 'file' or
+                    doc.docType?.toLowerCase() is 'notification' and
+                        doc.type?.toLowerCase() is 'temporary'
+
         replication = @db.replicate.from @config.remote,
             batch_size: 20
             batches_limit: 5
-            filter: (doc) ->
-                doc.docType is 'Folder' or doc.docType is 'File'
+            filter: filter
             live: false
             since: checkpoint
 
@@ -326,11 +366,12 @@ module.exports = class Replicator extends Backbone.Model
             console.log "REPLICATION COMPLETED"
             @config.save checkpointed: result.last_seq, (err) =>
                 callback err
-                app.router.forceRefresh()
-                # updateIndex In background
-                @updateIndex =>
-                    @startRealtime()
-
+                unless options.background
+                    app.router.forceRefresh()
+                    # updateIndex In background
+                    @updateIndex =>
+                        console.log 'start Realtime'
+                        @startRealtime()
 
     # realtime
     # start from the last checkpointed value
@@ -346,7 +387,10 @@ module.exports = class Replicator extends Backbone.Model
             batch_size: 20
             batches_limit: 5
             filter: (doc) ->
-                doc.docType is 'Folder' or doc.docType is 'File'
+                return doc.docType?.toLowerCase() is 'folder' or
+                    doc.docType?.toLowerCase() is 'file' or
+                    doc.docType?.toLowerCase() is 'notification' and
+                        doc.type?.toLowerCase() is 'temporary'
             since: @config.get 'checkpointed'
             continuous: true
 

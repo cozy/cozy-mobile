@@ -1,5 +1,6 @@
 DeviceStatus = require '../lib/device_status'
 fs = require './filesystem'
+request = require '../lib/request'
 
 
 # This files contains all replicator functions liked to backup
@@ -13,15 +14,18 @@ fs = require './filesystem'
 module.exports =
 
     # wrapper around _backup to maintain the state of inBackup
-    backup: (force=false, callback = ->) ->
+    backup: (options, callback = ->) ->
         return callback null if @get 'inBackup'
+
+        options = options or { force: false }
+
         @set 'inBackup', true
         @set 'backup_step', null
         @liveReplication?.cancel()
-        @_backup force, (err) =>
+        @_backup options.force, (err) =>
             @set 'backup_step', null
             @set 'inBackup', false
-            @startRealtime()
+            @startRealtime() unless options.background
             return callback err if err
             @config.save lastBackup: new Date().toString(), (err) =>
                 callback null
@@ -31,7 +35,7 @@ module.exports =
         DeviceStatus.checkReadyForSync (err, ready, msg) =>
             console.log "SYNC STATUS", err, ready, msg
             return callback err if err
-            return callback new Error(t msg) unless ready
+            return callback new Error(msg) unless ready
             console.log "WE ARE READY FOR SYNC"
 
             @syncPictures force, (err) =>
@@ -271,10 +275,17 @@ module.exports =
             return callback err if err
             if results.rows.length > 0
                 device = results.rows[0]
-                if err?
-                    createNew()
-                else
-                    console.log "DEVICE FOLDER EXISTS"
-                    return callback null, device
+                console.log "DEVICE FOLDER EXISTS"
+                return callback null, device
             else
-                createNew()
+                # TODO : relies on byFullPath folder view of cozy-file !
+                query = '/_design/folder/_view/byfullpath/?' +
+                    "key=\"/#{t('photos')}\""
+
+                request.get @config.makeUrl(query), (err, res, body) ->
+                    return callback err if err
+                    if body?.rows?.length is 0
+                        createNew()
+                    else
+                        # already exist remote, but not locally...
+                        callback new Error 'photo folder not replicated yet'

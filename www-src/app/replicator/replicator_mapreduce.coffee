@@ -39,6 +39,15 @@ PicturesDesignDoc =
                     if doc.docType?.toLowerCase() is 'file'
                         emit [doc.path, doc.lastModification]
 
+NotificationsTemporaryDesignDoc =
+    _id: '_design/NotificationsTemporary'
+    version: 1
+    views:
+        'NotificationsTemporary':
+            map: Object.toString.apply (doc) ->
+                if doc.docType?.toLowerCase() is 'notification' and doc.type is 'temporary'
+                    emit doc._id
+
 LocalPathDesignDoc =
     _id: '_design/LocalPath'
     version: 1
@@ -77,6 +86,7 @@ DevicesByLocalIdDesignDoc =
 module.exports = (db, contactsDB, photosDB, callback) ->
 
     async.series [
+        (cb) -> createOrUpdateDesign db, NotificationsTemporaryDesignDoc, cb
         (cb) -> createOrUpdateDesign db, FilesAndFolderDesignDoc, cb
         (cb) -> createOrUpdateDesign db, PicturesDesignDoc, cb
         (cb) -> createOrUpdateDesign db, LocalPathDesignDoc, cb
