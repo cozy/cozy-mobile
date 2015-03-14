@@ -14,8 +14,8 @@ module.exports =
     "cozy notifications sync label": "Synchroniser les notifications Cozy"
     "home"                : "Accueil"
     "about"               : "À propos"
-    "last sync"           : "Dernière synchro : "
-    "last backup"         : "Derniere sauvegarde : "
+    "last sync"           : "Dernière synchro : "
+    "last backup"         : "Derniere sauvegarde : "
     "reset title"         : "Remise à zéro"
     "reset action"        : "R.à.Z"
     "retry synchro"       : "Sync"
@@ -37,11 +37,11 @@ module.exports =
     "save"                : "Sauvegarder"
     "done"                : "Fait"
     "photos"              : "Appareils photo"
-    "confirm message"     : "Êtes-vous sûr ?"
-    "confirm exit message": "Voulez-vous quitter l'application ?"
-    "replication complete" : "Réplication complétée"
+    "confirm message"     : "Êtes-vous sûr(e) ?"
+    "confirm exit message": "Voulez-vous quitter l'application ?"
+    "replication complete" : "Reproduction terminée."
     "no activity found"   : """
-        Aucune application n'a été trouvé sur ce téléphone pour ce type de fichier.
+        Aucune application n'a été trouvée sur ce téléphone pour ce type de fichier.
     """
     "not enough space"    : """
         Il n'y a pas suffisament d'espace disque sur votre mobile.
@@ -60,12 +60,12 @@ module.exports =
     # -- generic
     "next"                  : "Suivant"
     "back"                  : "Retour"
-    "connection failure"    : "Echec de la connexion"
+    "connection failure"    : "Échec de la connexion"
 
     # --- login
     "setup 1/3"             : "Configuration 1/3"
     "password placeholder"  : "votre mot de passe"
-    "authenticating..."     : "Vérification des identifiants..."
+    "authenticating..."     : "Vérification des identifiants…"
 
     # -- device name picker
     "setup 2/3"                 : "Configuration 2/3"
@@ -73,31 +73,31 @@ module.exports =
         Choisissez un nom d'usage pour ce périphérique pour pouvoir le gérer facilement depuis votre Cozy.
     """
     "device name placeholder"   : "mon-telephone"
-    "registering..."            : "Enregistrement..."
+    "registering..."            : "Enregistrement…"
 
     # -- backup configuration
     "setup 3/3"             : "Configuration 3/3"
 
     # -- end of setup
     "setup end"             : "Fin de la configuration"
-    "wait message device"   : "Enregistrement du device..."
+    "wait message device"   : "Enregistrement de l'appareil…"
     "message step 0"        : "Etape 1/3 : Synchronisation des fichiers."
     "message step 1"        : "Etape 2/3 : Synchronisation des dossiers."
     "message step 2"        : "Etape 3/3 : Préparation des documents."
-    "ready message"         : "L'application est prête à être utilisée !"
-    "waiting..."            : "En attente..."
-    "filesystem bug error"  : "Erreur dans le système de fichier. Essayez de redémarrer votre téléphone"
+    "ready message"         : "L'application est prête à être utilisée !"
+    "waiting..."            : "En attente…"
+    "filesystem bug error"  : "Erreur dans le système de fichiers. Essayez de redémarrer votre téléphone"
     "end"                   : "Fin"
 
     # Errors
     "all fields are required" : "Tous les champs sont obligatoires"
-    "cozy need patch"       : "Cozy a besoin d'un corretif"
+    "cozy need patch"       : "Cozy a besoin d'un correctif"
     "wrong password"        : "Mot de passe incorrect"
     "device name already exist" : "Ce nom d'appareil existe déjà"
     "An error happened (UNKNOWN)": "Une erreur est survenue"
     "An error happened (NOT FOUND)": "Une erreur est survenue (non trouvé)"
     "An error happened (INVALID URL)": "Une erreur est survenue (url invalide)"
     "This file isnt available offline": "Ce fichier n'est pas disponible hors ligne"
-    "ABORTED"               :  "La procédure a été interompu."
+    "ABORTED"               :  "La procédure a été interrompue."
     "photo folder not replicated yet" : "L'initialisation n'est pas terminée."
 
