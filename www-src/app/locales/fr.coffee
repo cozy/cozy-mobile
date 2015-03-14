@@ -98,6 +98,6 @@ module.exports =
     "An error happened (NOT FOUND)": "Une erreur est survenue (non trouvé)"
     "An error happened (INVALID URL)": "Une erreur est survenue (url invalide)"
     "This file isnt available offline": "Ce fichier n'est pas disponible hors ligne"
-    "ABORTED"               :  "La procédure a été interompue."
+    "ABORTED"               :  "La procédure a été interrompue."
     "photo folder not replicated yet" : "L'initialisation n'est pas terminée."
 
