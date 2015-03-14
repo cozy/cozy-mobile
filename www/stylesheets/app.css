@@ -6409,19 +6409,6 @@ img.backup {
 #breadcrumbs #crumbs::-webkit-scrollbar {
   display: none;
 }
-#breadcrumbs #shadow {
-  position: absolute;
-  width: 10px;
-  height: 30px;
-  right: 0px;
-  top: 0px;
-  background: -webkit-gradient(linear, left top, right top, color-stop(0, rgba(0,0,0,0)), color-stop(1, #fff));
-  background: -webkit-linear-gradient(left, rgba(0,0,0,0) 0%, #fff 100%);
-  background: -moz-linear-gradient(left, rgba(0,0,0,0) 0%, #fff 100%);
-  background: -o-linear-gradient(left, rgba(0,0,0,0) 0%, #fff 100%);
-  background: -ms-linear-gradient(left, rgba(0,0,0,0) 0%, #fff 100%);
-  background: linear-gradient(left, rgba(0,0,0,0) 0%, #fff 100%);
-}
 #breadcrumbs ul {
   margin-bottom: 0px;
   padding-left: 0;
@@ -6534,6 +6521,26 @@ img.backup {
   border-top-right-radius: 10px;
   border-bottom-right-radius: 10px;
   background: #3fbaf4;
+}
+#shadow {
+  position: absolute;
+  width: 10px;
+  height: 30px;
+  right: 0px;
+  top: 0px;
+  background: -webkit-gradient(linear, left top, right top, color-stop(0, rgba(255,255,255,0)), color-stop(1, #fff));
+  background: -webkit-linear-gradient(left, rgba(255,255,255,0) 0%, #fff 100%);
+  background: -moz-linear-gradient(left, rgba(255,255,255,0) 0%, #fff 100%);
+  background: -o-linear-gradient(left, rgba(255,255,255,0) 0%, #fff 100%);
+  background: -ms-linear-gradient(left, rgba(255,255,255,0) 0%, #fff 100%);
+  background: linear-gradient(left, rgba(255,255,255,0) 0%, #fff 100%);
+}
+#headerSpinner {
+  position: absolute;
+  right: 0px;
+  padding: 4px;
+  background-color: #fff;
+  height: 32px;
 }
 
 
