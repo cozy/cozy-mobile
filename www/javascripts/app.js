@@ -91,11 +91,13 @@
   globals.require.brunch = true;
 })();
 require.register("application", function(exports, require, module) {
-var LayoutView, Replicator;
+var LayoutView, Replicator, ServiceManager;
 
 Replicator = require('./replicator/main');
 
 LayoutView = require('./views/layout');
+
+ServiceManager = require('./service/service_manager');
 
 module.exports = {
   initialize: function() {
@@ -133,9 +135,11 @@ module.exports = {
             console.log(err, err.stack);
             return alert(err.message || err);
           }
+          _this.serviceManager = new ServiceManager();
           $('body').empty().append(_this.layout.render().$el);
           Backbone.history.start();
           if (config.remote) {
+            _this.serviceManager.activate();
             _this.router.navigate('folder/', {
               trigger: true
             });
@@ -180,11 +184,13 @@ module.exports = {
 });
 
 require.register("collections/files", function(exports, require, module) {
-var File, FileAndFolderCollection,
+var File, FileAndFolderCollection, PAGE_LENGTH,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 File = require('../models/file');
+
+PAGE_LENGTH = 20;
 
 module.exports = FileAndFolderCollection = (function(_super) {
   __extends(FileAndFolderCollection, _super);
@@ -225,55 +231,81 @@ module.exports = FileAndFolderCollection = (function(_super) {
     })(this));
   };
 
-  FileAndFolderCollection.prototype.fetch = function(_callback) {
-    var callback;
-    if (_callback == null) {
-      _callback = function() {};
+  FileAndFolderCollection.prototype.fetch = function(callback) {
+    if (callback == null) {
+      callback = function() {};
     }
-    callback = (function(_this) {
-      return function(err) {
-        _this.notloaded = false;
-        _this.trigger('sync');
-        return _callback(err);
-      };
-    })(this);
-    return this._fetch(this.path, (function(_this) {
-      return function(err, items) {
-        if (err) {
-          return callback(err);
-        }
-        _this.trigger('fullsync');
-        return _this.slowReset(items, function(err) {
-          return callback(err);
+    this.offset = 0;
+    return this._fetchPathes(this.path, (function(_this) {
+      return function(err, results) {
+        _this.inPathIds = results.rows.map(function(row) {
+          return row.id;
         });
+        _this.loadNextPage(callback);
+        return _this.trigger('fullsync');
       };
     })(this));
   };
 
-  FileAndFolderCollection.prototype._fetch = function(path, callback) {
+  FileAndFolderCollection.prototype.loadNextPage = function(_callback) {
+    var callback;
+    callback = (function(_this) {
+      return function(err, noMoreItems) {
+        _this.notloaded = false;
+        _this.trigger('sync');
+        return _callback(err, noMoreItems);
+      };
+    })(this);
+    return this._fetchNextPageDocs((function(_this) {
+      return function(err, items) {
+        var models;
+        if (err) {
+          return callback(err);
+        }
+        models = _this._rowsToModels(items);
+        _this.allPagesLoaded = models.length < PAGE_LENGTH;
+        if (_this.offset === 0) {
+          _this.reset(models);
+        } else {
+          _this.add(models);
+        }
+        _this.offset += PAGE_LENGTH;
+        return callback(err, _this.allPagesLoaded);
+      };
+    })(this));
+  };
+
+  FileAndFolderCollection.prototype._fetchPathes = function(path, callback) {
     var params, view;
     if (path === t('photos')) {
       params = {
         endkey: path ? ['/' + path] : [''],
         startkey: path ? ['/' + path, {}] : ['', {}],
-        include_docs: true,
         descending: true
       };
       view = 'Pictures';
     } else {
       params = {
         startkey: path ? ['/' + path] : [''],
-        endkey: path ? ['/' + path, {}] : ['', {}],
-        include_docs: true
+        endkey: path ? ['/' + path, {}] : ['', {}]
       };
       view = 'FilesAndFolder';
     }
     return app.replicator.db.query(view, params, callback);
   };
 
-  FileAndFolderCollection.prototype.slowReset = function(results, callback) {
-    var i, models, nonBlockingAdd;
-    models = results.rows.map(function(row) {
+  FileAndFolderCollection.prototype._fetchNextPageDocs = function(callback) {
+    var ids, params;
+    ids = this.inPathIds.slice(this.offset, this.offset + PAGE_LENGTH);
+    params = {
+      keys: ids,
+      include_docs: true
+    };
+    return app.replicator.db.allDocs(params, callback);
+  };
+
+  FileAndFolderCollection.prototype._rowsToModels = function(results) {
+    return results.rows.map(function(row) {
       var binary_id, doc, _ref, _ref1;
       doc = row.doc;
       if (binary_id = (_ref = doc.binary) != null ? (_ref1 = _ref.file) != null ? _ref1.id : void 0 : void 0) {
@@ -282,6 +314,11 @@ module.exports = FileAndFolderCollection = (function(_super) {
       }
       return doc;
     });
+  };
+
+  FileAndFolderCollection.prototype.slowReset = function(results, callback) {
+    var i, models, nonBlockingAdd;
+    models = this._rowsToModels(results);
     this.reset(models.slice(0, 10));
     if (models.length < 10) {
       return callback(null);
@@ -1157,6 +1194,7 @@ module.exports = {
   "contacts sync label": "Backup contacts",
   "images sync label": "Backup images",
   "wifi sync label": "Backup on Wifi only",
+  "cozy notifications sync label": "Sync Cozy notifications",
   "home": "Home",
   "about": "About",
   "last sync": "Last sync was : ",
@@ -1218,7 +1256,8 @@ module.exports = {
   "An error happened (NOT FOUND)": "An error occured (not found).",
   "An error happened (INVALID URL)": "An error occured (invalid url).",
   "This file isnt available offline": "This file isn't available offline.",
-  "ABORTED": "The procedure was aborted."
+  "ABORTED": "The procedure was aborted.",
+  "photo folder not replicated yet": "Initialization not finished yet."
 };
 
 });
@@ -1237,6 +1276,7 @@ module.exports = {
   "contacts sync label": "Sauvegarde des contacts",
   "images sync label": "Sauvegarde des images du téléphone",
   "wifi sync label": "Sauvegarde uniquement en Wifi",
+  "cozy notifications sync label": "Synchroniser les notifications Cozy",
   "home": "Accueil",
   "about": "À propos",
   "last sync": "Dernière synchro : ",
@@ -1298,7 +1338,8 @@ module.exports = {
   "An error happened (NOT FOUND)": "Une erreur est survenue (non trouvé)",
   "An error happened (INVALID URL)": "Une erreur est survenue (url invalide)",
   "This file isnt available offline": "Ce fichier n'est pas disponible hors ligne",
-  "ABORTED": "La procédure a été interompu."
+  "ABORTED": "La procédure a été interompu.",
+  "photo folder not replicated yet": "L'initialisation n'est pas terminée."
 };
 
 });
@@ -1720,7 +1761,16 @@ module.exports = Replicator = (function(_super) {
   };
 
   Replicator.prototype.resetSynchro = function(callback) {
-    return this.initialReplication(callback);
+    var _ref;
+    if ((_ref = this.liveReplication) != null) {
+      _ref.cancel();
+    }
+    return this.initialReplication((function(_this) {
+      return function(err) {
+        _this.startRealtime();
+        return callback(err);
+      };
+    })(this));
   };
 
   Replicator.prototype.init = function(callback) {
@@ -1863,6 +1913,8 @@ module.exports = Replicator = (function(_super) {
           }, function(cb) {
             return _this.copyView('folder', cb);
           }, function(cb) {
+            return _this.copyView('notification', cb);
+          }, function(cb) {
             return _this.set('initialReplicationStep', 2) && cb(null);
           }, function(cb) {
             return _this.config.save({
@@ -1870,6 +1922,8 @@ module.exports = Replicator = (function(_super) {
             }, cb);
           }, function(cb) {
             return _this.db.query('FilesAndFolder', {}, cb);
+          }, function(cb) {
+            return _this.db.query('NotificationsTemporary', {}, cb);
           }
         ], function(err) {
           console.log("end of inital replication " + (Date.now()));
@@ -1884,12 +1938,21 @@ module.exports = Replicator = (function(_super) {
   };
 
   Replicator.prototype.copyView = function(model, callback) {
-    var options;
+    var handleResponse, options, options2;
     console.log("copyView " + (Date.now()));
-    options = this.config.makeUrl("/_design/" + model + "/_view/all/");
-    return request.get(options, (function(_this) {
+    if (model === 'file' || model === 'folder') {
+      options = this.config.makeUrl("/_design/" + model + "/_view/files-all/");
+      options2 = this.config.makeUrl("/_design/" + model + "/_view/all/");
+    } else {
+      options = this.config.makeUrl("/_design/" + model + "/_view/all/");
+    }
+    handleResponse = (function(_this) {
       return function(err, res, body) {
         var _ref;
+        if (!err && res.status > 399) {
+          console.log(res);
+          err = new Error(res.status);
+        }
         if (err) {
           return callback(err);
         }
@@ -1905,7 +1968,14 @@ module.exports = Replicator = (function(_super) {
           });
         }, callback);
       };
-    })(this));
+    })(this);
+    return request.get(options, function(err, res, body) {
+      if (res.status === 404 && (model === 'file' || model === 'folder')) {
+        return request.get(options2, handleResponse);
+      } else {
+        return handleResponse(err, res, body);
+      }
+    });
   };
 
   Replicator.prototype.fileInFileSystem = function(file) {
@@ -2106,13 +2176,13 @@ module.exports = Replicator = (function(_super) {
     })(this));
   };
 
-  Replicator.prototype.sync = function(callback) {
+  Replicator.prototype.sync = function(options, callback) {
     if (this.get('inSync')) {
       return callback(null);
     }
     console.log("SYNC CALLED");
     this.set('inSync', true);
-    return this._sync({}, (function(_this) {
+    return this._sync(options, (function(_this) {
       return function(err) {
         _this.set('inSync', false);
         return callback(err);
@@ -2121,19 +2191,28 @@ module.exports = Replicator = (function(_super) {
   };
 
   Replicator.prototype._sync = function(options, callback) {
-    var checkpoint, replication, total_count, _ref;
+    var checkpoint, filter, replication, total_count, _ref;
     console.log("BEGIN SYNC");
     total_count = 0;
     if ((_ref = this.liveReplication) != null) {
       _ref.cancel();
     }
     checkpoint = options.checkpoint || this.config.get('checkpointed');
+    if (options.notificationsOnly) {
+      filter = function(doc) {
+        var _ref1, _ref2;
+        return ((_ref1 = doc.docType) != null ? _ref1.toLowerCase() : void 0) === 'notification' && ((_ref2 = doc.type) != null ? _ref2.toLowerCase() : void 0) === 'temporary';
+      };
+    } else {
+      filter = function(doc) {
+        var _ref1, _ref2, _ref3, _ref4;
+        return ((_ref1 = doc.docType) != null ? _ref1.toLowerCase() : void 0) === 'folder' || ((_ref2 = doc.docType) != null ? _ref2.toLowerCase() : void 0) === 'file' || ((_ref3 = doc.docType) != null ? _ref3.toLowerCase() : void 0) === 'notification' && ((_ref4 = doc.type) != null ? _ref4.toLowerCase() : void 0) === 'temporary';
+      };
+    }
     replication = this.db.replicate.from(this.config.remote, {
       batch_size: 20,
       batches_limit: 5,
-      filter: function(doc) {
-        return doc.docType === 'Folder' || doc.docType === 'File';
-      },
+      filter: filter,
       live: false,
       since: checkpoint
     });
@@ -2161,10 +2240,13 @@ module.exports = Replicator = (function(_super) {
           checkpointed: result.last_seq
         }, function(err) {
           callback(err);
-          app.router.forceRefresh();
-          return _this.updateIndex(function() {
-            return _this.startRealtime();
-          });
+          if (!options.background) {
+            app.router.forceRefresh();
+            return _this.updateIndex(function() {
+              console.log('start Realtime');
+              return _this.startRealtime();
+            });
+          }
         });
       };
     })(this));
@@ -2181,7 +2263,8 @@ module.exports = Replicator = (function(_super) {
       batch_size: 20,
       batches_limit: 5,
       filter: function(doc) {
-        return doc.docType === 'Folder' || doc.docType === 'File';
+        var _ref, _ref1, _ref2, _ref3;
+        return ((_ref = doc.docType) != null ? _ref.toLowerCase() : void 0) === 'folder' || ((_ref1 = doc.docType) != null ? _ref1.toLowerCase() : void 0) === 'file' || ((_ref2 = doc.docType) != null ? _ref2.toLowerCase() : void 0) === 'notification' && ((_ref3 = doc.type) != null ? _ref3.toLowerCase() : void 0) === 'temporary';
       },
       since: this.config.get('checkpointed'),
       continuous: true
@@ -2232,35 +2315,39 @@ module.exports = Replicator = (function(_super) {
 });
 
 require.register("replicator/replicator_backups", function(exports, require, module) {
-var DeviceStatus, fs,
+var DeviceStatus, fs, request,
   __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
 DeviceStatus = require('../lib/device_status');
 
 fs = require('./filesystem');
 
+request = require('../lib/request');
+
 module.exports = {
-  backup: function(force, callback) {
+  backup: function(options, callback) {
     var _ref;
-    if (force == null) {
-      force = false;
-    }
     if (callback == null) {
       callback = function() {};
     }
     if (this.get('inBackup')) {
       return callback(null);
     }
+    options = options || {
+      force: false
+    };
     this.set('inBackup', true);
     this.set('backup_step', null);
     if ((_ref = this.liveReplication) != null) {
       _ref.cancel();
     }
-    return this._backup(force, (function(_this) {
+    return this._backup(options.force, (function(_this) {
       return function(err) {
         _this.set('backup_step', null);
         _this.set('inBackup', false);
-        _this.startRealtime();
+        if (!options.background) {
+          _this.startRealtime();
+        }
         if (err) {
           return callback(err);
         }
@@ -2280,7 +2367,7 @@ module.exports = {
           return callback(err);
         }
         if (!ready) {
-          return callback(new Error(t(msg)));
+          return callback(new Error(msg));
         }
         console.log("WE ARE READY FOR SYNC");
         return _this.syncPictures(force, function(err) {
@@ -2588,20 +2675,27 @@ module.exports = {
       key: ['', "1_" + (t('photos').toLowerCase())]
     }, (function(_this) {
       return function(err, results) {
-        var device;
+        var device, query;
         if (err) {
           return callback(err);
         }
         if (results.rows.length > 0) {
           device = results.rows[0];
-          if (err != null) {
-            return createNew();
-          } else {
-            console.log("DEVICE FOLDER EXISTS");
-            return callback(null, device);
-          }
+          console.log("DEVICE FOLDER EXISTS");
+          return callback(null, device);
         } else {
-          return createNew();
+          query = '/_design/folder/_view/byfullpath/?' + ("key=\"/" + (t('photos')) + "\"");
+          return request.get(_this.config.makeUrl(query), function(err, res, body) {
+            var _ref;
+            if (err) {
+              return callback(err);
+            }
+            if ((body != null ? (_ref = body.rows) != null ? _ref.length : void 0 : void 0) === 0) {
+              return createNew();
+            } else {
+              return callback(new Error('photo folder not replicated yet'));
+            }
+          });
         }
       };
     })(this));
@@ -2632,6 +2726,7 @@ module.exports = ReplicatorConfig = (function(_super) {
       syncContacts: app.locale === 'digidisk',
       syncImages: true,
       syncOnWifi: true,
+      cozyNotifications: true,
       cozyURL: '',
       deviceName: ''
     };
@@ -2693,7 +2788,7 @@ module.exports = ReplicatorConfig = (function(_super) {
 });
 
 require.register("replicator/replicator_mapreduce", function(exports, require, module) {
-var ContactsByLocalIdDesignDoc, DevicesByLocalIdDesignDoc, FilesAndFolderDesignDoc, LocalPathDesignDoc, PathToBinaryDesignDoc, PhotosByLocalIdDesignDoc, PicturesDesignDoc, createOrUpdateDesign;
+var ContactsByLocalIdDesignDoc, DevicesByLocalIdDesignDoc, FilesAndFolderDesignDoc, LocalPathDesignDoc, NotificationsTemporaryDesignDoc, PathToBinaryDesignDoc, PhotosByLocalIdDesignDoc, PicturesDesignDoc, createOrUpdateDesign;
 
 createOrUpdateDesign = function(db, design, callback) {
   return db.get(design._id, (function(_this) {
@@ -2763,6 +2858,21 @@ PicturesDesignDoc = {
   }
 };
 
+NotificationsTemporaryDesignDoc = {
+  _id: '_design/NotificationsTemporary',
+  version: 1,
+  views: {
+    'NotificationsTemporary': {
+      map: Object.toString.apply(function(doc) {
+        var _ref;
+        if (((_ref = doc.docType) != null ? _ref.toLowerCase() : void 0) === 'notification' && doc.type === 'temporary') {
+          return emit(doc._id);
+        }
+      })
+    }
+  }
+};
+
 LocalPathDesignDoc = {
   _id: '_design/LocalPath',
   version: 1,
@@ -2825,6 +2935,8 @@ DevicesByLocalIdDesignDoc = {
 module.exports = function(db, contactsDB, photosDB, callback) {
   return async.series([
     function(cb) {
+      return createOrUpdateDesign(db, NotificationsTemporaryDesignDoc, cb);
+    }, function(cb) {
       return createOrUpdateDesign(db, FilesAndFolderDesignDoc, cb);
     }, function(cb) {
       return createOrUpdateDesign(db, PicturesDesignDoc, cb);
@@ -2973,6 +3085,184 @@ module.exports = Router = (function(_super) {
 
 });
 
+require.register("service/service", function(exports, require, module) {
+var Notifications, Replicator, Service;
+
+Replicator = require('../replicator/main');
+
+Notifications = require('../views/notifications');
+
+module.exports = Service = {
+  initialize: function() {
+    setTimeout(window.service.workDone, 10 * 60 * 1000);
+    window.app = this;
+    if (window.isBrowserDebugging) {
+      window.navigator = window.navigator || {};
+      window.navigator.globalization = window.navigator.globalization || {};
+      window.navigator.globalization.getPreferredLanguage = function(callback) {
+        return callback({
+          value: 'fr-FR'
+        });
+      };
+    }
+    return navigator.globalization.getPreferredLanguage((function(_this) {
+      return function(properties) {
+        var e, locales;
+        _this.locale = properties.value.split('-')[0];
+        _this.polyglot = new Polyglot();
+        locales = (function() {
+          try {
+            return require('locales/' + this.locale);
+          } catch (_error) {
+            e = _error;
+            return require('locales/en');
+          }
+        }).call(_this);
+        _this.polyglot.extend(locales);
+        window.t = _this.polyglot.t.bind(_this.polyglot);
+        _this.replicator = new Replicator();
+        return _this.replicator.init(function(err, config) {
+          var delayedQuit, syncNotifications;
+          if (err) {
+            console.log(err, err.stack);
+            return window.service.workDone();
+          }
+          if (config.remote) {
+            if (config.get('cozyNotifications')) {
+              _this.notificationManager = new Notifications();
+            }
+            delayedQuit = function(err) {
+              if (err) {
+                console.log(err);
+              }
+              return setTimeout(window.service.workDone, 5 * 1000);
+            };
+            syncNotifications = function(err) {
+              if (config.get('cozyNotifications')) {
+                return app.replicator.sync({
+                  background: true,
+                  notificationsOnly: true
+                }, delayedQuit);
+              } else {
+                return delayedQuit();
+              }
+            };
+            if (config.get('syncImages')) {
+              return app.replicator.backup({
+                background: true
+              }, function(err) {
+                if (err && err.message === 'no wifi') {
+                  return syncNotifications();
+                } else {
+                  return app.replicator.sync({
+                    background: true
+                  }, delayedQuit);
+                }
+              });
+            } else {
+              return syncNotifications();
+            }
+          } else {
+            return window.service.workDone();
+          }
+        });
+      };
+    })(this));
+  }
+};
+
+document.addEventListener('deviceready', function() {
+  return Service.initialize();
+});
+
+});
+
+require.register("service/service_manager", function(exports, require, module) {
+var ServiceManager, repeatingPeriod,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+repeatingPeriod = 15 * 60 * 1000;
+
+module.exports = ServiceManager = (function(_super) {
+  __extends(ServiceManager, _super);
+
+  function ServiceManager() {
+    return ServiceManager.__super__.constructor.apply(this, arguments);
+  }
+
+  ServiceManager.prototype.defaults = function() {
+    return {
+      daemonActivated: false
+    };
+  };
+
+  ServiceManager.prototype.initialize = function() {
+    this.listenTo(app.replicator.config, "change:cozyNotifications", this.toggle);
+    this.listenTo(app.replicator.config, "change:syncImages", this.listenNewPictures);
+    return this.checkActivated();
+  };
+
+  ServiceManager.prototype.isActivated = function() {
+    return this.get('daemonActivated');
+  };
+
+  ServiceManager.prototype.checkActivated = function() {
+    return window.JSBackgroundService.isRepeating((function(_this) {
+      return function(err, isRepeating) {
+        if (err) {
+          console.log(err);
+          isRepeating = false;
+        }
+        return _this.set('daemonActivated', isRepeating);
+      };
+    })(this));
+  };
+
+  ServiceManager.prototype.activate = function(repeatingPeriod) {
+    return window.JSBackgroundService.setRepeating(repeatingPeriod, (function(_this) {
+      return function(err) {
+        if (err) {
+          return console.log(err);
+        }
+        return _this.checkActivated();
+      };
+    })(this));
+  };
+
+  ServiceManager.prototype.deactivate = function() {
+    return window.JSBackgroundService.cancelRepeating((function(_this) {
+      return function(err) {
+        if (err) {
+          return console.log(err);
+        }
+        return _this.checkActivated();
+      };
+    })(this));
+  };
+
+  ServiceManager.prototype.toggle = function(config, activate) {
+    if (activate) {
+      return this.deactivate();
+    } else {
+      return this.activate();
+    }
+  };
+
+  ServiceManager.prototype.listenNewPictures = function(config, listen) {
+    return window.JSBackgroundService.listenNewPictures(listen, function(err) {
+      if (err) {
+        return console.log(err);
+      }
+    });
+  };
+
+  return ServiceManager;
+
+})(Backbone.Model);
+
+});
+
 require.register("templates/breadcrumbs", function(exports, require, module) {
 module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
 attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
@@ -3028,6 +3318,11 @@ var __val__ = t('wifi sync label')
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('<label class="checkbox"><input');
 buf.push(attrs({ 'id':('wifiSyncCheck'), 'type':("checkbox"), 'checked':(syncOnWifi) }, {"type":true,"checked":true}));
+buf.push('/></label></div><div class="item item-checkbox">');
+var __val__ = t('cozy notifications sync label')
+buf.push(escape(null == __val__ ? "" : __val__));
+buf.push('<label class="checkbox"><input');
+buf.push(attrs({ 'id':('cozyNotificationsCheck'), 'type':("checkbox"), 'checked':(cozyNotifications) }, {"type":true,"checked":true}));
 buf.push('/></label></div>');
 if ( firstRun)
 {
@@ -3051,7 +3346,7 @@ buf.push('</div><div class="item">');
 var __val__ = t('device name') + ' : ' + deviceName
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</div><div class="item">');
-var __val__ = t('app name') + ' v 0.1.3'
+var __val__ = t('app name') + ' v 0.1.4'
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</div><div class="item item-divider">');
 var __val__ = t('reset title')
@@ -3189,7 +3484,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<div id="container" class="pane"><div id="bar-header" class="bar bar-header"><a id="btn-menu" class="button button-icon"><img src="img/menu-icon.svg" width="58"/></a><h1 id="title" class="title">Loading</h1><div id="breadcrumbs"></div><a id="headerSpinner" class="button button-icon"><img src="img/spinner.svg" width="25"/></a></div><div class="bar bar-subheader bar-calm"><h2 id="backupIndicator" class="title"></h2></div><div id="viewsPlaceholder" class="scroll-content has-header"><div class="scroll"></div></div></div>');
+buf.push('<div id="container" class="pane"><div id="bar-header" class="bar bar-header"><a id="btn-menu" class="button button-icon"><img src="img/menu-icon.svg" width="58"/></a><h1 id="title" class="title">Loading</h1><div id="breadcrumbs"></div><a id="headerSpinner" class="button button-icon"><div id="shadow" style="right: 30px;"></div><img src="img/spinner.svg" width="25"/></a></div><div class="bar bar-subheader bar-calm"><h2 id="backupIndicator" class="title"></h2></div><div id="viewsPlaceholder" class="scroll-content has-header"><div class="scroll"></div></div></div>');
 }
 return buf.join("");
 };
@@ -3373,7 +3668,8 @@ module.exports = ConfigView = (function(_super) {
       'tap #synchrobtn': 'synchroBtn',
       'tap #contactSyncCheck': 'saveChanges',
       'tap #imageSyncCheck': 'saveChanges',
-      'tap #wifiSyncCheck': 'saveChanges'
+      'tap #wifiSyncCheck': 'saveChanges',
+      'tap #cozyNotificationsCheck': 'saveChanges'
     };
   };
 
@@ -3435,16 +3731,17 @@ module.exports = ConfigView = (function(_super) {
   };
 
   ConfigView.prototype.saveChanges = function() {
-    this.$('#contactSyncCheck, #imageSyncCheck, #wifiSyncCheck').prop('disabled', true);
+    var checkboxes;
+    checkboxes = this.$('#contactSyncCheck, #imageSyncCheck,' + '#wifiSyncCheck, #cozyNotificationsCheck');
+    checkboxes.prop('disabled', true);
     return app.replicator.config.save({
       syncContacts: this.$('#contactSyncCheck').is(':checked'),
       syncImages: this.$('#imageSyncCheck').is(':checked'),
-      syncOnWifi: this.$('#wifiSyncCheck').is(':checked')
-    }, (function(_this) {
-      return function() {
-        return _this.$('#contactSyncCheck, #imageSyncCheck, #wifiSyncCheck').prop('disabled', false);
-      };
-    })(this));
+      syncOnWifi: this.$('#wifiSyncCheck').is(':checked'),
+      cozyNotifications: this.$('#cozyNotificationsCheck').is(':checked')
+    }, function() {
+      return checkboxes.prop('disabled', false);
+    });
   };
 
   return ConfigView;
@@ -3630,9 +3927,10 @@ module.exports = FirstSyncView = (function(_super) {
       return console.log("pics & contacts synced");
     });
     app.isFirstRun = false;
-    return app.router.navigate('folder/', {
+    app.router.navigate('folder/', {
       trigger: true
     });
+    return app.serviceManager.activate();
   };
 
   return FirstSyncView;
@@ -3653,6 +3951,7 @@ module.exports = FolderView = (function(_super) {
   __extends(FolderView, _super);
 
   function FolderView() {
+    this.checkScroll = __bind(this.checkScroll, this);
     this.displaySlider = __bind(this.displaySlider, this);
     this.remove = __bind(this.remove, this);
     this.appendView = __bind(this.appendView, this);
@@ -3699,22 +3998,51 @@ module.exports = FolderView = (function(_super) {
     FolderView.__super__.afterRender.apply(this, arguments);
     return this.ionicView = new ionic.views.ListView({
       el: this.$el[0],
-      _handleDrag: function(e) {
-        if (!(app.layout.isMenuOpen() || e.gesture.deltaX > 0)) {
-          ionic.views.ListView.prototype._handleDrag.apply(this, arguments);
-          e.preventDefault();
-          return e.stopPropagation();
-        }
-      }
+      _handleDrag: (function(_this) {
+        return function(e) {
+          var gesture;
+          gesture = e.gesture;
+          if (gesture.direction === 'up') {
+            gesture.deltaX = 0;
+            gesture.angle = -90;
+            gesture.distance = -1 * gesture.deltaY;
+            gesture.velocityX = 0;
+          } else if (gesture.direction === 'down') {
+            gesture.deltaX = 0;
+            gesture.angle = 90;
+            gesture.distance = gesture.deltaY;
+            gesture.velocityX = 0;
+          } else if (gesture.direction === 'left') {
+            gesture.deltaY = 0;
+            gesture.angle = 180;
+            gesture.distance = gesture.deltaX;
+            gesture.velocityY = 0;
+          } else if (gesture.direction === 'right') {
+            gesture.deltaY = 0;
+            gesture.angle = 0;
+            gesture.distance = gesture.deltaX;
+            gesture.velocityY = 0;
+          }
+          _this.checkScroll();
+          if (!(app.layout.isMenuOpen() || e.gesture.deltaX > 0)) {
+            ionic.views.ListView.prototype._handleDrag.apply(_this.ionicView, arguments);
+            e.preventDefault();
+            return e.stopPropagation();
+          }
+        };
+      })(this)
     });
   };
 
   FolderView.prototype.onChange = function() {
     var message;
+    app.layout.ionicScroll.resize();
     this.$('#empty-message').remove();
     if (_.size(this.views) === 0) {
       message = this.collection.notloaded ? 'loading' : this.collection.isSearch() ? 'no results' : 'this folder is empty';
       return $('<li class="item" id="empty-message">').text(t(message)).appendTo(this.$el);
+    } else if (!this.collection.allPagesLoaded) {
+      return $('<li class="item" id="empty-message">').text(t('loading')).appendTo(this.$el);
     }
   };
 
@@ -3757,6 +4085,26 @@ module.exports = FolderView = (function(_super) {
     }
     event.preventDefault();
     return event.stopPropagation();
+  };
+
+  FolderView.prototype.checkScroll = function() {
+    var triggerPoint;
+    triggerPoint = $('#viewsPlaceholder').height() * 2;
+    if (app.layout.ionicScroll.getValues().top + triggerPoint > app.layout.ionicScroll.getScrollMax().top) {
+      return this.loadMore();
+    }
+  };
+
+  FolderView.prototype.loadMore = function(callback) {
+    if (!this.collection.notLoaded && !this.isLoading && !this.collection.allPagesLoaded) {
+      this.isLoading = true;
+      return this.collection.loadNextPage((function(_this) {
+        return function(err) {
+          _this.isLoading = false;
+          return typeof callback === "function" ? callback() : void 0;
+        };
+      })(this));
+    }
   };
 
   return FolderView;
@@ -4304,7 +4652,7 @@ module.exports = Menu = (function(_super) {
     if (app.replicator.get('inSync')) {
       return;
     }
-    return app.replicator.sync(function(err) {
+    return app.replicator.sync({}, function(err) {
       var _ref, _ref1;
       if (err) {
         console.log(err, err.stack);
@@ -4321,16 +4669,14 @@ module.exports = Menu = (function(_super) {
     if (app.replicator.get('inBackup')) {
       return this.sync();
     } else {
-      return app.replicator.backup(false, (function(_this) {
+      return app.replicator.backup({
+        force: false
+      }, (function(_this) {
         return function(err) {
           var _ref, _ref1;
           if (err) {
             console.log(err, err.stack);
-          }
-          if (err) {
-            alert(err.message);
-          }
-          if (err) {
+            alert(t(err.message));
             return;
           }
           if ((_ref = app.layout.currentView) != null) {
@@ -4369,6 +4715,79 @@ module.exports = Menu = (function(_super) {
   return Menu;
 
 })(BaseView);
+
+});
+
+require.register("views/notifications", function(exports, require, module) {
+var Notifications,
+  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+module.exports = Notifications = (function() {
+  _.extend(Notifications.prototype, Backbone.Events);
+
+  function Notifications(options) {
+    this.showNotification = __bind(this.showNotification, this);
+    this.markAsShown = __bind(this.markAsShown, this);
+    this.fetch = __bind(this.fetch, this);
+    this.onSync = __bind(this.onSync, this);
+    options = options || {};
+    this.initialize.apply(this, arguments);
+  }
+
+  Notifications.prototype.initialize = function() {
+    return this.listenTo(app.replicator, 'change:inSync', this.onSync);
+  };
+
+  Notifications.prototype.onSync = function() {
+    var inSync;
+    inSync = app.replicator.get('inSync');
+    if (!inSync) {
+      return this.fetch();
+    }
+  };
+
+  Notifications.prototype.fetch = function() {
+    return app.replicator.db.query('NotificationsTemporary', {
+      include_docs: true
+    }, (function(_this) {
+      return function(err, notifications) {
+        return notifications.rows.forEach(function(notification) {
+          return _this.showNotification(notification.doc);
+        });
+      };
+    })(this));
+  };
+
+  Notifications.prototype.markAsShown = function(notification) {
+    return app.replicator.db.remove(notification, function(err) {
+      if (err) {
+        console.log("Error while removing notification.");
+        console.log(err);
+      }
+      if (err) {
+        return console.log(err.message);
+      }
+    });
+  };
+
+  Notifications.prototype.showNotification = function(notification) {
+    var id;
+    id = parseInt(notification._id.slice(-7), 16);
+    if (isNaN(id)) {
+      id = notification.publishDate % 10000000;
+    }
+    window.plugin.notification.local.add({
+      id: id,
+      message: notification.text,
+      title: "Cozy - " + (notification.app || 'Notification'),
+      autoCancel: true
+    });
+    return this.markAsShown(notification);
+  };
+
+  return Notifications;
+
+})();
 
 });
 
