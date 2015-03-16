@@ -4,16 +4,16 @@ async  = require './www-src/vendor/scripts/async'
 
 plugins = {
     "com.fgomiero.cordova.externafileutil": "https://github.com/aenario/cordova-external-file-open"
-    "com.brodysoft.sqlitePlugin": "https://github.com/brodysoft/Cordova-SQLitePlugin"
-    "org.apache.cordova.file": "https://git-wip-us.apache.org/repos/asf/cordova-plugin-file.git"
-    "org.apache.cordova.file-transfer": "https://git-wip-us.apache.org/repos/asf/cordova-plugin-file-transfer.git"
+    "com.brodysoft.sqlitePlugin": "https://github.com/brodysoft/Cordova-SQLitePlugin#r1.0.4"
+    "org.apache.cordova.file": "https://git-wip-us.apache.org/repos/asf/cordova-plugin-file.git#r1.3.3"
+    "org.apache.cordova.file-transfer": "https://git-wip-us.apache.org/repos/asf/cordova-plugin-file-transfer.git#r0.5.0"
     "io.cozy.cordova-images-browser": "https://github.com/aenario/cordova-images-browser"
     "io.cozy.jsbackgroundservice": "https://github.com/jacquarg/cordova-jsbackgroundservice"
     "io.cozy.jsbgservice-newpicture": "https://github.com/jacquarg/cordova-jsbgservice-newpicture"
-    "org.apache.cordova.battery-status": "org.apache.cordova.battery-status"
-    "org.apache.cordova.network-information": "https://git-wip-us.apache.org/repos/asf/cordova-plugin-network-information.git"
-    "org.apache.cordova.globalization": "org.apache.cordova.globalization"
-    "de.appplant.cordova.plugin.local-notification": "de.appplant.cordova.plugin.local-notification"
+    "org.apache.cordova.battery-status": "org.apache.cordova.battery-status@0.2.12"
+    "org.apache.cordova.network-information": "https://git-wip-us.apache.org/repos/asf/cordova-plugin-network-information.git#r0.2.15"
+    "org.apache.cordova.globalization": "org.apache.cordova.globalization@0.3.4 "
+    "de.appplant.cordova.plugin.local-notification": "de.appplant.cordova.plugin.local-notification@0.8.1"
 }
 
 platforms = ['ios', 'android']
@@ -39,6 +39,16 @@ installPlatforms = (done) ->
             cb()
     , done
 
+uninstallPlatforms = (done) ->
+    async.eachSeries platforms, (platform, cb) ->
+        console.log "attempt to remove platform #{platform} ..."
+        command = 'cordova platform remove ' + platform
+        exec command, (err, stdout, stderr) ->
+            console.log stdout
+            console.log stderr
+            cb()
+    , done
+
 uninstallPlugins = (done) ->
     async.eachSeries Object.keys(plugins).reverse(), (plugin, cb) ->
         console.log "uninstalling plugin #{plugin} ..."
@@ -49,10 +59,13 @@ uninstallPlugins = (done) ->
             cb()
     , done
 
-updatePlugins = (done) -> uninstallPlugins -> installPlugins done
+resetPlugins = (done) -> uninstallPlatforms -> installPlatforms done
+
+updatePlugins = (done) -> uninstallPlugins -> installPlugins -> resetPlugins done
+
+
 
 release = (done) ->
-
     password = fs.readFileSync 'keys/cozy-play-store.password', encoding: 'utf8'
     signing =  'jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 '
     signing += '-keystore keys/cozy-play-store.keystore -storepass '
