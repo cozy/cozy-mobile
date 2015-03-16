@@ -50,17 +50,20 @@ module.exports = class Replicator extends Backbone.Model
                 @config = new ReplicatorConfig(this)
                 @config.fetch callback
 
+    # Find all files in (recursively) the specified folder.
     getDbFilesOfFolder: (folder, callback) ->
         path = folder.path
+        path += '/' + folder.name
         options =
-            startkey: if path then ['/' + path] else ['']
-            endkey: if path then ['/' + path, {}] else ['', {}]
+            startkey: [path]
+            endkey: [path + '/\uffff', {}]
             include_docs: true
 
         @db.query 'FilesAndFolder', options, (err, results) ->
             return callback err if err
             docs = results.rows.map (row) -> row.doc
             files = docs.filter (doc) -> doc.docType?.toLowerCase() is 'file'
+
             callback null, files
 
     registerRemote: (config, callback) ->

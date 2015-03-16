@@ -89,9 +89,15 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
     _rowsToModels: (results) ->
         return results.rows.map (row) ->
             doc = row.doc
-            if binary_id = doc.binary?.file?.id
-                doc.incache = app.replicator.fileInFileSystem doc
-                doc.version = app.replicator.fileVersion doc
+            if doc.docType.toLowerCase() is 'file'
+                if binary_id = doc.binary?.file?.id
+                    doc.incache = app.replicator.fileInFileSystem doc
+                    doc.version = app.replicator.fileVersion doc
+
+            else if doc.docType.toLowerCase() is 'folder'
+                # TODO ASYNC !  doc.incache = app.replicator.folderInFileSystem doc
+                doc.incache = false
+
             return doc
 
     slowReset: (results, callback) ->
