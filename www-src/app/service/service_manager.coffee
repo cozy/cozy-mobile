@@ -7,8 +7,15 @@ module.exports = class ServiceManager extends Backbone.Model
         daemonActivated: false
 
     initialize: ->
+        config = app.replicator.config
+        # Initialize plugin with current config values.
+        @toggle config, config.get 'cozyNotifications'
+        @listenNewPictures config, config.get 'syncImages'
+
+        # Listen to updates.
         @listenTo app.replicator.config, "change:cozyNotifications", @toggle
         @listenTo app.replicator.config, "change:syncImages", @listenNewPictures
+
         @checkActivated()
 
     isActivated: ->

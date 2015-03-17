@@ -41,10 +41,6 @@ module.exports =
                 Backbone.history.start()
 
                 if config.remote
-                    # Activate background service only if database is
-                    # configured.
-                    @serviceManager.activate()
-
                     @router.navigate 'folder/', trigger: true
                     @router.once 'collectionfetched', =>
                         app.replicator.startRealtime()
