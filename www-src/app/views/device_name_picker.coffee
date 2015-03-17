@@ -41,8 +41,8 @@ module.exports = class DeviceNamePickerView extends BaseView
                 app.isFirstRun = true
 
                 console.log 'starting first replication'
-                noop = ->
-                app.replicator.initialReplication noop
+                app.replicator.initialReplication (err) ->
+                    alert t err.message if err
 
                 app.router.navigate 'config', trigger: true
 
