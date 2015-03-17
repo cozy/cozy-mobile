@@ -23,13 +23,22 @@ module.exports.update = update = ->
 
     callbackWaiting null, true
 
-module.exports.checkReadyForSync = (callback) ->
+module.exports.checkReadyForSync = (force, callback) ->
+    # force is optionnal
+    if arguments.length is 1
+        callback = force
+        force = false
+
+    update() if force
+
     if readyForSync?
         callback null, readyForSync, readyForSyncMsg
     else if window.isBrowserDebugging
         callback null, true
     else
         callbacks.push callback
+
+
     unless initialized
         timeout = true
         setTimeout () =>
@@ -46,4 +55,3 @@ module.exports.checkReadyForSync = (callback) ->
         , false
         app.replicator.config.on 'change:syncOnWifi', update
         initialized = true
-
