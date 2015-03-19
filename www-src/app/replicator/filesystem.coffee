@@ -42,6 +42,12 @@ module.exports.getFile = (parent, name, callback) ->
     onError = (err) -> callback err
     parent.getFile name, null, onSuccess, onError
 
+module.exports.moveTo = (entry, directory, name, callback) ->
+    onSuccess = (entry) -> callback null, entry
+    onError = (err) -> callback err
+    entry.moveTo directory, name, null, onSuccess, onError
+
+
 module.exports.getDirectory = (parent, name, callback) ->
     onSuccess = (entry) -> callback null, entry
     onError = (err) -> callback err
@@ -101,6 +107,7 @@ module.exports.metadataFromEntry = (entry, callback) ->
     onSuccess = (file) -> callback null, file
     onError = (err) -> callback err
     entry.getMetadata onSuccess, onError
+
 
 
 module.exports.download = (options, progressback, callback) ->

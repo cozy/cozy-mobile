@@ -198,6 +198,7 @@ module.exports = class Replicator extends Backbone.Model
             @cache.some (entry) ->
                 entry.name.indexOf(file.binary.file.id) isnt -1
 
+
     fileVersion: (file) =>
         if file.docType.toLowerCase() is 'file'
             @cache.some (entry) ->
@@ -293,6 +294,39 @@ module.exports = class Replicator extends Backbone.Model
                                 @cache.splice index, 1
                                 break
 
+
+    updateLocal: (options, callback) ->
+        file = options.file
+        entry = options.entry
+        # check binary revs # actually can't test, no way to change a file in cozy ?
+        if entry.name isnt file.binary.file.id + '-' + file.binary.file.rev
+
+            # remove old one.
+            fs.rmrf entry, (err) =>
+                return callback err if err
+                # remove from @cache
+                for entry, index in @cache when entry.name is binary_id + '-' + binary_rev
+                    @cache.splice index, 1
+                    break
+
+                # Download the new version.
+                @getBinary file, callback
+
+
+        # else check filename
+        else
+            fs.getChildren entry, (err, children) =>
+                if not err? and children.length is 0
+                    err = new Error 'File is missing'
+                return callback err if err
+
+                child = children[0]
+                if child.name is file.name
+                    callback()
+                else
+                    fs.moveTo child, entry, file.name, callback
+
+
     removeLocal: (model, callback) ->
         binary_id = model.binary.file.id
         binary_rev = model.binary.file.rev
@@ -307,6 +341,7 @@ module.exports = class Replicator extends Backbone.Model
                     @cache.splice index, 1
                     break
                 callback null
+
 
     removeLocalFolder: (folder, callback) ->
          @getDbFilesOfFolder folder, (err, files) =>
@@ -354,8 +389,26 @@ module.exports = class Replicator extends Backbone.Model
             live: false
             since: checkpoint
 
-        replication.on 'change', (change) ->
-            console.log "REPLICATION CHANGE : #{change}"
+        replication.on 'change', (change) =>
+            try
+                console.log "REPLICATION CHANGE"
+                console.log change
+
+                # fichiers + entry en cache.
+                fileNEntriesInCache = change.docs.reduce (agg, file) ->
+                    if file.docType.toLowerCase() is 'file'
+                        entries = @cache.filter (entry) ->
+                            entry.name.indexOf(file.binary.file.id) isnt -1
+                        if entries.length isnt 0
+                            agg.push
+                                file: file
+                                entry: entries[0]
+                , []
+
+                async.eachSeries fileNEntriesInCache, @updateLocal, =>
+                    console.log "done update files !"
+
+            catch e then console.log e
 
         replication.once 'error', (err) =>
             console.log "REPLICATOR ERROR #{JSON.stringify(err)} #{err.stack}"
@@ -384,6 +437,9 @@ module.exports = class Replicator extends Backbone.Model
     #
     realtimeBackupCoef = 1
     startRealtime: =>
+        console.log 'REALTIME START STUBED !!'
+
+    startRealtime_deactivated: =>
         return if @liveReplication
         console.log 'REALTIME START'
         @liveReplication = @db.replicate.from @config.remote,
