@@ -172,7 +172,7 @@ module.exports = class Replicator extends Backbone.Model
 
             if not err and res.status > 399
                 console.log res
-                err = new Error res.status
+                err = new Error res.statusText
 
             return callback err if err
             return callback null unless body.rows?.length

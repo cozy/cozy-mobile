@@ -100,4 +100,5 @@ module.exports =
     "This file isnt available offline": "Ce fichier n'est pas disponible hors ligne"
     "ABORTED"               :  "La procédure a été interrompue."
     "photo folder not replicated yet" : "L'initialisation n'est pas terminée."
+    "Not Found" : "Erreur à l'initialisation. Avez-vous installé l'application Files sur votre Cozy ?"
 

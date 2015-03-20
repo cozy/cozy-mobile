@@ -32,7 +32,7 @@ module.exports =
 
 
     _backup: (force, callback) ->
-        DeviceStatus.checkReadyForSync (err, ready, msg) =>
+        DeviceStatus.checkReadyForSync true, (err, ready, msg) =>
             console.log "SYNC STATUS", err, ready, msg
             return callback err if err
             return callback new Error(msg) unless ready
@@ -170,7 +170,12 @@ module.exports =
                         else
                             # Create file
                             toUpload.push path
-                        setTimeout cb, 1
+
+                        DeviceStatus.checkReadyForSync (err, ready, msg) ->
+                            return cb err if err
+                            return cb new Error msg unless ready
+
+                            setTimeout cb, 1 # don't freeze UI
 
 
             , =>
@@ -184,7 +189,12 @@ module.exports =
                     console.log "UPLOADING #{path}"
                     @uploadPicture path, device, (err) =>
                         console.log "ERROR #{path} #{err}" if err
-                        setTimeout cb, 1
+                        DeviceStatus.checkReadyForSync (err, ready, msg) ->
+                            return cb err if err
+                            return cb new Error msg unless ready
+
+                            setTimeout cb, 1 # don't freeze UI.
+
                 , callback
 
     uploadPicture: (path, device, callback) ->
