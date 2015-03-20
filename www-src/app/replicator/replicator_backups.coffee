@@ -172,9 +172,10 @@ module.exports =
                             toUpload.push path
 
                         DeviceStatus.checkReadyForSync (err, ready, msg) ->
-                            err = new Error msg unless ready or err?
                             return cb err if err
-                            setTimeout cb, 1
+                            return cb new Error msg unless ready
+
+                            setTimeout cb, 1 # don't freeze UI
 
 
             , =>
@@ -189,9 +190,10 @@ module.exports =
                     @uploadPicture path, device, (err) =>
                         console.log "ERROR #{path} #{err}" if err
                         DeviceStatus.checkReadyForSync (err, ready, msg) ->
-                            err = new Error msg unless ready or err?
                             return cb err if err
-                            setTimeout cb, 1
+                            return cb new Error msg unless ready
+
+                            setTimeout cb, 1 # don't freeze UI.
 
                 , callback
 
