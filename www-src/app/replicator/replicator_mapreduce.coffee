@@ -29,6 +29,15 @@ FilesAndFolderDesignDoc =
                     if doc.docType?.toLowerCase() is 'folder'
                         emit [doc.path, '1_' + doc.name.toLowerCase()]
 
+ByBinaryIdDesignDoc =
+    _id: '_design/ByBinaryId'
+    version: 1
+    views:
+        'ByBinaryId':
+            map: Object.toString.apply (doc) ->
+                if doc.docType?.toLowerCase() is 'file'
+                    emit doc.binary?.file?.id
+
 PicturesDesignDoc =
     _id: '_design/Pictures'
     version: 1
@@ -88,6 +97,7 @@ module.exports = (db, contactsDB, photosDB, callback) ->
     async.series [
         (cb) -> createOrUpdateDesign db, NotificationsTemporaryDesignDoc, cb
         (cb) -> createOrUpdateDesign db, FilesAndFolderDesignDoc, cb
+        (cb) -> createOrUpdateDesign db, ByBinaryIdDesignDoc, cb
         (cb) -> createOrUpdateDesign db, PicturesDesignDoc, cb
         (cb) -> createOrUpdateDesign db, LocalPathDesignDoc, cb
         (cb) -> createOrUpdateDesign db, PathToBinaryDesignDoc, cb
