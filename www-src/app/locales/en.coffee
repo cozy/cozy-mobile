@@ -101,3 +101,4 @@ module.exports =
     "ABORTED"               :  "The procedure was aborted."
     "photo folder not replicated yet" : "Initialization not finished yet."
     "Not Found" : "Error while initializing. Did you install the Files application in your Cozy ?"
+    "ssl certificate error": "Unknown SSL certificate, did you add your self-signed certificate to Android ?"

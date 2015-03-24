@@ -101,4 +101,4 @@ module.exports =
     "ABORTED"               :  "La procédure a été interrompue."
     "photo folder not replicated yet" : "L'initialisation n'est pas terminée."
     "Not Found" : "Erreur à l'initialisation. Avez-vous installé l'application Files sur votre Cozy ?"
-
+    "ssl certificate error": "Certificat SSL inconu, avez-vous mis votre certificat auto-signé sur votre smartphone ?"
