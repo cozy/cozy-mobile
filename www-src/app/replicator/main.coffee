@@ -2,6 +2,7 @@ request = require '../lib/request'
 fs = require './filesystem'
 makeDesignDocs = require './replicator_mapreduce'
 ReplicatorConfig = require './replicator_config'
+DeviceStatus = require '../lib/device_status'
 DBNAME = "cozy-files.db"
 DBCONTACTS = "cozy-contacts.db"
 DBPHOTOS = "cozy-photos.db"
@@ -296,25 +297,24 @@ module.exports = class Replicator extends Backbone.Model
                                 @cache.splice index, 1
                                 break
 
-
+    # Update the local copy  (options.entry) of the file (options.file)
     updateLocal: (options, callback) =>
         file = options.file
         entry = options.entry
-        # check binary revs # actually can't test, no way to change a file in cozy ?
-        if entry.name isnt file.binary.file.id + '-' + file.binary.file.rev
+
+        if file._deleted
+            @removeLocal file, callback
+
+        # check binary revs
+        else if entry.name isnt file.binary.file.id + '-' + file.binary.file.rev
             # Don't update the binary if "no wifi"
             DeviceStatus.checkReadyForSync (err, ready, msg) =>
                 if ready
-                    # remove old one.
-                    fs.rmrf entry, (err) =>
-                        return callback err if err
-                        # remove from @cache
-                        for entry, index in @cache when entry.name is binary_id + '-' + binary_rev
-                            @cache.splice index, 1
-                            break
-
-                        # Download the new version.
-                        @getBinary file, callback
+                    # Download the new version.
+                    noop = ->
+                    @getBinary file, noop, callback
+                else
+                    callback()
 
         else # check filename
             fs.getChildren entry, (err, children) =>
@@ -372,6 +372,21 @@ module.exports = class Replicator extends Backbone.Model
 
         return fileNEntriesInCache
 
+    _replicationFilter: ->
+        if @config.get 'cozyNotifications'
+            filter = (doc) ->
+                return doc.docType?.toLowerCase() is 'folder' or
+                    doc.docType?.toLowerCase() is 'file' or
+                    doc.docType?.toLowerCase() is 'notification' and
+                        doc.type?.toLowerCase() is 'temporary'
+
+        else
+            filter = (doc) ->
+                return doc.docType?.toLowerCase() is 'folder' or
+                    doc.docType?.toLowerCase() is 'file'
+
+        return filter
+
     # wrapper around _sync to maintain the state of inSync
     sync: (options, callback) ->
         return callback null if @get 'inSync'
@@ -390,30 +405,19 @@ module.exports = class Replicator extends Backbone.Model
         console.log "BEGIN SYNC"
         total_count = 0
         @liveReplication?.cancel()
+        changedDocs = []
         checkpoint = options.checkpoint or @config.get 'checkpointed'
-
-        if options.notificationsOnly
-            filter = (doc) ->
-                return doc.docType?.toLowerCase() is 'notification' and
-                    doc.type?.toLowerCase() is 'temporary'
-        else
-            filter = (doc) ->
-                return doc.docType?.toLowerCase() is 'folder' or
-                    doc.docType?.toLowerCase() is 'file' or
-                    doc.docType?.toLowerCase() is 'notification' and
-                        doc.type?.toLowerCase() is 'temporary'
 
         replication = @db.replicate.from @config.remote,
             batch_size: 20
             batches_limit: 5
-            filter: filter
+            filter: @_replicationFilter()
             live: false
             since: checkpoint
 
         replication.on 'change', (change) =>
-            fileNEntriesInCache = @_filesNEntriesInCache change.docs
-            async.eachSeries fileNEntriesInCache, @updateLocal, =>
-                console.log "done update files !"
+            console.log "REPLICATION CHANGE"
+            changedDocs = changedDocs.concat change.docs
 
         replication.once 'error', (err) =>
             console.log "REPLICATOR ERROR #{JSON.stringify(err)} #{err.stack}"
@@ -425,14 +429,16 @@ module.exports = class Replicator extends Backbone.Model
 
         replication.once 'complete', (result) =>
             console.log "REPLICATION COMPLETED"
-            @config.save checkpointed: result.last_seq, (err) =>
-                callback err
-                unless options.background
-                    app.router.forceRefresh()
-                    # updateIndex In background
-                    @updateIndex =>
-                        console.log 'start Realtime'
-                        @startRealtime()
+            async.eachSeries @_fileNEntriesInCache(changedDocs), \
+                @updateLocal, (err) =>
+                @config.save checkpointed: result.last_seq, (err) =>
+                    callback err
+                    unless options.background
+                        app.router.forceRefresh()
+                        # updateIndex In background
+                        @updateIndex =>
+                            console.log 'start Realtime'
+                            @startRealtime()
 
     # realtime
     # start from the last checkpointed value
@@ -441,17 +447,15 @@ module.exports = class Replicator extends Backbone.Model
     # with exponential backoff 2^x s (max 1min)
     #
     realtimeBackupCoef = 1
+
     startRealtime: =>
         return if @liveReplication
         console.log 'REALTIME START'
+
         @liveReplication = @db.replicate.from @config.remote,
             batch_size: 20
             batches_limit: 5
-            filter: (doc) ->
-                return doc.docType?.toLowerCase() is 'folder' or
-                    doc.docType?.toLowerCase() is 'file' or
-                    doc.docType?.toLowerCase() is 'notification' and
-                        doc.type?.toLowerCase() is 'temporary'
+            filter: @_replicationFilter()
             since: @config.get 'checkpointed'
             continuous: true
 
@@ -488,8 +492,7 @@ module.exports = class Replicator extends Backbone.Model
 
     # Update cache files with outdated revisions.
     syncCache:  (callback) =>
-        # No optim yet !
-        # To test, with binary version changes !
+        # TODO: Add optimizations on db.query : avoid include_docs on big list.
         options =
             keys: @cache.map (entry) -> return entry.name.split('-')[0]
             include_docs: true
@@ -497,6 +500,4 @@ module.exports = class Replicator extends Backbone.Model
         @db.query 'ByBinaryId', options, (err, results) =>
             return callback err if err
             toUpdate = @_filesNEntriesInCache results.rows.map (row) -> row.doc
-
-            console.log toUpdate
             async.eachSeries toUpdate, @updateLocal, callback
