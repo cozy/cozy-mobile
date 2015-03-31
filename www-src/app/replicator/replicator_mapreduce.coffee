@@ -65,14 +65,38 @@ LocalPathDesignDoc =
             map: Object.toString.apply (doc) ->
                 emit doc.localPath if doc.localPath
 
-ContactsByLocalIdDesignDoc =
-    _id: '_design/ContactsByLocalId'
+ContactsDesignDoc =
+    _id: '_design/Contacts'
     version: 1
     views:
-        'ContactsByLocalId':
+        'Contacts':
             map: Object.toString.apply (doc) ->
-                if doc.docType?.toLowerCase() is 'contact' and doc.localId
-                    emit doc.localId, [doc.localVersion, doc._rev]
+                if doc.docType?.toLowerCase() is 'contact'
+                    emit doc._id
+ByCozyContactIdDesignDoc =
+    _id: '_design/ByCozyContactId'
+    version: 1
+    views:
+        'ByCozyContactId':
+            map: Object.toString.apply (doc) ->
+                emit doc.pouchId
+
+ByLocalContactIdDesignDoc =
+    _id: '_design/ByLocalContactId'
+    version: 1
+    views:
+        'ByLocalContactId':
+            map: Object.toString.apply (doc) ->
+                emit doc.localId
+
+# ContactsByLocalIdDesignDoc =
+#     _id: '_design/ContactsByLocalId'
+#     version: 1
+#     views:
+#         'ContactsByLocalId':
+#             map: Object.toString.apply (doc) ->
+#                 if doc.docType?.toLowerCase() is 'contact' and doc.localId
+#                     emit doc.localId, [doc.localVersion, doc._rev]
 
 PhotosByLocalIdDesignDoc =
     _id: '_design/PhotosByLocalId'
@@ -101,7 +125,9 @@ module.exports = (db, contactsDB, photosDB, callback) ->
         (cb) -> createOrUpdateDesign db, PicturesDesignDoc, cb
         (cb) -> createOrUpdateDesign db, LocalPathDesignDoc, cb
         (cb) -> createOrUpdateDesign db, PathToBinaryDesignDoc, cb
-        (cb) -> createOrUpdateDesign contactsDB, ContactsByLocalIdDesignDoc, cb
+        (cb) -> createOrUpdateDesign db, ContactsDesignDoc, cb
+        (cb) -> createOrUpdateDesign contactsDB, ByLocalContactIdDesignDoc, cb
+        (cb) -> createOrUpdateDesign contactsDB, ByCozyContactIdDesignDoc, cb
         (cb) -> createOrUpdateDesign photosDB, PhotosByLocalIdDesignDoc, cb
         (cb) -> createOrUpdateDesign photosDB, DevicesByLocalIdDesignDoc, cb
     ], callback

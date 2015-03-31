@@ -6,7 +6,7 @@ module.exports = class ReplicatorConfig extends Backbone.Model
         @remote = null
     defaults: ->
         _id: 'localconfig'
-        syncContacts: app.locale is 'digidisk'
+        syncContacts: true #app.locale is 'digidisk'
         syncImages: true
         syncOnWifi: true
         cozyNotifications: true

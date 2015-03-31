@@ -1,7 +1,11 @@
 DeviceStatus = require '../lib/device_status'
 fs = require './filesystem'
 request = require '../lib/request'
+Contact = require '../models/contact'
 
+# Account type and name of the created android contact account.
+CONTACT_PHONE_ACCOUNT_TYPE = 'io.cozy'
+CONTACT_PHONE_ACCOUNT_NAME = 'myCozy'
 
 # This files contains all replicator functions liked to backup
 # use the ImagesBrowser cordova plugin to fetch images & contacts
@@ -50,6 +54,117 @@ module.exports =
 
 
     syncContacts: (callback) ->
+        return callback null unless @config.get 'syncContacts'
+
+        # Phone is right on conflict.
+        # Contact sync has 3 phases
+        # 1 - Phone2Pouch
+        # 2 - Pouch <-> Couch (cozy)
+        # 3 - Pouch2Phone.
+
+        async.series [
+            @_syncPhone2Pouch
+            @_syncWithCozy
+            @_syncPouch2Phone
+            ], callback
+
+    _syncWithCozy: (callback) =>
+        # Get contacts from the cozy (couch -> pouch replication)
+        replication = @db.replicate.sync @config.remote,
+            batch_size: 20
+            batches_limit: 5
+            filter: (doc) -> return doc.docType?.toLowerCase() is 'contact'
+            live: false
+            since: 0 # TODO checkpoints
+
+        replication.on 'change', (e) =>
+            console.log "Replication Change"
+            console.log e
+        replication.on 'error', callback
+        replication.on 'complete', =>
+            console.log "REPLICATION COMPLETED contacts"
+            callback()
+
+    _syncPouch2Phone: (callback) ->
+        # TODO: option : list of changed documents.
+
+        # Get contacts list, get sync list.
+        @db.query 'contactsById', { include_docs: true }, (err, result) =>
+            return callback err if err
+            [rows: pouchContacts, rows: syncContacts] = result
+
+            async.eachSeries pouchContacts, (cozyContact, cb) =>
+                # Find sync info related to.
+                @contactsDB.query 'byCozyContactId', { include_docs: true }
+                , (err, result) =>
+                    # result
+                    if result.rows.length is 0
+                        # Not synced yet !
+                        contact = Contact.cozy2Cordova cozyContact
+                        @_saveContactOnPhone cozyContact, contact, {}, cb
+
+                    else
+                        syncInfo = result.rows[0].doc
+                        if syncInfo.pouchRev isnt cozyContact._rev
+                            # Needs update !
+                            contact = Contact.cozy2Cordova cozyContact
+                            contact.id = syncInfo.localId
+                            @_saveContactOnPhone cozyContact, contact, syncInfo, cb
+            , callback
+
+    _syncPhone2Pouch: (callback) =>
+        # Get the contacts, and syncInfos.
+        options = new ContactFindOptions "", true, [], 'io.cozy', 'myCozy'
+        fields = [navigator.contacts.fieldType.id]
+
+        navigator.contacts.find fields
+        , (contacts) ->
+            that = app.replicator # hack as => and @ doesn't work here...
+            async.eachSeries contacts, (contact, cb) =>
+                that.contactsDB.query 'byLocalContactId', { include_docs: true }
+                , (err, result) =>
+                    if result.rows.length is 0
+                        # New contact from phone !
+                        cozyContact = Contact.cordova2Cozy contact
+                        that._saveContactInCozy cozycontact, contact, {}, cb
+
+        , (err) ->
+            return callback err if err
+        , options
+
+
+    _saveContactInCozy: (cozyContact, contact, syncInfo, cb) =>
+        app.replicator.db.put cozyContact, cozyContact._id, cozyContact._rev,
+            (err, doc) =>
+                return cb err if err
+                @_updateSyncInfo cozyContact, contact, syncInfo, cb
+
+    _saveContactOnPhone: (cozyContact, contact, syncInfo, cb) =>
+        contact.save (c) ->
+            console.log "contact saved"
+            console.log c
+            # Update sync
+            # unless syncInfo?
+            @_updateSyncInfo cozyContact, contact, syncInfo, cb
+        , (err) ->
+            console.log "error saving contact"
+            console.log err
+            cb err
+        ,
+            accountType: 'io.cozy'
+            accountName: 'myCozy'
+
+    _updateSyncInfo: (cozyContact, contact, syncInfo, cb) =>
+        _.extends syncInfo,
+                pouchId: cozyContact._id
+                pouchRev: cozyContact._rev
+                localId: c.id
+                localRev: c.version # TODO : collect this info from Android in the plugin.
+
+            @contactsDB.put syncInfo, syncInfo._id, syncInfo._rev, cb
+
+
+    syncContacts_old: (callback) ->
         return callback null unless @config.get 'syncContacts'
 
         console.log "SYNC CONTACTS"
