@@ -101,4 +101,4 @@ module.exports =
     "ABORTED"               :  "The procedure was aborted."
     "photo folder not replicated yet" : "Initialization not finished yet."
     "Not Found" : "Error while initializing. Did you install the Files application in your Cozy ?"
-    "ssl certificate error": "Unknown SSL certificate, did you add your self-signed certificate to Android ?"
+    "connexion error": "We failed to connect to your cozy. Please check that your device is connected to the internet, the address of your cozy is spelled correctly and your cozy is running. If you are an advanced user with a self hosted cozy, refer to the <a href='http://cozy.io/en/mobile/files.html#note-about-self-signed-certificates' target='_system'>doc to handle self-signed certificates</a>."

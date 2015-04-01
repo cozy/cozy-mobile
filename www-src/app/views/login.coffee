@@ -8,6 +8,7 @@ module.exports = class LoginView extends BaseView
     events: ->
         'click #btn-save': 'doSave'
         'click #input-pass': 'doComplete'
+        "click a[target='_system']": 'openInSystemBrowser'
 
     getRenderData: ->
         defaultValue = app.loginConfig  or cozyURL: '', password: ''
@@ -58,6 +59,11 @@ module.exports = class LoginView extends BaseView
         @saving = false
         @error.remove() if @error
         text = t 'connection failure' if ~text.indexOf('CORS request rejected')
-        @error = $('<div>').addClass('button button-full button-energized')
-        @error.text text
+        @error = $('<div>').addClass('error-msg')
+        @error.html text
         @$(field or '#btn-save').before @error
+
+    openInSystemBrowser: (e) ->
+        window.open e.currentTarget.href, '_system', ''
+        e.preventDefault()
+        return false

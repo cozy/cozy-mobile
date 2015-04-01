@@ -14,6 +14,7 @@ plugins = {
     "org.apache.cordova.network-information": "https://git-wip-us.apache.org/repos/asf/cordova-plugin-network-information.git#r0.2.15"
     "org.apache.cordova.globalization": "org.apache.cordova.globalization@0.3.4 "
     "de.appplant.cordova.plugin.local-notification": "de.appplant.cordova.plugin.local-notification@0.8.1"
+    "org.apache.cordova.inappbrowser": "org.apache.cordova.inappbrowser@0.6.0"
 }
 
 platforms = ['ios', 'android']

@@ -106,9 +106,8 @@ module.exports = class Replicator extends Backbone.Model
                 username: 'owner'
                 password: config.password
         , (err, response, body) ->
-
             if response?.status is 0
-                error = t 'ssl certificate error'
+                error = t 'connexion error'
 
             else if response?.statusCode isnt 200
                 error = err?.message or body.error or body.message
