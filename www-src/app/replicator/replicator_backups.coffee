@@ -39,9 +39,14 @@ module.exports =
             console.log "WE ARE READY FOR SYNC"
 
             @syncPictures force, (err) =>
+                console.log "done syncPict"
                 return callback err if err
-                @syncContacts (err) =>
-                    callback err
+                @syncCache (err) =>
+                    console.log "done syncCache"
+
+                    return callback err if err
+                    @syncContacts (err) =>
+                        callback err
 
 
     syncContacts: (callback) ->
