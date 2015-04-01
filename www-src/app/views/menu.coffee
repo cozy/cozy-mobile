@@ -29,18 +29,17 @@ module.exports = class Menu extends BaseView
     backup: ->
         app.layout.closeMenu()
 
-        @sync()
-        # if app.replicator.get 'inBackup'
-        #     @sync()
-        # else
-        #     app.replicator.backup { force: false }, (err) =>
-        #         if err
-        #             console.log err, err.stack
-        #             alert t err.message
-        #             return
+        if app.replicator.get 'inBackup'
+            @sync()
+        else
+            app.replicator.backup { force: false }, (err) =>
+                if err
+                    console.log err, err.stack
+                    alert t err.message
+                    return
 
-        #         app.layout.currentView?.collection?.fetch()
-        #         @sync()
+                app.layout.currentView?.collection?.fetch()
+                @sync()
 
     doSearchIfEnter: (event) => @doSearch() if event.which is 13
     doSearch: ->

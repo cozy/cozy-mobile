@@ -357,18 +357,15 @@ module.exports = class Replicator extends Backbone.Model
     # Get the entry (if in cache) related to the specified files list.
     # return a list of objects {file, entry}
     _filesNEntriesInCache: (docs) ->
-        # fichiers + entry en cache.
-        fileNEntriesInCache = docs.reduce (agg, file) =>
+        fileNEntriesInCache = []
+        for file in docs
             if file.docType.toLowerCase() is 'file'
                 entries = @cache.filter (entry) ->
                     entry.name.indexOf(file.binary.file.id) isnt -1
                 if entries.length isnt 0
-                    agg.push
+                    fileNEntriesInCache.push
                         file: file
                         entry: entries[0]
-
-            return agg
-        , []
 
         return fileNEntriesInCache
 
@@ -431,6 +428,9 @@ module.exports = class Replicator extends Backbone.Model
             console.log "REPLICATION COMPLETED"
             async.eachSeries @_fileNEntriesInCache(changedDocs), \
                 @updateLocal, (err) =>
+                # Continue on cache update error, 'syncCache' call on next
+                # backup may fix it.
+                console.log err if err
                 @config.save checkpointed: result.last_seq, (err) =>
                     callback err
                     unless options.background
