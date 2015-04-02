@@ -41,9 +41,9 @@ module.exports = class ServiceManager extends Backbone.Model
 
     toggle: (config, activate) ->
         if activate
-            @deactivate()
-        else
             @activate()
+        else
+            @deactivate()
 
     listenNewPictures: (config, listen) ->
         window.JSBackgroundService.listenNewPictures listen, (err) ->
