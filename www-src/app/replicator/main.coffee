@@ -31,7 +31,7 @@ module.exports = class Replicator extends Backbone.Model
                     fs.rmrf @downloads, callback
 
     resetSynchro: (callback) ->
-        @liveReplication?.cancel()
+        @stopRealtime()
         # remove all files/folders then call initialReplication
         @initialReplication (err) =>
             @startRealtime()
@@ -404,7 +404,7 @@ module.exports = class Replicator extends Backbone.Model
     _sync: (options, callback) ->
         console.log "BEGIN SYNC"
         total_count = 0
-        @liveReplication?.cancel()
+        @stopRealtime()
         changedDocs = []
         checkpoint = options.checkpoint or @config.get 'checkpointed'
 
@@ -429,8 +429,8 @@ module.exports = class Replicator extends Backbone.Model
 
         replication.once 'complete', (result) =>
             console.log "REPLICATION COMPLETED"
-            async.eachSeries @_fileNEntriesInCache(changedDocs), \
-                @updateLocal, (err) =>
+            async.eachSeries @_filesNEntriesInCache(changedDocs), \
+              @updateLocal, (err) =>
                 # Continue on cache update error, 'syncCache' call on next
                 # backup may fix it.
                 console.log err if err
@@ -484,14 +484,21 @@ module.exports = class Replicator extends Backbone.Model
             console.log "LIVE REPLICATION CANCELLED"
             @set 'inSync', false
             @liveReplication = null
-            @startRealtime()
+            #@startRealtime() #WTF !!?
 
         @liveReplication.once 'error', (e) =>
             @liveReplication = null
             realtimeBackupCoef++ if realtimeBackupCoef < 6
             timeout = 1000 * (1 << realtimeBackupCoef)
             console.log "REALTIME BROKE, TRY AGAIN IN #{timeout} #{e.toString()}"
-            setTimeout @startRealtime, timeout
+            @realtimeBackOff = setTimeout @startRealtime, timeout
+
+    stopRealtime: =>
+        # Stop replication.
+        @liveReplication?.cancel()
+
+        # Kill backoff if exists.
+        clearTimeout @realtimeBackOff
 
     # Update cache files with outdated revisions.
     syncCache:  (callback) =>

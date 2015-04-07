@@ -48,17 +48,27 @@ module.exports = Service =
                         # give some time to finish and close things.
                         setTimeout window.service.workDone, 5 * 1000
 
+                    syncNotifications = (err) ->
+                        if config.get 'cozyNotifications'
+                            app.replicator.sync
+                                background: true
+                                notificationsOnly: true
+                            , delayedQuit
+                        else
+                            delayedQuit()
+
                     if config.get 'syncImages'
                         app.replicator.backup { background: true }, (err) ->
-                            app.replicator.sync {background: true}, delayedQuit
+                            if err and err.message is 'no wifi'
+                                syncNotifications()
+                            else
+                                app.replicator.sync {background: true}, delayedQuit
 
                     else
-                        app.replicator.sync {background: true}, delayedQuit
-
+                        syncNotifications()
 
                 else
                     window.service.workDone()
-
 
 document.addEventListener 'deviceready', ->
     Service.initialize()

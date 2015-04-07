@@ -21,7 +21,7 @@ module.exports =
 
         @set 'inBackup', true
         @set 'backup_step', null
-        @liveReplication?.cancel()
+        @stopRealtime()
         @_backup options.force, (err) =>
             @set 'backup_step', null
             @set 'inBackup', false
