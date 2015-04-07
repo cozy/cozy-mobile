@@ -1,6 +1,7 @@
 Replicator = require './replicator/main'
 LayoutView = require './views/layout'
 ServiceManager = require './service/service_manager'
+Notifications = require '../views/notifications'
 
 module.exports =
 
@@ -35,6 +36,7 @@ module.exports =
                     console.log err, err.stack
                     return alert err.message or err
 
+                @notificationManager = new Notifications()
                 @serviceManager = new ServiceManager()
 
                 $('body').empty().append @layout.render().$el
@@ -50,6 +52,7 @@ module.exports =
                             console.log "RESUME EVENT"
                             if app.backFromOpen
                                 app.backFromOpen = false
+                                app.replicator.startRealtime()
                             else
                                 app.replicator.backup()
                         , false

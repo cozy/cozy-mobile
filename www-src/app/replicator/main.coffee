@@ -484,7 +484,6 @@ module.exports = class Replicator extends Backbone.Model
             console.log "LIVE REPLICATION CANCELLED"
             @set 'inSync', false
             @liveReplication = null
-            #@startRealtime() #WTF !!?
 
         @liveReplication.once 'error', (e) =>
             @liveReplication = null
