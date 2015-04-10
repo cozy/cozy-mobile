@@ -452,7 +452,9 @@ module.exports = class Replicator extends Backbone.Model
     realtimeBackupCoef = 1
 
     startRealtime: =>
-        return if @liveReplication
+        if @liveReplication or not app.foreground
+            return
+
         console.log 'REALTIME START'
 
         @liveReplication = @db.replicate.from @config.remote,

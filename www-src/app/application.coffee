@@ -43,36 +43,43 @@ module.exports =
                 Backbone.history.start()
 
                 if config.remote
-                    @router.navigate 'folder/', trigger: true
-                    @router.once 'collectionfetched', =>
-                        app.replicator.startRealtime()
+                    app.regularStart()
 
-                        app.replicator.backup()
-                        document.addEventListener "resume", =>
-                            console.log "RESUME EVENT"
-                            if app.backFromOpen
-                                app.backFromOpen = false
-                                app.replicator.startRealtime()
-                            else
-                                app.replicator.backup()
-                        , false
-                        document.addEventListener "pause", =>
-                            console.log "PAUSE EVENT"
-                            app.replicator.stopRealtime()
-
-                        , false
-                        document.addEventListener 'offline', ->
-                            device_status = require './lib/device_status'
-                            device_status.update()
-                        , false
-                        document.addEventListener 'online', ->
-                            device_status = require './lib/device_status'
-                            device_status.update()
-                            backup = () ->
-                                app.replicator.backup(true)
-                                window.removeEventListener 'realtime:onChange', backup, false
-                            window.addEventListener 'realtime:onChange', backup, false
-                        , false
                 else
+                    # App's first start
                     @router.navigate 'login', trigger: true
 
+    regularStart: ->
+        app.foreground = true
+
+        document.addEventListener "resume", =>
+            console.log "RESUME EVENT"
+            app.foreground = true
+            if app.backFromOpen
+                app.backFromOpen = false
+                app.replicator.startRealtime()
+            else
+                app.replicator.backup()
+        , false
+        document.addEventListener "pause", =>
+            console.log "PAUSE EVENT"
+            app.foreground = false
+            app.replicator.stopRealtime()
+
+        , false
+        document.addEventListener 'offline', ->
+            device_status = require './lib/device_status'
+            device_status.update()
+        , false
+        document.addEventListener 'online', ->
+            device_status = require './lib/device_status'
+            device_status.update()
+            backup = () ->
+                app.replicator.backup(true)
+                window.removeEventListener 'realtime:onChange', backup, false
+            window.addEventListener 'realtime:onChange', backup, false
+        , false
+
+        @router.navigate 'folder/', trigger: true
+        @router.once 'collectionfetched', =>
+            app.replicator.backup()
