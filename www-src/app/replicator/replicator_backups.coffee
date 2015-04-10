@@ -160,6 +160,10 @@ module.exports =
 
             toUpload = []
 
+            # Filter images : keep only the ones from Camera
+            # TODO: Android Specific !
+            images = images.filter (path) -> path.indexOf('/DCIM/') != -1
+
             # step 1 scan all images, find the new ones
             async.eachSeries images, (path, cb) =>
                 #Check if pictures is in dbImages
