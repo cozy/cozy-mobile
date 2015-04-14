@@ -60,7 +60,7 @@ Contact.cozy2Cordova = (cozyContact) ->
             name: n2ContactName cozyContact.n
             organizations: cozyContact2ContactOrganizations cozyContact
             # Missing Cordova ; nickname ? cozyContact.title
-            birthday: cozyContact.day # check date format !
+            birthday: cozyContact.bday # check date format !
             nickname: cozyContact.nickname
             urls: cozyContact2URLs cozyContact
             #cozyContact.revision      : Date
@@ -80,6 +80,7 @@ Contact.cordova2Cozy = (cordovaContact) ->
         return parts.join ';'
 
     c =
+        docType: 'contact'
         #TODO ! id            : String
         # vCard FullName = display name
         # (Prefix Given Middle Familly Suffix), or something else.
