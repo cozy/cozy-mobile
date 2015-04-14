@@ -164,6 +164,9 @@ module.exports =
             # TODO: Android Specific !
             images = images.filter (path) -> path.indexOf('/DCIM/') != -1
 
+            if images.length is 0
+                callback new Error 'no images in DCIM'
+
             # step 1 scan all images, find the new ones
             async.eachSeries images, (path, cb) =>
                 #Check if pictures is in dbImages

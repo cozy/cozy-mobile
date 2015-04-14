@@ -102,3 +102,4 @@ module.exports =
     "photo folder not replicated yet" : "Initialization not finished yet."
     "Not Found" : "Error while initializing. Did you install the Files application in your Cozy ?"
     "connexion error": "We failed to connect to your cozy. Please check that your device is connected to the internet, the address of your cozy is spelled correctly and your cozy is running. If you are an advanced user with a self hosted cozy, refer to the <a href='http://cozy.io/en/mobile/files.html#note-about-self-signed-certificates' target='_system'>doc to handle self-signed certificates</a>."
+    "no images in DCIM": "Backup images : no image found in DCIM dir."
