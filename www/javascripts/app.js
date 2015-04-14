@@ -91,13 +91,15 @@
   globals.require.brunch = true;
 })();
 require.register("application", function(exports, require, module) {
-var LayoutView, Replicator, ServiceManager;
+var LayoutView, Notifications, Replicator, ServiceManager;
 
 Replicator = require('./replicator/main');
 
 LayoutView = require('./views/layout');
 
 ServiceManager = require('./service/service_manager');
+
+Notifications = require('../views/notifications');
 
 module.exports = {
   initialize: function() {
@@ -135,47 +137,63 @@ module.exports = {
             console.log(err, err.stack);
             return alert(err.message || err);
           }
+          _this.notificationManager = new Notifications();
           _this.serviceManager = new ServiceManager();
           $('body').empty().append(_this.layout.render().$el);
           Backbone.history.start();
           if (config.remote) {
-            _this.serviceManager.activate();
-            _this.router.navigate('folder/', {
-              trigger: true
-            });
-            return _this.router.once('collectionfetched', function() {
-              app.replicator.startRealtime();
-              app.replicator.backup();
-              document.addEventListener("resume", function() {
-                console.log("RESUME EVENT");
-                if (app.backFromOpen) {
-                  return app.backFromOpen = false;
-                } else {
-                  return app.replicator.backup();
-                }
-              }, false);
-              document.addEventListener('offline', function() {
-                var device_status;
-                device_status = require('./lib/device_status');
-                return device_status.update();
-              }, false);
-              return document.addEventListener('online', function() {
-                var backup, device_status;
-                device_status = require('./lib/device_status');
-                device_status.update();
-                backup = function() {
-                  app.replicator.backup(true);
-                  return window.removeEventListener('realtime:onChange', backup, false);
-                };
-                return window.addEventListener('realtime:onChange', backup, false);
-              }, false);
-            });
+            return app.regularStart();
           } else {
             return _this.router.navigate('login', {
               trigger: true
             });
           }
         });
+      };
+    })(this));
+  },
+  regularStart: function() {
+    app.foreground = true;
+    document.addEventListener("resume", (function(_this) {
+      return function() {
+        console.log("RESUME EVENT");
+        app.foreground = true;
+        if (app.backFromOpen) {
+          app.backFromOpen = false;
+          return app.replicator.startRealtime();
+        } else {
+          return app.replicator.backup();
+        }
+      };
+    })(this), false);
+    document.addEventListener("pause", (function(_this) {
+      return function() {
+        console.log("PAUSE EVENT");
+        app.foreground = false;
+        return app.replicator.stopRealtime();
+      };
+    })(this), false);
+    document.addEventListener('offline', function() {
+      var device_status;
+      device_status = require('./lib/device_status');
+      return device_status.update();
+    }, false);
+    document.addEventListener('online', function() {
+      var backup, device_status;
+      device_status = require('./lib/device_status');
+      device_status.update();
+      backup = function() {
+        app.replicator.backup(true);
+        return window.removeEventListener('realtime:onChange', backup, false);
+      };
+      return window.addEventListener('realtime:onChange', backup, false);
+    }, false);
+    this.router.navigate('folder/', {
+      trigger: true
+    });
+    return this.router.once('collectionfetched', (function(_this) {
+      return function() {
+        return app.replicator.backup();
       };
     })(this));
   }
@@ -308,9 +326,13 @@ module.exports = FileAndFolderCollection = (function(_super) {
     return results.rows.map(function(row) {
       var binary_id, doc, _ref, _ref1;
       doc = row.doc;
-      if (binary_id = (_ref = doc.binary) != null ? (_ref1 = _ref.file) != null ? _ref1.id : void 0 : void 0) {
-        doc.incache = app.replicator.fileInFileSystem(doc);
-        doc.version = app.replicator.fileVersion(doc);
+      if (doc.docType.toLowerCase() === 'file') {
+        if (binary_id = (_ref = doc.binary) != null ? (_ref1 = _ref.file) != null ? _ref1.id : void 0 : void 0) {
+          doc.incache = app.replicator.fileInFileSystem(doc);
+          doc.version = app.replicator.fileVersion(doc);
+        }
+      } else if (doc.docType.toLowerCase() === 'folder') {
+        doc.incache = false;
       }
       return doc;
     });
@@ -545,8 +567,15 @@ module.exports.update = update = function() {
   return callbackWaiting(null, true);
 };
 
-module.exports.checkReadyForSync = function(callback) {
+module.exports.checkReadyForSync = function(force, callback) {
   var timeout;
+  if (arguments.length === 1) {
+    callback = force;
+    force = false;
+  }
+  if (force) {
+    update();
+  }
   if (readyForSync != null) {
     callback(null, readyForSync, readyForSyncMsg);
   } else if (window.isBrowserDebugging) {
@@ -1257,7 +1286,10 @@ module.exports = {
   "An error happened (INVALID URL)": "An error occured (invalid url).",
   "This file isnt available offline": "This file isn't available offline.",
   "ABORTED": "The procedure was aborted.",
-  "photo folder not replicated yet": "Initialization not finished yet."
+  "photo folder not replicated yet": "Initialization not finished yet.",
+  "Not Found": "Error while initializing. Did you install the Files application in your Cozy ?",
+  "connexion error": "We failed to connect to your cozy. Please check that your device is connected to the internet, the address of your cozy is spelled correctly and your cozy is running. If you are an advanced user with a self hosted cozy, refer to the <a href='http://cozy.io/en/mobile/files.html#note-about-self-signed-certificates' target='_system'>doc to handle self-signed certificates</a>.",
+  "no images in DCIM": "Backup images : no image found in DCIM dir."
 };
 
 });
@@ -1279,8 +1311,8 @@ module.exports = {
   "cozy notifications sync label": "Synchroniser les notifications Cozy",
   "home": "Accueil",
   "about": "À propos",
-  "last sync": "Dernière synchro : ",
-  "last backup": "Derniere sauvegarde : ",
+  "last sync": "Dernière synchro : ",
+  "last backup": "Derniere sauvegarde : ",
   "reset title": "Remise à zéro",
   "reset action": "R.à.Z",
   "retry synchro": "Sync",
@@ -1302,44 +1334,47 @@ module.exports = {
   "save": "Sauvegarder",
   "done": "Fait",
   "photos": "Appareils photo",
-  "confirm message": "Êtes-vous sûr ?",
-  "confirm exit message": "Voulez-vous quitter l'application ?",
-  "replication complete": "Réplication complétée",
-  "no activity found": "Aucune application n'a été trouvé sur ce téléphone pour ce type de fichier.",
+  "confirm message": "Êtes-vous sûr(e) ?",
+  "confirm exit message": "Voulez-vous quitter l'application ?",
+  "replication complete": "Reproduction terminée.",
+  "no activity found": "Aucune application n'a été trouvée sur ce téléphone pour ce type de fichier.",
   "not enough space": "Il n'y a pas suffisament d'espace disque sur votre mobile.",
   "no battery": "La sauvegarde n'aura pas lieu car vous n'avez pas assez de batterie.",
   "no wifi": "La sauvegarde n'aura pas lieu car vous n'êtes pas en wifi.",
   "no connection": "La sauvegarde n'aura pas lieu car vous n'avez pas de connexion.",
   "next": "Suivant",
   "back": "Retour",
-  "connection failure": "Echec de la connexion",
+  "connection failure": "Échec de la connexion",
   "setup 1/3": "Configuration 1/3",
   "password placeholder": "votre mot de passe",
-  "authenticating...": "Vérification des identifiants...",
+  "authenticating...": "Vérification des identifiants…",
   "setup 2/3": "Configuration 2/3",
   "device name explanation": "Choisissez un nom d'usage pour ce périphérique pour pouvoir le gérer facilement depuis votre Cozy.",
   "device name placeholder": "mon-telephone",
-  "registering...": "Enregistrement...",
+  "registering...": "Enregistrement…",
   "setup 3/3": "Configuration 3/3",
   "setup end": "Fin de la configuration",
-  "wait message device": "Enregistrement du device...",
+  "wait message device": "Enregistrement de l'appareil…",
   "message step 0": "Etape 1/3 : Synchronisation des fichiers.",
   "message step 1": "Etape 2/3 : Synchronisation des dossiers.",
   "message step 2": "Etape 3/3 : Préparation des documents.",
-  "ready message": "L'application est prête à être utilisée !",
-  "waiting...": "En attente...",
-  "filesystem bug error": "Erreur dans le système de fichier. Essayez de redémarrer votre téléphone",
+  "ready message": "L'application est prête à être utilisée !",
+  "waiting...": "En attente…",
+  "filesystem bug error": "Erreur dans le système de fichiers. Essayez de redémarrer votre téléphone",
   "end": "Fin",
   "all fields are required": "Tous les champs sont obligatoires",
-  "cozy need patch": "Cozy a besoin d'un corretif",
+  "cozy need patch": "Cozy a besoin d'un correctif",
   "wrong password": "Mot de passe incorrect",
   "device name already exist": "Ce nom d'appareil existe déjà",
   "An error happened (UNKNOWN)": "Une erreur est survenue",
   "An error happened (NOT FOUND)": "Une erreur est survenue (non trouvé)",
   "An error happened (INVALID URL)": "Une erreur est survenue (url invalide)",
   "This file isnt available offline": "Ce fichier n'est pas disponible hors ligne",
-  "ABORTED": "La procédure a été interompu.",
-  "photo folder not replicated yet": "L'initialisation n'est pas terminée."
+  "ABORTED": "La procédure a été interrompue.",
+  "photo folder not replicated yet": "L'initialisation n'est pas terminée.",
+  "Not Found": "Erreur à l'initialisation. Avez-vous installé l'application Files sur votre Cozy ?",
+  "connexion error": "La connection à votre cozy a échoué. Vérifiez que votre terminal est connecté à internet, que l'adresse de votre cozy est bien écrite et que votre cozy fonctionne. Pour les utilisateurs avancés avec un cozy auto-hébergé, consulter la <a href='http://cozy.io/fr/mobile/files.html#a-propos-des-certificats-auto-sign-s' target='_system'>documentation à propos des certificats autosignés</a>",
+  "no images in DCIM": "Sauvegarde des images : aucune image trouvée dans le répertoire DCIM."
 };
 
 });
@@ -1474,6 +1509,17 @@ module.exports.getFile = function(parent, name, callback) {
     return callback(err);
   };
   return parent.getFile(name, null, onSuccess, onError);
+};
+
+module.exports.moveTo = function(entry, directory, name, callback) {
+  var onError, onSuccess;
+  onSuccess = function(entry) {
+    return callback(null, entry);
+  };
+  onError = function(err) {
+    return callback(err);
+  };
+  return entry.moveTo(directory, name, null, onSuccess, onError);
 };
 
 module.exports.getDirectory = function(parent, name, callback) {
@@ -1689,7 +1735,7 @@ __chromeSafe = function() {
 });
 
 require.register("replicator/main", function(exports, require, module) {
-var DBCONTACTS, DBNAME, DBOPTIONS, DBPHOTOS, Replicator, ReplicatorConfig, fs, makeDesignDocs, request,
+var DBCONTACTS, DBNAME, DBOPTIONS, DBPHOTOS, DeviceStatus, Replicator, ReplicatorConfig, fs, makeDesignDocs, request,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
@@ -1702,6 +1748,8 @@ fs = require('./filesystem');
 makeDesignDocs = require('./replicator_mapreduce');
 
 ReplicatorConfig = require('./replicator_config');
+
+DeviceStatus = require('../lib/device_status');
 
 DBNAME = "cozy-files.db";
 
@@ -1719,7 +1767,10 @@ module.exports = Replicator = (function(_super) {
   __extends(Replicator, _super);
 
   function Replicator() {
+    this.syncCache = __bind(this.syncCache, this);
+    this.stopRealtime = __bind(this.stopRealtime, this);
     this.startRealtime = __bind(this.startRealtime, this);
+    this.updateLocal = __bind(this.updateLocal, this);
     this.folderInFileSystem = __bind(this.folderInFileSystem, this);
     this.fileVersion = __bind(this.fileVersion, this);
     this.fileInFileSystem = __bind(this.fileInFileSystem, this);
@@ -1761,10 +1812,7 @@ module.exports = Replicator = (function(_super) {
   };
 
   Replicator.prototype.resetSynchro = function(callback) {
-    var _ref;
-    if ((_ref = this.liveReplication) != null) {
-      _ref.cancel();
-    }
+    this.stopRealtime();
     return this.initialReplication((function(_this) {
       return function(err) {
         _this.startRealtime();
@@ -1798,9 +1846,10 @@ module.exports = Replicator = (function(_super) {
   Replicator.prototype.getDbFilesOfFolder = function(folder, callback) {
     var options, path;
     path = folder.path;
+    path += '/' + folder.name;
     options = {
-      startkey: path ? ['/' + path] : [''],
-      endkey: path ? ['/' + path, {}] : ['', {}],
+      startkey: [path],
+      endkey: [path + '/\uffff', {}],
       include_docs: true
     };
     return this.db.query('FilesAndFolder', options, function(err, results) {
@@ -1865,7 +1914,9 @@ module.exports = Replicator = (function(_super) {
       }
     }, function(err, response, body) {
       var error;
-      if ((response != null ? response.statusCode : void 0) !== 200) {
+      if ((response != null ? response.status : void 0) === 0) {
+        error = t('connexion error');
+      } else if ((response != null ? response.statusCode : void 0) !== 200) {
         error = (err != null ? err.message : void 0) || body.error || body.message;
       } else {
         error = null;
@@ -1951,7 +2002,7 @@ module.exports = Replicator = (function(_super) {
         var _ref;
         if (!err && res.status > 399) {
           console.log(res);
-          err = new Error(res.status);
+          err = new Error(res.statusText);
         }
         if (err) {
           return callback(err);
@@ -2135,6 +2186,45 @@ module.exports = Replicator = (function(_super) {
     })(this));
   };
 
+  Replicator.prototype.updateLocal = function(options, callback) {
+    var entry, file;
+    file = options.file;
+    entry = options.entry;
+    if (file._deleted) {
+      return this.removeLocal(file, callback);
+    } else if (entry.name !== file.binary.file.id + '-' + file.binary.file.rev) {
+      return DeviceStatus.checkReadyForSync((function(_this) {
+        return function(err, ready, msg) {
+          var noop;
+          if (ready) {
+            noop = function() {};
+            return _this.getBinary(file, noop, callback);
+          } else {
+            return callback();
+          }
+        };
+      })(this));
+    } else {
+      return fs.getChildren(entry, (function(_this) {
+        return function(err, children) {
+          var child;
+          if ((err == null) && children.length === 0) {
+            err = new Error('File is missing');
+          }
+          if (err) {
+            return callback(err);
+          }
+          child = children[0];
+          if (child.name === file.name) {
+            return callback();
+          } else {
+            return fs.moveTo(child, entry, file.name, callback);
+          }
+        };
+      })(this));
+    }
+  };
+
   Replicator.prototype.removeLocal = function(model, callback) {
     var binary_id, binary_rev;
     binary_id = model.binary.file.id;
@@ -2176,6 +2266,42 @@ module.exports = Replicator = (function(_super) {
     })(this));
   };
 
+  Replicator.prototype._filesNEntriesInCache = function(docs) {
+    var entries, file, fileNEntriesInCache, _i, _len;
+    fileNEntriesInCache = [];
+    for (_i = 0, _len = docs.length; _i < _len; _i++) {
+      file = docs[_i];
+      if (file.docType.toLowerCase() === 'file') {
+        entries = this.cache.filter(function(entry) {
+          return entry.name.indexOf(file.binary.file.id) !== -1;
+        });
+        if (entries.length !== 0) {
+          fileNEntriesInCache.push({
+            file: file,
+            entry: entries[0]
+          });
+        }
+      }
+    }
+    return fileNEntriesInCache;
+  };
+
+  Replicator.prototype._replicationFilter = function() {
+    var filter;
+    if (this.config.get('cozyNotifications')) {
+      filter = function(doc) {
+        var _ref, _ref1, _ref2, _ref3;
+        return ((_ref = doc.docType) != null ? _ref.toLowerCase() : void 0) === 'folder' || ((_ref1 = doc.docType) != null ? _ref1.toLowerCase() : void 0) === 'file' || ((_ref2 = doc.docType) != null ? _ref2.toLowerCase() : void 0) === 'notification' && ((_ref3 = doc.type) != null ? _ref3.toLowerCase() : void 0) === 'temporary';
+      };
+    } else {
+      filter = function(doc) {
+        var _ref, _ref1;
+        return ((_ref = doc.docType) != null ? _ref.toLowerCase() : void 0) === 'folder' || ((_ref1 = doc.docType) != null ? _ref1.toLowerCase() : void 0) === 'file';
+      };
+    }
+    return filter;
+  };
+
   Replicator.prototype.sync = function(options, callback) {
     if (this.get('inSync')) {
       return callback(null);
@@ -2191,39 +2317,30 @@ module.exports = Replicator = (function(_super) {
   };
 
   Replicator.prototype._sync = function(options, callback) {
-    var checkpoint, filter, replication, total_count, _ref;
+    var changedDocs, checkpoint, replication, total_count;
     console.log("BEGIN SYNC");
     total_count = 0;
-    if ((_ref = this.liveReplication) != null) {
-      _ref.cancel();
-    }
+    this.stopRealtime();
+    changedDocs = [];
     checkpoint = options.checkpoint || this.config.get('checkpointed');
-    if (options.notificationsOnly) {
-      filter = function(doc) {
-        var _ref1, _ref2;
-        return ((_ref1 = doc.docType) != null ? _ref1.toLowerCase() : void 0) === 'notification' && ((_ref2 = doc.type) != null ? _ref2.toLowerCase() : void 0) === 'temporary';
-      };
-    } else {
-      filter = function(doc) {
-        var _ref1, _ref2, _ref3, _ref4;
-        return ((_ref1 = doc.docType) != null ? _ref1.toLowerCase() : void 0) === 'folder' || ((_ref2 = doc.docType) != null ? _ref2.toLowerCase() : void 0) === 'file' || ((_ref3 = doc.docType) != null ? _ref3.toLowerCase() : void 0) === 'notification' && ((_ref4 = doc.type) != null ? _ref4.toLowerCase() : void 0) === 'temporary';
-      };
-    }
     replication = this.db.replicate.from(this.config.remote, {
       batch_size: 20,
       batches_limit: 5,
-      filter: filter,
+      filter: this._replicationFilter(),
       live: false,
       since: checkpoint
     });
-    replication.on('change', function(change) {
-      return console.log("REPLICATION CHANGE : " + change);
-    });
+    replication.on('change', (function(_this) {
+      return function(change) {
+        console.log("REPLICATION CHANGE");
+        return changedDocs = changedDocs.concat(change.docs);
+      };
+    })(this));
     replication.once('error', (function(_this) {
       return function(err) {
-        var _ref1;
+        var _ref;
         console.log("REPLICATOR ERROR " + (JSON.stringify(err)) + " " + err.stack);
-        if (((err != null ? (_ref1 = err.result) != null ? _ref1.status : void 0 : void 0) != null) && err.result.status === 'aborted') {
+        if (((err != null ? (_ref = err.result) != null ? _ref.status : void 0 : void 0) != null) && err.result.status === 'aborted') {
           if (replication != null) {
             replication.cancel();
           }
@@ -2236,17 +2353,22 @@ module.exports = Replicator = (function(_super) {
     return replication.once('complete', (function(_this) {
       return function(result) {
         console.log("REPLICATION COMPLETED");
-        return _this.config.save({
-          checkpointed: result.last_seq
-        }, function(err) {
-          callback(err);
-          if (!options.background) {
-            app.router.forceRefresh();
-            return _this.updateIndex(function() {
-              console.log('start Realtime');
-              return _this.startRealtime();
-            });
+        return async.eachSeries(_this._filesNEntriesInCache(changedDocs), _this.updateLocal, function(err) {
+          if (err) {
+            console.log(err);
           }
+          return _this.config.save({
+            checkpointed: result.last_seq
+          }, function(err) {
+            callback(err);
+            if (!options.background) {
+              app.router.forceRefresh();
+              return _this.updateIndex(function() {
+                console.log('start Realtime');
+                return _this.startRealtime();
+              });
+            }
+          });
         });
       };
     })(this));
@@ -2255,27 +2377,28 @@ module.exports = Replicator = (function(_super) {
   realtimeBackupCoef = 1;
 
   Replicator.prototype.startRealtime = function() {
-    if (this.liveReplication) {
+    if (this.liveReplication || !app.foreground) {
       return;
     }
     console.log('REALTIME START');
     this.liveReplication = this.db.replicate.from(this.config.remote, {
       batch_size: 20,
       batches_limit: 5,
-      filter: function(doc) {
-        var _ref, _ref1, _ref2, _ref3;
-        return ((_ref = doc.docType) != null ? _ref.toLowerCase() : void 0) === 'folder' || ((_ref1 = doc.docType) != null ? _ref1.toLowerCase() : void 0) === 'file' || ((_ref2 = doc.docType) != null ? _ref2.toLowerCase() : void 0) === 'notification' && ((_ref3 = doc.type) != null ? _ref3.toLowerCase() : void 0) === 'temporary';
-      },
+      filter: this._replicationFilter(),
       since: this.config.get('checkpointed'),
       continuous: true
     });
     this.liveReplication.on('change', (function(_this) {
-      return function(e) {
-        var event;
+      return function(change) {
+        var event, fileNEntriesInCache;
         realtimeBackupCoef = 1;
         event = new Event('realtime:onChange');
         window.dispatchEvent(event);
-        return _this.set('inSync', true);
+        _this.set('inSync', true);
+        fileNEntriesInCache = _this._filesNEntriesInCache(change.docs);
+        return async.eachSeries(fileNEntriesInCache, _this.updateLocal, function() {
+          return console.log("FILES UPDATED");
+        });
       };
     })(this));
     this.liveReplication.on('uptodate', (function(_this) {
@@ -2290,8 +2413,7 @@ module.exports = Replicator = (function(_super) {
       return function(e) {
         console.log("LIVE REPLICATION CANCELLED");
         _this.set('inSync', false);
-        _this.liveReplication = null;
-        return _this.startRealtime();
+        return _this.liveReplication = null;
       };
     })(this));
     return this.liveReplication.once('error', (function(_this) {
@@ -2303,7 +2425,37 @@ module.exports = Replicator = (function(_super) {
         }
         timeout = 1000 * (1 << realtimeBackupCoef);
         console.log("REALTIME BROKE, TRY AGAIN IN " + timeout + " " + (e.toString()));
-        return setTimeout(_this.startRealtime, timeout);
+        return _this.realtimeBackOff = setTimeout(_this.startRealtime, timeout);
+      };
+    })(this));
+  };
+
+  Replicator.prototype.stopRealtime = function() {
+    var _ref;
+    if ((_ref = this.liveReplication) != null) {
+      _ref.cancel();
+    }
+    return clearTimeout(this.realtimeBackOff);
+  };
+
+  Replicator.prototype.syncCache = function(callback) {
+    var options;
+    options = {
+      keys: this.cache.map(function(entry) {
+        return entry.name.split('-')[0];
+      }),
+      include_docs: true
+    };
+    return this.db.query('ByBinaryId', options, (function(_this) {
+      return function(err, results) {
+        var toUpdate;
+        if (err) {
+          return callback(err);
+        }
+        toUpdate = _this._filesNEntriesInCache(results.rows.map(function(row) {
+          return row.doc;
+        }));
+        return async.eachSeries(toUpdate, _this.updateLocal, callback);
       };
     })(this));
   };
@@ -2326,7 +2478,6 @@ request = require('../lib/request');
 
 module.exports = {
   backup: function(options, callback) {
-    var _ref;
     if (callback == null) {
       callback = function() {};
     }
@@ -2338,9 +2489,7 @@ module.exports = {
     };
     this.set('inBackup', true);
     this.set('backup_step', null);
-    if ((_ref = this.liveReplication) != null) {
-      _ref.cancel();
-    }
+    this.stopRealtime();
     return this._backup(options.force, (function(_this) {
       return function(err) {
         _this.set('backup_step', null);
@@ -2360,7 +2509,7 @@ module.exports = {
     })(this));
   },
   _backup: function(force, callback) {
-    return DeviceStatus.checkReadyForSync((function(_this) {
+    return DeviceStatus.checkReadyForSync(true, (function(_this) {
       return function(err, ready, msg) {
         console.log("SYNC STATUS", err, ready, msg);
         if (err) {
@@ -2371,11 +2520,18 @@ module.exports = {
         }
         console.log("WE ARE READY FOR SYNC");
         return _this.syncPictures(force, function(err) {
+          console.log("done syncPict");
           if (err) {
             return callback(err);
           }
-          return _this.syncContacts(function(err) {
-            return callback(err);
+          return _this.syncCache(function(err) {
+            console.log("done syncCache");
+            if (err) {
+              return callback(err);
+            }
+            return _this.syncContacts(function(err) {
+              return callback(err);
+            });
           });
         });
       };
@@ -2506,6 +2662,12 @@ module.exports = {
         });
         myDownloadFolder = _this.downloads.toURL().replace('file://', '');
         toUpload = [];
+        images = images.filter(function(path) {
+          return path.indexOf('/DCIM/') !== -1;
+        });
+        if (images.length === 0) {
+          callback(new Error('no images in DCIM'));
+        }
         return async.eachSeries(images, function(path, cb) {
           if (__indexOf.call(dbImages, path) >= 0) {
             return cb();
@@ -2517,7 +2679,15 @@ module.exports = {
               } else {
                 toUpload.push(path);
               }
-              return setTimeout(cb, 1);
+              return DeviceStatus.checkReadyForSync(function(err, ready, msg) {
+                if (err) {
+                  return cb(err);
+                }
+                if (!ready) {
+                  return cb(new Error(msg));
+                }
+                return setTimeout(cb, 1);
+              });
             });
           }
         }, function() {
@@ -2533,7 +2703,15 @@ module.exports = {
               if (err) {
                 console.log("ERROR " + path + " " + err);
               }
-              return setTimeout(cb, 1);
+              return DeviceStatus.checkReadyForSync(function(err, ready, msg) {
+                if (err) {
+                  return cb(err);
+                }
+                if (!ready) {
+                  return cb(new Error(msg));
+                }
+                return setTimeout(cb, 1);
+              });
             });
           }, callback);
         });
@@ -2788,7 +2966,7 @@ module.exports = ReplicatorConfig = (function(_super) {
 });
 
 require.register("replicator/replicator_mapreduce", function(exports, require, module) {
-var ContactsByLocalIdDesignDoc, DevicesByLocalIdDesignDoc, FilesAndFolderDesignDoc, LocalPathDesignDoc, NotificationsTemporaryDesignDoc, PathToBinaryDesignDoc, PhotosByLocalIdDesignDoc, PicturesDesignDoc, createOrUpdateDesign;
+var ByBinaryIdDesignDoc, ContactsByLocalIdDesignDoc, DevicesByLocalIdDesignDoc, FilesAndFolderDesignDoc, LocalPathDesignDoc, NotificationsTemporaryDesignDoc, PathToBinaryDesignDoc, PhotosByLocalIdDesignDoc, PicturesDesignDoc, createOrUpdateDesign;
 
 createOrUpdateDesign = function(db, design, callback) {
   return db.get(design._id, (function(_this) {
@@ -2835,6 +3013,21 @@ FilesAndFolderDesignDoc = {
           if (((_ref1 = doc.docType) != null ? _ref1.toLowerCase() : void 0) === 'folder') {
             return emit([doc.path, '1_' + doc.name.toLowerCase()]);
           }
+        }
+      })
+    }
+  }
+};
+
+ByBinaryIdDesignDoc = {
+  _id: '_design/ByBinaryId',
+  version: 1,
+  views: {
+    'ByBinaryId': {
+      map: Object.toString.apply(function(doc) {
+        var _ref, _ref1, _ref2;
+        if (((_ref = doc.docType) != null ? _ref.toLowerCase() : void 0) === 'file') {
+          return emit((_ref1 = doc.binary) != null ? (_ref2 = _ref1.file) != null ? _ref2.id : void 0 : void 0);
         }
       })
     }
@@ -2938,6 +3131,8 @@ module.exports = function(db, contactsDB, photosDB, callback) {
       return createOrUpdateDesign(db, NotificationsTemporaryDesignDoc, cb);
     }, function(cb) {
       return createOrUpdateDesign(db, FilesAndFolderDesignDoc, cb);
+    }, function(cb) {
+      return createOrUpdateDesign(db, ByBinaryIdDesignDoc, cb);
     }, function(cb) {
       return createOrUpdateDesign(db, PicturesDesignDoc, cb);
     }, function(cb) {
@@ -3094,7 +3289,6 @@ Notifications = require('../views/notifications');
 
 module.exports = Service = {
   initialize: function() {
-    setTimeout(window.service.workDone, 10 * 60 * 1000);
     window.app = this;
     if (window.isBrowserDebugging) {
       window.navigator = window.navigator || {};
@@ -3135,7 +3329,9 @@ module.exports = Service = {
               if (err) {
                 console.log(err);
               }
-              return setTimeout(window.service.workDone, 5 * 1000);
+              return setTimeout(function() {
+                return window.service.workDone();
+              }, 5 * 1000);
             };
             syncNotifications = function(err) {
               if (config.get('cozyNotifications')) {
@@ -3172,7 +3368,18 @@ module.exports = Service = {
 };
 
 document.addEventListener('deviceready', function() {
-  return Service.initialize();
+  var error;
+  try {
+    return Service.initialize();
+  } catch (_error) {
+    error = _error;
+    console.log('EXCEPTION SERVICE INITIALIZATION !');
+    return console.log(error);
+  } finally {
+    setTimeout(function() {
+      return window.service.workDone();
+    }, 10 * 60 * 1000);
+  }
 });
 
 });
@@ -3198,7 +3405,10 @@ module.exports = ServiceManager = (function(_super) {
   };
 
   ServiceManager.prototype.initialize = function() {
-    this.listenTo(app.replicator.config, "change:cozyNotifications", this.toggle);
+    var config;
+    config = app.replicator.config;
+    this.listenNewPictures(config, config.get('syncImages'));
+    this.toggle(config, true);
     this.listenTo(app.replicator.config, "change:syncImages", this.listenNewPictures);
     return this.checkActivated();
   };
@@ -3243,9 +3453,9 @@ module.exports = ServiceManager = (function(_super) {
 
   ServiceManager.prototype.toggle = function(config, activate) {
     if (activate) {
-      return this.deactivate();
-    } else {
       return this.activate();
+    } else {
+      return this.deactivate();
     }
   };
 
@@ -3346,7 +3556,7 @@ buf.push('</div><div class="item">');
 var __val__ = t('device name') + ' : ' + deviceName
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</div><div class="item">');
-var __val__ = t('app name') + ' v 0.1.4'
+var __val__ = t('app name') + ' v 0.1.5'
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</div><div class="item item-divider">');
 var __val__ = t('reset title')
@@ -3436,7 +3646,7 @@ buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</span>');
 if ( isFolder)
 {
-buf.push('<i class="icon ion-chevron-right"></i>');
+buf.push('<i class="cache-indicator icon ion-ios7-cloud-download-outline"></i>');
 }
 else if ( model.incache && model.version)
 {
@@ -3808,15 +4018,17 @@ module.exports = DeviceNamePickerView = (function(_super) {
     $('#btn-save').text(t('registering...'));
     return app.replicator.registerRemote(config, (function(_this) {
       return function(err) {
-        var noop;
         if (err != null) {
           return _this.displayError(t(err.message));
         } else {
           delete app.loginConfig;
           app.isFirstRun = true;
           console.log('starting first replication');
-          noop = function() {};
-          app.replicator.initialReplication(noop);
+          app.replicator.initialReplication(function(err) {
+            if (err) {
+              return alert(t(err.message));
+            }
+          });
           return app.router.navigate('config', {
             trigger: true
           });
@@ -3920,17 +4132,8 @@ module.exports = FirstSyncView = (function(_super) {
     if (step !== 3) {
       return;
     }
-    app.replicator.backup(function(err) {
-      if (err) {
-        alert(err);
-      }
-      return console.log("pics & contacts synced");
-    });
     app.isFirstRun = false;
-    app.router.navigate('folder/', {
-      trigger: true
-    });
-    return app.serviceManager.activate();
+    return app.regularStart();
   };
 
   return FirstSyncView;
@@ -4525,7 +4728,8 @@ module.exports = LoginView = (function(_super) {
   LoginView.prototype.events = function() {
     return {
       'click #btn-save': 'doSave',
-      'click #input-pass': 'doComplete'
+      'click #input-pass': 'doComplete',
+      "click a[target='_system']": 'openInSystemBrowser'
     };
   };
 
@@ -4598,9 +4802,15 @@ module.exports = LoginView = (function(_super) {
     if (~text.indexOf('CORS request rejected')) {
       text = t('connection failure');
     }
-    this.error = $('<div>').addClass('button button-full button-energized');
-    this.error.text(text);
+    this.error = $('<div>').addClass('error-msg');
+    this.error.html(text);
     return this.$(field || '#btn-save').before(this.error);
+  };
+
+  LoginView.prototype.openInSystemBrowser = function(e) {
+    window.open(e.currentTarget.href, '_system', '');
+    e.preventDefault();
+    return false;
   };
 
   return LoginView;
@@ -4730,12 +4940,25 @@ module.exports = Notifications = (function() {
     this.markAsShown = __bind(this.markAsShown, this);
     this.fetch = __bind(this.fetch, this);
     this.onSync = __bind(this.onSync, this);
+    this.activate = __bind(this.activate, this);
     options = options || {};
     this.initialize.apply(this, arguments);
   }
 
   Notifications.prototype.initialize = function() {
-    return this.listenTo(app.replicator, 'change:inSync', this.onSync);
+    var config;
+    config = app.replicator.config;
+    this.listenTo(config, 'change:cozyNotifications', this.activate);
+    return this.activate(config, config.get('cozyNotifications'));
+  };
+
+  Notifications.prototype.activate = function(config, activate) {
+    if (activate) {
+      this.listenTo(app.replicator, 'change:inSync', this.onSync);
+      return this.onSync();
+    } else {
+      return this.stopListening(app.replicator, 'change:inSync');
+    }
   };
 
   Notifications.prototype.onSync = function() {
@@ -4776,7 +4999,7 @@ module.exports = Notifications = (function() {
     if (isNaN(id)) {
       id = notification.publishDate % 10000000;
     }
-    window.plugin.notification.local.add({
+    cordova.plugins.notification.local.schedule({
       id: id,
       message: notification.text,
       title: "Cozy - " + (notification.app || 'Notification'),
