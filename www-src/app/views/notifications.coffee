@@ -6,7 +6,18 @@ module.exports = class Notifications
         @initialize.apply @, arguments
 
     initialize: ->
-        @listenTo app.replicator, 'change:inSync', @onSync
+        config = app.replicator.config
+        @listenTo config, 'change:cozyNotifications', @activate
+
+        @activate config, config.get 'cozyNotifications'
+
+    # Activate/deactivate notification display.
+    activate: (config, activate) =>
+        if activate
+            @listenTo app.replicator, 'change:inSync', @onSync
+            @onSync()
+        else
+            @stopListening app.replicator, 'change:inSync'
 
     onSync: =>
         inSync = app.replicator.get 'inSync'
@@ -23,7 +34,7 @@ module.exports = class Notifications
     # Delete doc in (locale) db.
     #
     # @TODO: may generate conflict between pouchDB and cozy's couchDB, with
-    # persistant notifcations (ie updated in couchDB). But currently only
+    # persistant notifications (ie updated in couchDB). But currently only
     # 'temporary' notifications are showed.
     markAsShown: (notification) =>
         app.replicator.db.remove notification, (err) ->
@@ -40,7 +51,7 @@ module.exports = class Notifications
         if isNaN id # if id wasn't an hexa chain, fallback on timestamp.
             id = notification.publishDate % 10000000
 
-        window.plugin.notification.local.add
+        cordova.plugins.notification.local.schedule
             id: id
             message: notification.text # The message that is displayed
             title: "Cozy - #{notification.app or 'Notification' }" # The title of the message

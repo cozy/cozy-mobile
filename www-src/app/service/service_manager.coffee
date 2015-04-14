@@ -1,3 +1,22 @@
+# Service lifecycle
+#
+# Service is started on :
+#   Repeatedly
+#
+#   if syncImage
+#       New Picture Intent
+#       New connection on Wifi
+#
+# Service do
+#   if Wifi
+#       Backup images (if syncImages)
+#       Sync
+#       Update cache
+#
+#   if cozyNotifications
+#       Sync notifications
+#       Display notifications
+#
 
 repeatingPeriod = 15 * 60 * 1000
 

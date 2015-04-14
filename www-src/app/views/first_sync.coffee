@@ -34,11 +34,6 @@ module.exports = class FirstSyncView extends BaseView
         console.log "end #{step}"
         return if step isnt 3
 
-        # start the first contact & pictures backup
-        app.replicator.backup (err) ->
-            alert err if err
-            console.log "pics & contacts synced"
-
-        # go to home
         app.isFirstRun = false
-        app.router.navigate 'folder/', trigger: true
+
+        app.regularStart()

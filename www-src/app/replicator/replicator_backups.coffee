@@ -21,7 +21,7 @@ module.exports =
 
         @set 'inBackup', true
         @set 'backup_step', null
-        @liveReplication?.cancel()
+        @stopRealtime()
         @_backup options.force, (err) =>
             @set 'backup_step', null
             @set 'inBackup', false
@@ -159,6 +159,13 @@ module.exports =
             myDownloadFolder = @downloads.toURL().replace 'file://', ''
 
             toUpload = []
+
+            # Filter images : keep only the ones from Camera
+            # TODO: Android Specific !
+            images = images.filter (path) -> path.indexOf('/DCIM/') != -1
+
+            if images.length is 0
+                callback new Error 'no images in DCIM'
 
             # step 1 scan all images, find the new ones
             async.eachSeries images, (path, cb) =>
