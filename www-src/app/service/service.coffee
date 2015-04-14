@@ -10,9 +10,6 @@ Notifications = require '../views/notifications'
 module.exports = Service =
 
     initialize: ->
-        # "Watchdog" : in all cases, kill service after 10'
-        setTimeout window.service.workDone, 10 * 60 * 1000
-
         window.app = this
 
         # Monkey patch for browser debugging
@@ -46,7 +43,11 @@ module.exports = Service =
                     delayedQuit = (err) ->
                         console.log err if err
                         # give some time to finish and close things.
-                        setTimeout window.service.workDone, 5 * 1000
+                        setTimeout ->
+                            # call this javabinding directly on object to avoid
+                            # Error 'NPMethod called on non-NPObject'
+                            window.service.workDone()
+                        , 5 * 1000
 
                     syncNotifications = (err) ->
                         if config.get 'cozyNotifications'
@@ -70,5 +71,20 @@ module.exports = Service =
                 else
                     window.service.workDone()
 
+
+
 document.addEventListener 'deviceready', ->
-    Service.initialize()
+    try
+        Service.initialize()
+
+    catch error
+        console.log 'EXCEPTION SERVICE INITIALIZATION !'
+        console.log error
+
+    finally
+        # "Watchdog" : in all cases, kill service after 10'
+        setTimeout ->
+            # call this javabinding directly on object to avoid
+            # Error 'NPMethod called on non-NPObject'
+            window.service.workDone()
+        , 10 * 60 * 1000
