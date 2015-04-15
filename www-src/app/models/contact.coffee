@@ -49,6 +49,15 @@ Contact.cozy2Cordova = (cozyContact) ->
         else
             return []
 
+    attachments2Photos = (contact) ->
+        if contact._attachments? and 'picture' of contact._attachments
+            console.log contact._attachments.picture
+            photo = new ContactField 'base64', contact._attachments.picture.data
+
+            return [photo]
+
+        return [];
+
 
     c = navigator.contacts.create
             #TODO ? id || rawId :  id
@@ -67,17 +76,22 @@ Contact.cozy2Cordova = (cozyContact) ->
             # TODO extract somes.cozyContact.datapoints    : [DataPoint]
             note: cozyContact.note
             categories: tags2Categories cozyContact.tags #
-            # TODO photo. cozyContact._attachments  : Object
+            photos: attachments2Photos cozyContact
 
     return c
 
-Contact.cordova2Cozy = (cordovaContact) ->
+Contact.cordova2Cozy = (cordovaContact, callback) ->
     contactName2N = (contactName) ->
         parts = []
         for field in ['familyName', 'givenName', 'middle', 'prefix', 'suffix']
             parts.push contactName[field] or ''
 
         return parts.join ';'
+
+
+
+
+
 
     c =
         docType: 'contact'
@@ -98,7 +112,43 @@ Contact.cordova2Cozy = (cordovaContact) ->
         # TOTO datapoints
         note: cordovaContact.note
         # TODO !tags: cordovaContact.categories
-        # _attachments  : Object
+        # _attachments: photos2Attachments cordovaContact.photos
 
-    return c
+
+    # photos2Attachments = (photos, cb) ->
+
+    console.log 'photos2Attachments'
+    unless cordovaContact.photos?.length > 0
+        return callback null, c
+
+
+    photo = cordovaContact.photos[0]
+    console.log photo
+
+    img = new Image()
+
+    img.onload = ->
+        IMAGE_DIMENSION = 600
+        ratiodim = if img.width > img.height then 'height' else 'width'
+        ratio = IMAGE_DIMENSION / img[ratiodim]
+
+        # use canvas to resize the image
+        canvas = document.createElement 'canvas'
+        canvas.height = canvas.width = IMAGE_DIMENSION
+        ctx = canvas.getContext '2d'
+        ctx.drawImage img, 0, 0, ratio * img.width, ratio * img.height
+        dataUrl = canvas.toDataURL 'image/jpeg'
+
+        c._attachments =
+            picture:
+                # content_type: 'image/jpeg'
+                content_type: 'application/octet-stream'
+                data: dataUrl.split(',')[1]
+
+
+        callback null, c
+
+    img.src = photo.value
+
+    # return c
 
