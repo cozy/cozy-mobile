@@ -148,6 +148,12 @@ module.exports = class Replicator extends Backbone.Model
                 (cb) => @copyView 'folder', cb
                 # TODO: it copies all notifications (persistent ones too).
                 (cb) => @copyView 'notification', cb
+
+                # TODO
+                (cb) => @copyView 'contact', cb
+                (cb) => @config.save contactsPullCheckpointed: last_seq, cb
+                # END TODO
+
                 (cb) => @set('initialReplicationStep', 2) and cb null
                 # Save last sequences
                 (cb) => @config.save checkpointed: last_seq, cb
@@ -452,6 +458,9 @@ module.exports = class Replicator extends Backbone.Model
     realtimeBackupCoef = 1
 
     startRealtime: =>
+        # TODO : STUB !
+        return
+
         if @liveReplication or not app.foreground
             return
 

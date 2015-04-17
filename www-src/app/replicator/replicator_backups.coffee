@@ -65,7 +65,9 @@ module.exports =
         async.series [
             @_createAccount
             @_syncPhone2Pouch
-            @_syncWithCozy
+            # @_syncWithCozy
+            @_syncToCozy
+            @_syncFromCozy
             @_syncPouch2Phone
             ], callback
 
@@ -80,167 +82,221 @@ module.exports =
             callback err
 
 
-    _syncWithCozy: (callback) =>
+    _syncToCozy: (callback) =>
         # Get contacts from the cozy (couch -> pouch replication)
-        replication = app.replicator.db.replicate.sync app.replicator.config.remote,
+        console.log "checkpointedPush: #{app.replicator.config.get 'contactsPushCheckpointed'}"
+        replication = app.replicator.db.replicate.to app.replicator.config.remote,
             batch_size: 20
             batches_limit: 5
             filter: (doc) ->
-                return doc? and doc.docType?.toLowerCase() is 'contact' and
-                    not doc._deleted # TODO ! should not need this ! # Pb with attachments ?
+                return doc? and doc.docType?.toLowerCase() is 'contact' # and
+                    #not doc._deleted # TODO ! should not need this ! # Pb with attachments ?
             live: false
-            # since: 0 # TODO checkpoints
-            attachments: false
+            #since: app.replicator.config.get 'contactsPushCheckpointed'
 
         replication.on 'change', (e) =>
             console.log "Replication Change"
             console.log e
         replication.on 'error', callback
-        replication.on 'complete', =>
+        replication.on 'complete', (result) =>
             console.log "REPLICATION COMPLETED contacts"
-            callback()
+            console.log result
+            app.replicator.config.save contactsPushCheckpointed: result.last_seq,  callback
+
+
+    _syncFromCozy: (callback) =>
+        # Get contacts from the cozy (couch -> pouch replication)
+        console.log "checkpointedPull: #{app.replicator.config.get 'contactsPullCheckpointed'}"
+        replication = app.replicator.db.replicate.from app.replicator.config.remote,
+            batch_size: 20
+            batches_limit: 5
+            filter: (doc) ->
+                return doc? and doc.docType?.toLowerCase() is 'contact' # and
+                    #not doc._deleted # TODO ! should not need this ! # Pb with attachments ?
+            live: false
+            since: app.replicator.config.get 'contactsPullCheckpointed'
+
+        replication.on 'change', (e) =>
+            console.log "Replication Change"
+            console.log e
+        replication.on 'error', callback
+        replication.on 'complete', (result) =>
+            console.log "REPLICATION COMPLETED contacts"
+            console.log result
+            app.replicator.config.save contactsPullCheckpointed: result.last_seq, callback
+
 
     _syncPouch2Phone: (callback) ->
         # TODO: option : list of changed documents.
         console.log '_syncPouch2Phone'
 
         # Get contacts list
-        app.replicator.db.query 'Contacts', { include_docs: true, attachments: true }, (err, results) ->
+        async.parallel
+            contacts: (cb) ->
+                app.replicator.db.query 'Contacts', { include_docs: true, attachments: true }, cb
+            syncInfos: (cb) ->
+                # All docs but no design ones.
+                app.replicator.contactsDB.query 'ByCozyContactId', { include_docs: true} , cb
+
+        , (err, results) ->
             if err
                 console.log err
                 return callback err
 
-            console.log results
-            #[rows: pouchContacts, rows: syncContacts] = result
+            syncInfos = {}
+            results.syncInfos.rows.forEach (row) ->
+                doc = row.doc
+                syncInfos[doc.pouchId] = doc
 
-            async.eachSeries results.rows, (row, cb) =>
+            async.eachSeries results.contacts.rows, (row, cb) =>
                 cozyContact = row.doc
-                # Find sync info related to that contact.
-                params =
-                    key: cozyContact._id
-                    include_docs: true
 
-                app.replicator.contactsDB.query 'ByCozyContactId', params, (err, result) =>
-                    # result
-                    if result.rows.length is 0
-                        console.log '# Not synced yet !'
+                if cozyContact._id of syncInfos # Contact already exists.
+                    syncInfo = syncInfos[cozyContact._id]
+                    # Mark as viewed to identify deleted contacts later.
+                    delete syncInfos[cozyContact._id]
+
+                    if syncInfo.pouchRev isnt cozyContact._rev
+                        console.log '# Needs update !'
                         contact = Contact.cozy2Cordova cozyContact
-                        app.replicator._saveContactOnPhone cozyContact, contact, {}, cb
+                        contact.id = syncInfo.localId
+                        contact.rawId = syncInfo.localRawId
+                        app.replicator._saveContactOnPhone cozyContact, contact, syncInfo, cb
 
                     else
-                        syncInfo = result.rows[0].doc
-                        if syncInfo.pouchRev isnt cozyContact._rev
-                            console.log '# Needs update !'
-                            contact = Contact.cozy2Cordova cozyContact
-                            contact.id = syncInfo.localId
-                            contact.rawId = syncInfo.localRawId
-                            app.replicator._saveContactOnPhone cozyContact, contact, syncInfo, cb
+                        cb()
 
-                        else
-                            cb()
-            , callback
+                else
+                    console.log '# Not synced yet !'
+                    contact = Contact.cozy2Cordova cozyContact
+                    app.replicator._saveContactOnPhone cozyContact, contact, {}, cb
+
+            , (err) ->
+                    return callback err if err
+                    # Remaining syncInfos are contact to delete from pouch.
+                    toDelete = _.values syncInfos
+                    console.log toDelete
+                    async.eachSeries toDelete, @_deleteContactOnPhone, callback
 
     _syncPhone2Pouch: (callback) =>
         # Get the contacts, and syncInfos.
-        options = new ContactFindOptions "", true, [], 'io.cozy', 'myCozy'
-        fields = [navigator.contacts.fieldType.id]
+        async.parallel [
+            (cb) ->
+                options = new ContactFindOptions "", true, [], 'io.cozy', 'myCozy'
+                fields = [navigator.contacts.fieldType.id]
 
-        navigator.contacts.find fields
-        , (contacts) ->
-            console.log "CONTACTS FROM PHONE : #{contacts.length}"
+                navigator.contacts.find fields
+                , (contacts) ->
+                    console.log "CONTACTS FROM PHONE : #{contacts.length}"
+                    cb null, contacts
+                , cb
+                , options
+            (cb) ->
+                # All docs but no design ones.
+                app.replicator.contactsDB.query 'ByCozyContactId', { include_docs: true} , cb
+            ],
+            (err, results) ->
+                [contacts, syncResults] = results
+                syncInfos = {}
+                console.log syncResults
+                syncResults.rows.forEach (row) ->
+                    doc = row.doc
+                    syncInfos[doc.localId] = doc
 
 
-            contacts = contacts.slice 0, 5 # STUB !
-            async.eachSeries contacts, (contact, cb) =>
-                console.log contact
+                async.eachSeries contacts, (contact, cb) =>
+                    console.log contact
 
-                params =
-                    keys: [contact.id]
-                    include_docs: true
+                    if contact.id of syncInfos  # Contact already exists
+                        syncInfo = syncInfos[contact.id]
+                        # Mark as viewed to identify deleted contacts later.
+                        delete syncInfos[contact.id]
 
-                app.replicator.contactsDB.query 'ByLocalContactId', params, (err, result) =>
-                    if err and err.status isnt 404
-                        console.log err
-                        return cb err
-
-                    if result.rows.length is 0
-                        console.log '# New contact from phone !'
-                        app.replicator._saveContactInCozy contact, null, cb
-
-                    # TODO: never reach !
-                    else # Contact already exists
-                        console.log result
-                        syncInfo = result.rows[0].doc
                         if syncInfo.localRev isnt contact.version
                             console.log '# Phone2Pouch Needs update !'
                             app.replicator._saveContactInCozy contact, syncInfo, cb
                         else
                             cb()
-            , callback
 
-        , (err) ->
+                    else
+                        console.log '# New contact from phone !'
+                        app.replicator._saveContactInCozy contact, null, cb
+
+                , (err) ->
+                    return callback err if err
+                    # Remaining syncInfos are contact to delete from pouch.
+                    toDelete = _.values syncInfos
+                    console.log toDelete
+                    async.eachSeries toDelete, @_deleteContactInCozy, callback
+
+    _deleteContactOnPhone: (syncInfo, callback) ->
+        console.log "delete contact !"
+        console.log syncInfo
+        # delete contact in phone
+        phoneContact = navigator.contacts.create { id: syncInfo.localId }
+
+        phoneContact.remove -> # onSuccess
+            # delete syncInfo object
+            app.replicator.contactsDB.remove syncInfo, callback
+
+        , callback # onError
+
+    _deleteContactInCozy: (syncInfo, callback) ->
+        console.log "delete contact !"
+        console.log syncInfo
+        # delete contact in db
+        app.replicator.db.remove syncInfo.pouchId, syncInfo.pouchRev, (err, res) ->
             return callback err if err
-        , options
 
+            # delete syncInfo object
+            app.replicator.contactsDB.remove syncInfo, callback
 
-    _saveContactInCozy: (contact, syncInfo, cb) =>
-        console.log "_saveContactInCozy"
+    _saveContactInCozy: (contact, syncInfo, callback) =>
         Contact.cordova2Cozy contact, (err, cozyContact) =>
-
             doneCallback = (err, result) =>
-                if err
-                    console.log err
-                    return cb err
+                return cb err if err
 
-                console.log "contact saved!"
                 cozyContact._id = result.id
                 cozyContact._rev = result.rev
 
-                app.replicator._updateSyncInfo cozyContact, contact, syncInfo, cb
+                app.replicator._updateSyncInfo cozyContact, contact, syncInfo \
+                    , callback
 
             if syncInfo?
                 cozyContact._id = syncInfo.pouchId
                 cozyContact._rev = syncInfo.pouchRev
-                console.log syncInfo
-                app.replicator.db.put cozyContact, syncInfo.pouchId, syncInfo.pouchRev, doneCallback
+                app.replicator.db.put cozyContact, syncInfo.pouchId, \
+                    syncInfo.pouchRev, doneCallback
 
             else
                 app.replicator.db.post cozyContact, doneCallback
 
-    _saveContactOnPhone: (cozyContact, contact, syncInfo, cb) =>
-        console.log contact
-        contact.save (c) ->
-            console.log "contact saved"
-            console.log c
-            # Update sync
-            # unless syncInfo?
-            app.replicator._updateSyncInfo cozyContact, c, syncInfo, cb
-        , (err) ->
-            console.log "error saving contact"
-            console.log err
-            cb err
-        ,
+    _saveContactOnPhone: (cozyContact, contact, syncInfo, callback) =>
+        options =
             accountType: 'io.cozy'
             accountName: 'myCozy'
 
-    _updateSyncInfo: (cozyContact, contact, syncInfo, cb) =>
+        onSuccess = (phoneContact) -> # onSuccess
+            app.replicator._updateSyncInfo cozyContact, phoneContact, syncInfo, callback
 
+        contact.save onSuccess, callback, options # onSuccess, onError, options.
+
+
+    _updateSyncInfo: (cozyContact, contact, syncInfo, callback) =>
         syncInfo = syncInfo or {}
-        console.log "_updateSyncInfo"
-        console.log cozyContact
-        console.log contact
-        console.log syncInfo
         _.extend syncInfo,
                 pouchId: cozyContact._id
                 pouchRev: cozyContact._rev
                 localId: contact.id
                 localRawId: contact.rawId
                 localRev: contact.version
+
         if syncInfo._id?
-            app.replicator.contactsDB.put syncInfo, syncInfo._id, syncInfo._rev, cb
+            app.replicator.contactsDB.put syncInfo, \
+                syncInfo._id, syncInfo._rev, callback
 
         else
-            app.replicator.contactsDB.post syncInfo, cb
+            app.replicator.contactsDB.post syncInfo, callback
 
     syncContacts_old: (callback) ->
         return callback null unless @config.get 'syncContacts'
