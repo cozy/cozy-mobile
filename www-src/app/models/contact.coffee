@@ -224,6 +224,8 @@ Contact.cordova2Cozy = (cordovaContact, callback) ->
                 # content_type: 'image/jpeg'
                 content_type: 'application/octet-stream'
                 data: dataUrl.split(',')[1]
+                # TODO
+                #revpos: _rev.split('-')[0]
 
 
         callback null, c

@@ -176,7 +176,8 @@ module.exports =
                     # Remaining syncInfos are contact to delete from pouch.
                     toDelete = _.values syncInfos
                     console.log toDelete
-                    async.eachSeries toDelete, @_deleteContactOnPhone, callback
+                    async.eachSeries toDelete, \
+                        app.replicator._deleteContactOnPhone, callback
 
     _syncPhone2Pouch: (callback) =>
         # Get the contacts, and syncInfos.
@@ -227,10 +228,11 @@ module.exports =
                     # Remaining syncInfos are contact to delete from pouch.
                     toDelete = _.values syncInfos
                     console.log toDelete
-                    async.eachSeries toDelete, @_deleteContactInCozy, callback
+                    async.eachSeries toDelete, \
+                        app.replicator._deleteContactInCozy, callback
 
     _deleteContactOnPhone: (syncInfo, callback) ->
-        console.log "delete contact !"
+        console.log "delete contact on Phone !"
         console.log syncInfo
         # delete contact in phone
         phoneContact = navigator.contacts.create { id: syncInfo.localId }
@@ -242,14 +244,24 @@ module.exports =
         , callback # onError
 
     _deleteContactInCozy: (syncInfo, callback) ->
-        console.log "delete contact !"
+        console.log "delete contact in Cozy !"
         console.log syncInfo
         # delete contact in db
-        app.replicator.db.remove syncInfo.pouchId, syncInfo.pouchRev, (err, res) ->
-            return callback err if err
+        # app.replicator.db.remove syncInfo.pouchId, syncInfo.pouchRev, (err, res) ->
+        deletedContact =
+            _id: syncInfo.pouchId
+            _rev: syncInfo.pouchRev
+            _deleted: true
+            docType: 'contact'
 
-            # delete syncInfo object
-            app.replicator.contactsDB.remove syncInfo, callback
+        # app.replicator.db.get
+        app.replicator.db.put deletedContact, \
+            syncInfo.pouchId, syncInfo.pouchRev, \
+            (err, res) ->
+                return callback err if err
+
+                # delete syncInfo object
+                app.replicator.contactsDB.remove syncInfo, callback
 
     _saveContactInCozy: (contact, syncInfo, callback) =>
         Contact.cordova2Cozy contact, (err, cozyContact) =>
@@ -259,16 +271,24 @@ module.exports =
                 cozyContact._id = result.id
                 cozyContact._rev = result.rev
 
+
                 app.replicator._updateSyncInfo cozyContact, contact, syncInfo \
                     , callback
 
             if syncInfo?
                 cozyContact._id = syncInfo.pouchId
                 cozyContact._rev = syncInfo.pouchRev
+                # TODO : clean up ! / avoid update pict on each update.
+                if cozyContact?._attachments?.picture?
+                    cozyContact._attachments.picture.revpos = syncInfo.pouchRev.split('-')[0] + 1
+
                 app.replicator.db.put cozyContact, syncInfo.pouchId, \
                     syncInfo.pouchRev, doneCallback
 
             else
+                # TODO : clean up !
+                if cozyContact?._attachments?.picture?
+                    cozyContact._attachments.picture.revpos = 1
                 app.replicator.db.post cozyContact, doneCallback
 
     _saveContactOnPhone: (cozyContact, contact, syncInfo, callback) =>
