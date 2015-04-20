@@ -6542,6 +6542,23 @@ img.backup {
   background-color: #fff;
   height: 32px;
 }
+.error-msg {
+  background-color: #fe8800;
+  color: #fff;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  line-height: 20px;
+  padding: 10px;
+  text-align: center;
+  text-overflow: ellipsis;
+  font-size: 16px;
+  border-style: solid;
+  border-color: #cb6d00;
+  border-width: 1px;
+}
+.error-msg a {
+  color: #fff;
+}
 
 
 /*# sourceMappingURL=app.css.map*/
