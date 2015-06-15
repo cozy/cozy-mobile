@@ -115,6 +115,10 @@ Contact.cozy2Cordova = (cozyContact) ->
         note: cozyContact.note
         categories: tags2Categories cozyContact.tags #
         photos: attachments2Photos cozyContact
+        sourceId: cozyContact._id
+        sync2: cozyContact._rev
+        # sync3: cozyContact.revision
+        dirty: 0
 
     dataPoints2Cordova cozyContact, c
 
@@ -175,6 +179,8 @@ Contact.cordova2Cozy = (cordovaContact, callback) ->
 
     c =
         docType: 'contact'
+        _id: cordovaContact.sourceId
+        _rev: cordovaContact.sync2
         #TODO ! id            : String
         # vCard FullName = display name
         # (Prefix Given Middle Familly Suffix), or something else.

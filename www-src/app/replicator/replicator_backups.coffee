@@ -1,4 +1,5 @@
 DeviceStatus = require '../lib/device_status'
+Utils = require './utils'
 fs = require './filesystem'
 request = require '../lib/request'
 Contact = require '../models/contact'
@@ -48,10 +49,138 @@ module.exports =
             #     @syncCache (err) =>
             #         console.log "done syncCache"
                     # return callback err if err
-            @syncContacts (err) =>
-                console.log err
-                callback err
+            # @syncContacts (err) =>
+                # console.log err
+            callback err
 
+#### Update 20150611
+
+    testSyncContacts: (callback) ->
+
+        @syncContacts (err, cozyContacts) ->
+                if err
+                    console.log 'err'
+                    console.log err
+                    return callback err
+
+                console.log cozyContacts
+                return callback cozyContacts
+
+
+        # Test plugin :
+        #
+        #* liste de tous les contacts dirty <-- OK
+        #* champs sourceId et SYNC2, 3
+        #* update d'un contact (par id ...) (sans dirty à 1 ...)
+        #* liste des contacts par sourceId . <-- OK
+
+        ##
+        # tester récupération de champs supplémentaires !!
+
+
+        # # Add contact :
+        # c = navigator.contacts.create
+        #         displayName: "Super testeuh"
+        #         name:  new ContactName "Super testeuh", "testeuh", "Super"
+        #         sync2: 'yeeee'
+        #         sync3: new Date().toISOString()
+        #         sourceId: 'machintruec'
+        #         dirty: 0
+
+        # c.save (savedContact) ->
+        #     console.log JSON.stringify savedContact, null, 2
+        #     callback savedContact
+        # , (err) ->
+        #     console.log err
+        #     callback err
+        # , { accountType: 'io.cozy', accountName: 'myCozy', callerIsSyncAdapter: true }
+
+        # options = new ContactFindOptions "1", true, [], 'io.cozy', 'myCozy'
+        # # options = new ContactFindOptions "5d82f98d0cbf088c", true, [], 'com.google', 'guillaume.jacquart@gmail.com'
+
+        # #fields = [navigator.contacts.fieldType.id]
+
+        # fields = [navigator.contacts.fieldType.dirty]
+
+        # navigator.contacts.find fields
+        # , (contacts) ->
+
+        #     console.log "CONTACTS FROM PHONE : #{contacts.length}"
+        #     console.log contacts
+        #     console.log JSON.stringify contacts[0], null, 2
+
+        #     # contact = contacts[0]
+
+        #     # contact.sync3 = "machintruc"
+        #     # contact.sourceId = "spdifeuh"
+        #     # contact.dirty = 0
+
+
+        #     # contact.save callback, callback, { accountType: 'io.cozy', accountName: 'myCozy', callerIsSyncAdapter: true }
+
+        #     callback contacts
+        # , callback
+        # , options
+
+
+# "id": "4040",
+#   "rawId": "3810",
+#   "version": 3,
+
+# "sourceId": "5d82f98d0cbf088c",
+#   "dirty": false,
+#   "sync1": "https://www.google.com/m8/feeds/contacts/guillaume.jacquart%40gmail.com/base2_property-android_linksto-gprofiles_highresphotos/5d82f98d0cbf088c",
+#   "sync2": "\"Q3Y_eTVSLi17ImA9XRVTEkQIQwQ.\"",
+#   "sync3": "2015-04-29T07:26:42.841Z",
+#   "sync4": null
+
+
+# {
+#   "id": "4052",
+#   "rawId": "3822",
+#   "version": 2,
+#   "displayName": "Dépannage électricité ERDF",
+#   "name": {
+#     "familyName": "Dépannage électricité ERDF",
+#     "middleName": "",
+#     "honorificPrefix": "",
+#     "honorificSuffix": "",
+#     "formatted": "  Dépannage électricité ERDF "
+#   },
+#   "nickname": null,
+#   "phoneNumbers": [
+#     {
+#       "id": "3822",
+#       "pref": false,
+#       "value": "09 726 750 92",
+#       "type": "other"
+#     },
+#     {
+#       "id": "3829",
+#       "pref": false,
+#       "value": "09 726 750 92",
+#       "type": "custom"
+#     }
+#   ],
+#   "emails": null,
+#   "addresses": null,
+#   "ims": null,
+#   "organizations": null,
+#   "birthday": null,
+#   "note": "",
+#   "photos": null,
+#   "categories": null,
+#   "urls": null,
+#   "sourceId": null,
+#   "dirty": true,
+#   "sync1": null,
+#   "sync2": null,
+#   "sync3": null,
+#   "sync4": null
+# }
+
+
+####
 
     syncContacts: (callback) ->
         return callback null unless @config.get 'syncContacts'
@@ -125,8 +254,91 @@ module.exports =
             console.log result
             app.replicator.config.save contactsPullCheckpointed: result.last_seq, callback
 
+    saveContactInPhone: (cozyContact, phoneContact, callback) =>
+        toSave = Contact.cozy2Cordova cozyContact
+
+        if phoneContact
+            toSave.id = phoneContact.id
+            toSave.rawId = phoneContact.rawId
+
+        options =
+            accountType: 'io.cozy'
+            accountName: 'myCozy'
+            callerIsSyncAdapter: true
+
+        toSave.save (contact)->
+            callback null, contact
+        , callback, options
+
 
     _syncPouch2Phone: (callback) ->
+        # • SyncPouch2Phone
+        # - pour les docs dont les revisions ne coincident pas / la liste de changements reçus ?
+        # • update donnée dans phone
+
+        # Get all phones and all Pouch contacts :
+        # for each _id , check sync2  == _rev ;
+        # if pouch > phone  ->
+            # update in phone (callerIsSyncAdapter)
+        # if == skip
+        # else : error ! / skip.
+
+        # Get contacts list
+        async.parallel
+            pouchContacts: (cb) ->
+                app.replicator.db.query 'Contacts', { include_docs: true, attachments: true }, cb
+
+
+            # Get all dirty contacts
+            phoneContacts: (cb) ->
+                navigator.contacts.find [navigator.contacts.fieldType.id]
+                , (contacts) ->
+                    console.log "CONTACTS FROM PHONE : #{contacts.length}"
+                    console.log contacts
+
+                    cb null, contacts
+
+
+                , cb
+                # TODO : required fields ?
+                , new ContactFindOptions "", true, [], 'io.cozy', 'myCozy'
+        , (err, res) ->
+            return callback err if err
+
+            phoneCById = Utils.array2Hash res.phoneContacts, 'sourceId'
+
+            async.map res.pouchContacts.rows, (row, cb) ->
+                pouchContact = row.doc
+                id = pouchContact._id
+                rev = pouchContact._rev
+
+                unless id of phoneCById
+                    return app.replicator.saveContactInPhone pouchContact, null, cb
+
+                phoneContact = phoneCById[id]
+
+                if rev > phoneContact.sync2
+                    app.replicator.saveContactInPhone pouchContact, phoneContact, cb
+
+
+                else if rev < phoneContact.sync2
+                    # Error !!
+                    console.log "Error, cozy late on rev !"
+                    cb()
+                else # nothing to do, skip
+                    cb()
+
+
+            , (err, updatedContacts) ->
+                return callback err if err
+                console.log "Done syncPouch2Phone"
+                console.log updatedContacts
+                callback null, updatedContacts
+
+
+
+
+    _syncPouch2PhoneOld: (callback) ->
         # TODO: option : list of changed documents.
         console.log '_syncPouch2Phone'
 
@@ -179,7 +391,70 @@ module.exports =
                     async.eachSeries toDelete, \
                         app.replicator._deleteContactOnPhone, callback
 
+
+    saveContactInPouch: (cozyContact, callback) ->
+        if cozyContact._id # update
+            if cozyContact?._attachments?.picture?
+                # TODO : clean up ! / avoid update pict on each update.
+                cozyContact._attachments.picture.revpos = cozyContact._rev.split('-')[0] + 1
+
+            app.replicator.db.put cozyContact, cozyContact._id, \
+            cozyContact._rev, callback
+
+        else # create
+            # TODO : clean up !
+            if cozyContact?._attachments?.picture?
+                cozyContact._attachments.picture.revpos = 1
+            app.replicator.db.post cozyContact, callback
+
     _syncPhone2Pouch: (callback) =>
+
+        # - pour tous les dirty :
+        # * update donnée dans pouch
+        # * update phone avec : màj rev, sourceId (si nouveau), ràz dirty.
+
+        updateInPouch = (dirtyContact, cb) ->
+            # Convert to pouch
+            Contact.cordova2Cozy dirtyContact, (err, cozyContact) ->
+                return cb err if err
+
+                # Add in pouch
+                app.replicator.saveContactInPouch cozyContact, (err, res) ->
+                    return cb err if err
+                    cozyContact._id = res.id
+                    cozyContact._rev = res.rev
+
+                    unDirty dirtyContact, cozyContact
+
+            # get id (case create), rev, and put in phone while un-dirtying.
+            unDirty = (dirtyContact, cozyContact) ->
+                dirtyContact.dirty = false
+                dirtyContact.sourceId = cozyContact._id
+                dirtyContact.sync2 = cozyContact._rev
+
+                dirtyContact.save () ->
+                    cb null, cozyContact
+                , cb
+                ,
+                    accountType: 'io.cozy'
+                    accountName: 'myCozy'
+                    callerIsSyncAdapter: true
+            # done.
+
+        # Get all dirty contacts
+        navigator.contacts.find [navigator.contacts.fieldType.dirty]
+        , (dirtyContacts) ->
+            console.log "CONTACTS FROM PHONE : #{dirtyContacts.length}"
+            console.log dirtyContacts
+
+            async.map dirtyContacts, updateInPouch, callback
+
+
+        , callback # quick fail on error.
+        , new ContactFindOptions "1", true, [], 'io.cozy', 'myCozy'
+
+
+    _syncPhone2PouchOld: (callback) =>
         # Get the contacts, and syncInfos.
         async.parallel [
             (cb) ->
