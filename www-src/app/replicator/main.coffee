@@ -16,6 +16,7 @@ module.exports = class Replicator extends Backbone.Model
 
     # backup functions (contacts & images) are in replicator_backups
     _.extend Replicator.prototype, require './replicator_backups'
+    _.extend Replicator.prototype, require './replicator_contacts'
 
     defaults: ->
         inSync: false
@@ -149,10 +150,8 @@ module.exports = class Replicator extends Backbone.Model
                 # TODO: it copies all notifications (persistent ones too).
                 (cb) => @copyView 'notification', cb
 
-                # TODO
-                (cb) => @copyView 'contact', cb
+                (cb) => @initContactsInPhone cb
                 (cb) => @config.save contactsPullCheckpointed: last_seq, cb
-                # END TODO
 
                 (cb) => @set('initialReplicationStep', 2) and cb null
                 # Save last sequences
@@ -190,6 +189,7 @@ module.exports = class Replicator extends Backbone.Model
             return callback err if err
             return callback null unless body.rows?.length
             async.eachSeries body.rows, (doc, cb) =>
+                console.log doc if model is 'contact' # TODO remove !
                 doc = doc.value
                 @db.put doc, 'new_edits':false, (err, file) =>
                     cb()

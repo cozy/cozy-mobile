@@ -118,7 +118,8 @@ Contact.cozy2Cordova = (cozyContact) ->
         sourceId: cozyContact._id
         sync2: cozyContact._rev
         # sync3: cozyContact.revision
-        dirty: 0
+        dirty: false
+        deleted: false
 
     dataPoints2Cordova cozyContact, c
 
