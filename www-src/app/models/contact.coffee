@@ -32,9 +32,8 @@ Contact.cozy2Cordova = (cozyContact) ->
     cozyContact2URLs = (contact) ->
         if contact.url
             return [
-                new ContactField 'urls',    contact.url, false
+                new ContactField 'urls', contact.url, false
                 ]
-        # TODO : look into datapoints!
         else
             return []
 
@@ -62,12 +61,8 @@ Contact.cozy2Cordova = (cozyContact) ->
             field = new ContactField datapoint.type, datapoint.value
             cordovaContact[cordovaField].push field
 
-
-
         for i, datapoint of cozyContact.datapoints
             name = datapoint.name.toUpperCase()
-
-
             switch name
                 when 'TEL'
                     addContactField 'phoneNumbers', datapoint
@@ -95,12 +90,7 @@ Contact.cozy2Cordova = (cozyContact) ->
         catch error
             return undefined
 
-
-
-
-
     c = navigator.contacts.create
-        #TODO ? id || rawId :  id
         # vCard FullName = display name
         # (Prefix Given Middle Familly Suffix), or something else.
         displayName: cozyContact.fn
@@ -115,6 +105,7 @@ Contact.cozy2Cordova = (cozyContact) ->
         note: cozyContact.note
         categories: tags2Categories cozyContact.tags #
         photos: attachments2Photos cozyContact
+
         sourceId: cozyContact._id
         sync2: cozyContact._rev
         # sync3: cozyContact.revision
@@ -126,19 +117,19 @@ Contact.cozy2Cordova = (cozyContact) ->
     return c
 
 Contact.cordova2Cozy = (cordovaContact, callback) ->
+
     contactName2N = (contactName) ->
         parts = []
         for field in ['familyName', 'givenName', 'middle', 'prefix', 'suffix']
             parts.push contactName[field] or ''
 
-        return parts.join ';'
+        n = parts.join ';'
+        return n if n isnt ';;;;'
 
 
     categories2Tags = (categories) ->
         if categories?
             return caterories.map (categorie) -> return category.value
-        else
-            return []
 
     organisations2Cozy = (organisations, cozyContact) ->
         if organisations?.length > 0
@@ -175,14 +166,11 @@ Contact.cordova2Cozy = (cordovaContact, callback) ->
 
         return datapoints
 
-
-
-
     c =
         docType: 'contact'
         _id: cordovaContact.sourceId
+        id: cordovaContact.sourceId
         _rev: cordovaContact.sync2
-        #TODO ! id            : String
         # vCard FullName = display name
         # (Prefix Given Middle Familly Suffix), or something else.
         fn: cordovaContact.displayName
@@ -191,18 +179,15 @@ Contact.cordova2Cozy = (cordovaContact, callback) ->
         n: contactName2N cordovaContact.name
         bday: cordovaContact.birthday
         nickname: cordovaContact.nickname
-        # TODO in datapoints url:
-        # TODO ? revision
-        # TOTO datapoints
+        # TODO in datapoints url: <-- ?
+        revision: new Date().toISOString()
         note: cordovaContact.note
         tags: categories2Tags cordovaContact.categories
+        # TODO _attachments.
 
     organisations2Cozy cordovaContact.organisations, c
 
     c.datapoints = cordova2Datapoints cordovaContact
-
-
-    # photos2Attachments = (photos, cb) ->
 
     console.log 'photos2Attachments'
     unless cordovaContact.photos?.length > 0
@@ -228,16 +213,10 @@ Contact.cordova2Cozy = (cordovaContact, callback) ->
 
         c._attachments =
             picture:
-                # content_type: 'image/jpeg'
                 content_type: 'application/octet-stream'
                 data: dataUrl.split(',')[1]
-                # TODO
-                #revpos: _rev.split('-')[0]
-
 
         callback null, c
 
     img.src = photo.value
-
-    # return c
 
