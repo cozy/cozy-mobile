@@ -73,30 +73,7 @@ ContactsDesignDoc =
             map: Object.toString.apply (doc) ->
                 if doc.docType?.toLowerCase() is 'contact'
                     emit doc._id
-ByCozyContactIdDesignDoc =
-    _id: '_design/ByCozyContactId'
-    version: 1
-    views:
-        'ByCozyContactId':
-            map: Object.toString.apply (doc) ->
-                emit doc.pouchId
 
-ByLocalContactIdDesignDoc =
-    _id: '_design/ByLocalContactId'
-    version: 1
-    views:
-        'ByLocalContactId':
-            map: Object.toString.apply (doc) ->
-                emit doc.localId
-
-# ContactsByLocalIdDesignDoc =
-#     _id: '_design/ContactsByLocalId'
-#     version: 1
-#     views:
-#         'ContactsByLocalId':
-#             map: Object.toString.apply (doc) ->
-#                 if doc.docType?.toLowerCase() is 'contact' and doc.localId
-#                     emit doc.localId, [doc.localVersion, doc._rev]
 
 PhotosByLocalIdDesignDoc =
     _id: '_design/PhotosByLocalId'
@@ -116,7 +93,7 @@ DevicesByLocalIdDesignDoc =
                 if doc.docType?.toLowerCase() is 'device'
                     emit doc.localId, doc
 
-module.exports = (db, contactsDB, photosDB, callback) ->
+module.exports = (db, photosDB, callback) ->
 
     async.series [
         (cb) -> createOrUpdateDesign db, NotificationsTemporaryDesignDoc, cb
@@ -126,8 +103,6 @@ module.exports = (db, contactsDB, photosDB, callback) ->
         (cb) -> createOrUpdateDesign db, LocalPathDesignDoc, cb
         (cb) -> createOrUpdateDesign db, PathToBinaryDesignDoc, cb
         (cb) -> createOrUpdateDesign db, ContactsDesignDoc, cb
-        (cb) -> createOrUpdateDesign contactsDB, ByLocalContactIdDesignDoc, cb
-        (cb) -> createOrUpdateDesign contactsDB, ByCozyContactIdDesignDoc, cb
         (cb) -> createOrUpdateDesign photosDB, PhotosByLocalIdDesignDoc, cb
         (cb) -> createOrUpdateDesign photosDB, DevicesByLocalIdDesignDoc, cb
     ], callback

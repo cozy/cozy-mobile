@@ -7,8 +7,8 @@ module.exports = class Menu extends BaseView
     template: require '../templates/menu'
     events:
         'click #close-menu': 'closeMenu'
-        'click #syncButton': 'test'
-        # 'click #syncButton': 'backup'
+        # 'click #syncButton': 'test'
+        'click #syncButton': 'backup'
         'click #btn-search': 'doSearch'
         'click a.item': 'closeMenu'
         'keydown #search-input': 'doSearchIfEnter'

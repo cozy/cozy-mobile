@@ -39,15 +39,13 @@ module.exports =
             return callback new Error(msg) unless ready
             console.log "WE ARE READY FOR SYNC"
 
-            # @syncPictures force, (err) =>
-            #     console.log "done syncPict"
-            #     return callback err if err
-            #     @syncCache (err) =>
-            #         console.log "done syncCache"
-                    # return callback err if err
-            # @syncContacts (err) =>
-                # console.log err
-            callback err
+            async.series [
+                (cb) => @syncPictures force, cb
+                (cb) => @syncCache cb
+                (cb) => @syncContacts cb
+            ], (err) ->
+                console.log "Backup done."
+                callback err
 
 
     syncPictures: (force, callback) ->
@@ -83,7 +81,7 @@ module.exports =
             images = images.filter (path) -> path.indexOf('/DCIM/') != -1
 
             if images.length is 0
-                callback new Error 'no images in DCIM'
+                return callback new Error 'no images in DCIM'
 
             # step 1 scan all images, find the new ones
             async.eachSeries images, (path, cb) =>

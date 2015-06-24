@@ -4,7 +4,6 @@ makeDesignDocs = require './replicator_mapreduce'
 ReplicatorConfig = require './replicator_config'
 DeviceStatus = require '../lib/device_status'
 DBNAME = "cozy-files.db"
-DBCONTACTS = "cozy-contacts.db"
 DBPHOTOS = "cozy-photos.db"
 DBOPTIONS = if window.isBrowserDebugging then {} else adapter: 'websql'
 
@@ -25,11 +24,9 @@ module.exports = class Replicator extends Backbone.Model
     destroyDB: (callback) ->
         @db.destroy (err) =>
             return callback err if err
-            @contactsDB.destroy (err) =>
+            @photosDB.destroy (err) =>
                 return callback err if err
-                @photosDB.destroy (err) =>
-                    return callback err if err
-                    fs.rmrf @downloads, callback
+                fs.rmrf @downloads, callback
 
     resetSynchro: (callback) ->
         @stopRealtime()
@@ -45,9 +42,8 @@ module.exports = class Replicator extends Backbone.Model
             @downloads = downloads
             @cache = cache
             @db = new PouchDB DBNAME, DBOPTIONS
-            @contactsDB = new PouchDB DBCONTACTS, DBOPTIONS
             @photosDB = new PouchDB DBPHOTOS, DBOPTIONS
-            makeDesignDocs @db, @contactsDB, @photosDB, (err) =>
+            makeDesignDocs @db, @photosDB, (err) =>
                 return callback err if err
                 @config = new ReplicatorConfig(this)
                 @config.fetch callback
@@ -189,7 +185,6 @@ module.exports = class Replicator extends Backbone.Model
             return callback err if err
             return callback null unless body.rows?.length
             async.eachSeries body.rows, (doc, cb) =>
-                console.log doc if model is 'contact' # TODO remove !
                 doc = doc.value
                 @db.put doc, 'new_edits':false, (err, file) =>
                     cb()

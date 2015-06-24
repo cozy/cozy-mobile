@@ -1220,7 +1220,7 @@ module.exports = {
   "config": "Config",
   "never": "Never",
   "phone2cozy title": "Phone to Cozy backup",
-  "contacts sync label": "Backup contacts",
+  "contacts sync label": "Sync contacts",
   "images sync label": "Backup images",
   "wifi sync label": "Backup on Wifi only",
   "cozy notifications sync label": "Sync Cozy notifications",
@@ -1388,7 +1388,7 @@ module.exports = {
   "config": "Configuration",
   "never": "Jamais",
   "phone2cozy title": "Sauvegarde du téléphone",
-  "contacts sync label": "Sauvegarde des contacts",
+  "contacts sync label": "Synchronisation des contacts",
   "images sync label": "Sauvegarde des images du téléphone",
   "wifi sync label": "Sauvegarde uniquement en Wifi",
   "cozy notifications sync label": "Synchroniser les notifications Cozy",
@@ -2058,7 +2058,7 @@ __chromeSafe = function() {
 });
 
 require.register("replicator/main", function(exports, require, module) {
-var DBCONTACTS, DBNAME, DBOPTIONS, DBPHOTOS, DeviceStatus, Replicator, ReplicatorConfig, fs, makeDesignDocs, request,
+var DBNAME, DBOPTIONS, DBPHOTOS, DeviceStatus, Replicator, ReplicatorConfig, fs, makeDesignDocs, request,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   __hasProp = {}.hasOwnProperty,
@@ -2075,8 +2075,6 @@ ReplicatorConfig = require('./replicator_config');
 DeviceStatus = require('../lib/device_status');
 
 DBNAME = "cozy-files.db";
-
-DBCONTACTS = "cozy-contacts.db";
 
 DBPHOTOS = "cozy-photos.db";
 
@@ -2121,16 +2119,11 @@ module.exports = Replicator = (function(_super) {
         if (err) {
           return callback(err);
         }
-        return _this.contactsDB.destroy(function(err) {
+        return _this.photosDB.destroy(function(err) {
           if (err) {
             return callback(err);
           }
-          return _this.photosDB.destroy(function(err) {
-            if (err) {
-              return callback(err);
-            }
-            return fs.rmrf(_this.downloads, callback);
-          });
+          return fs.rmrf(_this.downloads, callback);
         });
       };
     })(this));
@@ -2155,9 +2148,8 @@ module.exports = Replicator = (function(_super) {
         _this.downloads = downloads;
         _this.cache = cache;
         _this.db = new PouchDB(DBNAME, DBOPTIONS);
-        _this.contactsDB = new PouchDB(DBCONTACTS, DBOPTIONS);
         _this.photosDB = new PouchDB(DBPHOTOS, DBOPTIONS);
-        return makeDesignDocs(_this.db, _this.contactsDB, _this.photosDB, function(err) {
+        return makeDesignDocs(_this.db, _this.photosDB, function(err) {
           if (err) {
             return callback(err);
           }
@@ -2342,9 +2334,6 @@ module.exports = Replicator = (function(_super) {
           return callback(null);
         }
         return async.eachSeries(body.rows, function(doc, cb) {
-          if (model === 'contact') {
-            console.log(doc);
-          }
           doc = doc.value;
           return _this.db.put(doc, {
             'new_edits': false
@@ -2856,7 +2845,18 @@ module.exports = {
           return callback(new Error(msg));
         }
         console.log("WE ARE READY FOR SYNC");
-        return callback(err);
+        return async.series([
+          function(cb) {
+            return _this.syncPictures(force, cb);
+          }, function(cb) {
+            return _this.syncCache(cb);
+          }, function(cb) {
+            return _this.syncContacts(cb);
+          }
+        ], function(err) {
+          console.log("Backup done.");
+          return callback(err);
+        });
       };
     })(this));
   },
@@ -2900,7 +2900,7 @@ module.exports = {
           return path.indexOf('/DCIM/') !== -1;
         });
         if (images.length === 0) {
-          callback(new Error('no images in DCIM'));
+          return callback(new Error('no images in DCIM'));
         }
         return async.eachSeries(images, function(path, cb) {
           if (__indexOf.call(dbImages, path) >= 0) {
@@ -3242,15 +3242,16 @@ module.exports = {
           return _this.syncFromCozyToPouchToPhone(cb);
         };
       })(this)
-    ], callback);
+    ], function(err) {
+      console.log("Sync contacts done");
+      return callback(err);
+    });
   },
   createAccount: (function(_this) {
     return function(callback) {
       return navigator.contacts.createAccount(ACCOUNT_TYPE, ACCOUNT_NAME, function() {
         return callback(null);
-      }, function(err) {
-        return callback(err);
-      });
+      }, callback);
     };
   })(this),
   _updateInPouch: function(phoneContact, callback) {
@@ -3286,8 +3287,6 @@ module.exports = {
         return _this.db.put(contact, contact._id, contact._rev, function(err, idNrev) {
           if (err) {
             if (err.status === 409) {
-              console.log(err);
-              console.log(contact);
               return callback(err);
             } else {
               return callback(err);
@@ -3332,8 +3331,6 @@ module.exports = {
   },
   _deleteInPouch: function(phoneContact, callback) {
     var toDelete;
-    console.log("delete a contact");
-    console.log(phoneContact);
     toDelete = {
       docType: 'contact',
       _id: phoneContact.sourceId,
@@ -3353,15 +3350,13 @@ module.exports = {
   syncPhone2Pouch: function(callback) {
     return navigator.contacts.find([navigator.contacts.fieldType.dirty], (function(_this) {
       return function(contacts) {
-        console.log("DIRTY CONTACTS FROM PHONE : " + contacts.length);
-        console.log(contacts);
         return async.eachSeries(contacts, function(contact, cb) {
           if (contact.deleted) {
             return _this._deleteInPouch(contact, cb);
           } else if (contact.sourceId) {
-            return _this._updateInPouch(phoneContact, cb);
+            return _this._updateInPouch(contact, cb);
           } else {
-            return _this._createInPouch(phoneContact, cb);
+            return _this._createInPouch(contact, cb);
           }
         }, callback);
       };
@@ -3370,7 +3365,6 @@ module.exports = {
   _syncToCozy: (function(_this) {
     return function(callback) {
       var replication;
-      console.log("checkpointedPush: " + (app.replicator.config.get('contactsPushCheckpointed')));
       replication = app.replicator.db.replicate.to(app.replicator.config.remote, {
         batch_size: 20,
         batches_limit: 5,
@@ -3381,14 +3375,9 @@ module.exports = {
         live: false,
         since: app.replicator.config.get('contactsPushCheckpointed')
       });
-      replication.on('change', function(e) {
-        console.log("Replication Change");
-        return console.log(e);
-      });
+      replication.on('change', function(e) {});
       replication.on('error', callback);
       return replication.on('complete', function(result) {
-        console.log("REPLICATION COMPLETED contacts");
-        console.log(result);
         return app.replicator.config.save({
           contactsPushCheckpointed: result.last_seq
         }, callback);
@@ -3410,7 +3399,6 @@ module.exports = {
         resetFields: true
       };
       return toSave.save(function(contact) {
-        console.log(contact);
         return callback(null, contact);
       }, callback, options);
     };
@@ -3418,10 +3406,7 @@ module.exports = {
   _applyChangeToPhone: function(docs, callback) {
     var getBySourceId;
     getBySourceId = function(sourceId, cb) {
-      console.log("get contact: " + sourceId);
       return navigator.contacts.find([navigator.contacts.fieldType.sourceId], function(contacts) {
-        console.log("CONTACTS FROM PHONE : " + contacts.length);
-        console.log(contacts);
         return cb(null, contacts[0]);
       }, cb, new ContactFindOptions(sourceId, false, [], ACCOUNT_TYPE, ACCOUNT_NAME));
     };
@@ -3443,7 +3428,6 @@ module.exports = {
         });
       };
     })(this), function(err) {
-      console.log("done changes");
       return callback(err);
     });
   },
@@ -3456,7 +3440,6 @@ module.exports = {
         return callback;
       }
     };
-    console.log("checkpointedPull: " + (app.replicator.config.get('contactsPullCheckpointed')));
     replication = this.db.replicate.from(this.config.remote, {
       batch_size: 20,
       batches_limit: 1,
@@ -3469,16 +3452,12 @@ module.exports = {
     });
     replication.on('change', (function(_this) {
       return function(e) {
-        console.log("Replication Change");
-        console.log(e);
         return q.push($.extend(true, {}, e.docs));
       };
     })(this));
     replication.on('error', callback);
     return replication.on('complete', (function(_this) {
       return function(result) {
-        console.log("REPLICATION COMPLETED contacts");
-        console.log(result);
         return _this.config.save({
           contactsPullCheckpointed: result.last_seq
         }, function() {
@@ -3539,7 +3518,7 @@ module.exports = {
 });
 
 require.register("replicator/replicator_mapreduce", function(exports, require, module) {
-var ByBinaryIdDesignDoc, ByCozyContactIdDesignDoc, ByLocalContactIdDesignDoc, ContactsDesignDoc, DevicesByLocalIdDesignDoc, FilesAndFolderDesignDoc, LocalPathDesignDoc, NotificationsTemporaryDesignDoc, PathToBinaryDesignDoc, PhotosByLocalIdDesignDoc, PicturesDesignDoc, createOrUpdateDesign;
+var ByBinaryIdDesignDoc, ContactsDesignDoc, DevicesByLocalIdDesignDoc, FilesAndFolderDesignDoc, LocalPathDesignDoc, NotificationsTemporaryDesignDoc, PathToBinaryDesignDoc, PhotosByLocalIdDesignDoc, PicturesDesignDoc, createOrUpdateDesign;
 
 createOrUpdateDesign = function(db, design, callback) {
   return db.get(design._id, (function(_this) {
@@ -3668,30 +3647,6 @@ ContactsDesignDoc = {
   }
 };
 
-ByCozyContactIdDesignDoc = {
-  _id: '_design/ByCozyContactId',
-  version: 1,
-  views: {
-    'ByCozyContactId': {
-      map: Object.toString.apply(function(doc) {
-        return emit(doc.pouchId);
-      })
-    }
-  }
-};
-
-ByLocalContactIdDesignDoc = {
-  _id: '_design/ByLocalContactId',
-  version: 1,
-  views: {
-    'ByLocalContactId': {
-      map: Object.toString.apply(function(doc) {
-        return emit(doc.localId);
-      })
-    }
-  }
-};
-
 PhotosByLocalIdDesignDoc = {
   _id: '_design/PhotosByLocalId',
   version: 1,
@@ -3722,7 +3677,7 @@ DevicesByLocalIdDesignDoc = {
   }
 };
 
-module.exports = function(db, contactsDB, photosDB, callback) {
+module.exports = function(db, photosDB, callback) {
   return async.series([
     function(cb) {
       return createOrUpdateDesign(db, NotificationsTemporaryDesignDoc, cb);
@@ -3738,10 +3693,6 @@ module.exports = function(db, contactsDB, photosDB, callback) {
       return createOrUpdateDesign(db, PathToBinaryDesignDoc, cb);
     }, function(cb) {
       return createOrUpdateDesign(db, ContactsDesignDoc, cb);
-    }, function(cb) {
-      return createOrUpdateDesign(contactsDB, ByLocalContactIdDesignDoc, cb);
-    }, function(cb) {
-      return createOrUpdateDesign(contactsDB, ByCozyContactIdDesignDoc, cb);
     }, function(cb) {
       return createOrUpdateDesign(photosDB, PhotosByLocalIdDesignDoc, cb);
     }, function(cb) {
@@ -5443,7 +5394,7 @@ module.exports = Menu = (function(_super) {
 
   Menu.prototype.events = {
     'click #close-menu': 'closeMenu',
-    'click #syncButton': 'test',
+    'click #syncButton': 'backup',
     'click #btn-search': 'doSearch',
     'click a.item': 'closeMenu',
     'keydown #search-input': 'doSearchIfEnter'

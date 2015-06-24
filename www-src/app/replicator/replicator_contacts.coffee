@@ -55,28 +55,27 @@ module.exports =
         # 3 - Pouch2Phone.
 
         async.series [
-            # @createAccount
-                (cb) => @syncPhone2Pouch cb
-                (cb) => @_syncToCozy cb
-                (cb) => @syncFromCozyToPouchToPhone cb
-            ], callback
+            (cb) => @syncPhone2Pouch cb
+            (cb) => @_syncToCozy cb
+            (cb) => @syncFromCozyToPouchToPhone cb
+        ], (err) ->
+            console.log "Sync contacts done"
+            callback err
 
     createAccount: (callback) =>
         navigator.contacts.createAccount ACCOUNT_TYPE, ACCOUNT_NAME
         , ->
             callback null
-        , (err) ->
-            callback err
+        , callback
 
     # Sync phone to pouch components
-
     _updateInPouch: (phoneContact, callback) ->
         async.parallel
             fromPouch: (cb) =>
                 @db.get phoneContact.sourceId,  attachments: true, cb
 
             fromPhone: (cb) ->
-                    Contact.cordova2Cozy phoneContact, cb
+                Contact.cordova2Cozy phoneContact, cb
         , (err, res) =>
             return callback err if err
 
@@ -95,10 +94,6 @@ module.exports =
             @db.put contact, contact._id, contact._rev, (err, idNrev) =>
                 if err
                     if err.status is 409 # conflict, bad _rev
-                        # Try again.
-                        console.log err
-                        console.log contact
-                        # return @_updateInPouch phoneContact, callback
                         return callback err
                     else
                         return callback err
@@ -135,79 +130,8 @@ module.exports =
             accountName: ACCOUNT_NAME
             callerIsSyncAdapter: true
 
-    # Delete remaining contacts in pouch.
-    # _deleteInPouch: (contactIds, callback) ->
-    #     console.log "DELETE IN POUCH: #{Object.keys(contactIds).length} contacts."
-    #     options =
-    #         include_docs: true
-    #         attachments: false
-    #         keys: Object.keys contactIds
-
-    #     @db.query 'Contacts', options, (err, res) =>
-    #         return callback err if err
-
-    #         async.each res.rows, (row, cb) =>
-    #             toDelete =
-    #                 docType: 'contact'
-    #                 _id: row.doc._id
-    #                 _rev: row.doc._rev
-    #                 _deleted: true
-
-    #             @db.put toDelete, toDelete._id, toDelete._rev
-    #             , cb
-    #         , callback
-
-
-    # TODO : clean.
-    # syncPhone2Pouch: (callback) ->
-    #     # No deleted flags... identify delete by list comparison
-    #     # Go through each phoneContact,
-    #     # mark pouchContacts
-    #     # if dirty, updateorCreate pouchContact
-    #     #
-    #     # delete un-marked pouchContact
-
-    #     # Get contacts list
-    #     async.parallel
-    #         pouchContacts: (cb) ->
-    #             app.replicator.db.query 'Contacts', { include_docs: false, attachments: false }, cb
-
-    #         # Get all contacts
-    #         phoneContacts: (cb) ->
-    #             navigator.contacts.find [navigator.contacts.fieldType.id]
-    #             , (contacts) ->
-    #                 console.log "CONTACTS FROM PHONE : #{contacts.length}"
-    #                 console.log contacts
-
-    #                 cb null, contacts
-
-    #             , cb
-    #             , new ContactFindOptions "", true, [], ACCOUNT_TYPE, ACCOUNT_NAME
-    #     , (err, res) =>
-    #         return callback err if err
-
-    #         pouchContactIds = Utils.array2Hash res.pouchContacts.rows, 'id'
-
-    #         async.each res.phoneContacts, (phoneContact, cb) =>
-
-    #             delete pouchContactIds[phoneContact.sourceId]
-    #             if phoneContact.dirty
-    #                 if phoneContact.sourceId
-    #                     @_updateInPouch phoneContact, cb
-    #                 else
-    #                     @_createInPouch phoneContact, cb
-    #             else
-    #                 cb() # skip
-
-    #         , (err) =>
-    #             console.log pouchContactIds
-    #             return callback err if err
-    #             @_deleteInPouch pouchContactIds, callback
 
     _deleteInPouch: (phoneContact, callback) ->
-        console.log "delete a contact"
-        console.log phoneContact
-
         toDelete =
             docType: 'contact'
             _id: phoneContact.sourceId
@@ -223,16 +147,13 @@ module.exports =
         # delete, update or create....
         navigator.contacts.find [navigator.contacts.fieldType.dirty]
         , (contacts) =>
-            console.log "DIRTY CONTACTS FROM PHONE : #{contacts.length}"
-            console.log contacts
-
             async.eachSeries contacts, (contact, cb) =>
                 if contact.deleted
                     @_deleteInPouch contact, cb
                 else if contact.sourceId
-                    @_updateInPouch phoneContact, cb
+                    @_updateInPouch contact, cb
                 else
-                    @_createInPouch phoneContact, cb
+                    @_createInPouch contact, cb
             , callback
 
         , callback
@@ -241,23 +162,17 @@ module.exports =
 
     _syncToCozy: (callback) =>
         # Get contacts from the cozy (couch -> pouch replication)
-        console.log "checkpointedPush: #{app.replicator.config.get 'contactsPushCheckpointed'}"
         replication = app.replicator.db.replicate.to app.replicator.config.remote,
             batch_size: 20
             batches_limit: 5
             filter: (doc) ->
-                return doc? and doc.docType?.toLowerCase() is 'contact' # and
-                    #not doc._deleted # TODO ! should not need this ! # Pb with attachments ?
+                return doc? and doc.docType?.toLowerCase() is 'contact'
             live: false
             since: app.replicator.config.get 'contactsPushCheckpointed'
 
         replication.on 'change', (e) =>
-            console.log "Replication Change"
-            console.log e
         replication.on 'error', callback
         replication.on 'complete', (result) =>
-            console.log "REPLICATION COMPLETED contacts"
-            console.log result
             app.replicator.config.save contactsPushCheckpointed: result.last_seq,  callback
 
     _saveContactInPhone: (cozyContact, phoneContact, callback) =>
@@ -274,19 +189,14 @@ module.exports =
             resetFields: true
 
         toSave.save (contact)->
-            console.log contact
-
             callback null, contact
         , callback, options
 
 
     _applyChangeToPhone: (docs, callback) ->
         getBySourceId = (sourceId, cb) ->
-            console.log "get contact: #{sourceId}"
             navigator.contacts.find [navigator.contacts.fieldType.sourceId]
                 , (contacts) ->
-                    console.log "CONTACTS FROM PHONE : #{contacts.length}"
-                    console.log contacts
                     cb null, contacts[0]
                 , cb
                 , new ContactFindOptions sourceId, false, [], ACCOUNT_TYPE, ACCOUNT_NAME
@@ -300,7 +210,6 @@ module.exports =
                 else
                     @_saveContactInPhone doc, contact, cb
         , (err) ->
-            console.log "done changes"
             callback err
 
 
@@ -312,28 +221,19 @@ module.exports =
         q.drain = -> callback if replicationDone
 
         # Get contacts from the cozy (couch -> pouch replication)
-        console.log "checkpointedPull: #{app.replicator.config.get 'contactsPullCheckpointed'}"
         replication = @db.replicate.from @config.remote,
             batch_size: 20
             batches_limit: 1
             filter: (doc) ->
-                return doc? and doc.docType?.toLowerCase() is 'contact' # and
-                    #not doc._deleted # TODO ! should not need this ! # Pb with attachments ?
+                return doc? and doc.docType?.toLowerCase() is 'contact'
             live: false
             since: @config.get 'contactsPullCheckpointed'
 
         replication.on 'change', (e) =>
-            console.log "Replication Change"
-            console.log e
-
             q.push $.extend(true, {}, e.docs) # whitout become _id value ... !
-            # q.push e.docs
-            # @_applyChangeToPhone e.docs, ->
 
         replication.on 'error', callback
         replication.on 'complete', (result) =>
-            console.log "REPLICATION COMPLETED contacts"
-            console.log result
             @config.save contactsPullCheckpointed: result.last_seq, ->
                 replicationDone = true
                 if q.idle()
@@ -355,7 +255,6 @@ module.exports =
                     # fetch attachments if exists.
                     if doc._attachments?.picture?
                         request.get @config.makeUrl("/#{doc._id}?attachments=true")
-                        # request.get @config.makeUrl("/#{doc._id}/picture")
                         , (err, res, body) ->
                             return cb err if err
                             cb null, body

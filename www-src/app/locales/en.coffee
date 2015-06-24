@@ -8,7 +8,7 @@ module.exports =
     "config"              : "Config"
     "never"               : "Never"
     "phone2cozy title"    : "Phone to Cozy backup"
-    "contacts sync label" : "Backup contacts"
+    "contacts sync label" : "Sync contacts"
     "images sync label"   : "Backup images"
     "wifi sync label"     : "Backup on Wifi only"
     "cozy notifications sync label": "Sync Cozy notifications"
