@@ -197,26 +197,35 @@ Contact.cordova2Cozy = (cordovaContact, callback) ->
     photo = cordovaContact.photos[0]
     console.log photo
 
-    img = new Image()
-
-    img.onload = ->
-        IMAGE_DIMENSION = 600
-        ratiodim = if img.width > img.height then 'height' else 'width'
-        ratio = IMAGE_DIMENSION / img[ratiodim]
-
-        # use canvas to resize the image
-        canvas = document.createElement 'canvas'
-        canvas.height = canvas.width = IMAGE_DIMENSION
-        ctx = canvas.getContext '2d'
-        ctx.drawImage img, 0, 0, ratio * img.width, ratio * img.height
-        dataUrl = canvas.toDataURL 'image/jpeg'
-
+    if photo.type is 'base64'
         c._attachments =
-            picture:
-                content_type: 'application/octet-stream'
-                data: dataUrl.split(',')[1]
+                picture:
+                    content_type: 'application/octet-stream'
+                    data: photo.value
 
         callback null, c
 
-    img.src = photo.value
+    else if photo.type is 'url'
+        img = new Image()
+
+        img.onload = ->
+            IMAGE_DIMENSION = 600
+            ratiodim = if img.width > img.height then 'height' else 'width'
+            ratio = IMAGE_DIMENSION / img[ratiodim]
+
+            # use canvas to resize the image
+            canvas = document.createElement 'canvas'
+            canvas.height = canvas.width = IMAGE_DIMENSION
+            ctx = canvas.getContext '2d'
+            ctx.drawImage img, 0, 0, ratio * img.width, ratio * img.height
+            dataUrl = canvas.toDataURL 'image/jpeg'
+
+            c._attachments =
+                picture:
+                    content_type: 'application/octet-stream'
+                    data: dataUrl.split(',')[1]
+
+            callback null, c
+
+        img.src = photo.value
 

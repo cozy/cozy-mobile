@@ -1668,26 +1668,36 @@ Contact.cordova2Cozy = function(cordovaContact, callback) {
   }
   photo = cordovaContact.photos[0];
   console.log(photo);
-  img = new Image();
-  img.onload = function() {
-    var IMAGE_DIMENSION, canvas, ctx, dataUrl, ratio, ratiodim;
-    IMAGE_DIMENSION = 600;
-    ratiodim = img.width > img.height ? 'height' : 'width';
-    ratio = IMAGE_DIMENSION / img[ratiodim];
-    canvas = document.createElement('canvas');
-    canvas.height = canvas.width = IMAGE_DIMENSION;
-    ctx = canvas.getContext('2d');
-    ctx.drawImage(img, 0, 0, ratio * img.width, ratio * img.height);
-    dataUrl = canvas.toDataURL('image/jpeg');
+  if (photo.type === 'base64') {
     c._attachments = {
       picture: {
         content_type: 'application/octet-stream',
-        data: dataUrl.split(',')[1]
+        data: photo.value
       }
     };
     return callback(null, c);
-  };
-  return img.src = photo.value;
+  } else if (photo.type === 'url') {
+    img = new Image();
+    img.onload = function() {
+      var IMAGE_DIMENSION, canvas, ctx, dataUrl, ratio, ratiodim;
+      IMAGE_DIMENSION = 600;
+      ratiodim = img.width > img.height ? 'height' : 'width';
+      ratio = IMAGE_DIMENSION / img[ratiodim];
+      canvas = document.createElement('canvas');
+      canvas.height = canvas.width = IMAGE_DIMENSION;
+      ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, ratio * img.width, ratio * img.height);
+      dataUrl = canvas.toDataURL('image/jpeg');
+      c._attachments = {
+        picture: {
+          content_type: 'application/octet-stream',
+          data: dataUrl.split(',')[1]
+        }
+      };
+      return callback(null, c);
+    };
+    return img.src = photo.value;
+  }
 };
 
 });
@@ -3275,7 +3285,13 @@ module.exports = {
         }
         return _this.db.put(contact, contact._id, contact._rev, function(err, idNrev) {
           if (err) {
-            return callback(err);
+            if (err.status === 409) {
+              console.log(err);
+              console.log(contact);
+              return callback(err);
+            } else {
+              return callback(err);
+            }
           }
           return _this._undirty(phoneContact, idNrev, callback);
         });
@@ -3314,72 +3330,42 @@ module.exports = {
       callerIsSyncAdapter: true
     });
   },
-  _deleteInPouch: function(contactIds, callback) {
-    var options;
-    options = {
-      include_docs: true,
-      attachments: false,
-      keys: Object.keys(contactIds)
+  _deleteInPouch: function(phoneContact, callback) {
+    var toDelete;
+    console.log("delete a contact");
+    console.log(phoneContact);
+    toDelete = {
+      docType: 'contact',
+      _id: phoneContact.sourceId,
+      _rev: phoneContact.sync2,
+      _deleted: true
     };
-    return this.db.query('Contacts', options, (function(_this) {
+    return this.db.put(toDelete, toDelete._id, toDelete._rev, (function(_this) {
       return function(err, res) {
-        if (err) {
-          return callback(err);
-        }
-        return async.each(res.rows, function(row, cb) {
-          var toDelete;
-          toDelete = {
-            docType: 'contact',
-            _id: row.doc._id,
-            _rev: row.doc._rev,
-            _deleted: true
-          };
-          return _this.db.put(toDelete, toDelete._id, toDelete._rev, cb);
-        }, callback);
+        return phoneContact.remove((function() {
+          return callback();
+        }), callback, {
+          callerIsSyncAdapter: true
+        });
       };
     })(this));
   },
   syncPhone2Pouch: function(callback) {
-    return async.parallel({
-      pouchContacts: function(cb) {
-        return app.replicator.db.query('Contacts', {
-          include_docs: false,
-          attachments: false
-        }, cb);
-      },
-      phoneContacts: function(cb) {
-        return navigator.contacts.find([navigator.contacts.fieldType.id], function(contacts) {
-          console.log("CONTACTS FROM PHONE : " + contacts.length);
-          console.log(contacts);
-          return cb(null, contacts);
-        }, cb, new ContactFindOptions("", true, [], ACCOUNT_TYPE, ACCOUNT_NAME));
-      }
-    }, (function(_this) {
-      return function(err, res) {
-        var pouchContactIds;
-        if (err) {
-          return callback(err);
-        }
-        pouchContactIds = Utils.array2Hash(res.pouchContacts.rows, 'id');
-        return async.each(res.phoneContacts, function(phoneContact, cb) {
-          delete pouchContactIds[phoneContact.sourceId];
-          if (phoneContact.dirty) {
-            if (phoneContact.sourceId) {
-              return _this._updateInPouch(phoneContact, cb);
-            } else {
-              return _this._createInPouch(phoneContact, cb);
-            }
+    return navigator.contacts.find([navigator.contacts.fieldType.dirty], (function(_this) {
+      return function(contacts) {
+        console.log("DIRTY CONTACTS FROM PHONE : " + contacts.length);
+        console.log(contacts);
+        return async.eachSeries(contacts, function(contact, cb) {
+          if (contact.deleted) {
+            return _this._deleteInPouch(contact, cb);
+          } else if (contact.sourceId) {
+            return _this._updateInPouch(phoneContact, cb);
           } else {
-            return cb();
+            return _this._createInPouch(phoneContact, cb);
           }
-        }, function(err) {
-          if (err) {
-            return callback(err);
-          }
-          return _this._deleteInPouch(pouchContactIds, callback);
-        });
+        }, callback);
       };
-    })(this));
+    })(this), callback, new ContactFindOptions("1", true, [], ACCOUNT_TYPE, ACCOUNT_NAME));
   },
   _syncToCozy: (function(_this) {
     return function(callback) {
@@ -3392,7 +3378,8 @@ module.exports = {
           var _ref;
           return (doc != null) && ((_ref = doc.docType) != null ? _ref.toLowerCase() : void 0) === 'contact';
         },
-        live: false
+        live: false,
+        since: app.replicator.config.get('contactsPushCheckpointed')
       });
       replication.on('change', function(e) {
         console.log("Replication Change");
@@ -3422,7 +3409,6 @@ module.exports = {
         callerIsSyncAdapter: true,
         resetFields: true
       };
-      console.log(JSON.stringify(toSave, null, 2));
       return toSave.save(function(contact) {
         console.log(contact);
         return callback(null, contact);
@@ -3439,7 +3425,7 @@ module.exports = {
         return cb(null, contacts[0]);
       }, cb, new ContactFindOptions(sourceId, false, [], ACCOUNT_TYPE, ACCOUNT_NAME));
     };
-    return async.each(docs, (function(_this) {
+    return async.eachSeries(docs, (function(_this) {
       return function(doc, cb) {
         return getBySourceId(doc._id, function(err, contact) {
           if (err) {
@@ -3462,11 +3448,18 @@ module.exports = {
     });
   },
   syncFromCozyToPouchToPhone: function(callback) {
-    var replication;
+    var q, replication, replicationDone;
+    replicationDone = false;
+    q = async.queue(this._applyChangeToPhone.bind(this));
+    q.drain = function() {
+      if (replicationDone) {
+        return callback;
+      }
+    };
     console.log("checkpointedPull: " + (app.replicator.config.get('contactsPullCheckpointed')));
     replication = this.db.replicate.from(this.config.remote, {
       batch_size: 20,
-      batches_limit: 5,
+      batches_limit: 1,
       filter: function(doc) {
         var _ref;
         return (doc != null) && ((_ref = doc.docType) != null ? _ref.toLowerCase() : void 0) === 'contact';
@@ -3478,7 +3471,7 @@ module.exports = {
       return function(e) {
         console.log("Replication Change");
         console.log(e);
-        return _this._applyChangeToPhone(e.docs, function() {});
+        return q.push($.extend(true, {}, e.docs));
       };
     })(this));
     replication.on('error', callback);
@@ -3488,7 +3481,13 @@ module.exports = {
         console.log(result);
         return _this.config.save({
           contactsPullCheckpointed: result.last_seq
-        }, callback);
+        }, function() {
+          replicationDone = true;
+          if (q.idle()) {
+            q.drain = null;
+            return callback();
+          }
+        });
       };
     })(this));
   },
