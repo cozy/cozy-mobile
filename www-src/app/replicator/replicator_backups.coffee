@@ -41,8 +41,20 @@ module.exports =
 
             async.series [
                 (cb) => @syncPictures force, cb
-                (cb) => @syncCache cb
-                (cb) => @syncContacts cb
+                (cb) =>
+                    status = DeviceStatus.getStatus()
+                    if status.readyForSync
+                        @syncCache cb
+                    else
+                        cb status.readyForSyncMsg
+
+                (cb) =>
+                    status = DeviceStatus.getStatus()
+                    if status.readyForSync
+                        @syncContacts cb
+                    else
+                        cb status.readyForSyncMsg
+
             ], (err) ->
                 console.log "Backup done."
                 callback err
@@ -117,11 +129,11 @@ module.exports =
                     console.log "UPLOADING #{path}"
                     @uploadPicture path, device, (err) =>
                         console.log "ERROR #{path} #{err}" if err
-                        DeviceStatus.checkReadyForSync (err, ready, msg) ->
-                            return cb err if err
-                            return cb new Error msg unless ready
-
-                            setTimeout cb, 1 # don't freeze UI.
+                        if DeviceStatus.readyForSync
+                            setTimeout cb, 1  # don't freeze UI.
+                        else
+                            # stop uploading if leaves wifi and ...
+                            cb DeviceStatus.readyForSyncMsg
 
                 , callback
 

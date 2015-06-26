@@ -1,6 +1,5 @@
 request = require '../lib/request'
 Contact = require '../models/contact'
-Utils = require './utils'
 
 # Account type and name of the created android contact account.
 ACCOUNT_TYPE = 'io.cozy'
@@ -9,45 +8,11 @@ ACCOUNT_NAME = 'myCozy'
 
 module.exports =
 
-    testSyncContacts: (callback) ->
-        # @initContactsInPhone (err) ->
-        @syncContacts (err, cozyContacts) ->
-            if err
-                 console.log 'err'
-                 console.log err
-                 return callback err
-
-            console.log cozyContacts
-            return callback cozyContacts
-
-        # navigator.contacts.find [navigator.contacts.fieldType.sourceId]
-        # , (contacts) ->
-        #     console.log "CONTACTS FROM PHONE : #{contacts.length}"
-        #     console.log contacts
-
-        #     # update data and change  version :
-        #     c = contacts[0]
-        #     c.note = new Date().toISOString()
-        #     c.dirty = true
-        #    # c.sync2 = '5d40cdecca9e84d8809679a2f21e54b4'
-        #    # c.sync3 = new Date().toISOString()
-
-        #     c.save callback, callback
-        #     ,
-        #         accountType: 'com.google'
-        #         accountName: 'rogerdupondt@gmail.com'
-
-
-        # , callback
-        # , new ContactFindOptions "3e4ff6648ea6dd5c", false, [], 'com.google', 'rogerdupondt@gmail.com'
-
-
-
-
-# #
     syncContacts: (callback) ->
         return callback null unless @config.get 'syncContacts'
 
+        @set 'backup_step', 'contacts_sync'
+        @set 'backup_step_done', null
         # Phone is right on conflict.
         # Contact sync has 3 phases
         # 1 - Phone2Pouch
@@ -160,7 +125,7 @@ module.exports =
         , new ContactFindOptions "1", true, [], ACCOUNT_TYPE, ACCOUNT_NAME
 
 
-    _syncToCozy: (callback) =>
+    _syncToCozy: (callback) ->
         # Get contacts from the cozy (couch -> pouch replication)
         replication = app.replicator.db.replicate.to app.replicator.config.remote,
             batch_size: 20
@@ -170,12 +135,12 @@ module.exports =
             live: false
             since: app.replicator.config.get 'contactsPushCheckpointed'
 
-        replication.on 'change', (e) =>
+        replication.on 'change', (e) => return
         replication.on 'error', callback
         replication.on 'complete', (result) =>
             app.replicator.config.save contactsPushCheckpointed: result.last_seq,  callback
 
-    _saveContactInPhone: (cozyContact, phoneContact, callback) =>
+    _saveContactInPhone: (cozyContact, phoneContact, callback) ->
         toSave = Contact.cozy2Cordova cozyContact
 
         if phoneContact
@@ -218,7 +183,7 @@ module.exports =
 
         q = async.queue @_applyChangeToPhone.bind @
 
-        q.drain = -> callback if replicationDone
+        q.drain = -> callback() if replicationDone
 
         # Get contacts from the cozy (couch -> pouch replication)
         replication = @db.replicate.from @config.remote,
@@ -230,7 +195,7 @@ module.exports =
             since: @config.get 'contactsPullCheckpointed'
 
         replication.on 'change', (e) =>
-            q.push $.extend(true, {}, e.docs) # whitout become _id value ... !
+            q.push $.extend(true, {}, e.docs) # whitout doc become _id value !
 
         replication.on 'error', callback
         replication.on 'complete', (result) =>

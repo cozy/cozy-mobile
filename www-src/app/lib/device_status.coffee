@@ -55,3 +55,6 @@ module.exports.checkReadyForSync = (force, callback) ->
         , false
         app.replicator.config.on 'change:syncOnWifi', update
         initialized = true
+
+module.exports.getStatus = () ->
+    return { initialized, readyForSync, readyForSyncMsg, battery }

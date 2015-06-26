@@ -162,7 +162,11 @@ module.exports = {
           app.backFromOpen = false;
           return app.replicator.startRealtime();
         } else {
-          return app.replicator.backup();
+          return app.replicator.backup({}, function(err) {
+            if (err) {
+              return console.log(err);
+            }
+          });
         }
       };
     })(this), false);
@@ -183,7 +187,11 @@ module.exports = {
       device_status = require('./lib/device_status');
       device_status.update();
       backup = function() {
-        app.replicator.backup(true);
+        app.replicator.backup({}, function(err) {
+          if (err) {
+            return console.log(err);
+          }
+        });
         return window.removeEventListener('realtime:onChange', backup, false);
       };
       return window.addEventListener('realtime:onChange', backup, false);
@@ -193,7 +201,11 @@ module.exports = {
     });
     return this.router.once('collectionfetched', (function(_this) {
       return function() {
-        return app.replicator.backup();
+        return app.replicator.backup({}, function(err) {
+          if (err) {
+            return console.log(err);
+          }
+        });
       };
     })(this));
   }
@@ -606,6 +618,15 @@ module.exports.checkReadyForSync = function(force, callback) {
     app.replicator.config.on('change:syncOnWifi', update);
     return initialized = true;
   }
+};
+
+module.exports.getStatus = function() {
+  return {
+    initialized: initialized,
+    readyForSync: readyForSync,
+    readyForSyncMsg: readyForSyncMsg,
+    battery: battery
+  };
 };
 
 });
@@ -1234,10 +1255,14 @@ module.exports = {
   "reset warning": "This will erase all cozy-generated data on your phone.",
   "pull to sync": "Pull to sync",
   "syncing": "Syncing",
-  "contacts_scan": "Scanning contacts for changes",
   "contacts_sync": "Syncing contacts",
   "pictures_sync": "Syncing pictures",
+<<<<<<< HEAD
   "synchronized with": "Synchronized with",
+=======
+  "cache_sync": "Updating cache",
+  "synchronized with": "Synchronized with ",
+>>>>>>> Improve progress messages for new backups, quick stop backup on wifi lost.
   "this folder is empty": "This folder is empty.",
   "no results": "No results",
   "loading": "Loading",
@@ -1268,9 +1293,11 @@ module.exports = {
   "registering...": "Registering...",
   "setup 3/3": "Setup 3/3",
   "setup end": "End of setting",
-  "message step 0": "Step 1/3: Files synchronization.",
-  "message step 1": "Step 2/3: Folders synchronization.",
-  "message step 2": "Step 3/3: Documents preparation.",
+  "message step 0": "Step 1/5: Files synchronization.",
+  "message step 1": "Step 2/5: Folders synchronization.",
+  "message step 2": "Step 3/5: Notifications synchronization.",
+  "message step 3": "Step 4/5: Contacts synchronization.",
+  "message step 4": "Step 5/5: Documents preparation.",
   "wait message device": "Device configuration...",
   "ready message": "The application is ready to be used!",
   "waiting...": "Waiting...",
@@ -1402,10 +1429,14 @@ module.exports = {
   "reset warning": "Cela supprimera toutes les données cozy sur votre mobile (dont votre appareil).",
   "pull to sync": "Tirer pour synchroniser",
   "syncing": "En cours de synchronisation",
-  "contacts_scan": "Extraction des contacts",
   "contacts_sync": "Synchronisation des contacts",
   "pictures_sync": "Synchronisation des images",
+<<<<<<< HEAD
   "synchronized with": "Synchronisé avec",
+=======
+  "cache_update": "Mise à jour du cache",
+  "synchronized with": "Synchronisé avec ",
+>>>>>>> Improve progress messages for new backups, quick stop backup on wifi lost.
   "this folder is empty": "Ce dossier est vide.",
   "no results": "Pas de résultats",
   "loading": "Chargement",
@@ -1437,9 +1468,11 @@ module.exports = {
   "setup 3/3": "Configuration 3/3",
   "setup end": "Fin de la configuration",
   "wait message device": "Enregistrement de l'appareil…",
-  "message step 0": "Etape 1/3 : Synchronisation des fichiers.",
-  "message step 1": "Etape 2/3 : Synchronisation des dossiers.",
-  "message step 2": "Etape 3/3 : Préparation des documents.",
+  "message step 0": "Etape 1/5 : Synchronisation des fichiers.",
+  "message step 1": "Etape 2/5 : Synchronisation des dossiers.",
+  "message step 2": "Etape 3/5 : Synchronisation des notifications.",
+  "message step 3": "Etape 4/5 : Synchronisation des contacts.",
+  "message step 4": "Etape 5/5 : Préparation des documents.",
   "ready message": "L'application est prête à être utilisée !",
   "waiting...": "En attente…",
   "filesystem bug error": "Erreur dans le système de fichiers. Essayez de redémarrer votre téléphone",
@@ -2281,7 +2314,11 @@ module.exports = Replicator = (function(_super) {
           }, function(cb) {
             return _this.copyView('folder', cb);
           }, function(cb) {
+            return _this.set('initialReplicationStep', 2) && cb(null);
+          }, function(cb) {
             return _this.copyView('notification', cb);
+          }, function(cb) {
+            return _this.set('initialReplicationStep', 3) && cb(null);
           }, function(cb) {
             return _this.initContactsInPhone(cb);
           }, function(cb) {
@@ -2289,7 +2326,7 @@ module.exports = Replicator = (function(_super) {
               contactsPullCheckpointed: last_seq
             }, cb);
           }, function(cb) {
-            return _this.set('initialReplicationStep', 2) && cb(null);
+            return _this.set('initialReplicationStep', 4) && cb(null);
           }, function(cb) {
             return _this.config.save({
               checkpointed: last_seq
@@ -2301,7 +2338,7 @@ module.exports = Replicator = (function(_super) {
           }
         ], function(err) {
           console.log("end of inital replication " + (Date.now()));
-          _this.set('initialReplicationStep', 3);
+          _this.set('initialReplicationStep', 5);
           callback(err);
           return _this.updateIndex(function() {
             return console.log("Index built");
@@ -2764,6 +2801,8 @@ module.exports = Replicator = (function(_super) {
 
   Replicator.prototype.syncCache = function(callback) {
     var options;
+    this.set('backup_step', 'cache_update');
+    this.set('backup_step_done', null);
     options = {
       keys: this.cache.map(function(entry) {
         return entry.name.split('-')[0];
@@ -2772,14 +2811,20 @@ module.exports = Replicator = (function(_super) {
     };
     return this.db.query('ByBinaryId', options, (function(_this) {
       return function(err, results) {
-        var toUpdate;
+        var processed, toUpdate;
         if (err) {
           return callback(err);
         }
         toUpdate = _this._filesNEntriesInCache(results.rows.map(function(row) {
           return row.doc;
         }));
-        return async.eachSeries(toUpdate, _this.updateLocal, callback);
+        processed = 0;
+        _this.set('backup_step', 'cache_update');
+        _this.set('backup_step_total', toUpdate.length);
+        return async.eachSeries(toUpdate, function(fileNEntry, cb) {
+          _this.set('backup_step_done', processed++);
+          return _this.updateLocal(fileNEntry, cb);
+        }, callback);
       };
     })(this));
   };
@@ -2849,9 +2894,21 @@ module.exports = {
           function(cb) {
             return _this.syncPictures(force, cb);
           }, function(cb) {
-            return _this.syncCache(cb);
+            var status;
+            status = DeviceStatus.getStatus();
+            if (status.readyForSync) {
+              return _this.syncCache(cb);
+            } else {
+              return cb(status.readyForSyncMsg);
+            }
           }, function(cb) {
-            return _this.syncContacts(cb);
+            var status;
+            status = DeviceStatus.getStatus();
+            if (status.readyForSync) {
+              return _this.syncContacts(cb);
+            } else {
+              return cb(status.readyForSyncMsg);
+            }
           }
         ], function(err) {
           console.log("Backup done.");
@@ -2937,15 +2994,11 @@ module.exports = {
               if (err) {
                 console.log("ERROR " + path + " " + err);
               }
-              return DeviceStatus.checkReadyForSync(function(err, ready, msg) {
-                if (err) {
-                  return cb(err);
-                }
-                if (!ready) {
-                  return cb(new Error(msg));
-                }
+              if (DeviceStatus.readyForSync) {
                 return setTimeout(cb, 1);
-              });
+              } else {
+                return cb(DeviceStatus.readyForSyncMsg);
+              }
             });
           }, callback);
         });
@@ -3200,34 +3253,23 @@ module.exports = ReplicatorConfig = (function(_super) {
 });
 
 require.register("replicator/replicator_contacts", function(exports, require, module) {
-var ACCOUNT_NAME, ACCOUNT_TYPE, Contact, Utils, request;
+var ACCOUNT_NAME, ACCOUNT_TYPE, Contact, request;
 
 request = require('../lib/request');
 
 Contact = require('../models/contact');
-
-Utils = require('./utils');
 
 ACCOUNT_TYPE = 'io.cozy';
 
 ACCOUNT_NAME = 'myCozy';
 
 module.exports = {
-  testSyncContacts: function(callback) {
-    return this.syncContacts(function(err, cozyContacts) {
-      if (err) {
-        console.log('err');
-        console.log(err);
-        return callback(err);
-      }
-      console.log(cozyContacts);
-      return callback(cozyContacts);
-    });
-  },
   syncContacts: function(callback) {
     if (!this.config.get('syncContacts')) {
       return callback(null);
     }
+    this.set('backup_step', 'contacts_sync');
+    this.set('backup_step_done', null);
     return async.series([
       (function(_this) {
         return function(cb) {
@@ -3362,47 +3404,47 @@ module.exports = {
       };
     })(this), callback, new ContactFindOptions("1", true, [], ACCOUNT_TYPE, ACCOUNT_NAME));
   },
-  _syncToCozy: (function(_this) {
-    return function(callback) {
-      var replication;
-      replication = app.replicator.db.replicate.to(app.replicator.config.remote, {
-        batch_size: 20,
-        batches_limit: 5,
-        filter: function(doc) {
-          var _ref;
-          return (doc != null) && ((_ref = doc.docType) != null ? _ref.toLowerCase() : void 0) === 'contact';
-        },
-        live: false,
-        since: app.replicator.config.get('contactsPushCheckpointed')
-      });
-      replication.on('change', function(e) {});
-      replication.on('error', callback);
-      return replication.on('complete', function(result) {
+  _syncToCozy: function(callback) {
+    var replication;
+    replication = app.replicator.db.replicate.to(app.replicator.config.remote, {
+      batch_size: 20,
+      batches_limit: 5,
+      filter: function(doc) {
+        var _ref;
+        return (doc != null) && ((_ref = doc.docType) != null ? _ref.toLowerCase() : void 0) === 'contact';
+      },
+      live: false,
+      since: app.replicator.config.get('contactsPushCheckpointed')
+    });
+    replication.on('change', (function(_this) {
+      return function(e) {};
+    })(this));
+    replication.on('error', callback);
+    return replication.on('complete', (function(_this) {
+      return function(result) {
         return app.replicator.config.save({
           contactsPushCheckpointed: result.last_seq
         }, callback);
-      });
-    };
-  })(this),
-  _saveContactInPhone: (function(_this) {
-    return function(cozyContact, phoneContact, callback) {
-      var options, toSave;
-      toSave = Contact.cozy2Cordova(cozyContact);
-      if (phoneContact) {
-        toSave.id = phoneContact.id;
-        toSave.rawId = phoneContact.rawId;
-      }
-      options = {
-        accountType: ACCOUNT_TYPE,
-        accountName: ACCOUNT_NAME,
-        callerIsSyncAdapter: true,
-        resetFields: true
       };
-      return toSave.save(function(contact) {
-        return callback(null, contact);
-      }, callback, options);
+    })(this));
+  },
+  _saveContactInPhone: function(cozyContact, phoneContact, callback) {
+    var options, toSave;
+    toSave = Contact.cozy2Cordova(cozyContact);
+    if (phoneContact) {
+      toSave.id = phoneContact.id;
+      toSave.rawId = phoneContact.rawId;
+    }
+    options = {
+      accountType: ACCOUNT_TYPE,
+      accountName: ACCOUNT_NAME,
+      callerIsSyncAdapter: true,
+      resetFields: true
     };
-  })(this),
+    return toSave.save(function(contact) {
+      return callback(null, contact);
+    }, callback, options);
+  },
   _applyChangeToPhone: function(docs, callback) {
     var getBySourceId;
     getBySourceId = function(sourceId, cb) {
@@ -3437,7 +3479,7 @@ module.exports = {
     q = async.queue(this._applyChangeToPhone.bind(this));
     q.drain = function() {
       if (replicationDone) {
-        return callback;
+        return callback();
       }
     };
     replication = this.db.replicate.from(this.config.remote, {
@@ -3704,15 +3746,11 @@ module.exports = function(db, photosDB, callback) {
 });
 
 require.register("replicator/utils", function(exports, require, module) {
-module.exports.array2Hash = function(array, key) {
-  var obj;
-  obj = _.object(_.pluck(array, key), array);
-  return obj;
-};
+
 
 });
 
-require.register("router", function(exports, require, module) {
+;require.register("router", function(exports, require, module) {
 var ConfigView, DeviceNamePickerView, FirstSyncView, FolderCollection, FolderView, LoginView, Router, app,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   __hasProp = {}.hasOwnProperty;
@@ -3872,7 +3910,7 @@ module.exports = Service = {
         window.t = _this.polyglot.t.bind(_this.polyglot);
         _this.replicator = new Replicator();
         return _this.replicator.init(function(err, config) {
-          var delayedQuit, syncNotifications;
+          var DeviceStatus, delayedQuit, syncNotifications;
           if (err) {
             console.log(err, err.stack);
             return window.service.workDone();
@@ -3880,6 +3918,10 @@ module.exports = Service = {
           if (config.remote) {
             if (config.get('cozyNotifications')) {
               _this.notificationManager = new Notifications();
+              DeviceStatus = require('../lib/device_status');
+              document.addEventListener('offline', function() {
+                return DeviceStatus.update();
+              }, false);
             }
             delayedQuit = function(err) {
               if (err) {
@@ -3899,7 +3941,7 @@ module.exports = Service = {
                 return delayedQuit();
               }
             };
-            if (config.get('syncImages')) {
+            if (config.get('syncImages' || config.get('syncContacts'))) {
               return app.replicator.backup({
                 background: true
               }, function(err) {
@@ -4625,11 +4667,13 @@ module.exports = DeviceNamePickerView = (function(_super) {
 });
 
 require.register("views/first_sync", function(exports, require, module) {
-var BaseView, FirstSyncView,
+var BaseView, FirstSyncView, LAST_STEP,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   __hasProp = {}.hasOwnProperty;
 
 BaseView = require('../lib/base_view');
+
+LAST_STEP = 5;
 
 module.exports = FirstSyncView = (function(_super) {
   __extends(FirstSyncView, _super);
@@ -4652,7 +4696,7 @@ module.exports = FirstSyncView = (function(_super) {
     var buttonText, messageText, step;
     step = app.replicator.get('initialReplicationStep');
     console.log("onChange : " + step);
-    if (step === 3) {
+    if (step === LAST_STEP) {
       messageText = t('ready message');
       buttonText = t('end');
     } else {
@@ -4673,14 +4717,14 @@ module.exports = FirstSyncView = (function(_super) {
     var step;
     step = replicator.get('initialReplicationStep');
     this.$('#finishSync .progress').text(t("message step " + step));
-    return (this.render() === step && step === 3);
+    return (this.render() === step && step === LAST_STEP);
   };
 
   FirstSyncView.prototype.end = function() {
     var step;
     step = parseInt(app.replicator.get('initialReplicationStep'));
     console.log("end " + step);
-    if (step !== 3) {
+    if (step !== LAST_STEP) {
       return;
     }
     app.isFirstRun = false;
@@ -5113,7 +5157,7 @@ module.exports = Layout = (function(_super) {
       return function() {
         var step, text;
         step = app.replicator.get('backup_step');
-        if (step && (step !== 'pictures_scan' && step !== 'contacts_scan')) {
+        if (step && (step !== 'pictures_scan')) {
           text = t(step);
           if (app.replicator.get('backup_step_done')) {
             text += ": " + (app.replicator.get('backup_step_done'));

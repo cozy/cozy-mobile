@@ -29,7 +29,7 @@ module.exports = class ServiceManager extends Backbone.Model
         config = app.replicator.config
         # Initialize plugin with current config values.
         @listenNewPictures config, config.get 'syncImages'
-        @toggle config, true
+        @toggle config, true # force activate.
 
         # Listen to updates.
         @listenTo app.replicator.config, "change:syncImages", @listenNewPictures
