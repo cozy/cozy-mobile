@@ -1,6 +1,6 @@
 fs     = require 'fs'
 {exec} = require 'child_process'
-async  = require './www-src/vendor/scripts/async'
+async  = require './www-src/vendor/scripts/async.1.2.1'
 
 plugins = {
     "com.fgomiero.cordova.externafileutil": "https://github.com/aenario/cordova-external-file-open"
@@ -10,11 +10,13 @@ plugins = {
     "io.cozy.cordova-images-browser": "https://github.com/aenario/cordova-images-browser"
     "io.cozy.jsbackgroundservice": "https://github.com/jacquarg/cordova-jsbackgroundservice"
     "io.cozy.jsbgservice-newpicture": "https://github.com/jacquarg/cordova-jsbgservice-newpicture"
+    "io.cozy.contacts": "https://github.com/jacquarg/cordova-plugin-contacts"
     "org.apache.cordova.battery-status": "org.apache.cordova.battery-status@0.2.12"
     "org.apache.cordova.network-information": "https://git-wip-us.apache.org/repos/asf/cordova-plugin-network-information.git#r0.2.15"
     "org.apache.cordova.globalization": "org.apache.cordova.globalization@0.3.4 "
     "de.appplant.cordova.plugin.local-notification": "de.appplant.cordova.plugin.local-notification@0.8.1"
-    "org.apache.cordova.inappbrowser": "org.apache.cordova.inappbrowser@0.6.0"
+    "org.apache.cordova.inappbrowser": "org.apache.cordova.inappbrowser@0.6.0",
+
 }
 
 platforms = ['ios', 'android']

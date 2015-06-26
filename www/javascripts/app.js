@@ -1257,12 +1257,8 @@ module.exports = {
   "syncing": "Syncing",
   "contacts_sync": "Syncing contacts",
   "pictures_sync": "Syncing pictures",
-<<<<<<< HEAD
-  "synchronized with": "Synchronized with",
-=======
   "cache_sync": "Updating cache",
   "synchronized with": "Synchronized with ",
->>>>>>> Improve progress messages for new backups, quick stop backup on wifi lost.
   "this folder is empty": "This folder is empty.",
   "no results": "No results",
   "loading": "Loading",
@@ -1345,9 +1341,9 @@ module.exports = {
   "reset warning": "Esto suprimirá todos los datos cozy de su teléfono.",
   "pull to sync": "Arrastrar para sincronizar",
   "syncing": "En curso de sincronización",
-  "contacts_scan": "Extracción de contactos para los cambios",
   "contacts_sync": "Sincronización de los contactos",
   "pictures_sync": "Sincronización de las imágenes",
+  "cache_update": "Actualización de la caché",
   "synchronized with": "Sincronizado con",
   "this folder is empty": "Esta carpeta está vacía",
   "no results": "No hay resultados",
@@ -1379,9 +1375,11 @@ module.exports = {
   "registering...": "Registrando...",
   "setup 3/3": "Configuración 3/3",
   "setup end": "Fin de la configuración",
-  "message step 0": "Etapa 1/3: Sincronización de los archivos.",
-  "message step 1": "Etapa 2/3: Sincronización de las carpetas.",
-  "message step 2": "Preparación de los documentos.",
+  "message step 0": "Etapa 1/5: Sincronización de los archivos.",
+  "message step 1": "Etapa 2/5: Sincronización de las carpetas.",
+  "message step 2": "Etapa 3/5: Sincronización de las notificaciones.",
+  "message step 3": "Etapa 4/5: Sincronización de los contactos.",
+  "message step 4": "Etapa 5/5: Preparación de los documentos.",
   "wait message device": "Configuración del periférico...",
   "ready message": "¡La aplicación está lista para su uso!",
   "waiting...": "En espera...",
@@ -1431,12 +1429,8 @@ module.exports = {
   "syncing": "En cours de synchronisation",
   "contacts_sync": "Synchronisation des contacts",
   "pictures_sync": "Synchronisation des images",
-<<<<<<< HEAD
-  "synchronized with": "Synchronisé avec",
-=======
   "cache_update": "Mise à jour du cache",
   "synchronized with": "Synchronisé avec ",
->>>>>>> Improve progress messages for new backups, quick stop backup on wifi lost.
   "this folder is empty": "Ce dossier est vide.",
   "no results": "Pas de résultats",
   "loading": "Chargement",
