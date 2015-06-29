@@ -9,6 +9,8 @@ module.exports = Contact
 Contact.cozy2Cordova = (cozyContact) ->
     # Helpers :
     n2ContactName = (n) ->
+        return undefined unless n?
+
         parts =  n.split ';'
         [familyName, givenName, middle, prefix, suffix] = parts
 
@@ -83,12 +85,6 @@ Contact.cozy2Cordova = (cozyContact) ->
                 when 'SOCIAL' or 'URL'
                     addContactField 'urls', datapoint
 
-    cleanBDay = (bday) ->
-        try
-            d = new Date bday
-            return d.valueOf()
-        catch error
-            return undefined
 
     c = navigator.contacts.create
         # vCard FullName = display name
@@ -119,6 +115,7 @@ Contact.cozy2Cordova = (cozyContact) ->
 Contact.cordova2Cozy = (cordovaContact, callback) ->
 
     contactName2N = (contactName) ->
+        return undefined unless contactName?
         parts = []
         for field in ['familyName', 'givenName', 'middle', 'prefix', 'suffix']
             parts.push contactName[field] or ''

@@ -1496,9 +1496,12 @@ Contact = {};
 module.exports = Contact;
 
 Contact.cozy2Cordova = function(cozyContact) {
-  var attachments2Photos, c, cleanBDay, cozyContact2ContactOrganizations, cozyContact2URLs, dataPoints2Cordova, n2ContactName, tags2Categories;
+  var attachments2Photos, c, cozyContact2ContactOrganizations, cozyContact2URLs, dataPoints2Cordova, n2ContactName, tags2Categories;
   n2ContactName = function(n) {
     var familyName, formatted, givenName, middle, parts, prefix, suffix, validParts;
+    if (n == null) {
+      return void 0;
+    }
     parts = n.split(';');
     familyName = parts[0], givenName = parts[1], middle = parts[2], prefix = parts[3], suffix = parts[4];
     validParts = parts.filter(function(part) {
@@ -1579,16 +1582,6 @@ Contact.cozy2Cordova = function(cozyContact) {
     }
     return _results;
   };
-  cleanBDay = function(bday) {
-    var d, error;
-    try {
-      d = new Date(bday);
-      return d.valueOf();
-    } catch (_error) {
-      error = _error;
-      return void 0;
-    }
-  };
   c = navigator.contacts.create({
     displayName: cozyContact.fn,
     name: n2ContactName(cozyContact.n),
@@ -1612,6 +1605,9 @@ Contact.cordova2Cozy = function(cordovaContact, callback) {
   var c, categories2Tags, contactName2N, cordova2Datapoints, img, organisations2Cozy, photo, _ref;
   contactName2N = function(contactName) {
     var field, n, parts, _i, _len, _ref;
+    if (contactName == null) {
+      return void 0;
+    }
     parts = [];
     _ref = ['familyName', 'givenName', 'middle', 'prefix', 'suffix'];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
