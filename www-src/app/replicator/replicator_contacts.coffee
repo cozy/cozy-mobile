@@ -59,7 +59,10 @@ module.exports =
             @db.put contact, contact._id, contact._rev, (err, idNrev) =>
                 if err
                     if err.status is 409 # conflict, bad _rev
-                        return callback err
+                        console.log "UpdateInPouch, immediate conflict with #{contact._id}."
+                        console.log err
+                        # no error, no undirty, will try again next step.
+                        return callback null
                     else
                         return callback err
 

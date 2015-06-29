@@ -3319,7 +3319,9 @@ module.exports = {
         return _this.db.put(contact, contact._id, contact._rev, function(err, idNrev) {
           if (err) {
             if (err.status === 409) {
-              return callback(err);
+              console.log("UpdateInPouch, immediate conflict with " + contact._id + ".");
+              console.log(err);
+              return callback(null);
             } else {
               return callback(err);
             }
