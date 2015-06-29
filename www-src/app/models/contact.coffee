@@ -128,18 +128,18 @@ Contact.cordova2Cozy = (cordovaContact, callback) ->
         if categories?
             return caterories.map (categorie) -> return category.value
 
-    organisations2Cozy = (organisations, cozyContact) ->
-        if organisations?.length > 0
-            organisation = organisations[0]
-            cozyContact.org = organisation.name
-            cozyContact.department = organisation.department
-            cozyContact.title = organisation.title
+    organizations2Cozy = (organizations, cozyContact) ->
+        if organizations?.length > 0
+            organization = organizations[0]
+            cozyContact.org = organization.name
+            cozyContact.department = organization.department
+            cozyContact.title = organization.title
 
     cordova2Datapoints = (cordovaContact) ->
         datapoints = []
         field2Name =
             'phoneNumbers': 'tel'
-            'emails': 'mail'
+            'emails': 'email'
             'ims': 'chat'
             'urls': 'social'
 
@@ -182,7 +182,7 @@ Contact.cordova2Cozy = (cordovaContact, callback) ->
         tags: categories2Tags cordovaContact.categories
         # TODO _attachments.
 
-    organisations2Cozy cordovaContact.organisations, c
+    organizations2Cozy cordovaContact.organizations, c
 
     c.datapoints = cordova2Datapoints cordovaContact
 

@@ -1602,7 +1602,7 @@ Contact.cozy2Cordova = function(cozyContact) {
 };
 
 Contact.cordova2Cozy = function(cordovaContact, callback) {
-  var c, categories2Tags, contactName2N, cordova2Datapoints, img, organisations2Cozy, photo, _ref;
+  var c, categories2Tags, contactName2N, cordova2Datapoints, img, organizations2Cozy, photo, _ref;
   contactName2N = function(contactName) {
     var field, n, parts, _i, _len, _ref;
     if (contactName == null) {
@@ -1626,13 +1626,13 @@ Contact.cordova2Cozy = function(cordovaContact, callback) {
       });
     }
   };
-  organisations2Cozy = function(organisations, cozyContact) {
-    var organisation;
-    if ((organisations != null ? organisations.length : void 0) > 0) {
-      organisation = organisations[0];
-      cozyContact.org = organisation.name;
-      cozyContact.department = organisation.department;
-      return cozyContact.title = organisation.title;
+  organizations2Cozy = function(organizations, cozyContact) {
+    var organization;
+    if ((organizations != null ? organizations.length : void 0) > 0) {
+      organization = organizations[0];
+      cozyContact.org = organization.name;
+      cozyContact.department = organization.department;
+      return cozyContact.title = organization.title;
     }
   };
   cordova2Datapoints = function(cordovaContact) {
@@ -1640,7 +1640,7 @@ Contact.cordova2Cozy = function(cordovaContact, callback) {
     datapoints = [];
     field2Name = {
       'phoneNumbers': 'tel',
-      'emails': 'mail',
+      'emails': 'email',
       'ims': 'chat',
       'urls': 'social'
     };
@@ -1683,7 +1683,7 @@ Contact.cordova2Cozy = function(cordovaContact, callback) {
     note: cordovaContact.note,
     tags: categories2Tags(cordovaContact.categories)
   };
-  organisations2Cozy(cordovaContact.organisations, c);
+  organizations2Cozy(cordovaContact.organizations, c);
   c.datapoints = cordova2Datapoints(cordovaContact);
   console.log('photos2Attachments');
   if (!(((_ref = cordovaContact.photos) != null ? _ref.length : void 0) > 0)) {
