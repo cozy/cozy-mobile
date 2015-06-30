@@ -215,8 +215,8 @@ module.exports = {
 
 require.register("collections/files", function(exports, require, module) {
 var File, FileAndFolderCollection, PAGE_LENGTH,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __hasProp = {}.hasOwnProperty;
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 File = require('../models/file');
 
@@ -455,8 +455,8 @@ document.addEventListener('deviceready', function() {
 
 require.register("lib/base_view", function(exports, require, module) {
 var BaseView,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __hasProp = {}.hasOwnProperty;
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 module.exports = BaseView = (function(_super) {
   __extends(BaseView, _super);
@@ -1111,8 +1111,8 @@ module.exports = request;
 require.register("lib/view_collection", function(exports, require, module) {
 var BaseView, ViewCollection,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __hasProp = {}.hasOwnProperty;
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 BaseView = require('lib/base_view');
 
@@ -1727,8 +1727,8 @@ Contact.cordova2Cozy = function(cordovaContact, callback) {
 
 require.register("models/file", function(exports, require, module) {
 var File,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __hasProp = {}.hasOwnProperty;
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 module.exports = File = (function(_super) {
   __extends(File, _super);
@@ -1759,7 +1759,7 @@ module.exports = File = (function(_super) {
     var name, path;
     name = this.get('name');
     if (path = this.get('path')) {
-      return (path.slice(1)) + "/" + name;
+      return "" + (path.slice(1)) + "/" + name;
     } else {
       return name;
     }
@@ -2083,8 +2083,8 @@ __chromeSafe = function() {
 require.register("replicator/main", function(exports, require, module) {
 var DBNAME, DBOPTIONS, DBPHOTOS, DeviceStatus, Replicator, ReplicatorConfig, fs, makeDesignDocs, request,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
 request = require('../lib/request');
@@ -3161,16 +3161,16 @@ module.exports = {
 
 require.register("replicator/replicator_config", function(exports, require, module) {
 var ReplicatorConfig, basic,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __hasProp = {}.hasOwnProperty;
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 basic = require('../lib/basic');
 
 module.exports = ReplicatorConfig = (function(_super) {
   __extends(ReplicatorConfig, _super);
 
-  function ReplicatorConfig(_at_replicator) {
-    this.replicator = _at_replicator;
+  function ReplicatorConfig(replicator) {
+    this.replicator = replicator;
     ReplicatorConfig.__super__.constructor.call(this, null);
     this.remote = null;
   }
@@ -3744,8 +3744,8 @@ require.register("replicator/utils", function(exports, require, module) {
 
 ;require.register("router", function(exports, require, module) {
 var ConfigView, DeviceNamePickerView, FirstSyncView, FolderCollection, FolderView, LoginView, Router, app,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __hasProp = {}.hasOwnProperty;
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 app = require('application');
 
@@ -3976,8 +3976,8 @@ document.addEventListener('deviceready', function() {
 
 require.register("service/service_manager", function(exports, require, module) {
 var ServiceManager, repeatingPeriod,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __hasProp = {}.hasOwnProperty;
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 repeatingPeriod = 15 * 60 * 1000;
 
@@ -4141,7 +4141,7 @@ buf.push('</div><div class="item">');
 var __val__ = t('device name') + ' : ' + deviceName
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</div><div class="item">');
-var __val__ = t('app name') + ' v 0.1.5'
+var __val__ = t('app name') + ' v 0.1.6'
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</div><div class="item item-divider">');
 var __val__ = t('reset title')
@@ -4338,8 +4338,8 @@ return buf.join("");
 
 require.register("views/breadcrumbs", function(exports, require, module) {
 var BaseView, BreadcrumbsView,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __hasProp = {}.hasOwnProperty;
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 BaseView = require('../lib/base_view');
 
@@ -4440,8 +4440,8 @@ module.exports = BreadcrumbsView = (function(_super) {
 
 require.register("views/config", function(exports, require, module) {
 var BaseView, ConfigView,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __hasProp = {}.hasOwnProperty;
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 BaseView = require('../lib/base_view');
 
@@ -4547,8 +4547,8 @@ module.exports = ConfigView = (function(_super) {
 
 require.register("views/device_name_picker", function(exports, require, module) {
 var BaseView, DeviceNamePickerView,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __hasProp = {}.hasOwnProperty;
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 BaseView = require('../lib/base_view');
 
@@ -4660,8 +4660,8 @@ module.exports = DeviceNamePickerView = (function(_super) {
 
 require.register("views/first_sync", function(exports, require, module) {
 var BaseView, FirstSyncView, LAST_STEP,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __hasProp = {}.hasOwnProperty;
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 BaseView = require('../lib/base_view');
 
@@ -4732,8 +4732,8 @@ module.exports = FirstSyncView = (function(_super) {
 require.register("views/folder", function(exports, require, module) {
 var CollectionView, FolderView,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __hasProp = {}.hasOwnProperty;
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 CollectionView = require('../lib/view_collection');
 
@@ -4906,8 +4906,8 @@ module.exports = FolderView = (function(_super) {
 require.register("views/folder_line", function(exports, require, module) {
 var BaseView, FolderLineView,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __hasProp = {}.hasOwnProperty;
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 BaseView = require('../lib/base_view');
 
@@ -5097,8 +5097,8 @@ module.exports = FolderLineView = (function(_super) {
 require.register("views/layout", function(exports, require, module) {
 var BaseView, BreadcrumbsView, FolderView, Layout, Menu,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __hasProp = {}.hasOwnProperty;
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 BaseView = require('../lib/base_view');
 
@@ -5296,8 +5296,8 @@ module.exports = Layout = (function(_super) {
 
 require.register("views/login", function(exports, require, module) {
 var BaseView, LoginView,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __hasProp = {}.hasOwnProperty;
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 BaseView = require('../lib/base_view');
 
@@ -5409,8 +5409,8 @@ module.exports = LoginView = (function(_super) {
 require.register("views/menu", function(exports, require, module) {
 var BaseView, Menu,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __hasProp = {}.hasOwnProperty;
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 BaseView = require('../lib/base_view');
 
