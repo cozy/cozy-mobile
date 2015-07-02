@@ -18,7 +18,7 @@ Contact.cozy2Cordova = (cozyContact) ->
         validParts = parts.filter (part) -> part? and part isnt ''
         formatted = validParts.join ' '
 
-        return new ContactName formatted, familyName, givenName,
+        return new ContactName formatted, familyName, givenName, \
                                 middle, prefix, suffix
 
     cozyContact2ContactOrganizations = (contact) ->
@@ -48,7 +48,6 @@ Contact.cozy2Cordova = (cozyContact) ->
 
     attachments2Photos = (contact) ->
         if contact._attachments? and 'picture' of contact._attachments
-            console.log contact._attachments.picture
             photo = new ContactField 'base64', contact._attachments.picture.data
 
             return [photo]
@@ -85,6 +84,13 @@ Contact.cozy2Cordova = (cozyContact) ->
                 when 'SOCIAL' or 'URL'
                     addContactField 'urls', datapoint
 
+                # when 'ABOUT'
+                #     addContactField 'about', datapoint
+
+                # when 'RELATION'
+                #     addContactField 'relations', datapoint
+
+
 
     c = navigator.contacts.create
         # vCard FullName = display name
@@ -110,6 +116,10 @@ Contact.cozy2Cordova = (cozyContact) ->
 
     dataPoints2Cordova cozyContact, c
 
+    # Defensive, not named contact are hard to use...
+    unless c.displayName
+        c.displayName = "--"
+
     return c
 
 Contact.cordova2Cozy = (cordovaContact, callback) ->
@@ -117,7 +127,7 @@ Contact.cordova2Cozy = (cordovaContact, callback) ->
     contactName2N = (contactName) ->
         return undefined unless contactName?
         parts = []
-        for field in ['familyName', 'givenName', 'middle', 'prefix', 'suffix']
+        for field in ['familyName', 'givenName', 'middleName', 'honorificPrefix', 'honorificSuffix']
             parts.push contactName[field] or ''
 
         n = parts.join ';'
@@ -141,7 +151,9 @@ Contact.cordova2Cozy = (cordovaContact, callback) ->
             'phoneNumbers': 'tel'
             'emails': 'email'
             'ims': 'chat'
-            'urls': 'social'
+            'urls': 'url'
+            # 'about': 'about'
+            # 'relations': 'relation'
 
         for fieldName, name of field2Name
             fields = cordovaContact[fieldName]
@@ -186,13 +198,11 @@ Contact.cordova2Cozy = (cordovaContact, callback) ->
 
     c.datapoints = cordova2Datapoints cordovaContact
 
-    console.log 'photos2Attachments'
     unless cordovaContact.photos?.length > 0
         return callback null, c
 
 
     photo = cordovaContact.photos[0]
-    console.log photo
 
     if photo.type is 'base64'
         c._attachments =
