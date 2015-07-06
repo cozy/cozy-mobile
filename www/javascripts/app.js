@@ -1572,8 +1572,15 @@ Contact.cozy2Cordova = function(cozyContact) {
         case 'CHAT':
           _results.push(addContactField('ims', datapoint));
           break;
-        case 'SOCIAL' || 'URL':
+        case 'SOCIAL':
+        case 'URL':
           _results.push(addContactField('urls', datapoint));
+          break;
+        case 'ABOUT':
+          _results.push(addContactField('about', datapoint));
+          break;
+        case 'RELATION':
+          _results.push(addContactField('relations', datapoint));
           break;
         default:
           _results.push(void 0);
@@ -1637,14 +1644,15 @@ Contact.cordova2Cozy = function(cordovaContact, callback) {
       return cozyContact.title = organization.title;
     }
   };
-  cordova2Datapoints = function(cordovaContact) {
-    var datapoints, field2Name, fieldName, fields, fieldsDatapoints, name, _ref;
+  cordova2Datapoints = function(cordovaContact, cozyContact) {
+    var datapoints, field2Name, fieldName, fields, fieldsDatapoints, name, _ref, _ref1;
     datapoints = [];
     field2Name = {
       'phoneNumbers': 'tel',
       'emails': 'email',
       'ims': 'chat',
-      'urls': 'url'
+      'about': 'about',
+      'relations': 'relation'
     };
     for (fieldName in field2Name) {
       name = field2Name[fieldName];
@@ -1670,7 +1678,18 @@ Contact.cordova2Cozy = function(cordovaContact, callback) {
       });
       datapoints = datapoints.concat(fieldsDatapoints);
     }
-    return datapoints;
+    if (((_ref1 = cordovaContact.urls) != null ? _ref1.length : void 0) > 0) {
+      cozyContact.url = cordovaContact.urls[0].value;
+      fieldsDatapoints = cordovaContact.urls.slice(1).map(function(contactField) {
+        return {
+          name: 'url',
+          type: contactField.type,
+          value: contactField.value
+        };
+      });
+      datapoints = datapoints.concat(fieldsDatapoints);
+    }
+    return c.datapoints = datapoints;
   };
   c = {
     docType: 'contact',
@@ -1686,7 +1705,7 @@ Contact.cordova2Cozy = function(cordovaContact, callback) {
     tags: categories2Tags(cordovaContact.categories)
   };
   organizations2Cozy(cordovaContact.organizations, c);
-  c.datapoints = cordova2Datapoints(cordovaContact);
+  cordova2Datapoints(cordovaContact, c);
   if (!(((_ref = cordovaContact.photos) != null ? _ref.length : void 0) > 0)) {
     return callback(null, c);
   }
@@ -3467,11 +3486,13 @@ module.exports = {
             return cb(err);
           }
           if (doc._deleted) {
-            return contact.remove((function() {
-              return cb();
-            }), cb, {
-              callerIsSyncAdapter: true
-            });
+            if (contact != null) {
+              return contact.remove((function() {
+                return cb();
+              }), cb, {
+                callerIsSyncAdapter: true
+              });
+            }
           } else {
             return _this._saveContactInPhone(doc, contact, cb);
           }

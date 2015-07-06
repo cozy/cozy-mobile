@@ -81,15 +81,15 @@ Contact.cozy2Cordova = (cozyContact) ->
                 when 'CHAT'
                     addContactField 'ims', datapoint
 
-                when 'SOCIAL' or 'URL'
+
+                when 'SOCIAL', 'URL'
                     addContactField 'urls', datapoint
 
-                # when 'ABOUT'
-                #     addContactField 'about', datapoint
+                when 'ABOUT'
+                    addContactField 'about', datapoint
 
-                # when 'RELATION'
-                #     addContactField 'relations', datapoint
-
+                when 'RELATION'
+                    addContactField 'relations', datapoint
 
 
     c = navigator.contacts.create
@@ -101,9 +101,8 @@ Contact.cozy2Cordova = (cozyContact) ->
         name: n2ContactName cozyContact.n
         nickname: cozyContact.nickname
         organizations: cozyContact2ContactOrganizations cozyContact
-        birthday: cozyContact.bday # check date format !
+        birthday: cozyContact.bday
         urls: cozyContact2URLs cozyContact
-        # TODO extract somes.cozyContact.datapoints    : [DataPoint]
         note: cozyContact.note
         categories: tags2Categories cozyContact.tags #
         photos: attachments2Photos cozyContact
@@ -145,15 +144,14 @@ Contact.cordova2Cozy = (cordovaContact, callback) ->
             cozyContact.department = organization.department
             cozyContact.title = organization.title
 
-    cordova2Datapoints = (cordovaContact) ->
+    cordova2Datapoints = (cordovaContact, cozyContact) ->
         datapoints = []
         field2Name =
             'phoneNumbers': 'tel'
             'emails': 'email'
             'ims': 'chat'
-            'urls': 'url'
-            # 'about': 'about'
-            # 'relations': 'relation'
+            'about': 'about'
+            'relations': 'relation'
 
         for fieldName, name of field2Name
             fields = cordovaContact[fieldName]
@@ -173,7 +171,18 @@ Contact.cordova2Cozy = (cordovaContact, callback) ->
 
             datapoints = datapoints.concat fieldsDatapoints
 
-        return datapoints
+        if cordovaContact.urls?.length > 0
+            cozyContact.url = cordovaContact.urls[0].value
+
+            fieldsDatapoints = cordovaContact.urls.slice(1).map (contactField) ->
+                    name: 'url'
+                    type: contactField.type
+                    value: contactField.value
+            datapoints = datapoints.concat fieldsDatapoints
+
+
+        c.datapoints = datapoints
+
 
     c =
         docType: 'contact'
@@ -196,7 +205,7 @@ Contact.cordova2Cozy = (cordovaContact, callback) ->
 
     organizations2Cozy cordovaContact.organizations, c
 
-    c.datapoints = cordova2Datapoints cordovaContact
+    cordova2Datapoints cordovaContact, c
 
     unless cordovaContact.photos?.length > 0
         return callback null, c

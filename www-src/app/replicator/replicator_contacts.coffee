@@ -184,7 +184,9 @@ module.exports =
             getBySourceId doc._id, (err, contact) =>
                 return cb err if err
                 if doc._deleted
-                    contact.remove (-> cb()), cb, callerIsSyncAdapter: true
+                    if contact?
+                        contact.remove (-> cb()), cb, callerIsSyncAdapter: true
+                    # else already done.
 
                 else
                     @_saveContactInPhone doc, contact, cb
