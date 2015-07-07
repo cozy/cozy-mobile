@@ -3583,11 +3583,51 @@ module.exports = {
               return _this._applyChangeToPhone(docs, function(err) {
                 return _this.config.save({
                   contactsPullCheckpointed: lastSeq
-                }, callback);
+                }, function(err) {
+                  return _this.deleteObsoletePhoneContacts(callback);
+                });
               });
             });
           });
         });
+      };
+    })(this));
+  },
+  deleteObsoletePhoneContacts: function(callback) {
+    return async.parallel({
+      phone: function(cb) {
+        return navigator.contacts.find([navigator.contacts.fieldType.id], function(contacts) {
+          return cb(null, contacts);
+        }, cb, new ContactFindOptions("", true, [], ACCOUNT_TYPE, ACCOUNT_NAME));
+      },
+      pouch: (function(_this) {
+        return function(cb) {
+          return _this.db.query("Contacts", {}, cb);
+        };
+      })(this)
+    }, (function(_this) {
+      return function(err, contacts) {
+        var idsInPouch, row, _i, _len, _ref;
+        if (err) {
+          return callback(err);
+        }
+        console.log(contacts);
+        idsInPouch = {};
+        _ref = contacts.pouch.rows;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          row = _ref[_i];
+          idsInPouch[row.id] = true;
+        }
+        return async.eachSeries(contacts.phone, function(contact, cb) {
+          if (!(contact.sourceId in idsInPouch)) {
+            return contact.remove((function() {
+              return cb();
+            }), cb, {
+              callerIsSyncAdapter: true
+            });
+          }
+          return cb();
+        }, callback);
       };
     })(this));
   }
