@@ -40,6 +40,12 @@ module.exports = Service =
                         # Activate notifications handling
                         @notificationManager = new Notifications()
 
+                        DeviceStatus = require '../lib/device_status'
+                        document.addEventListener 'offline', ->
+                            DeviceStatus.update()
+                        , false
+
+
                     delayedQuit = (err) ->
                         console.log err if err
                         # give some time to finish and close things.
@@ -58,7 +64,7 @@ module.exports = Service =
                         else
                             delayedQuit()
 
-                    if config.get 'syncImages'
+                    if config.get 'syncImages' or config.get 'syncContacts'
                         app.replicator.backup { background: true }, (err) ->
                             if err and err.message is 'no wifi'
                                 syncNotifications()

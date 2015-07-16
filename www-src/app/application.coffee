@@ -59,7 +59,7 @@ module.exports =
                 app.backFromOpen = false
                 app.replicator.startRealtime()
             else
-                app.replicator.backup()
+                app.replicator.backup {}, (err) -> console.log err if err
         , false
         document.addEventListener "pause", =>
             console.log "PAUSE EVENT"
@@ -75,11 +75,11 @@ module.exports =
             device_status = require './lib/device_status'
             device_status.update()
             backup = () ->
-                app.replicator.backup(true)
+                app.replicator.backup {}, (err) -> console.log err if err
                 window.removeEventListener 'realtime:onChange', backup, false
             window.addEventListener 'realtime:onChange', backup, false
         , false
 
         @router.navigate 'folder/', trigger: true
         @router.once 'collectionfetched', =>
-            app.replicator.backup()
+            app.replicator.backup {}, (err) -> console.log err if err

@@ -8,7 +8,7 @@ module.exports =
     "config"              : "Config"
     "never"               : "Never"
     "phone2cozy title"    : "Phone to Cozy backup"
-    "contacts sync label" : "Backup contacts"
+    "contacts sync label" : "Sync contacts"
     "images sync label"   : "Backup images"
     "wifi sync label"     : "Backup on Wifi only"
     "cozy notifications sync label": "Sync Cozy notifications"
@@ -22,10 +22,11 @@ module.exports =
     "reset warning"       : "This will erase all cozy-generated data on your phone."
     "pull to sync"        : "Pull to sync"
     "syncing"             : "Syncing"
-    "contacts_scan"       : "Scanning contacts for changes"
     "contacts_sync"       : "Syncing contacts"
     "pictures_sync"       : "Syncing pictures"
-    "synchronized with"   : "Synchronized with"
+    "cache_sync"          : "Updating cache"
+
+    "synchronized with"   : "Synchronized with "
     "this folder is empty": "This folder is empty."
     "no results"          : "No results"
     "loading"             : "Loading"
@@ -79,9 +80,12 @@ module.exports =
 
     # -- end of setup
     "setup end"             : "End of setting"
-    "message step 0"        : "Step 1/3: Files synchronization."
-    "message step 1"        : "Step 2/3: Folders synchronization."
-    "message step 2"        : "Step 3/3: Documents preparation."
+    "message step 0"        : "Step 1/5: Files synchronization."
+    "message step 1"        : "Step 2/5: Folders synchronization."
+    "message step 2"        : "Step 3/5: Notifications synchronization."
+    "message step 3"        : "Step 4/5: Contacts synchronization."
+    "message step 4"        : "Step 5/5: Documents preparation."
+
     "wait message device"   : "Device configuration..."
     "ready message"         : "The application is ready to be used!"
     "waiting..."            : "Waiting..."

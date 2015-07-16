@@ -4,7 +4,6 @@ makeDesignDocs = require './replicator_mapreduce'
 ReplicatorConfig = require './replicator_config'
 DeviceStatus = require '../lib/device_status'
 DBNAME = "cozy-files.db"
-DBCONTACTS = "cozy-contacts.db"
 DBPHOTOS = "cozy-photos.db"
 DBOPTIONS = if window.isBrowserDebugging then {} else adapter: 'websql'
 
@@ -14,8 +13,10 @@ module.exports = class Replicator extends Backbone.Model
     db: null
     config: null
 
-    # backup functions (contacts & images) are in replicator_backups
+    # backup images functions are in replicator_backups
     _.extend Replicator.prototype, require './replicator_backups'
+    # Contact sync functions are in replicator_contacts
+    _.extend Replicator.prototype, require './replicator_contacts'
 
     defaults: ->
         inSync: false
@@ -24,11 +25,9 @@ module.exports = class Replicator extends Backbone.Model
     destroyDB: (callback) ->
         @db.destroy (err) =>
             return callback err if err
-            @contactsDB.destroy (err) =>
+            @photosDB.destroy (err) =>
                 return callback err if err
-                @photosDB.destroy (err) =>
-                    return callback err if err
-                    fs.rmrf @downloads, callback
+                fs.rmrf @downloads, callback
 
     resetSynchro: (callback) ->
         @stopRealtime()
@@ -44,9 +43,8 @@ module.exports = class Replicator extends Backbone.Model
             @downloads = downloads
             @cache = cache
             @db = new PouchDB DBNAME, DBOPTIONS
-            @contactsDB = new PouchDB DBCONTACTS, DBOPTIONS
             @photosDB = new PouchDB DBPHOTOS, DBOPTIONS
-            makeDesignDocs @db, @contactsDB, @photosDB, (err) =>
+            makeDesignDocs @db, @photosDB, (err) =>
                 return callback err if err
                 @config = new ReplicatorConfig(this)
                 @config.fetch callback
@@ -146,9 +144,16 @@ module.exports = class Replicator extends Backbone.Model
                 #(cb) => @config.save checkpointed: 0, cb
                 (cb) => @set('initialReplicationStep', 1) and cb null
                 (cb) => @copyView 'folder', cb
+
+                (cb) => @set('initialReplicationStep', 2) and cb null
                 # TODO: it copies all notifications (persistent ones too).
                 (cb) => @copyView 'notification', cb
-                (cb) => @set('initialReplicationStep', 2) and cb null
+
+                (cb) => @set('initialReplicationStep', 3) and cb null
+
+                (cb) => @initContactsInPhone last_seq, cb
+
+                (cb) => @set('initialReplicationStep', 4) and cb null
                 # Save last sequences
                 (cb) => @config.save checkpointed: last_seq, cb
                 # build the initial state of FilesAndFolder view index
@@ -157,7 +162,7 @@ module.exports = class Replicator extends Backbone.Model
 
             ], (err) =>
                 console.log "end of inital replication #{Date.now()}"
-                @set 'initialReplicationStep', 3
+                @set 'initialReplicationStep', 5
                 callback err
                 # updateIndex In background
                 @updateIndex -> console.log "Index built"
@@ -452,6 +457,9 @@ module.exports = class Replicator extends Backbone.Model
     realtimeBackupCoef = 1
 
     startRealtime: =>
+        # TODO : STUB !
+        return
+
         if @liveReplication or not app.foreground
             return
 
@@ -503,6 +511,9 @@ module.exports = class Replicator extends Backbone.Model
 
     # Update cache files with outdated revisions.
     syncCache:  (callback) =>
+        @set 'backup_step', 'cache_update'
+        @set 'backup_step_done', null
+
         # TODO: Add optimizations on db.query : avoid include_docs on big list.
         options =
             keys: @cache.map (entry) -> return entry.name.split('-')[0]
@@ -511,4 +522,11 @@ module.exports = class Replicator extends Backbone.Model
         @db.query 'ByBinaryId', options, (err, results) =>
             return callback err if err
             toUpdate = @_filesNEntriesInCache results.rows.map (row) -> row.doc
-            async.eachSeries toUpdate, @updateLocal, callback
+
+            processed = 0
+            @set 'backup_step', 'cache_update'
+            @set 'backup_step_total', toUpdate.length
+            async.eachSeries toUpdate, (fileNEntry, cb) =>
+                @set 'backup_step_done', processed++
+                @updateLocal fileNEntry, cb
+            , callback

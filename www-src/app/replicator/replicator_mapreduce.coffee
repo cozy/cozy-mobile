@@ -65,14 +65,15 @@ LocalPathDesignDoc =
             map: Object.toString.apply (doc) ->
                 emit doc.localPath if doc.localPath
 
-ContactsByLocalIdDesignDoc =
-    _id: '_design/ContactsByLocalId'
+ContactsDesignDoc =
+    _id: '_design/Contacts'
     version: 1
     views:
-        'ContactsByLocalId':
+        'Contacts':
             map: Object.toString.apply (doc) ->
-                if doc.docType?.toLowerCase() is 'contact' and doc.localId
-                    emit doc.localId, [doc.localVersion, doc._rev]
+                if doc.docType?.toLowerCase() is 'contact'
+                    emit doc._id
+
 
 PhotosByLocalIdDesignDoc =
     _id: '_design/PhotosByLocalId'
@@ -92,7 +93,7 @@ DevicesByLocalIdDesignDoc =
                 if doc.docType?.toLowerCase() is 'device'
                     emit doc.localId, doc
 
-module.exports = (db, contactsDB, photosDB, callback) ->
+module.exports = (db, photosDB, callback) ->
 
     async.series [
         (cb) -> createOrUpdateDesign db, NotificationsTemporaryDesignDoc, cb
@@ -101,7 +102,7 @@ module.exports = (db, contactsDB, photosDB, callback) ->
         (cb) -> createOrUpdateDesign db, PicturesDesignDoc, cb
         (cb) -> createOrUpdateDesign db, LocalPathDesignDoc, cb
         (cb) -> createOrUpdateDesign db, PathToBinaryDesignDoc, cb
-        (cb) -> createOrUpdateDesign contactsDB, ContactsByLocalIdDesignDoc, cb
+        (cb) -> createOrUpdateDesign db, ContactsDesignDoc, cb
         (cb) -> createOrUpdateDesign photosDB, PhotosByLocalIdDesignDoc, cb
         (cb) -> createOrUpdateDesign photosDB, DevicesByLocalIdDesignDoc, cb
     ], callback

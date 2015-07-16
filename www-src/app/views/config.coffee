@@ -60,8 +60,10 @@ module.exports = class ConfigView extends BaseView
     # prevent simultaneous changes by disabling checkboxes
     saveChanges: ->
         checkboxes = @$ '#contactSyncCheck, #imageSyncCheck,' +
-                        '#wifiSyncCheck, #cozyNotificationsCheck'
+                        '#wifiSyncCheck, #cozyNotificationsCheck' +
+                        '#configDone'
         checkboxes.prop 'disabled', true
+
 
         app.replicator.config.save
             syncContacts: @$('#contactSyncCheck').is ':checked'
@@ -71,3 +73,4 @@ module.exports = class ConfigView extends BaseView
 
         , ->
             checkboxes.prop 'disabled', false
+

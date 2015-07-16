@@ -7,6 +7,7 @@ module.exports = class Menu extends BaseView
     template: require '../templates/menu'
     events:
         'click #close-menu': 'closeMenu'
+        # 'click #syncButton': 'test'
         'click #syncButton': 'backup'
         'click #btn-search': 'doSearch'
         'click a.item': 'closeMenu'
@@ -25,6 +26,10 @@ module.exports = class Menu extends BaseView
             if err
                 alert t if err.message? then err.message else "no connection"
             app.layout.currentView?.collection?.fetch()
+
+    test: ->
+        app.replicator.testSyncContacts (err) ->
+            alert err if err
 
     backup: ->
         app.layout.closeMenu()

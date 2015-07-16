@@ -8,7 +8,8 @@ Get it from the play store.
 Or head over to the [Releases page](https://github.com/cozy-labs/cozy-mobile/releases)
 
 ## Built with
-- cordova
+- cordova  @4.3.1
+New cordova 5.1.1 doesn't comply with the custom plugins of cozy-mobile. Please install the appropriate version with : npm install -g cordova@4.3.1
 
 ## Hack
 

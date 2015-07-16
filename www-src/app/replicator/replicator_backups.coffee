@@ -1,4 +1,5 @@
 DeviceStatus = require '../lib/device_status'
+Utils = require './utils'
 fs = require './filesystem'
 request = require '../lib/request'
 
@@ -38,98 +39,25 @@ module.exports =
             return callback new Error(msg) unless ready
             console.log "WE ARE READY FOR SYNC"
 
-            @syncPictures force, (err) =>
-                console.log "done syncPict"
-                return callback err if err
-                @syncCache (err) =>
-                    console.log "done syncCache"
+            async.series [
+                (cb) => @syncPictures force, cb
+                (cb) =>
+                    status = DeviceStatus.getStatus()
+                    if status.readyForSync
+                        @syncCache cb
+                    else
+                        cb status.readyForSyncMsg
 
-                    return callback err if err
-                    @syncContacts (err) =>
-                        callback err
+                (cb) =>
+                    status = DeviceStatus.getStatus()
+                    if status.readyForSync
+                        @syncContacts cb
+                    else
+                        cb status.readyForSyncMsg
 
-
-    syncContacts: (callback) ->
-        return callback null unless @config.get 'syncContacts'
-
-        console.log "SYNC CONTACTS"
-        @set 'backup_step', 'contacts_scan'
-        @set 'backup_step_done', null
-        async.parallel [
-            ImagesBrowser.getContactsList
-            (cb) => @contactsDB.query 'ContactsByLocalId', {}, cb
-        ], (err, result) =>
-            return callback err if err
-            [phoneContacts, rows: dbContacts] = result
-
-            # for test purpose
-            # phoneContacts = phoneContacts[0..50]
-
-            console.log "BEGIN SYNC #{dbContacts.length} #{phoneContacts.length}"
-
-            dbCache = {}
-            dbContacts.forEach (row) ->
-                dbCache[row.key] =
-                    id: row.id
-                    rev: row.value[1]
-                    version: row.value[0]
-
-            processed = 0
-            @set 'backup_step_total', phoneContacts.length
-
-            async.eachSeries phoneContacts, (contact, cb) =>
-                @set 'backup_step_done', processed++
-
-
-                contact.localId = contact.localId.toString()
-                contact.docType = 'Contact'
-                inDb = dbCache[contact.localId]
-
-                log = "CONTACT : #{contact.localId} #{contact.localVersion}"
-                log += "DB #{inDb?.version} : "
-
-                # no changes
-                if contact.localVersion is inDb?.version
-                    console.log log + "NOTHING TO DO"
-                    cb null
-
-                # the contact already exists, but has changed, we update it
-                else if inDb?
-                    console.log log + "UPDATING"
-                    @contactsDB.put contact, inDb.id, inDb.rev, cb
-
-                # this is a new contact
-                else
-                    console.log log + "CREATING"
-                    @contactsDB.post contact, (err, doc) ->
-                        return callback err if err
-                        return callback new Error('cant create') unless doc.ok
-                        dbCache[contact.localId] =
-                            id: doc.id
-                            rev: doc.rev
-                            version: contact.localVersion
-                        cb null
-
-            , (err) =>
-                return callback err if err
-                console.log "SYNC CONTACTS phone -> pouch DONE"
-
-                # extract the ids
-                ids = _.map dbCache, (doc) -> doc.id
-                @set 'backup_step', 'contacts_sync'
-                @set 'backup_step_total', ids.length
-
-                replication = @contactsDB.replicate.to @config.remote,
-                    since: 0, doc_ids: ids
-
-                replication.on 'error', callback
-                replication.on 'change', (e) =>
-                    @set 'backup_step_done', e.last_seq
-                replication.on 'complete', =>
-                    callback null
-                    # we query the view to force rebuilding the mapreduce index
-                    @contactsDB.query 'ContactsByLocalId', {}, ->
-
+            ], (err) ->
+                console.log "Backup done."
+                callback err
 
 
     syncPictures: (force, callback) ->
@@ -165,7 +93,7 @@ module.exports =
             images = images.filter (path) -> path.indexOf('/DCIM/') != -1
 
             if images.length is 0
-                callback new Error 'no images in DCIM'
+                return callback new Error 'no images in DCIM'
 
             # step 1 scan all images, find the new ones
             async.eachSeries images, (path, cb) =>
@@ -201,11 +129,11 @@ module.exports =
                     console.log "UPLOADING #{path}"
                     @uploadPicture path, device, (err) =>
                         console.log "ERROR #{path} #{err}" if err
-                        DeviceStatus.checkReadyForSync (err, ready, msg) ->
-                            return cb err if err
-                            return cb new Error msg unless ready
-
-                            setTimeout cb, 1 # don't freeze UI.
+                        if DeviceStatus.readyForSync
+                            setTimeout cb, 1  # don't freeze UI.
+                        else
+                            # stop uploading if leaves wifi and ...
+                            cb DeviceStatus.readyForSyncMsg
 
                 , callback
 
@@ -311,3 +239,4 @@ module.exports =
                     else
                         # already exist remote, but not locally...
                         callback new Error 'photo folder not replicated yet'
+
