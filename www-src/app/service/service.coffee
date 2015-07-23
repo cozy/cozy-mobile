@@ -36,14 +36,15 @@ module.exports = Service =
                     return window.service.workDone()
 
                 if config.remote
+
+                    DeviceStatus = require '../lib/device_status'
+                    document.addEventListener 'offline', ->
+                        DeviceStatus.update()
+                    , false
+
                     if config.get 'cozyNotifications'
                         # Activate notifications handling
                         @notificationManager = new Notifications()
-
-                        DeviceStatus = require '../lib/device_status'
-                        document.addEventListener 'offline', ->
-                            DeviceStatus.update()
-                        , false
 
 
                     delayedQuit = (err) ->
@@ -55,24 +56,11 @@ module.exports = Service =
                             window.service.workDone()
                         , 5 * 1000
 
-                    syncNotifications = (err) ->
-                        if config.get 'cozyNotifications'
-                            app.replicator.sync
-                                background: true
-                                notificationsOnly: true
-                            , delayedQuit
-                        else
+                    app.replicator.backup { background: true }, (err) ->
+                        if err
                             delayedQuit()
-
-                    if config.get 'syncImages' or config.get 'syncContacts'
-                        app.replicator.backup { background: true }, (err) ->
-                            if err and err.message is 'no wifi'
-                                syncNotifications()
-                            else
-                                app.replicator.sync {background: true}, delayedQuit
-
-                    else
-                        syncNotifications()
+                        else
+                            app.replicator.sync {background: true}, delayedQuit
 
                 else
                     window.service.workDone()

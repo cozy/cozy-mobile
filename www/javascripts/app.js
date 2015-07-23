@@ -3998,18 +3998,18 @@ module.exports = Service = {
         window.t = _this.polyglot.t.bind(_this.polyglot);
         _this.replicator = new Replicator();
         return _this.replicator.init(function(err, config) {
-          var DeviceStatus, delayedQuit, syncNotifications;
+          var DeviceStatus, delayedQuit;
           if (err) {
             console.log(err, err.stack);
             return window.service.workDone();
           }
           if (config.remote) {
+            DeviceStatus = require('../lib/device_status');
+            document.addEventListener('offline', function() {
+              return DeviceStatus.update();
+            }, false);
             if (config.get('cozyNotifications')) {
               _this.notificationManager = new Notifications();
-              DeviceStatus = require('../lib/device_status');
-              document.addEventListener('offline', function() {
-                return DeviceStatus.update();
-              }, false);
             }
             delayedQuit = function(err) {
               if (err) {
@@ -4019,31 +4019,17 @@ module.exports = Service = {
                 return window.service.workDone();
               }, 5 * 1000);
             };
-            syncNotifications = function(err) {
-              if (config.get('cozyNotifications')) {
-                return app.replicator.sync({
-                  background: true,
-                  notificationsOnly: true
-                }, delayedQuit);
-              } else {
+            return app.replicator.backup({
+              background: true
+            }, function(err) {
+              if (err) {
                 return delayedQuit();
+              } else {
+                return app.replicator.sync({
+                  background: true
+                }, delayedQuit);
               }
-            };
-            if (config.get('syncImages' || config.get('syncContacts'))) {
-              return app.replicator.backup({
-                background: true
-              }, function(err) {
-                if (err && err.message === 'no wifi') {
-                  return syncNotifications();
-                } else {
-                  return app.replicator.sync({
-                    background: true
-                  }, delayedQuit);
-                }
-              });
-            } else {
-              return syncNotifications();
-            }
+            });
           } else {
             return window.service.workDone();
           }
