@@ -54,6 +54,7 @@ Contact.cozy2Cordova = (cozyContact) ->
 
         return [];
 
+
     dataPoints2Cordova = (cozyContact, cordovaContact) ->
         addContactField = (cordovaField, datapoint) ->
             unless cordovaContact[cordovaField]
@@ -72,11 +73,18 @@ Contact.cozy2Cordova = (cozyContact) ->
                     addContactField 'emails', datapoint
                 when 'ADR'
                     cordovaContact.addresses = [] unless cordovaContact.addresses
+                    structuredToFlat = (t) ->
+                        t = t.filter (part) -> return part? and part isnt ''
+                        return t.join ', '
+                    street = structuredToFlat datapoint.value[0..2]
+                    countryPart = structuredToFlat datapoint.value[3..6]
+                    formatted = street
+                    formatted += '\n' + countryPart if countryPart isnt ''
 
                     cordovaContact.addresses.push new ContactAddress undefined
                     , datapoint.type
-                    # in cozy Contacts, streetAddress field contains everything.
-                    , datapoint.value[2], datapoint.value[2]
+                    , formatted, street, datapoint.value[3], datapoint.value[4]
+                    , datapoint.value[5], datapoint.value[6]
 
                 when 'CHAT'
                     addContactField 'ims', datapoint
