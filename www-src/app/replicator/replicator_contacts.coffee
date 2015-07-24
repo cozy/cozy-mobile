@@ -20,6 +20,17 @@ module.exports =
         # 3 - Pouch2Phone.
 
         async.series [
+            (cb) =>
+                if @config.has('contactsPullCheckpointed')
+                    cb()
+                else
+                    request.get @config.makeUrl('/_changes?descending=true&limit=1')
+                    , (err, res, body) =>
+                        return cb err if err
+                        # we store last_seq before copying files & folder
+                        # to avoid losing changes occuring during replication
+                        @initContactsInPhone body.last_seq, cb
+
             (cb) => @syncPhone2Pouch cb
             (cb) => @_syncToCozy cb
             (cb) => @syncFromCozyToPouchToPhone cb
@@ -173,7 +184,9 @@ module.exports =
             getBySourceId doc._id, (err, contact) =>
                 return cb err if err
                 if doc._deleted
-                    contact.remove (-> cb()), cb, callerIsSyncAdapter: true
+                    if contact?
+                        contact.remove (-> cb()), cb, callerIsSyncAdapter: true
+                    # else already done.
 
                 else
                     @_saveContactInPhone doc, contact, cb
@@ -210,7 +223,10 @@ module.exports =
 
 
     # Initial replication task.
-    initContactsInPhone: (callback) ->
+    initContactsInPhone: (lastSeq, callback) ->
+        unless @config.get 'syncContacts'
+            return callback()
+
         @createAccount (err) =>
             # Fetch contacs from view all of contact app.
             request.get @config.makeUrl("/_design/contact/_view/all/")
@@ -236,4 +252,35 @@ module.exports =
 
                     , (err, contacts) =>
                         return callback err if err
-                        @_applyChangeToPhone docs, callback
+                        @_applyChangeToPhone docs, (err) =>
+                            @config.save contactsPullCheckpointed: lastSeq, (err) =>
+                                @deleteObsoletePhoneContacts callback
+
+    # Synchronise delete state between pouch and the phone.
+    deleteObsoletePhoneContacts: (callback) ->
+        async.parallel
+            phone: (cb) ->
+                navigator.contacts.find [navigator.contacts.fieldType.id]
+                , (contacts) ->
+                    cb null, contacts
+                , cb
+                , new ContactFindOptions "", true, [], ACCOUNT_TYPE, ACCOUNT_NAME
+            pouch: (cb) =>
+                @db.query "Contacts", {}, cb
+
+        , (err, contacts) =>
+            return callback err if err
+            console.log contacts
+            idsInPouch = {}
+            for row in contacts.pouch.rows
+                idsInPouch[row.id] = true
+
+            async.eachSeries contacts.phone, (contact, cb) =>
+                unless contact.sourceId of idsInPouch
+                    return contact.remove (-> cb()), cb, \
+                        callerIsSyncAdapter: true
+                return cb()
+            , callback
+
+
+

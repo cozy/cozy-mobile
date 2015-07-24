@@ -1536,7 +1536,6 @@ Contact.cozy2Cordova = function(cozyContact) {
   attachments2Photos = function(contact) {
     var photo;
     if ((contact._attachments != null) && 'picture' in contact._attachments) {
-      console.log(contact._attachments.picture);
       photo = new ContactField('base64', contact._attachments.picture.data);
       return [photo];
     }
@@ -1573,8 +1572,15 @@ Contact.cozy2Cordova = function(cozyContact) {
         case 'CHAT':
           _results.push(addContactField('ims', datapoint));
           break;
-        case 'SOCIAL' || 'URL':
+        case 'SOCIAL':
+        case 'URL':
           _results.push(addContactField('urls', datapoint));
+          break;
+        case 'ABOUT':
+          _results.push(addContactField('about', datapoint));
+          break;
+        case 'RELATION':
+          _results.push(addContactField('relations', datapoint));
           break;
         default:
           _results.push(void 0);
@@ -1598,6 +1604,9 @@ Contact.cozy2Cordova = function(cozyContact) {
     deleted: false
   });
   dataPoints2Cordova(cozyContact, c);
+  if (!c.displayName) {
+    c.displayName = "--";
+  }
   return c;
 };
 
@@ -1609,7 +1618,7 @@ Contact.cordova2Cozy = function(cordovaContact, callback) {
       return void 0;
     }
     parts = [];
-    _ref = ['familyName', 'givenName', 'middle', 'prefix', 'suffix'];
+    _ref = ['familyName', 'givenName', 'middleName', 'honorificPrefix', 'honorificSuffix'];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       field = _ref[_i];
       parts.push(contactName[field] || '');
@@ -1635,14 +1644,15 @@ Contact.cordova2Cozy = function(cordovaContact, callback) {
       return cozyContact.title = organization.title;
     }
   };
-  cordova2Datapoints = function(cordovaContact) {
-    var datapoints, field2Name, fieldName, fields, fieldsDatapoints, name, _ref;
+  cordova2Datapoints = function(cordovaContact, cozyContact) {
+    var datapoints, field2Name, fieldName, fields, fieldsDatapoints, name, _ref, _ref1;
     datapoints = [];
     field2Name = {
       'phoneNumbers': 'tel',
       'emails': 'email',
       'ims': 'chat',
-      'urls': 'social'
+      'about': 'about',
+      'relations': 'relation'
     };
     for (fieldName in field2Name) {
       name = field2Name[fieldName];
@@ -1668,7 +1678,18 @@ Contact.cordova2Cozy = function(cordovaContact, callback) {
       });
       datapoints = datapoints.concat(fieldsDatapoints);
     }
-    return datapoints;
+    if (((_ref1 = cordovaContact.urls) != null ? _ref1.length : void 0) > 0) {
+      cozyContact.url = cordovaContact.urls[0].value;
+      fieldsDatapoints = cordovaContact.urls.slice(1).map(function(contactField) {
+        return {
+          name: 'url',
+          type: contactField.type,
+          value: contactField.value
+        };
+      });
+      datapoints = datapoints.concat(fieldsDatapoints);
+    }
+    return c.datapoints = datapoints;
   };
   c = {
     docType: 'contact',
@@ -1684,13 +1705,11 @@ Contact.cordova2Cozy = function(cordovaContact, callback) {
     tags: categories2Tags(cordovaContact.categories)
   };
   organizations2Cozy(cordovaContact.organizations, c);
-  c.datapoints = cordova2Datapoints(cordovaContact);
-  console.log('photos2Attachments');
+  cordova2Datapoints(cordovaContact, c);
   if (!(((_ref = cordovaContact.photos) != null ? _ref.length : void 0) > 0)) {
     return callback(null, c);
   }
   photo = cordovaContact.photos[0];
-  console.log(photo);
   if (photo.type === 'base64') {
     c._attachments = {
       picture: {
@@ -2310,11 +2329,7 @@ module.exports = Replicator = (function(_super) {
           }, function(cb) {
             return _this.set('initialReplicationStep', 3) && cb(null);
           }, function(cb) {
-            return _this.initContactsInPhone(cb);
-          }, function(cb) {
-            return _this.config.save({
-              contactsPullCheckpointed: last_seq
-            }, cb);
+            return _this.initContactsInPhone(last_seq, cb);
           }, function(cb) {
             return _this.set('initialReplicationStep', 4) && cb(null);
           }, function(cb) {
@@ -3201,19 +3216,26 @@ module.exports = ReplicatorConfig = (function(_super) {
 
   ReplicatorConfig.prototype.save = function(changes, callback) {
     this.set(changes);
-    return this.replicator.db.put(this.toJSON(), (function(_this) {
-      return function(err, res) {
-        if (err) {
-          return callback(err);
+    return this.replicator.db.get('localconfig', (function(_this) {
+      return function(err, config) {
+        if (!err) {
+          _this.set({
+            _rev: config._rev
+          });
         }
-        if (!res.ok) {
-          return callback(new Error('cant save config'));
-        }
-        _this.set({
-          _rev: res.rev
+        return _this.replicator.db.put(_this.toJSON(), function(err, res) {
+          if (err) {
+            return callback(err);
+          }
+          if (!res.ok) {
+            return callback(new Error('cant save config'));
+          }
+          _this.set({
+            _rev: res.rev
+          });
+          _this.remote = _this.createRemotePouchInstance();
+          return typeof callback === "function" ? callback(null, _this) : void 0;
         });
-        _this.remote = _this.createRemotePouchInstance();
-        return typeof callback === "function" ? callback(null, _this) : void 0;
       };
     })(this));
   };
@@ -3262,6 +3284,19 @@ module.exports = {
     this.set('backup_step_done', null);
     return async.series([
       (function(_this) {
+        return function(cb) {
+          if (_this.config.has('contactsPullCheckpointed')) {
+            return cb();
+          } else {
+            return request.get(_this.config.makeUrl('/_changes?descending=true&limit=1'), function(err, res, body) {
+              if (err) {
+                return cb(err);
+              }
+              return _this.initContactsInPhone(body.last_seq, cb);
+            });
+          }
+        };
+      })(this), (function(_this) {
         return function(cb) {
           return _this.syncPhone2Pouch(cb);
         };
@@ -3451,11 +3486,13 @@ module.exports = {
             return cb(err);
           }
           if (doc._deleted) {
-            return contact.remove((function() {
-              return cb();
-            }), cb, {
-              callerIsSyncAdapter: true
-            });
+            if (contact != null) {
+              return contact.remove((function() {
+                return cb();
+              }), cb, {
+                callerIsSyncAdapter: true
+              });
+            }
           } else {
             return _this._saveContactInPhone(doc, contact, cb);
           }
@@ -3504,7 +3541,10 @@ module.exports = {
       };
     })(this));
   },
-  initContactsInPhone: function(callback) {
+  initContactsInPhone: function(lastSeq, callback) {
+    if (!this.config.get('syncContacts')) {
+      return callback();
+    }
     return this.createAccount((function(_this) {
       return function(err) {
         return request.get(_this.config.makeUrl("/_design/contact/_view/all/"), function(err, res, body) {
@@ -3540,10 +3580,54 @@ module.exports = {
               if (err) {
                 return callback(err);
               }
-              return _this._applyChangeToPhone(docs, callback);
+              return _this._applyChangeToPhone(docs, function(err) {
+                return _this.config.save({
+                  contactsPullCheckpointed: lastSeq
+                }, function(err) {
+                  return _this.deleteObsoletePhoneContacts(callback);
+                });
+              });
             });
           });
         });
+      };
+    })(this));
+  },
+  deleteObsoletePhoneContacts: function(callback) {
+    return async.parallel({
+      phone: function(cb) {
+        return navigator.contacts.find([navigator.contacts.fieldType.id], function(contacts) {
+          return cb(null, contacts);
+        }, cb, new ContactFindOptions("", true, [], ACCOUNT_TYPE, ACCOUNT_NAME));
+      },
+      pouch: (function(_this) {
+        return function(cb) {
+          return _this.db.query("Contacts", {}, cb);
+        };
+      })(this)
+    }, (function(_this) {
+      return function(err, contacts) {
+        var idsInPouch, row, _i, _len, _ref;
+        if (err) {
+          return callback(err);
+        }
+        console.log(contacts);
+        idsInPouch = {};
+        _ref = contacts.pouch.rows;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          row = _ref[_i];
+          idsInPouch[row.id] = true;
+        }
+        return async.eachSeries(contacts.phone, function(contact, cb) {
+          if (!(contact.sourceId in idsInPouch)) {
+            return contact.remove((function() {
+              return cb();
+            }), cb, {
+              callerIsSyncAdapter: true
+            });
+          }
+          return cb();
+        }, callback);
       };
     })(this));
   }
@@ -4527,7 +4611,7 @@ module.exports = ConfigView = (function(_super) {
 
   ConfigView.prototype.saveChanges = function() {
     var checkboxes;
-    checkboxes = this.$('#contactSyncCheck, #imageSyncCheck,' + '#wifiSyncCheck, #cozyNotificationsCheck');
+    checkboxes = this.$('#contactSyncCheck, #imageSyncCheck,' + '#wifiSyncCheck, #cozyNotificationsCheck' + '#configDone');
     checkboxes.prop('disabled', true);
     return app.replicator.config.save({
       syncContacts: this.$('#contactSyncCheck').is(':checked'),

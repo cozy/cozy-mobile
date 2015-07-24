@@ -151,8 +151,7 @@ module.exports = class Replicator extends Backbone.Model
 
                 (cb) => @set('initialReplicationStep', 3) and cb null
 
-                (cb) => @initContactsInPhone cb
-                (cb) => @config.save contactsPullCheckpointed: last_seq, cb
+                (cb) => @initContactsInPhone last_seq, cb
 
                 (cb) => @set('initialReplicationStep', 4) and cb null
                 # Save last sequences
