@@ -2484,7 +2484,7 @@ module.exports = Replicator = (function(_super) {
             } else {
               _this.cache.push(binfolder);
               callback(null, entry.toURL());
-              return _this.removeAllLocal(binary_id, binary_rev);
+              return _this.removeAllLocal(binary_id, binary_rev, function() {});
             }
           });
         });
@@ -2535,18 +2535,17 @@ module.exports = Replicator = (function(_super) {
     })(this));
   };
 
-  Replicator.prototype.removeAllLocal = function(id, rev) {
-    return this.cache.some((function(_this) {
-      return function(entry) {
+  Replicator.prototype.removeAllLocal = function(id, rev, callback) {
+    return async.eachSeries(this.cache, (function(_this) {
+      return function(entry, cb) {
         if (entry.name.indexOf(id) !== -1 && entry.name !== id + '-' + rev) {
           return fs.getDirectory(_this.downloads, entry.name, function(err, binfolder) {
             if (err) {
-              return callback(err);
+              return cb(err);
             }
             return fs.rmrf(binfolder, function(err) {
-              var currentEntry, index, _i, _len, _ref, _results;
+              var currentEntry, index, _i, _len, _ref;
               _ref = _this.cache;
-              _results = [];
               for (index = _i = 0, _len = _ref.length; _i < _len; index = ++_i) {
                 currentEntry = _ref[index];
                 if (!(currentEntry.name === entry.name)) {
@@ -2555,26 +2554,27 @@ module.exports = Replicator = (function(_super) {
                 _this.cache.splice(index, 1);
                 break;
               }
-              return _results;
+              return cb();
             });
           });
+        } else {
+          return cb();
         }
       };
-    })(this));
+    })(this), callback);
   };
 
   Replicator.prototype.updateLocal = function(options, callback) {
-    var entry, file;
+    var entry, file, noop;
     file = options.file;
     entry = options.entry;
+    noop = function() {};
     if (file._deleted) {
       return this.removeLocal(file, callback);
     } else if (entry.name !== file.binary.file.id + '-' + file.binary.file.rev) {
       return DeviceStatus.checkReadyForSync((function(_this) {
         return function(err, ready, msg) {
-          var noop;
           if (ready) {
-            noop = function() {};
             return _this.getBinary(file, noop, callback);
           } else {
             return callback();
@@ -2584,18 +2584,15 @@ module.exports = Replicator = (function(_super) {
     } else {
       return fs.getChildren(entry, (function(_this) {
         return function(err, children) {
-          var child;
-          if ((err == null) && children.length === 0) {
-            err = new Error('File is missing');
-          }
           if (err) {
             return callback(err);
           }
-          child = children[0];
-          if (child.name === file.name) {
+          if (children.length === 0) {
+            return _this.getBinary(file, noop, callback);
+          } else if (children[0].name === file.name) {
             return callback();
           } else {
-            return fs.moveTo(child, entry, file.name, callback);
+            return fs.moveTo(children[0], entry, file.name, callback);
           }
         };
       })(this));
