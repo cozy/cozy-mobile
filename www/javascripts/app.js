@@ -1311,7 +1311,8 @@ module.exports = {
   "photo folder not replicated yet": "Initialization not finished yet.",
   "Not Found": "Error while initializing. Did you install the Files application in your Cozy ?",
   "connexion error": "We failed to connect to your cozy. Please check that your device is connected to the internet, the address of your cozy is spelled correctly and your cozy is running. If you are an advanced user with a self hosted cozy, refer to the <a href='http://cozy.io/en/mobile/files.html#note-about-self-signed-certificates' target='_system'>doc to handle self-signed certificates</a>.",
-  "no images in DCIM": "Backup images : no image found in DCIM dir."
+  "no images in DCIM": "Backup images : no image found in DCIM dir.",
+  "Document update conflict": "Update conflict in database, you could try to restart the app to fix it."
 };
 
 });
@@ -1397,7 +1398,8 @@ module.exports = {
   "photo folder not replicated yet": "La inicialización aún no ha terminado.",
   "Not Found": "Error en la inicialización. ¿Ha usted instalado la aplicación Archivos en su Cozy?",
   "connexion error": "La conexión a su cozy ha fallado. Revisar que su periférico esté conectado a internet, que la dirección de su cozy esté bien escrita y si su cozy funciona. Para los usuarios avezados con cozy en sus propios servidores, consultar la <a href='http://cozy.io/en/mobile/files.html#note-about-self-signed-certificates' target='_system'>documentación sobre los certificados auto-firmados </a>",
-  "no images in DCIM": "Copia de seguridad de imágenes: no se ha encontrado ninguna imagen en el directorio DCIM."
+  "no images in DCIM": "Copia de seguridad de imágenes: no se ha encontrado ninguna imagen en el directorio DCIM.",
+  "Document update conflict": "Conflicto durante una operación de base de datos. Reinicie la aplicación para arreglarlo."
 };
 
 });
@@ -1483,7 +1485,8 @@ module.exports = {
   "photo folder not replicated yet": "L'initialisation n'est pas terminée.",
   "Not Found": "Erreur à l'initialisation. Avez-vous installé l'application Files sur votre Cozy ?",
   "connexion error": "La connection à votre cozy a échoué. Vérifiez que votre terminal est connecté à internet, que l'adresse de votre cozy est bien écrite et que votre cozy fonctionne. Pour les utilisateurs avancés avec un cozy auto-hébergé, consulter la <a href='http://cozy.io/fr/mobile/files.html#a-propos-des-certificats-auto-sign-s' target='_system'>documentation à propos des certificats autosignés</a>",
-  "no images in DCIM": "Sauvegarde des images : aucune image trouvée dans le répertoire DCIM."
+  "no images in DCIM": "Sauvegarde des images : aucune image trouvée dans le répertoire DCIM.",
+  "Document update conflict": "Conflit lors d'une opération en base de données. Essayez de redémarrer l'application pour le résoudre."
 };
 
 });

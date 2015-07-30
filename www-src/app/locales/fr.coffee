@@ -106,3 +106,4 @@ module.exports =
     "Not Found" : "Erreur à l'initialisation. Avez-vous installé l'application Files sur votre Cozy ?"
     "connexion error": "La connection à votre cozy a échoué. Vérifiez que votre terminal est connecté à internet, que l'adresse de votre cozy est bien écrite et que votre cozy fonctionne. Pour les utilisateurs avancés avec un cozy auto-hébergé, consulter la <a href='http://cozy.io/fr/mobile/files.html#a-propos-des-certificats-auto-sign-s' target='_system'>documentation à propos des certificats autosignés</a>"
     "no images in DCIM": "Sauvegarde des images : aucune image trouvée dans le répertoire DCIM."
+    "Document update conflict": "Conflit lors d'une opération en base de données. Essayez de redémarrer l'application pour le résoudre."
