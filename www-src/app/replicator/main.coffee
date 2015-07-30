@@ -262,7 +262,7 @@ module.exports = class Replicator extends Backbone.Model
                     else
                         @cache.push binfolder
                         callback null, entry.toURL()
-                        @removeAllLocal binary_id, binary_rev
+                        @removeAllLocal binary_id, binary_rev, ->
 
     getBinaryFolder: (folder, progressback, callback) ->
         @getDbFilesOfFolder folder, (err, files) =>
@@ -293,22 +293,29 @@ module.exports = class Replicator extends Backbone.Model
                         @getBinary file, pb, cb
                     , callback
 
-    removeAllLocal: (id, rev) ->
-        @cache.some (entry) =>
-            if entry.name.indexOf(id) isnt -1 and
-                entry.name isnt id + '-' + rev
-                    fs.getDirectory @downloads, entry.name, (err, binfolder) =>
-                        return callback err if err
-                        fs.rmrf binfolder, (err) =>
-                            # remove from @cache
-                            for currentEntry, index in @cache when currentEntry.name is entry.name
-                                @cache.splice index, 1
-                                break
+    # Remove all versions in saved locally of the specified file-id, except the
+    # specified rev.
+    removeAllLocal: (id, rev, callback) ->
+        async.eachSeries @cache, (entry, cb) =>
+            if entry.name.indexOf(id) isnt -1 and entry.name isnt id + '-' + rev
+                fs.getDirectory @downloads, entry.name, (err, binfolder) =>
+                    return cb err if err
+                    fs.rmrf binfolder, (err) =>
+                        # remove from @cache
+                        for currentEntry, index in @cache when currentEntry.name is entry.name
+                            @cache.splice index, 1
+                            break
+                        cb()
+            else
+                cb()
+        , callback
 
     # Update the local copy  (options.entry) of the file (options.file)
     updateLocal: (options, callback) =>
         file = options.file
         entry = options.entry
+
+        noop = ->
 
         if file._deleted
             @removeLocal file, callback
@@ -319,22 +326,22 @@ module.exports = class Replicator extends Backbone.Model
             DeviceStatus.checkReadyForSync (err, ready, msg) =>
                 if ready
                     # Download the new version.
-                    noop = ->
                     @getBinary file, noop, callback
                 else
                     callback()
 
         else # check filename
             fs.getChildren entry, (err, children) =>
-                if not err? and children.length is 0
-                    err = new Error 'File is missing'
                 return callback err if err
 
-                child = children[0]
-                if child.name is file.name
+                if children.length is 0
+                    # it's anormal but download it !
+                    @getBinary file, noop, callback
+
+                else if children[0].name is file.name
                     callback()
                 else
-                    fs.moveTo child, entry, file.name, callback
+                    fs.moveTo children[0], entry, file.name, callback
 
 
     removeLocal: (model, callback) ->
