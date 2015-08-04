@@ -29,6 +29,7 @@ module.exports =
             @startRealtime() unless options.background
             return callback err if err
             @config.save lastBackup: new Date().toString(), (err) =>
+                console.log "#{new Date().toISOString()} Backup done."
                 callback null
 
 
@@ -56,7 +57,6 @@ module.exports =
                         cb status.readyForSyncMsg
 
             ], (err) ->
-                console.log "Backup done."
                 callback err
 
 

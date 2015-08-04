@@ -1,8 +1,8 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget android-versionCode="16"
-    android-versionName="0.1.6"
+<widget android-versionCode="18"
+    android-versionName="0.1.8"
     id="io.cozy.files-client"
-    version="0.1.6"
+    version="0.1.8"
     xmlns="http://www.w3.org/ns/widgets"
     xmlns:cdv="http://cordova.apache.org/ns/1.0">
 
@@ -37,5 +37,6 @@
         <icon height="72" src="res/icons/icon-72-ios.png" width="72"/>
         <icon height="144" src="res/ios/icon-144-ios.png" width="144"/>
     </platform>
+    <access origin="mailto:*" launch-external="yes"/>
     <access origin="*"/>
 </widget>

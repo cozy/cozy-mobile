@@ -91,7 +91,7 @@
   globals.require.brunch = true;
 })();
 require.register("application", function(exports, require, module) {
-var LayoutView, Notifications, Replicator, ServiceManager;
+var LayoutView, Notifications, Replicator, ServiceManager, overrideLog;
 
 Replicator = require('./replicator/main');
 
@@ -104,6 +104,7 @@ Notifications = require('../views/notifications');
 module.exports = {
   initialize: function() {
     window.app = this;
+    overrideLog();
     if (window.isBrowserDebugging) {
       window.navigator = window.navigator || {};
       window.navigator.globalization = window.navigator.globalization || {};
@@ -156,7 +157,7 @@ module.exports = {
     app.foreground = true;
     document.addEventListener("resume", (function(_this) {
       return function() {
-        console.log("RESUME EVENT");
+        console.log((new Date().toISOString()) + " RESUME EVENT");
         app.foreground = true;
         if (app.backFromOpen) {
           app.backFromOpen = false;
@@ -172,7 +173,7 @@ module.exports = {
     })(this), false);
     document.addEventListener("pause", (function(_this) {
       return function() {
-        console.log("PAUSE EVENT");
+        console.log((new Date().toISOString()) + " PAUSE EVENT");
         app.foreground = false;
         return app.replicator.stopRealtime();
       };
@@ -209,6 +210,18 @@ module.exports = {
       };
     })(this));
   }
+};
+
+overrideLog = function() {
+  var oldLog;
+  oldLog = console.log;
+  return console.log = function() {
+    if (window.app.logTrace == null) {
+      window.app.logTrace = [];
+    }
+    window.app.logTrace.push(Array.prototype.slice.call(arguments).join(' - '));
+    return oldLog.apply(console, arguments);
+  };
 };
 
 });
@@ -1253,6 +1266,9 @@ module.exports = {
   "retry synchro": "Sync",
   "synchro warning": "This start a replication from the beginning. It can take a long time.",
   "reset warning": "This will erase all cozy-generated data on your phone.",
+  "support": "Support",
+  "send log": "Send",
+  "send log info": "Send an email with application log to help us improve its quality and stability.",
   "pull to sync": "Pull to sync",
   "syncing": "Syncing",
   "contacts_sync": "Syncing contacts",
@@ -1427,6 +1443,9 @@ module.exports = {
   "retry synchro": "Sync",
   "synchro warning": "Cela relancera une synchronisation depuis le début. Cela peut prendre du temps.",
   "reset warning": "Cela supprimera toutes les données cozy sur votre mobile (dont votre appareil).",
+  "support": "Support",
+  "send log": "Envoyer",
+  "send log info": "Envoyer un email avec le journal de l'application afin de nous aider à améliorer sa qualité et sa fiabilité.",
   "pull to sync": "Tirer pour synchroniser",
   "syncing": "En cours de synchronisation",
   "contacts_sync": "Synchronisation des contacts",
@@ -2891,6 +2910,7 @@ module.exports = {
         return _this.config.save({
           lastBackup: new Date().toString()
         }, function(err) {
+          console.log((new Date().toISOString()) + " Backup done.");
           return callback(null);
         });
       };
@@ -2928,7 +2948,6 @@ module.exports = {
             }
           }
         ], function(err) {
-          console.log("Backup done.");
           return callback(err);
         });
       };
@@ -3322,7 +3341,7 @@ module.exports = {
         };
       })(this)
     ], function(err) {
-      console.log("Sync contacts done");
+      console.log((new Date().toISOString()) + " Sync contacts done");
       return callback(err);
     });
   },
@@ -3429,6 +3448,7 @@ module.exports = {
     })(this));
   },
   syncPhone2Pouch: function(callback) {
+    console.log((new Date().toISOString()) + " enter syncPhone2Pouch");
     return navigator.contacts.find([navigator.contacts.fieldType.dirty], (function(_this) {
       return function(contacts) {
         return async.eachSeries(contacts, function(contact, cb) {
@@ -3445,6 +3465,7 @@ module.exports = {
   },
   _syncToCozy: function(callback) {
     var replication;
+    console.log((new Date().toISOString()) + " enter sync2Cozy");
     replication = app.replicator.db.replicate.to(app.replicator.config.remote, {
       batch_size: 20,
       batches_limit: 5,
@@ -3516,6 +3537,7 @@ module.exports = {
   },
   syncFromCozyToPouchToPhone: function(callback) {
     var q, replication, replicationDone;
+    console.log((new Date().toISOString()) + " enter syncCozy2Phone");
     replicationDone = false;
     q = async.queue(this._applyChangeToPhone.bind(this));
     q.drain = function() {
@@ -4223,7 +4245,7 @@ buf.push('</div><div class="item">');
 var __val__ = t('device name') + ' : ' + deviceName
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</div><div class="item">');
-var __val__ = t('app name') + ' v 0.1.6'
+var __val__ = t('app name') + ' v' + appVersion
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</div><div class="item item-divider">');
 var __val__ = t('reset title')
@@ -4239,6 +4261,15 @@ var __val__ = t('reset action')
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</button>');
 var __val__ = t('reset warning')
+buf.push(escape(null == __val__ ? "" : __val__));
+buf.push('</div><div class="item item-divider">');
+var __val__ = t('support')
+buf.push(escape(null == __val__ ? "" : __val__));
+buf.push('</div><div style="padding-left: 95px; white-space: normal;" class="item item-button-left"><button id="sendlogbtn" style="font-size:15px;" class="button button-assertive">');
+var __val__ = t('send log')
+buf.push(escape(null == __val__ ? "" : __val__));
+buf.push('</button>');
+var __val__ = t('send log info')
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</div>');
 }
@@ -4521,11 +4552,13 @@ module.exports = BreadcrumbsView = (function(_super) {
 });
 
 require.register("views/config", function(exports, require, module) {
-var BaseView, ConfigView,
+var APP_VERSION, BaseView, ConfigView,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   __hasProp = {}.hasOwnProperty;
 
 BaseView = require('../lib/base_view');
+
+APP_VERSION = "0.1.8";
 
 module.exports = ConfigView = (function(_super) {
   __extends(ConfigView, _super);
@@ -4543,6 +4576,7 @@ module.exports = ConfigView = (function(_super) {
       'tap #configDone': 'configDone',
       'tap #redbtn': 'redBtn',
       'tap #synchrobtn': 'synchroBtn',
+      'tap #sendlogbtn': 'sendlogBtn',
       'tap #contactSyncCheck': 'saveChanges',
       'tap #imageSyncCheck': 'saveChanges',
       'tap #wifiSyncCheck': 'saveChanges',
@@ -4557,7 +4591,8 @@ module.exports = ConfigView = (function(_super) {
       lastSync: this.formatDate(config != null ? config.lastSync : void 0),
       lastBackup: this.formatDate(config != null ? config.lastBackup : void 0),
       firstRun: app.isFirstRun,
-      locale: app.locale
+      locale: app.locale,
+      appVersion: APP_VERSION
     });
   };
 
@@ -4605,6 +4640,15 @@ module.exports = ConfigView = (function(_super) {
         };
       })(this));
     }
+  };
+
+  ConfigView.prototype.sendlogBtn = function() {
+    var query;
+    query = {
+      subject: "Log from cozy-mobile v" + APP_VERSION,
+      body: "Describe the problem here:\n\n\n########################\n# Log Trace: please don't touch (or tell us what)\n##\n\n" + (window.app.logTrace.join('\n'))
+    };
+    return window.open("mailto:guillaume@cozycloud.cc?" + $.param(query), "_system");
   };
 
   ConfigView.prototype.saveChanges = function() {
