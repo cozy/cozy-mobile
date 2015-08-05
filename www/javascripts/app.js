@@ -2921,6 +2921,7 @@ module.exports = {
   _backup: function(force, callback) {
     return DeviceStatus.checkReadyForSync(true, (function(_this) {
       return function(err, ready, msg) {
+        var errors;
         console.log("SYNC STATUS", err, ready, msg);
         if (err) {
           return callback(err);
@@ -2929,14 +2930,27 @@ module.exports = {
           return callback(new Error(msg));
         }
         console.log("WE ARE READY FOR SYNC");
+        errors = [];
         return async.series([
           function(cb) {
-            return _this.syncPictures(force, cb);
+            return _this.syncPictures(force, function(err) {
+              if (err) {
+                console.log(err);
+                errors.push(err);
+              }
+              return cb();
+            });
           }, function(cb) {
             var status;
             status = DeviceStatus.getStatus();
             if (status.readyForSync) {
-              return _this.syncCache(cb);
+              return _this.syncCache(function(err) {
+                if (err) {
+                  console.log(err);
+                  errors.push(err);
+                }
+                return cb();
+              });
             } else {
               return cb(status.readyForSyncMsg);
             }
@@ -2944,13 +2958,26 @@ module.exports = {
             var status;
             status = DeviceStatus.getStatus();
             if (status.readyForSync) {
-              return _this.syncContacts(cb);
+              return _this.syncContacts(function(err) {
+                if (err) {
+                  console.log(err);
+                  errors.push(err);
+                }
+                return cb();
+              });
             } else {
               return cb(status.readyForSyncMsg);
             }
           }
         ], function(err) {
-          return callback(err);
+          if (err) {
+            return callback(err);
+          }
+          if (errors.length > 0) {
+            return callback(errors[0]);
+          } else {
+            return callback();
+          }
         });
       };
     })(this));
