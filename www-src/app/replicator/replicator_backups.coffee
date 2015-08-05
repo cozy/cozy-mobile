@@ -103,6 +103,8 @@ module.exports =
                 else
                     # Check if pictures is already present (old installation)
                     fs.getFileFromPath path, (err, file) =>
+                        return cb err if err
+
                         # We test only on filename, case-insensitive
                         if file.name?.toLowerCase() in dbPictures
                             # Add photo in local database

@@ -3001,6 +3001,9 @@ module.exports = {
           } else {
             return fs.getFileFromPath(path, function(err, file) {
               var _ref1, _ref2;
+              if (err) {
+                return cb(err);
+              }
               if (_ref1 = (_ref2 = file.name) != null ? _ref2.toLowerCase() : void 0, __indexOf.call(dbPictures, _ref1) >= 0) {
                 _this.createPhoto(path);
               } else {
