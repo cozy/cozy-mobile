@@ -1297,6 +1297,7 @@ module.exports = {
   "back": "Back",
   "connection failure": "Connection failure",
   "setup 1/3": "Setup 1/3",
+  "cozy welcome": "Welcome ! <br> Cozy, a Personal Cloud you can host, customize and fully control. If you already have a Cozy instance, follow the steps to sync your mobile with your Cozy. Otherwise, visit <a target='_system' href='http://cozy.io/en/'>cozy.io</a> for more.",
   "password placeholder": "your password",
   "authenticating...": "Authenticating...",
   "setup 2/3": "Setup 2/3",
@@ -1474,6 +1475,7 @@ module.exports = {
   "back": "Retour",
   "connection failure": "Échec de la connexion",
   "setup 1/3": "Configuration 1/3",
+  "cozy welcome": "Bienvenue ! <br> Cozy, un Cloud personnel que vous pouvez héberger, personnaliser et entièrement contrôler. Si vous avez déjà une instance Cozy, suivez les étapes pour synchroniser votre mobile avec votre Cozy. Sinon, rendez-vous sur <a target='_system' href='http://cozy.io/fr/'>cozy.io</a> pour en savoir plus.",
   "password placeholder": "votre mot de passe",
   "authenticating...": "Vérification des identifiants…",
   "setup 2/3": "Configuration 2/3",
@@ -4407,7 +4409,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<div class="list"><div class="card"><label class="item item-input"><span class="input-label">');
+buf.push('<div class="list"><div class="card"><div class="item item-text-wrap welcome"></div></div><div class="card"><label class="item item-input"><span class="input-label">');
 var __val__ = t('cozy url')
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</span><input');
@@ -5458,6 +5460,10 @@ module.exports = LoginView = (function(_super) {
     return {
       defaultValue: defaultValue
     };
+  };
+
+  LoginView.prototype.afterRender = function() {
+    return this.$('.welcome').html(t('cozy welcome'));
   };
 
   LoginView.prototype.doComplete = function() {
