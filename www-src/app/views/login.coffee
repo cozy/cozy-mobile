@@ -14,6 +14,9 @@ module.exports = class LoginView extends BaseView
         defaultValue = app.loginConfig  or cozyURL: '', password: ''
         return {defaultValue}
 
+    afterRender: ->
+        @$('.welcome').html t 'cozy welcome'
+
     doComplete: ->
         url = @$('#input-url').val()
         if url.indexOf('.') is -1 and url.length > 0

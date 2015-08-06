@@ -6460,10 +6460,10 @@ img.backup {
   text-decoration: none;
   color: #fff;
 }
-#breadcrumbs a:active {
+#breadcrumbs a.activated {
   background: #fe8800;
 }
-#breadcrumbs a:active:after {
+#breadcrumbs a.activated:after {
   border-left-color: #fe8800;
 }
 #breadcrumbs .home {
@@ -6513,6 +6513,9 @@ img.backup {
   height: 30px;
   z-index: 2;
 }
+#breadcrumbs .activated .blue-arrow {
+  border-left: 15px solid #fe8800;
+}
 #breadcrumbs .round {
   top: 0;
   height: 30px;
@@ -6521,6 +6524,9 @@ img.backup {
   border-top-right-radius: 10px;
   border-bottom-right-radius: 10px;
   background: #3fbaf4;
+}
+#breadcrumbs .activated .round {
+  background: #fe8800;
 }
 #shadow {
   position: absolute;

@@ -91,7 +91,7 @@
   globals.require.brunch = true;
 })();
 require.register("application", function(exports, require, module) {
-var LayoutView, Notifications, Replicator, ServiceManager;
+var LayoutView, Notifications, Replicator, ServiceManager, overrideLog;
 
 Replicator = require('./replicator/main');
 
@@ -104,6 +104,7 @@ Notifications = require('../views/notifications');
 module.exports = {
   initialize: function() {
     window.app = this;
+    overrideLog();
     if (window.isBrowserDebugging) {
       window.navigator = window.navigator || {};
       window.navigator.globalization = window.navigator.globalization || {};
@@ -156,7 +157,7 @@ module.exports = {
     app.foreground = true;
     document.addEventListener("resume", (function(_this) {
       return function() {
-        console.log("RESUME EVENT");
+        console.log((new Date().toISOString()) + " RESUME EVENT");
         app.foreground = true;
         if (app.backFromOpen) {
           app.backFromOpen = false;
@@ -172,7 +173,7 @@ module.exports = {
     })(this), false);
     document.addEventListener("pause", (function(_this) {
       return function() {
-        console.log("PAUSE EVENT");
+        console.log((new Date().toISOString()) + " PAUSE EVENT");
         app.foreground = false;
         return app.replicator.stopRealtime();
       };
@@ -211,12 +212,24 @@ module.exports = {
   }
 };
 
+overrideLog = function() {
+  var oldLog;
+  oldLog = console.log;
+  return console.log = function() {
+    if (window.app.logTrace == null) {
+      window.app.logTrace = [];
+    }
+    window.app.logTrace.push(Array.prototype.slice.call(arguments).join(' - '));
+    return oldLog.apply(console, arguments);
+  };
+};
+
 });
 
 require.register("collections/files", function(exports, require, module) {
 var File, FileAndFolderCollection, PAGE_LENGTH,
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  __hasProp = {}.hasOwnProperty;
 
 File = require('../models/file');
 
@@ -455,8 +468,8 @@ document.addEventListener('deviceready', function() {
 
 require.register("lib/base_view", function(exports, require, module) {
 var BaseView,
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  __hasProp = {}.hasOwnProperty;
 
 module.exports = BaseView = (function(_super) {
   __extends(BaseView, _super);
@@ -1111,8 +1124,8 @@ module.exports = request;
 require.register("lib/view_collection", function(exports, require, module) {
 var BaseView, ViewCollection,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  __hasProp = {}.hasOwnProperty;
 
 BaseView = require('lib/base_view');
 
@@ -1253,6 +1266,9 @@ module.exports = {
   "retry synchro": "Sync",
   "synchro warning": "This start a replication from the beginning. It can take a long time.",
   "reset warning": "This will erase all cozy-generated data on your phone.",
+  "support": "Support",
+  "send log": "Send",
+  "send log info": "Send an email with application log to help us improve its quality and stability.",
   "pull to sync": "Pull to sync",
   "syncing": "Syncing",
   "contacts_sync": "Syncing contacts",
@@ -1281,6 +1297,7 @@ module.exports = {
   "back": "Back",
   "connection failure": "Connection failure",
   "setup 1/3": "Setup 1/3",
+  "cozy welcome": "Welcome ! <br> Cozy, a Personal Cloud you can host, customize and fully control. If you already have a Cozy instance, follow the steps to sync your mobile with your Cozy. Otherwise, visit <a target='_system' href='http://cozy.io/en/'>cozy.io</a> for more.",
   "password placeholder": "your password",
   "authenticating...": "Authenticating...",
   "setup 2/3": "Setup 2/3",
@@ -1311,7 +1328,8 @@ module.exports = {
   "photo folder not replicated yet": "Initialization not finished yet.",
   "Not Found": "Error while initializing. Did you install the Files application in your Cozy ?",
   "connexion error": "We failed to connect to your cozy. Please check that your device is connected to the internet, the address of your cozy is spelled correctly and your cozy is running. If you are an advanced user with a self hosted cozy, refer to the <a href='http://cozy.io/en/mobile/files.html#note-about-self-signed-certificates' target='_system'>doc to handle self-signed certificates</a>.",
-  "no images in DCIM": "Backup images : no image found in DCIM dir."
+  "no images in DCIM": "Backup images : no image found in DCIM dir.",
+  "Document update conflict": "Update conflict in database, you could try to restart the app to fix it."
 };
 
 });
@@ -1397,7 +1415,8 @@ module.exports = {
   "photo folder not replicated yet": "La inicialización aún no ha terminado.",
   "Not Found": "Error en la inicialización. ¿Ha usted instalado la aplicación Archivos en su Cozy?",
   "connexion error": "La conexión a su cozy ha fallado. Revisar que su periférico esté conectado a internet, que la dirección de su cozy esté bien escrita y si su cozy funciona. Para los usuarios avezados con cozy en sus propios servidores, consultar la <a href='http://cozy.io/en/mobile/files.html#note-about-self-signed-certificates' target='_system'>documentación sobre los certificados auto-firmados </a>",
-  "no images in DCIM": "Copia de seguridad de imágenes: no se ha encontrado ninguna imagen en el directorio DCIM."
+  "no images in DCIM": "Copia de seguridad de imágenes: no se ha encontrado ninguna imagen en el directorio DCIM.",
+  "Document update conflict": "Conflicto durante una operación de base de datos. Reinicie la aplicación para arreglarlo."
 };
 
 });
@@ -1425,6 +1444,9 @@ module.exports = {
   "retry synchro": "Sync",
   "synchro warning": "Cela relancera une synchronisation depuis le début. Cela peut prendre du temps.",
   "reset warning": "Cela supprimera toutes les données cozy sur votre mobile (dont votre appareil).",
+  "support": "Support",
+  "send log": "Envoyer",
+  "send log info": "Envoyer un email avec le journal de l'application afin de nous aider à améliorer sa qualité et sa fiabilité.",
   "pull to sync": "Tirer pour synchroniser",
   "syncing": "En cours de synchronisation",
   "contacts_sync": "Synchronisation des contacts",
@@ -1453,6 +1475,7 @@ module.exports = {
   "back": "Retour",
   "connection failure": "Échec de la connexion",
   "setup 1/3": "Configuration 1/3",
+  "cozy welcome": "Bienvenue ! <br> Cozy, un Cloud personnel que vous pouvez héberger, personnaliser et entièrement contrôler. Si vous avez déjà une instance Cozy, suivez les étapes pour synchroniser votre mobile avec votre Cozy. Sinon, rendez-vous sur <a target='_system' href='http://cozy.io/fr/'>cozy.io</a> pour en savoir plus.",
   "password placeholder": "votre mot de passe",
   "authenticating...": "Vérification des identifiants…",
   "setup 2/3": "Configuration 2/3",
@@ -1483,7 +1506,8 @@ module.exports = {
   "photo folder not replicated yet": "L'initialisation n'est pas terminée.",
   "Not Found": "Erreur à l'initialisation. Avez-vous installé l'application Files sur votre Cozy ?",
   "connexion error": "La connection à votre cozy a échoué. Vérifiez que votre terminal est connecté à internet, que l'adresse de votre cozy est bien écrite et que votre cozy fonctionne. Pour les utilisateurs avancés avec un cozy auto-hébergé, consulter la <a href='http://cozy.io/fr/mobile/files.html#a-propos-des-certificats-auto-sign-s' target='_system'>documentation à propos des certificats autosignés</a>",
-  "no images in DCIM": "Sauvegarde des images : aucune image trouvée dans le répertoire DCIM."
+  "no images in DCIM": "Sauvegarde des images : aucune image trouvée dans le répertoire DCIM.",
+  "Document update conflict": "Conflit lors d'une opération en base de données. Essayez de redémarrer l'application pour le résoudre."
 };
 
 });
@@ -1542,7 +1566,7 @@ Contact.cozy2Cordova = function(cozyContact) {
     return [];
   };
   dataPoints2Cordova = function(cozyContact, cordovaContact) {
-    var addContactField, datapoint, i, name, _ref, _results;
+    var addContactField, countryPart, datapoint, formatted, i, name, street, structuredToFlat, _ref, _results;
     addContactField = function(cordovaField, datapoint) {
       var field;
       if (!cordovaContact[cordovaField]) {
@@ -1567,7 +1591,19 @@ Contact.cozy2Cordova = function(cozyContact) {
           if (!cordovaContact.addresses) {
             cordovaContact.addresses = [];
           }
-          _results.push(cordovaContact.addresses.push(new ContactAddress(void 0, datapoint.type, datapoint.value[2], datapoint.value[2])));
+          structuredToFlat = function(t) {
+            t = t.filter(function(part) {
+              return (part != null) && part !== '';
+            });
+            return t.join(', ');
+          };
+          street = structuredToFlat(datapoint.value.slice(0, 3));
+          countryPart = structuredToFlat(datapoint.value.slice(3, 7));
+          formatted = street;
+          if (countryPart !== '') {
+            formatted += '\n' + countryPart;
+          }
+          _results.push(cordovaContact.addresses.push(new ContactAddress(void 0, datapoint.type, formatted, street, datapoint.value[3], datapoint.value[4], datapoint.value[5], datapoint.value[6])));
           break;
         case 'CHAT':
           _results.push(addContactField('ims', datapoint));
@@ -1746,8 +1782,8 @@ Contact.cordova2Cozy = function(cordovaContact, callback) {
 
 require.register("models/file", function(exports, require, module) {
 var File,
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  __hasProp = {}.hasOwnProperty;
 
 module.exports = File = (function(_super) {
   __extends(File, _super);
@@ -1778,7 +1814,7 @@ module.exports = File = (function(_super) {
     var name, path;
     name = this.get('name');
     if (path = this.get('path')) {
-      return "" + (path.slice(1)) + "/" + name;
+      return (path.slice(1)) + "/" + name;
     } else {
       return name;
     }
@@ -2102,8 +2138,8 @@ __chromeSafe = function() {
 require.register("replicator/main", function(exports, require, module) {
 var DBNAME, DBOPTIONS, DBPHOTOS, DeviceStatus, Replicator, ReplicatorConfig, fs, makeDesignDocs, request,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  __hasProp = {}.hasOwnProperty,
   __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
 request = require('../lib/request');
@@ -2472,7 +2508,7 @@ module.exports = Replicator = (function(_super) {
             } else {
               _this.cache.push(binfolder);
               callback(null, entry.toURL());
-              return _this.removeAllLocal(binary_id, binary_rev);
+              return _this.removeAllLocal(binary_id, binary_rev, function() {});
             }
           });
         });
@@ -2523,18 +2559,17 @@ module.exports = Replicator = (function(_super) {
     })(this));
   };
 
-  Replicator.prototype.removeAllLocal = function(id, rev) {
-    return this.cache.some((function(_this) {
-      return function(entry) {
+  Replicator.prototype.removeAllLocal = function(id, rev, callback) {
+    return async.eachSeries(this.cache, (function(_this) {
+      return function(entry, cb) {
         if (entry.name.indexOf(id) !== -1 && entry.name !== id + '-' + rev) {
           return fs.getDirectory(_this.downloads, entry.name, function(err, binfolder) {
             if (err) {
-              return callback(err);
+              return cb(err);
             }
             return fs.rmrf(binfolder, function(err) {
-              var currentEntry, index, _i, _len, _ref, _results;
+              var currentEntry, index, _i, _len, _ref;
               _ref = _this.cache;
-              _results = [];
               for (index = _i = 0, _len = _ref.length; _i < _len; index = ++_i) {
                 currentEntry = _ref[index];
                 if (!(currentEntry.name === entry.name)) {
@@ -2543,26 +2578,27 @@ module.exports = Replicator = (function(_super) {
                 _this.cache.splice(index, 1);
                 break;
               }
-              return _results;
+              return cb();
             });
           });
+        } else {
+          return cb();
         }
       };
-    })(this));
+    })(this), callback);
   };
 
   Replicator.prototype.updateLocal = function(options, callback) {
-    var entry, file;
+    var entry, file, noop;
     file = options.file;
     entry = options.entry;
+    noop = function() {};
     if (file._deleted) {
       return this.removeLocal(file, callback);
     } else if (entry.name !== file.binary.file.id + '-' + file.binary.file.rev) {
       return DeviceStatus.checkReadyForSync((function(_this) {
         return function(err, ready, msg) {
-          var noop;
           if (ready) {
-            noop = function() {};
             return _this.getBinary(file, noop, callback);
           } else {
             return callback();
@@ -2572,18 +2608,15 @@ module.exports = Replicator = (function(_super) {
     } else {
       return fs.getChildren(entry, (function(_this) {
         return function(err, children) {
-          var child;
-          if ((err == null) && children.length === 0) {
-            err = new Error('File is missing');
-          }
           if (err) {
             return callback(err);
           }
-          child = children[0];
-          if (child.name === file.name) {
+          if (children.length === 0) {
+            return _this.getBinary(file, noop, callback);
+          } else if (children[0].name === file.name) {
             return callback();
           } else {
-            return fs.moveTo(child, entry, file.name, callback);
+            return fs.moveTo(children[0], entry, file.name, callback);
           }
         };
       })(this));
@@ -2879,6 +2912,7 @@ module.exports = {
         return _this.config.save({
           lastBackup: new Date().toString()
         }, function(err) {
+          console.log((new Date().toISOString()) + " Backup done.");
           return callback(null);
         });
       };
@@ -2887,6 +2921,7 @@ module.exports = {
   _backup: function(force, callback) {
     return DeviceStatus.checkReadyForSync(true, (function(_this) {
       return function(err, ready, msg) {
+        var errors;
         console.log("SYNC STATUS", err, ready, msg);
         if (err) {
           return callback(err);
@@ -2895,14 +2930,27 @@ module.exports = {
           return callback(new Error(msg));
         }
         console.log("WE ARE READY FOR SYNC");
+        errors = [];
         return async.series([
           function(cb) {
-            return _this.syncPictures(force, cb);
+            return _this.syncPictures(force, function(err) {
+              if (err) {
+                console.log(err);
+                errors.push(err);
+              }
+              return cb();
+            });
           }, function(cb) {
             var status;
             status = DeviceStatus.getStatus();
             if (status.readyForSync) {
-              return _this.syncCache(cb);
+              return _this.syncCache(function(err) {
+                if (err) {
+                  console.log(err);
+                  errors.push(err);
+                }
+                return cb();
+              });
             } else {
               return cb(status.readyForSyncMsg);
             }
@@ -2910,14 +2958,26 @@ module.exports = {
             var status;
             status = DeviceStatus.getStatus();
             if (status.readyForSync) {
-              return _this.syncContacts(cb);
+              return _this.syncContacts(function(err) {
+                if (err) {
+                  console.log(err);
+                  errors.push(err);
+                }
+                return cb();
+              });
             } else {
               return cb(status.readyForSyncMsg);
             }
           }
         ], function(err) {
-          console.log("Backup done.");
-          return callback(err);
+          if (err) {
+            return callback(err);
+          }
+          if (errors.length > 0) {
+            return callback(errors[0]);
+          } else {
+            return callback();
+          }
         });
       };
     })(this));
@@ -2970,6 +3030,9 @@ module.exports = {
           } else {
             return fs.getFileFromPath(path, function(err, file) {
               var _ref1, _ref2;
+              if (err) {
+                return cb(err);
+              }
               if (_ref1 = (_ref2 = file.name) != null ? _ref2.toLowerCase() : void 0, __indexOf.call(dbPictures, _ref1) >= 0) {
                 _this.createPhoto(path);
               } else {
@@ -3176,16 +3239,16 @@ module.exports = {
 
 require.register("replicator/replicator_config", function(exports, require, module) {
 var ReplicatorConfig, basic,
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  __hasProp = {}.hasOwnProperty;
 
 basic = require('../lib/basic');
 
 module.exports = ReplicatorConfig = (function(_super) {
   __extends(ReplicatorConfig, _super);
 
-  function ReplicatorConfig(replicator) {
-    this.replicator = replicator;
+  function ReplicatorConfig(_at_replicator) {
+    this.replicator = _at_replicator;
     ReplicatorConfig.__super__.constructor.call(this, null);
     this.remote = null;
   }
@@ -3310,7 +3373,7 @@ module.exports = {
         };
       })(this)
     ], function(err) {
-      console.log("Sync contacts done");
+      console.log((new Date().toISOString()) + " Sync contacts done");
       return callback(err);
     });
   },
@@ -3417,6 +3480,7 @@ module.exports = {
     })(this));
   },
   syncPhone2Pouch: function(callback) {
+    console.log((new Date().toISOString()) + " enter syncPhone2Pouch");
     return navigator.contacts.find([navigator.contacts.fieldType.dirty], (function(_this) {
       return function(contacts) {
         return async.eachSeries(contacts, function(contact, cb) {
@@ -3433,6 +3497,7 @@ module.exports = {
   },
   _syncToCozy: function(callback) {
     var replication;
+    console.log((new Date().toISOString()) + " enter sync2Cozy");
     replication = app.replicator.db.replicate.to(app.replicator.config.remote, {
       batch_size: 20,
       batches_limit: 5,
@@ -3504,6 +3569,7 @@ module.exports = {
   },
   syncFromCozyToPouchToPhone: function(callback) {
     var q, replication, replicationDone;
+    console.log((new Date().toISOString()) + " enter syncCozy2Phone");
     replicationDone = false;
     q = async.queue(this._applyChangeToPhone.bind(this));
     q.drain = function() {
@@ -3828,8 +3894,8 @@ require.register("replicator/utils", function(exports, require, module) {
 
 ;require.register("router", function(exports, require, module) {
 var ConfigView, DeviceNamePickerView, FirstSyncView, FolderCollection, FolderView, LoginView, Router, app,
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  __hasProp = {}.hasOwnProperty;
 
 app = require('application');
 
@@ -3986,18 +4052,18 @@ module.exports = Service = {
         window.t = _this.polyglot.t.bind(_this.polyglot);
         _this.replicator = new Replicator();
         return _this.replicator.init(function(err, config) {
-          var DeviceStatus, delayedQuit, syncNotifications;
+          var DeviceStatus, delayedQuit;
           if (err) {
             console.log(err, err.stack);
             return window.service.workDone();
           }
           if (config.remote) {
+            DeviceStatus = require('../lib/device_status');
+            document.addEventListener('offline', function() {
+              return DeviceStatus.update();
+            }, false);
             if (config.get('cozyNotifications')) {
               _this.notificationManager = new Notifications();
-              DeviceStatus = require('../lib/device_status');
-              document.addEventListener('offline', function() {
-                return DeviceStatus.update();
-              }, false);
             }
             delayedQuit = function(err) {
               if (err) {
@@ -4007,31 +4073,17 @@ module.exports = Service = {
                 return window.service.workDone();
               }, 5 * 1000);
             };
-            syncNotifications = function(err) {
-              if (config.get('cozyNotifications')) {
-                return app.replicator.sync({
-                  background: true,
-                  notificationsOnly: true
-                }, delayedQuit);
-              } else {
+            return app.replicator.backup({
+              background: true
+            }, function(err) {
+              if (err) {
                 return delayedQuit();
+              } else {
+                return app.replicator.sync({
+                  background: true
+                }, delayedQuit);
               }
-            };
-            if (config.get('syncImages' || config.get('syncContacts'))) {
-              return app.replicator.backup({
-                background: true
-              }, function(err) {
-                if (err && err.message === 'no wifi') {
-                  return syncNotifications();
-                } else {
-                  return app.replicator.sync({
-                    background: true
-                  }, delayedQuit);
-                }
-              });
-            } else {
-              return syncNotifications();
-            }
+            });
           } else {
             return window.service.workDone();
           }
@@ -4060,8 +4112,8 @@ document.addEventListener('deviceready', function() {
 
 require.register("service/service_manager", function(exports, require, module) {
 var ServiceManager, repeatingPeriod,
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  __hasProp = {}.hasOwnProperty;
 
 repeatingPeriod = 15 * 60 * 1000;
 
@@ -4225,7 +4277,7 @@ buf.push('</div><div class="item">');
 var __val__ = t('device name') + ' : ' + deviceName
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</div><div class="item">');
-var __val__ = t('app name') + ' v 0.1.6'
+var __val__ = t('app name') + ' v' + appVersion
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</div><div class="item item-divider">');
 var __val__ = t('reset title')
@@ -4241,6 +4293,15 @@ var __val__ = t('reset action')
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</button>');
 var __val__ = t('reset warning')
+buf.push(escape(null == __val__ ? "" : __val__));
+buf.push('</div><div class="item item-divider">');
+var __val__ = t('support')
+buf.push(escape(null == __val__ ? "" : __val__));
+buf.push('</div><div style="padding-left: 95px; white-space: normal;" class="item item-button-left"><button id="sendlogbtn" style="font-size:15px;" class="button button-assertive">');
+var __val__ = t('send log')
+buf.push(escape(null == __val__ ? "" : __val__));
+buf.push('</button>');
+var __val__ = t('send log info')
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</div>');
 }
@@ -4375,7 +4436,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<div class="list"><div class="card"><label class="item item-input"><span class="input-label">');
+buf.push('<div class="list"><div class="card"><div class="item item-text-wrap welcome"></div></div><div class="card"><label class="item item-input"><span class="input-label">');
 var __val__ = t('cozy url')
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</span><input');
@@ -4422,8 +4483,8 @@ return buf.join("");
 
 require.register("views/breadcrumbs", function(exports, require, module) {
 var BaseView, BreadcrumbsView,
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  __hasProp = {}.hasOwnProperty;
 
 BaseView = require('../lib/base_view');
 
@@ -4523,11 +4584,13 @@ module.exports = BreadcrumbsView = (function(_super) {
 });
 
 require.register("views/config", function(exports, require, module) {
-var BaseView, ConfigView,
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+var APP_VERSION, BaseView, ConfigView,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  __hasProp = {}.hasOwnProperty;
 
 BaseView = require('../lib/base_view');
+
+APP_VERSION = "0.1.8";
 
 module.exports = ConfigView = (function(_super) {
   __extends(ConfigView, _super);
@@ -4545,6 +4608,7 @@ module.exports = ConfigView = (function(_super) {
       'tap #configDone': 'configDone',
       'tap #redbtn': 'redBtn',
       'tap #synchrobtn': 'synchroBtn',
+      'tap #sendlogbtn': 'sendlogBtn',
       'tap #contactSyncCheck': 'saveChanges',
       'tap #imageSyncCheck': 'saveChanges',
       'tap #wifiSyncCheck': 'saveChanges',
@@ -4559,7 +4623,8 @@ module.exports = ConfigView = (function(_super) {
       lastSync: this.formatDate(config != null ? config.lastSync : void 0),
       lastBackup: this.formatDate(config != null ? config.lastBackup : void 0),
       firstRun: app.isFirstRun,
-      locale: app.locale
+      locale: app.locale,
+      appVersion: APP_VERSION
     });
   };
 
@@ -4609,6 +4674,15 @@ module.exports = ConfigView = (function(_super) {
     }
   };
 
+  ConfigView.prototype.sendlogBtn = function() {
+    var query;
+    query = {
+      subject: "Log from cozy-mobile v" + APP_VERSION,
+      body: "Describe the problem here:\n\n\n########################\n# Log Trace: please don't touch (or tell us what)\n##\n\n" + (window.app.logTrace.join('\n'))
+    };
+    return window.open("mailto:guillaume@cozycloud.cc?" + $.param(query), "_system");
+  };
+
   ConfigView.prototype.saveChanges = function() {
     var checkboxes;
     checkboxes = this.$('#contactSyncCheck, #imageSyncCheck,' + '#wifiSyncCheck, #cozyNotificationsCheck' + '#configDone');
@@ -4631,8 +4705,8 @@ module.exports = ConfigView = (function(_super) {
 
 require.register("views/device_name_picker", function(exports, require, module) {
 var BaseView, DeviceNamePickerView,
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  __hasProp = {}.hasOwnProperty;
 
 BaseView = require('../lib/base_view');
 
@@ -4744,8 +4818,8 @@ module.exports = DeviceNamePickerView = (function(_super) {
 
 require.register("views/first_sync", function(exports, require, module) {
 var BaseView, FirstSyncView, LAST_STEP,
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  __hasProp = {}.hasOwnProperty;
 
 BaseView = require('../lib/base_view');
 
@@ -4816,8 +4890,8 @@ module.exports = FirstSyncView = (function(_super) {
 require.register("views/folder", function(exports, require, module) {
 var CollectionView, FolderView,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  __hasProp = {}.hasOwnProperty;
 
 CollectionView = require('../lib/view_collection');
 
@@ -4990,8 +5064,8 @@ module.exports = FolderView = (function(_super) {
 require.register("views/folder_line", function(exports, require, module) {
 var BaseView, FolderLineView,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  __hasProp = {}.hasOwnProperty;
 
 BaseView = require('../lib/base_view');
 
@@ -5181,8 +5255,8 @@ module.exports = FolderLineView = (function(_super) {
 require.register("views/layout", function(exports, require, module) {
 var BaseView, BreadcrumbsView, FolderView, Layout, Menu,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  __hasProp = {}.hasOwnProperty;
 
 BaseView = require('../lib/base_view');
 
@@ -5380,8 +5454,8 @@ module.exports = Layout = (function(_super) {
 
 require.register("views/login", function(exports, require, module) {
 var BaseView, LoginView,
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  __hasProp = {}.hasOwnProperty;
 
 BaseView = require('../lib/base_view');
 
@@ -5413,6 +5487,10 @@ module.exports = LoginView = (function(_super) {
     return {
       defaultValue: defaultValue
     };
+  };
+
+  LoginView.prototype.afterRender = function() {
+    return this.$('.welcome').html(t('cozy welcome'));
   };
 
   LoginView.prototype.doComplete = function() {
@@ -5493,8 +5571,8 @@ module.exports = LoginView = (function(_super) {
 require.register("views/menu", function(exports, require, module) {
 var BaseView, Menu,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  __hasProp = {}.hasOwnProperty;
 
 BaseView = require('../lib/base_view');
 

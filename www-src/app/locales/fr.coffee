@@ -20,6 +20,9 @@ module.exports =
     "retry synchro"       : "Sync"
     "synchro warning"     : "Cela relancera une synchronisation depuis le début. Cela peut prendre du temps."
     "reset warning"       : "Cela supprimera toutes les données cozy sur votre mobile (dont votre appareil)."
+    "support"             : "Support"
+    "send log"            : "Envoyer"
+    "send log info"       : "Envoyer un email avec le journal de l'application afin de nous aider à améliorer sa qualité et sa fiabilité."
     "pull to sync"        : "Tirer pour synchroniser"
     "syncing"             : "En cours de synchronisation"
     "contacts_sync"       : "Synchronisation des contacts"
@@ -64,6 +67,8 @@ module.exports =
 
     # --- login
     "setup 1/3"             : "Configuration 1/3"
+    "cozy welcome"          : """Bienvenue ! <br> Cozy, un Cloud personnel que vous pouvez héberger, personnaliser et entièrement contrôler. Si vous avez déjà une instance Cozy, suivez les étapes pour synchroniser votre mobile avec votre Cozy. Sinon, rendez-vous sur <a target='_system' href='http://cozy.io/fr/'>cozy.io</a> pour en savoir plus."""
+
     "password placeholder"  : "votre mot de passe"
     "authenticating..."     : "Vérification des identifiants…"
 
@@ -106,3 +111,4 @@ module.exports =
     "Not Found" : "Erreur à l'initialisation. Avez-vous installé l'application Files sur votre Cozy ?"
     "connexion error": "La connection à votre cozy a échoué. Vérifiez que votre terminal est connecté à internet, que l'adresse de votre cozy est bien écrite et que votre cozy fonctionne. Pour les utilisateurs avancés avec un cozy auto-hébergé, consulter la <a href='http://cozy.io/fr/mobile/files.html#a-propos-des-certificats-auto-sign-s' target='_system'>documentation à propos des certificats autosignés</a>"
     "no images in DCIM": "Sauvegarde des images : aucune image trouvée dans le répertoire DCIM."
+    "Document update conflict": "Conflit lors d'une opération en base de données. Essayez de redémarrer l'application pour le résoudre."

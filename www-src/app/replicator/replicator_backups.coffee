@@ -29,6 +29,7 @@ module.exports =
             @startRealtime() unless options.background
             return callback err if err
             @config.save lastBackup: new Date().toString(), (err) =>
+                console.log "#{new Date().toISOString()} Backup done."
                 callback null
 
 
@@ -39,25 +40,44 @@ module.exports =
             return callback new Error(msg) unless ready
             console.log "WE ARE READY FOR SYNC"
 
+            # async series with non blocking errors
+            errors = []
             async.series [
-                (cb) => @syncPictures force, cb
+                (cb) =>
+                    @syncPictures force, (err) ->
+                        if err
+                            console.log err
+                            errors.push err
+                        cb()
                 (cb) =>
                     status = DeviceStatus.getStatus()
                     if status.readyForSync
-                        @syncCache cb
+                        @syncCache (err) ->
+                            if err
+                                console.log err
+                                errors.push err
+                            cb()
                     else
                         cb status.readyForSyncMsg
 
                 (cb) =>
                     status = DeviceStatus.getStatus()
                     if status.readyForSync
-                        @syncContacts cb
+                        @syncContacts (err) ->
+                            if err
+                                console.log err
+                                errors.push err
+                            cb()
                     else
                         cb status.readyForSyncMsg
 
             ], (err) ->
-                console.log "Backup done."
-                callback err
+                return callback err if err
+
+                if errors.length > 0
+                    callback errors[0]
+                else
+                    callback()
 
 
     syncPictures: (force, callback) ->
@@ -103,6 +123,8 @@ module.exports =
                 else
                     # Check if pictures is already present (old installation)
                     fs.getFileFromPath path, (err, file) =>
+                        return cb err if err
+
                         # We test only on filename, case-insensitive
                         if file.name?.toLowerCase() in dbPictures
                             # Add photo in local database

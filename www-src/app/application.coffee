@@ -7,6 +7,7 @@ module.exports =
 
     initialize: ->
         window.app = this
+        overrideLog()
 
         # Monkey patch for browser debugging
         if window.isBrowserDebugging
@@ -53,7 +54,7 @@ module.exports =
         app.foreground = true
 
         document.addEventListener "resume", =>
-            console.log "RESUME EVENT"
+            console.log "#{new Date().toISOString()} RESUME EVENT"
             app.foreground = true
             if app.backFromOpen
                 app.backFromOpen = false
@@ -62,7 +63,7 @@ module.exports =
                 app.replicator.backup {}, (err) -> console.log err if err
         , false
         document.addEventListener "pause", =>
-            console.log "PAUSE EVENT"
+            console.log "#{new Date().toISOString()} PAUSE EVENT"
             app.foreground = false
             app.replicator.stopRealtime()
 
@@ -83,3 +84,19 @@ module.exports =
         @router.navigate 'folder/', trigger: true
         @router.once 'collectionfetched', =>
             app.replicator.backup {}, (err) -> console.log err if err
+
+
+overrideLog = () ->
+    oldLog = console.log
+    console.log = () ->
+
+        # Keep log.
+        unless window.app.logTrace?
+            window.app.logTrace = []
+
+        # oldLog "here in overrideLog"
+        window.app.logTrace.push Array.prototype.slice.call(arguments).join ' - '
+
+        # Call regular console.log.
+        oldLog.apply console, arguments
+

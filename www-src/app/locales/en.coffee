@@ -20,6 +20,9 @@ module.exports =
     "retry synchro"       : "Sync"
     "synchro warning"     : "This start a replication from the beginning. It can take a long time."
     "reset warning"       : "This will erase all cozy-generated data on your phone."
+    "support"             : "Support"
+    "send log"            : "Send"
+    "send log info"       : "Send an email with application log to help us improve its quality and stability."
     "pull to sync"        : "Pull to sync"
     "syncing"             : "Syncing"
     "contacts_sync"       : "Syncing contacts"
@@ -64,6 +67,7 @@ module.exports =
 
     # --- login
     "setup 1/3"             : "Setup 1/3"
+    "cozy welcome"          : """Welcome ! <br> Cozy, a Personal Cloud you can host, customize and fully control. If you already have a Cozy instance, follow the steps to sync your mobile with your Cozy. Otherwise, visit <a target='_system' href='http://cozy.io/en/'>cozy.io</a> for more."""
     "password placeholder"  : "your password"
     "authenticating..."     : "Authenticating..."
 
@@ -106,3 +110,4 @@ module.exports =
     "Not Found" : "Error while initializing. Did you install the Files application in your Cozy ?"
     "connexion error": "We failed to connect to your cozy. Please check that your device is connected to the internet, the address of your cozy is spelled correctly and your cozy is running. If you are an advanced user with a self hosted cozy, refer to the <a href='http://cozy.io/en/mobile/files.html#note-about-self-signed-certificates' target='_system'>doc to handle self-signed certificates</a>."
     "no images in DCIM": "Backup images : no image found in DCIM dir."
+    "Document update conflict": "Update conflict in database, you could try to restart the app to fix it."

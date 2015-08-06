@@ -1,5 +1,7 @@
 BaseView = require '../lib/base_view'
 
+APP_VERSION = "0.1.8"
+
 module.exports = class ConfigView extends BaseView
 
     template: require '../templates/config'
@@ -10,6 +12,8 @@ module.exports = class ConfigView extends BaseView
         'tap #configDone': 'configDone'
         'tap #redbtn': 'redBtn'
         'tap #synchrobtn': 'synchroBtn'
+        'tap #sendlogbtn': 'sendlogBtn'
+
         'tap #contactSyncCheck': 'saveChanges'
         'tap #imageSyncCheck': 'saveChanges'
         'tap #wifiSyncCheck': 'saveChanges'
@@ -24,6 +28,7 @@ module.exports = class ConfigView extends BaseView
             lastBackup: @formatDate config?.lastBackup
             firstRun: app.isFirstRun
             locale: app.locale
+            appVersion: APP_VERSION
 
     # format a object as a readable date string
     # return t('never') if undefined
@@ -54,6 +59,21 @@ module.exports = class ConfigView extends BaseView
             app.replicator.resetSynchro (err) =>
                 return alert err.message if err
                 app.router.navigate 'first-sync', trigger: true
+
+    sendlogBtn: ->
+        query =
+            subject: "Log from cozy-mobile v" + APP_VERSION
+            body: """
+            Describe the problem here:
+
+
+            ########################
+            # Log Trace: please don't touch (or tell us what)
+            ##
+
+            #{window.app.logTrace.join('\n')}"""
+
+        window.open "mailto:guillaume@cozycloud.cc?" + $.param(query), "_system"
 
 
     # save config changes in local pouchdb

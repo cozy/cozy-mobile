@@ -31,7 +31,7 @@
 
         .item= t('synchronized with') + " " + cozyURL
         .item= t('device name') + ' : ' + deviceName
-        .item= t('app name') + ' v 0.1.6'
+        .item= t('app name') + ' v' + appVersion
 
         .item.item-divider= t('reset title')
 
@@ -42,3 +42,11 @@
         .item.item-button-left(style="padding-left: 95px; white-space: normal;")
             button#redbtn.button.button-assertive= t('reset action')
             = t('reset warning')
+
+        .item.item-divider= t('support')
+
+        .item.item-button-left(style="padding-left: 95px; white-space: normal;")
+            button#sendlogbtn.button.button-assertive(style="font-size:15px;")= t('send log')
+            = t('send log info')
+
+

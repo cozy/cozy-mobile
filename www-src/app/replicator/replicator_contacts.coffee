@@ -35,7 +35,7 @@ module.exports =
             (cb) => @_syncToCozy cb
             (cb) => @syncFromCozyToPouchToPhone cb
         ], (err) ->
-            console.log "Sync contacts done"
+            console.log "#{new Date().toISOString()} Sync contacts done"
             callback err
 
     createAccount: (callback) =>
@@ -122,6 +122,7 @@ module.exports =
 
 
     syncPhone2Pouch: (callback) ->
+        console.log "#{new Date().toISOString()} enter syncPhone2Pouch"
         # Go through modified contacts (dirtys)
         # delete, update or create....
         navigator.contacts.find [navigator.contacts.fieldType.dirty]
@@ -140,6 +141,7 @@ module.exports =
 
 
     _syncToCozy: (callback) ->
+        console.log "#{new Date().toISOString()} enter sync2Cozy"
         # Get contacts from the cozy (couch -> pouch replication)
         replication = app.replicator.db.replicate.to app.replicator.config.remote,
             batch_size: 20
@@ -195,6 +197,7 @@ module.exports =
 
 
     syncFromCozyToPouchToPhone: (callback) ->
+        console.log "#{new Date().toISOString()} enter syncCozy2Phone"
         replicationDone = false
 
         q = async.queue @_applyChangeToPhone.bind @
