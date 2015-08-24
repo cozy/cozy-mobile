@@ -18,7 +18,6 @@ module.exports.update = update = ->
         return callbackWaiting null, false, 'no battery'
     if app.replicator.config.get('syncOnWifi') and
         (not (navigator.connection.type is Connection.WIFI))
-            console.log 'no wifi'
             return callbackWaiting null, false, 'no wifi'
 
     callbackWaiting null, true

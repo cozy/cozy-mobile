@@ -1,5 +1,9 @@
 BaseView = require '../lib/base_view'
 
+log = require('/lib/persistent_log')
+    prefix: "FolderLineView"
+    date: true
+
 module.exports = class FolderLineView extends BaseView
 
     tagName: 'a'
@@ -88,7 +92,7 @@ module.exports = class FolderLineView extends BaseView
                     if 0 is err?.indexOf 'No Activity found'
                         err = t 'no activity found'
                     alert err
-                    console.log err
+                    log.error err.message
 
     addToCache: =>
         return true if @downloading

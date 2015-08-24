@@ -1,5 +1,9 @@
 BaseView = require '../lib/base_view'
 
+log = require('/lib/persistent_log')
+    prefix: "Menu"
+    date: true
+
 module.exports = class Menu extends BaseView
 
     id: 'menu'
@@ -22,7 +26,7 @@ module.exports = class Menu extends BaseView
     sync: ->
         return if app.replicator.get 'inSync'
         app.replicator.sync {}, (err) ->
-            console.log err, err.stack if err
+            log.error err.message, err.stack if err
             if err
                 alert t if err.message? then err.message else "no connection"
             app.layout.currentView?.collection?.fetch()
@@ -39,7 +43,7 @@ module.exports = class Menu extends BaseView
         else
             app.replicator.backup { force: false }, (err) =>
                 if err
-                    console.log err, err.stack
+                    log.error err.message, err.stack
                     alert t err.message
                     return
 

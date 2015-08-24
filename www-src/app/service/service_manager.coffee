@@ -18,6 +18,11 @@
 #       Display notifications
 #
 
+log = require('/lib/persistent_log')
+    prefix: "ServiceManager"
+    date: true
+
+
 repeatingPeriod = 15 * 60 * 1000
 
 module.exports = class ServiceManager extends Backbone.Model
@@ -42,7 +47,7 @@ module.exports = class ServiceManager extends Backbone.Model
     checkActivated: ->
         window.JSBackgroundService.isRepeating (err, isRepeating) =>
             if err
-                console.log err
+                log.error err
                 isRepeating = false
 
             @set 'daemonActivated', isRepeating

@@ -1,5 +1,14 @@
+# intialize module which initialize global vars.
+require '/lib/utils'
+
 Replicator = require '../replicator/main'
 Notifications = require '../views/notifications'
+
+log = require('/lib/persistent_log')
+    prefix: "application"
+    date: true
+    processusTag: "Service"
+
 
 # This service will be started in it's own browser instance by the
 # JSBackgroundService. It take place of traditionnal application object, on the
@@ -32,7 +41,7 @@ module.exports = Service =
             @replicator = new Replicator()
             @replicator.init (err, config) =>
                 if err
-                    console.log err, err.stack
+                    log.error err.message, err.stack
                     return window.service.workDone()
 
                 if config.remote
@@ -48,7 +57,7 @@ module.exports = Service =
 
 
                     delayedQuit = (err) ->
-                        console.log err if err
+                        log.error err.message if err
                         # give some time to finish and close things.
                         setTimeout ->
                             # call this javabinding directly on object to avoid
@@ -72,8 +81,7 @@ document.addEventListener 'deviceready', ->
         Service.initialize()
 
     catch error
-        console.log 'EXCEPTION SERVICE INITIALIZATION !'
-        console.log error
+        log.error 'EXCEPTION SERVICE INITIALIZATION : ', err.message
 
     finally
         # "Watchdog" : in all cases, kill service after 10'

@@ -1,9 +1,13 @@
+log = require('/lib/persistent_log')
+    prefix: "replicator mapreduce"
+    date: true
+
 createOrUpdateDesign = (db, design, callback) ->
     db.get design._id, (err, existing) =>
         if existing?.version is design.version
             return callback null
         else
-            console.log "REDEFINING DESIGN #{design._id} FROM #{existing}"
+            log.info "REDEFINING DESIGN #{design._id} FROM #{existing}"
             design._rev = existing._rev if existing
             db.put design, callback
 

@@ -54,7 +54,6 @@ module.exports = class LoginView extends BaseView
                 @displayError error
             else
                 app.loginConfig = config
-                console.log 'check credentials done'
                 app.router.navigate 'device-name-picker', trigger: true
 
     displayError: (text, field) ->

@@ -1,5 +1,9 @@
 BaseView = require '../lib/base_view'
 
+log = require('/lib/persistent_log')
+    prefix: "DeviceNamePickerView"
+    date: true
+
 module.exports = class DeviceNamePickerView extends BaseView
 
     className: 'list'
@@ -40,7 +44,7 @@ module.exports = class DeviceNamePickerView extends BaseView
                 delete app.loginConfig
                 app.isFirstRun = true
 
-                console.log 'starting first replication'
+                log.info 'starting first replication'
                 app.replicator.initialReplication (err) ->
                     alert t err.message if err
 

@@ -2,6 +2,10 @@ BaseView = require '../lib/base_view'
 
 APP_VERSION = "0.1.8"
 
+log = require('/lib/persistent_log')
+    prefix: "config view"
+    date: true
+
 module.exports = class ConfigView extends BaseView
 
     template: require '../templates/config'
@@ -71,7 +75,7 @@ module.exports = class ConfigView extends BaseView
             # Log Trace: please don't touch (or tell us what)
             ##
 
-            #{window.app.logTrace.join('\n')}"""
+            #{log.getTraces().join('\n')}"""
 
         window.open "mailto:guillaume@cozycloud.cc?" + $.param(query), "_system"
 
