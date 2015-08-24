@@ -12,6 +12,8 @@
         "node": "~0.6.10 || 0.8 || 0.9"
     },
     "scripts": {
+        "test": "mocha test/index.coffee --reporter spec --compilers coffee:coffee-script/register --colors",
+
         "start": "brunch watch --server"
     },
     "dependencies": {
@@ -27,7 +29,10 @@
         "auto-reload-brunch": "> 1.0 < 1.5"
     },
     "devDependencies": {
-        "mocha": "0.14.0",
+        "coffee-script": "1.8.0",
+        "mocha": "1.12.0",
+        "should": "1.2.0",
+        "chai": "1.7.2",
         "expect.js": "0.1.2",
         "ws": "0.4.21"
     }

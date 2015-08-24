@@ -1,17 +1,20 @@
-log = require('/lib/persistent_log')
+log = require('../lib/persistent_log')
     prefix: "contact"
     date: true
 
 # Tools to convert contact from cordova to cozy, and from cozy to cordova.
-module.exports = Contact = {}
+module.exports = Contact =
 
+################################################################################
 # Convert a cozy contact object in cordova contact object.
-Contact.cozy2Cordova = (cozyContact) ->
+#######################################
+
+
     # Helpers
 
     # Convert 'n' field to cordova ContactName object.
     # @param the cozy's n field.
-    n2ContactName = (n) ->
+    _n2ContactName: (n) ->
         return undefined unless n?
 
         parts =  n.split ';'
@@ -26,7 +29,7 @@ Contact.cozy2Cordova = (cozyContact) ->
 
 
     # Build cordova's ContactOrganization list from a cozy contact.
-    cozyContact2ContactOrganizations = (contact) ->
+    _cozyContact2ContactOrganizations: (contact) ->
         if contact.org
             return [
                 new ContactOrganization false, null, contact.org
@@ -37,17 +40,17 @@ Contact.cozy2Cordova = (cozyContact) ->
 
 
     # Initialize a url's ContactFields list with url field of cozy contact.
-    cozyContact2URLs = (contact) ->
+    _cozyContact2URLs: (contact) ->
         if contact.url
             return [
-                new ContactField 'urls', contact.url, false
+                new ContactField 'other', contact.url, false
                 ]
         else
             return []
 
 
     # Build categories list with cozy's tags.
-    tags2Categories = (tags) ->
+    _tags2Categories: (tags) ->
         if tags
             return tags.map (tag) ->
                 return new ContactField 'categories', tag, false
@@ -56,7 +59,7 @@ Contact.cozy2Cordova = (cozyContact) ->
 
 
     # Build pohto (list) field from contact's photo.
-    attachments2Photos = (contact) ->
+    _attachments2Photos: (contact) ->
         if contact._attachments? and 'picture' of contact._attachments
             photo = new ContactField 'base64', contact._attachments.picture.data
 
@@ -67,7 +70,7 @@ Contact.cozy2Cordova = (cozyContact) ->
 
     # loop trought the cozy's datapoints list and fill up the cordovaContact
     # with
-    dataPoints2Cordova = (cozyContact, cordovaContact) ->
+    _dataPoints2Cordova: (cozyContact, cordovaContact) ->
         addContactField = (cordovaField, datapoint) ->
             unless cordovaContact[cordovaField]
                 cordovaContact[cordovaField] = []
@@ -111,40 +114,54 @@ Contact.cozy2Cordova = (cozyContact) ->
                 when 'RELATION'
                     addContactField 'relations', datapoint
 
-    # Build cordova contact.
-    cordovaContact = navigator.contacts.create
-        # vCard FullName = display name
-        # (Prefix Given Middle Familly Suffix), or something else.
-        displayName: cozyContact.fn
-        # vCard Name = splitted
-        # (Familly;Given;Middle;Prefix;Suffix)
-        name: n2ContactName cozyContact.n
-        nickname: cozyContact.nickname
-        organizations: cozyContact2ContactOrganizations cozyContact
-        birthday: cozyContact.bday
-        urls: cozyContact2URLs cozyContact
-        note: cozyContact.note
-        categories: tags2Categories cozyContact.tags #
-        photos: attachments2Photos cozyContact
+    # Do the actual cordova contact build, without to much plugin dependency,
+    # for testing
+    _cozy2CordovaOptions: (cozyContact) ->
+        log.debug "\n cozy2cordova : cozyContact \n"
+        log.debug JSON.stringify cozyContact, null, 2
 
-        sourceId: cozyContact._id
-        sync2: cozyContact._rev
-        # sync3: cozyContact.revision
-        dirty: false
-        deleted: false
+        # Build cordova contact.
+        cordovaContact =
+            # vCard FullName = display name
+            # (Prefix Given Middle Familly Suffix), or something else.
+            displayName: cozyContact.fn
+            # vCard Name = splitted
+            # (Familly;Given;Middle;Prefix;Suffix)
+            name: Contact._n2ContactName cozyContact.n
+            nickname: cozyContact.nickname
+            organizations: Contact._cozyContact2ContactOrganizations cozyContact
+            birthday: cozyContact.bday
+            urls: Contact._cozyContact2URLs cozyContact
+            note: cozyContact.note
+            categories: Contact._tags2Categories cozyContact.tags #
+            photos: Contact._attachments2Photos cozyContact
 
-    dataPoints2Cordova cozyContact, cordovaContact
+            sourceId: cozyContact._id
+            sync2: cozyContact._rev
+            # sync3: cozyContact.revision
+            dirty: false
+            deleted: false
 
-    # Defensive, not named contact are hard to use...
-    unless cordovaContact.displayName
-        cordovaContact.displayName = "--"
+        Contact._dataPoints2Cordova cozyContact, cordovaContact
 
-    return cordovaContact
+        # Defensive, unnamed contact are hard to use...
+        unless cordovaContact.displayName
+            cordovaContact.displayName = "--"
 
+        log.debug "\n cozy2cordova : cordovaContact \n"
+        log.debug JSON.stringify cordovaContact, null, 2
+        return cordovaContact
+
+
+    cozy2Cordova: (cozyContact) ->
+        return navigator.contacts.create Contact._cozy2CordovaOptions cozyContact
+
+################################################################################
 # Convert a cordova contact to cozy contact (asynchronous).
-Contact.cordova2Cozy = (cordovaContact, callback) ->
+#######################################
 
-    contactName2N = (contactName) ->
+
+    _contactName2N: (contactName) ->
         return undefined unless contactName?
         parts = []
         for field in ['familyName', 'givenName', 'middleName', 'honorificPrefix', 'honorificSuffix']
@@ -154,13 +171,13 @@ Contact.cordova2Cozy = (cordovaContact, callback) ->
         return n if n isnt ';;;;'
 
 
-    categories2Tags = (categories) ->
+    _categories2Tags: (categories) ->
         if categories?
-            return caterories.map (categorie) -> return category.value
+            return categories.map (categorie) -> return category.value
 
     # Pick the first organisation in cordova's organizations field, and put it
     # in cozyContact fields.
-    organizations2Cozy = (organizations, cozyContact) ->
+    _organizations2Cozy: (organizations, cozyContact) ->
         if organizations?.length > 0
             organization = organizations[0]
             cozyContact.org = organization.name
@@ -168,7 +185,7 @@ Contact.cordova2Cozy = (cordovaContact, callback) ->
             cozyContact.title = organization.title
 
     # Fill datapoints from cordova data.
-    cordova2Datapoints = (cordovaContact, cozyContact) ->
+    _cordova2Datapoints: (cordovaContact, cozyContact) ->
         datapoints = []
         field2Name =
             'phoneNumbers': 'tel'
@@ -208,62 +225,70 @@ Contact.cordova2Cozy = (cordovaContact, callback) ->
 
         cozyContact.datapoints = datapoints
 
+    # Convert a cordova contact to cozy contact (asynchronous).
+    cordova2Cozy: (cordovaContact, callback) ->
+        log.debug "\n cordova2cozy : cordovaContact \n"
+        log.debug JSON.stringify cordovaContact, null, 2
 
-    cozyContact =
-        docType: 'contact'
-        _id: cordovaContact.sourceId
-        id: cordovaContact.sourceId
-        _rev: cordovaContact.sync2
-        # vCard FullName = display name
-        # (Prefix Given Middle Familly Suffix), or something else.
-        fn: cordovaContact.displayName
-        # vCard Name = splitted
-        # (Familly;Given;Middle;Prefix;Suffix)
-        n: contactName2N cordovaContact.name
-        bday: cordovaContact.birthday
-        nickname: cordovaContact.nickname
-        revision: new Date().toISOString()
-        note: cordovaContact.note
-        tags: categories2Tags cordovaContact.categories
+        cozyContact =
+            docType: 'contact'
+            _id: cordovaContact.sourceId
+            id: cordovaContact.sourceId
+            _rev: cordovaContact.sync2
+            # vCard FullName = display name
+            # (Prefix Given Middle Familly Suffix), or something else.
+            fn: cordovaContact.displayName
+            # vCard Name = splitted
+            # (Familly;Given;Middle;Prefix;Suffix)
+            n: Contact._contactName2N cordovaContact.name
+            bday: cordovaContact.birthday
+            nickname: cordovaContact.nickname
+            revision: new Date().toISOString()
+            note: cordovaContact.note
+            tags: Contact._categories2Tags cordovaContact.categories
 
-    organizations2Cozy cordovaContact.organizations, cozyContact
+        Contact._organizations2Cozy cordovaContact.organizations, cozyContact
 
-    cordova2Datapoints cordovaContact, cozyContact
+        Contact._cordova2Datapoints cordovaContact, cozyContact
 
-    unless cordovaContact.photos?.length > 0
-        return callback null, cozyContact
+        log.debug "\n cordova2cozy : cozyContact \n"
+        log.debug JSON.stringify cozyContact, null, 2
+
+        unless cordovaContact.photos?.length > 0
+
+            return callback null, cozyContact
 
 
-    photo = cordovaContact.photos[0]
+        photo = cordovaContact.photos[0]
 
-    if photo.type is 'base64'
-        cozyContact._attachments =
-                picture:
-                    content_type: 'application/octet-stream'
-                    data: photo.value
-
-        callback null, cozyContact
-
-    else if photo.type is 'url'
-        img = new Image()
-
-        img.onload = ->
-            IMAGE_DIMENSION = 600
-            ratiodim = if img.width > img.height then 'height' else 'width'
-            ratio = IMAGE_DIMENSION / img[ratiodim]
-
-            # use canvas to resize the image
-            canvas = document.createElement 'canvas'
-            canvas.height = canvas.width = IMAGE_DIMENSION
-            ctx = canvas.getContext '2d'
-            ctx.drawImage img, 0, 0, ratio * img.width, ratio * img.height
-            dataUrl = canvas.toDataURL 'image/jpeg'
-
+        if photo.type is 'base64'
             cozyContact._attachments =
-                picture:
-                    content_type: 'application/octet-stream'
-                    data: dataUrl.split(',')[1]
+                    picture:
+                        content_type: 'application/octet-stream'
+                        data: photo.value
 
             callback null, cozyContact
 
-        img.src = photo.value
+        else if photo.type is 'url'
+            img = new Image()
+
+            img.onload = ->
+                IMAGE_DIMENSION = 600
+                ratiodim = if img.width > img.height then 'height' else 'width'
+                ratio = IMAGE_DIMENSION / img[ratiodim]
+
+                # use canvas to resize the image
+                canvas = document.createElement 'canvas'
+                canvas.height = canvas.width = IMAGE_DIMENSION
+                ctx = canvas.getContext '2d'
+                ctx.drawImage img, 0, 0, ratio * img.width, ratio * img.height
+                dataUrl = canvas.toDataURL 'image/jpeg'
+
+                cozyContact._attachments =
+                    picture:
+                        content_type: 'application/octet-stream'
+                        data: dataUrl.split(',')[1]
+
+                callback null, cozyContact
+
+            img.src = photo.value

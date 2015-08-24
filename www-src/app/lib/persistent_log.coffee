@@ -23,7 +23,10 @@ class Logger
         if 'processusTag' of @options
             Logger.processusTag = @options.processusTag
 
-        logIndex = localStorage.getItem 'log_index'
+        # If no localStorage, should be test environment : deactivate log.
+        unless localStorage?
+            @noLog = true
+
 
 
     stringify: (text) ->
@@ -43,29 +46,35 @@ class Logger
         return text
 
     info: (texts...) ->
+        return if @noLog
         text = @format 'info', texts
         @persist text
         console.info text
 
     warn: (texts...) ->
+        return if @noLog
         text = @format 'warn', texts
         @persist text
         console.warn text
 
     error: (texts...) ->
+        return if @noLog
         text = @format 'error', texts
         @persist text
         console.error text
 
     debug: (texts...) ->
+        return if @noLog
         text = @format 'debug', texts
         @persist text
         console.info text
 
     raw: (texts...) ->
+        return if @noLog
         console.log.apply console, texts
 
     lineBreak: (text) ->
+        return if @noLog
         text = Array(80).join("*")
         @raw text
         window.logTrace.push text

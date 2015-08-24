@@ -671,7 +671,6 @@ levelColors = {
 
 Logger = (function() {
   function Logger(_at_options) {
-    var logIndex;
     this.options = _at_options;
     if (this.options == null) {
       this.options = {};
@@ -679,7 +678,9 @@ Logger = (function() {
     if ('processusTag' in this.options) {
       Logger.processusTag = this.options.processusTag;
     }
-    logIndex = localStorage.getItem('log_index');
+    if (typeof localStorage === "undefined" || localStorage === null) {
+      this.noLog = true;
+    }
   }
 
   Logger.prototype.stringify = function(text) {
@@ -719,6 +720,9 @@ Logger = (function() {
   Logger.prototype.info = function() {
     var text, texts;
     texts = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+    if (this.noLog) {
+      return;
+    }
     text = this.format('info', texts);
     this.persist(text);
     return console.info(text);
@@ -727,6 +731,9 @@ Logger = (function() {
   Logger.prototype.warn = function() {
     var text, texts;
     texts = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+    if (this.noLog) {
+      return;
+    }
     text = this.format('warn', texts);
     this.persist(text);
     return console.warn(text);
@@ -735,6 +742,9 @@ Logger = (function() {
   Logger.prototype.error = function() {
     var text, texts;
     texts = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+    if (this.noLog) {
+      return;
+    }
     text = this.format('error', texts);
     this.persist(text);
     return console.error(text);
@@ -743,6 +753,9 @@ Logger = (function() {
   Logger.prototype.debug = function() {
     var text, texts;
     texts = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+    if (this.noLog) {
+      return;
+    }
     text = this.format('debug', texts);
     this.persist(text);
     return console.info(text);
@@ -751,10 +764,16 @@ Logger = (function() {
   Logger.prototype.raw = function() {
     var texts;
     texts = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+    if (this.noLog) {
+      return;
+    }
     return console.log.apply(console, texts);
   };
 
   Logger.prototype.lineBreak = function(text) {
+    if (this.noLog) {
+      return;
+    }
     text = Array(80).join("*");
     this.raw(text);
     return window.logTrace.push(text);
@@ -1667,16 +1686,13 @@ module.exports = {
 require.register("models/contact", function(exports, require, module) {
 var Contact, log;
 
-log = require('/lib/persistent_log')({
+log = require('../lib/persistent_log')({
   prefix: "contact",
   date: true
 });
 
-module.exports = Contact = {};
-
-Contact.cozy2Cordova = function(cozyContact) {
-  var attachments2Photos, cordovaContact, cozyContact2ContactOrganizations, cozyContact2URLs, dataPoints2Cordova, n2ContactName, tags2Categories;
-  n2ContactName = function(n) {
+module.exports = Contact = {
+  _n2ContactName: function(n) {
     var familyName, formatted, givenName, middle, parts, prefix, suffix, validParts;
     if (n == null) {
       return void 0;
@@ -1688,22 +1704,22 @@ Contact.cozy2Cordova = function(cozyContact) {
     });
     formatted = validParts.join(' ');
     return new ContactName(formatted, familyName, givenName, middle, prefix, suffix);
-  };
-  cozyContact2ContactOrganizations = function(contact) {
+  },
+  _cozyContact2ContactOrganizations: function(contact) {
     if (contact.org) {
       return [new ContactOrganization(false, null, contact.org, contact.department, contact.title)];
     } else {
       return [];
     }
-  };
-  cozyContact2URLs = function(contact) {
+  },
+  _cozyContact2URLs: function(contact) {
     if (contact.url) {
-      return [new ContactField('urls', contact.url, false)];
+      return [new ContactField('other', contact.url, false)];
     } else {
       return [];
     }
-  };
-  tags2Categories = function(tags) {
+  },
+  _tags2Categories: function(tags) {
     if (tags) {
       return tags.map(function(tag) {
         return new ContactField('categories', tag, false);
@@ -1711,16 +1727,16 @@ Contact.cozy2Cordova = function(cozyContact) {
     } else {
       return [];
     }
-  };
-  attachments2Photos = function(contact) {
+  },
+  _attachments2Photos: function(contact) {
     var photo;
     if ((contact._attachments != null) && 'picture' in contact._attachments) {
       photo = new ContactField('base64', contact._attachments.picture.data);
       return [photo];
     }
     return [];
-  };
-  dataPoints2Cordova = function(cozyContact, cordovaContact) {
+  },
+  _dataPoints2Cordova: function(cozyContact, cordovaContact) {
     var addContactField, countryPart, datapoint, formatted, i, name, street, structuredToFlat, _ref, _results;
     addContactField = function(cordovaField, datapoint) {
       var field;
@@ -1778,32 +1794,38 @@ Contact.cozy2Cordova = function(cozyContact) {
       }
     }
     return _results;
-  };
-  cordovaContact = navigator.contacts.create({
-    displayName: cozyContact.fn,
-    name: n2ContactName(cozyContact.n),
-    nickname: cozyContact.nickname,
-    organizations: cozyContact2ContactOrganizations(cozyContact),
-    birthday: cozyContact.bday,
-    urls: cozyContact2URLs(cozyContact),
-    note: cozyContact.note,
-    categories: tags2Categories(cozyContact.tags),
-    photos: attachments2Photos(cozyContact),
-    sourceId: cozyContact._id,
-    sync2: cozyContact._rev,
-    dirty: false,
-    deleted: false
-  });
-  dataPoints2Cordova(cozyContact, cordovaContact);
-  if (!cordovaContact.displayName) {
-    cordovaContact.displayName = "--";
-  }
-  return cordovaContact;
-};
-
-Contact.cordova2Cozy = function(cordovaContact, callback) {
-  var categories2Tags, contactName2N, cordova2Datapoints, cozyContact, img, organizations2Cozy, photo, _ref;
-  contactName2N = function(contactName) {
+  },
+  _cozy2CordovaOptions: function(cozyContact) {
+    var cordovaContact;
+    log.debug("\n cozy2cordova : cozyContact \n");
+    log.debug(JSON.stringify(cozyContact, null, 2));
+    cordovaContact = {
+      displayName: cozyContact.fn,
+      name: Contact._n2ContactName(cozyContact.n),
+      nickname: cozyContact.nickname,
+      organizations: Contact._cozyContact2ContactOrganizations(cozyContact),
+      birthday: cozyContact.bday,
+      urls: Contact._cozyContact2URLs(cozyContact),
+      note: cozyContact.note,
+      categories: Contact._tags2Categories(cozyContact.tags),
+      photos: Contact._attachments2Photos(cozyContact),
+      sourceId: cozyContact._id,
+      sync2: cozyContact._rev,
+      dirty: false,
+      deleted: false
+    };
+    Contact._dataPoints2Cordova(cozyContact, cordovaContact);
+    if (!cordovaContact.displayName) {
+      cordovaContact.displayName = "--";
+    }
+    log.debug("\n cozy2cordova : cordovaContact \n");
+    log.debug(JSON.stringify(cordovaContact, null, 2));
+    return cordovaContact;
+  },
+  cozy2Cordova: function(cozyContact) {
+    return navigator.contacts.create(Contact._cozy2CordovaOptions(cozyContact));
+  },
+  _contactName2N: function(contactName) {
     var field, n, parts, _i, _len, _ref;
     if (contactName == null) {
       return void 0;
@@ -1818,15 +1840,15 @@ Contact.cordova2Cozy = function(cordovaContact, callback) {
     if (n !== ';;;;') {
       return n;
     }
-  };
-  categories2Tags = function(categories) {
+  },
+  _categories2Tags: function(categories) {
     if (categories != null) {
-      return caterories.map(function(categorie) {
+      return categories.map(function(categorie) {
         return category.value;
       });
     }
-  };
-  organizations2Cozy = function(organizations, cozyContact) {
+  },
+  _organizations2Cozy: function(organizations, cozyContact) {
     var organization;
     if ((organizations != null ? organizations.length : void 0) > 0) {
       organization = organizations[0];
@@ -1834,8 +1856,8 @@ Contact.cordova2Cozy = function(cordovaContact, callback) {
       cozyContact.department = organization.department;
       return cozyContact.title = organization.title;
     }
-  };
-  cordova2Datapoints = function(cordovaContact, cozyContact) {
+  },
+  _cordova2Datapoints: function(cordovaContact, cozyContact) {
     var datapoints, field2Name, fieldName, fields, fieldsDatapoints, name, _ref, _ref1;
     datapoints = [];
     field2Name = {
@@ -1881,55 +1903,62 @@ Contact.cordova2Cozy = function(cordovaContact, callback) {
       datapoints = datapoints.concat(fieldsDatapoints);
     }
     return cozyContact.datapoints = datapoints;
-  };
-  cozyContact = {
-    docType: 'contact',
-    _id: cordovaContact.sourceId,
-    id: cordovaContact.sourceId,
-    _rev: cordovaContact.sync2,
-    fn: cordovaContact.displayName,
-    n: contactName2N(cordovaContact.name),
-    bday: cordovaContact.birthday,
-    nickname: cordovaContact.nickname,
-    revision: new Date().toISOString(),
-    note: cordovaContact.note,
-    tags: categories2Tags(cordovaContact.categories)
-  };
-  organizations2Cozy(cordovaContact.organizations, cozyContact);
-  cordova2Datapoints(cordovaContact, cozyContact);
-  if (!(((_ref = cordovaContact.photos) != null ? _ref.length : void 0) > 0)) {
-    return callback(null, cozyContact);
-  }
-  photo = cordovaContact.photos[0];
-  if (photo.type === 'base64') {
-    cozyContact._attachments = {
-      picture: {
-        content_type: 'application/octet-stream',
-        data: photo.value
-      }
+  },
+  cordova2Cozy: function(cordovaContact, callback) {
+    var cozyContact, img, photo, _ref;
+    log.debug("\n cordova2cozy : cordovaContact \n");
+    log.debug(JSON.stringify(cordovaContact, null, 2));
+    cozyContact = {
+      docType: 'contact',
+      _id: cordovaContact.sourceId,
+      id: cordovaContact.sourceId,
+      _rev: cordovaContact.sync2,
+      fn: cordovaContact.displayName,
+      n: Contact._contactName2N(cordovaContact.name),
+      bday: cordovaContact.birthday,
+      nickname: cordovaContact.nickname,
+      revision: new Date().toISOString(),
+      note: cordovaContact.note,
+      tags: Contact._categories2Tags(cordovaContact.categories)
     };
-    return callback(null, cozyContact);
-  } else if (photo.type === 'url') {
-    img = new Image();
-    img.onload = function() {
-      var IMAGE_DIMENSION, canvas, ctx, dataUrl, ratio, ratiodim;
-      IMAGE_DIMENSION = 600;
-      ratiodim = img.width > img.height ? 'height' : 'width';
-      ratio = IMAGE_DIMENSION / img[ratiodim];
-      canvas = document.createElement('canvas');
-      canvas.height = canvas.width = IMAGE_DIMENSION;
-      ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, ratio * img.width, ratio * img.height);
-      dataUrl = canvas.toDataURL('image/jpeg');
+    Contact._organizations2Cozy(cordovaContact.organizations, cozyContact);
+    Contact._cordova2Datapoints(cordovaContact, cozyContact);
+    log.debug("\n cordova2cozy : cozyContact \n");
+    log.debug(JSON.stringify(cozyContact, null, 2));
+    if (!(((_ref = cordovaContact.photos) != null ? _ref.length : void 0) > 0)) {
+      return callback(null, cozyContact);
+    }
+    photo = cordovaContact.photos[0];
+    if (photo.type === 'base64') {
       cozyContact._attachments = {
         picture: {
           content_type: 'application/octet-stream',
-          data: dataUrl.split(',')[1]
+          data: photo.value
         }
       };
       return callback(null, cozyContact);
-    };
-    return img.src = photo.value;
+    } else if (photo.type === 'url') {
+      img = new Image();
+      img.onload = function() {
+        var IMAGE_DIMENSION, canvas, ctx, dataUrl, ratio, ratiodim;
+        IMAGE_DIMENSION = 600;
+        ratiodim = img.width > img.height ? 'height' : 'width';
+        ratio = IMAGE_DIMENSION / img[ratiodim];
+        canvas = document.createElement('canvas');
+        canvas.height = canvas.width = IMAGE_DIMENSION;
+        ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, ratio * img.width, ratio * img.height);
+        dataUrl = canvas.toDataURL('image/jpeg');
+        cozyContact._attachments = {
+          picture: {
+            content_type: 'application/octet-stream',
+            data: dataUrl.split(',')[1]
+          }
+        };
+        return callback(null, cozyContact);
+      };
+      return img.src = photo.value;
+    }
   }
 };
 
@@ -4892,11 +4921,124 @@ module.exports = ConfigView = (function(_super) {
 });
 
 require.register("views/device_name_picker", function(exports, require, module) {
+var BaseView, DeviceNamePickerView, log,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  __hasProp = {}.hasOwnProperty;
 
+BaseView = require('../lib/base_view');
+
+log = require('/lib/persistent_log')({
+  prefix: "DeviceNamePickerView",
+  date: true
+});
+
+module.exports = DeviceNamePickerView = (function(_super) {
+  __extends(DeviceNamePickerView, _super);
+
+  function DeviceNamePickerView() {
+    return DeviceNamePickerView.__super__.constructor.apply(this, arguments);
+  }
+
+  DeviceNamePickerView.prototype.className = 'list';
+
+  DeviceNamePickerView.prototype.template = require('../templates/device_name_picker');
+
+  DeviceNamePickerView.prototype.events = function() {
+    return {
+      'click #btn-save': 'doSave',
+      'blur #input-device': 'onCompleteDefaultValue',
+      'focus #input-device': 'onRemoveDefaultValue',
+      'click #btn-back': 'doBack',
+      'keypress #input-device': 'blurIfEnter'
+    };
+  };
+
+  DeviceNamePickerView.prototype.doBack = function() {
+    return app.router.navigate('login', {
+      trigger: true
+    });
+  };
+
+  DeviceNamePickerView.prototype.blurIfEnter = function(e) {
+    if (e.keyCode === 13) {
+      return this.$('#input-device').blur();
+    }
+  };
+
+  DeviceNamePickerView.prototype.doSave = function() {
+    var config, device;
+    if (this.saving) {
+      return null;
+    }
+    this.saving = $('#btn-save').text();
+    if (this.error) {
+      this.error.remove();
+    }
+    device = this.$('#input-device').val();
+    if (!device) {
+      return this.displayError('all fields are required');
+    }
+    config = app.loginConfig;
+    config.deviceName = device;
+    $('#btn-save').text(t('registering...'));
+    return app.replicator.registerRemote(config, (function(_this) {
+      return function(err) {
+        if (err != null) {
+          return _this.displayError(t(err.message));
+        } else {
+          delete app.loginConfig;
+          app.isFirstRun = true;
+          log.info('starting first replication');
+          app.replicator.initialReplication(function(err) {
+            if (err) {
+              return alert(t(err.message));
+            }
+          });
+          return app.router.navigate('config', {
+            trigger: true
+          });
+        }
+      };
+    })(this));
+  };
+
+  DeviceNamePickerView.prototype.onCompleteDefaultValue = function() {
+    var device;
+    device = this.$('#input-device').val();
+    if (device === '') {
+      return this.$('#input-device').val(t('device name placeholder'));
+    }
+  };
+
+  DeviceNamePickerView.prototype.onRemoveDefaultValue = function() {
+    var device;
+    device = this.$('#input-device').val();
+    if (device === t('device name placeholder')) {
+      return this.$('#input-device').val('');
+    }
+  };
+
+  DeviceNamePickerView.prototype.displayError = function(text, field) {
+    $('#btn-save').text(this.saving);
+    this.saving = false;
+    if (this.error) {
+      this.error.remove();
+    }
+    if (~text.indexOf('CORS request rejected')) {
+      text = t('connection failure');
+    }
+    this.error = $('<div>').addClass('button button-full button-energized');
+    this.error.text(text);
+    return this.$(field || 'label').after(this.error);
+  };
+
+  return DeviceNamePickerView;
+
+})(BaseView);
 
 });
 
-;require.register("views/first_sync", function(exports, require, module) {
+require.register("views/first_sync", function(exports, require, module) {
 var BaseView, FirstSyncView, LAST_STEP, log,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   __hasProp = {}.hasOwnProperty;
