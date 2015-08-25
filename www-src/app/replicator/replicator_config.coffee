@@ -1,6 +1,6 @@
 basic = require '../lib/basic'
 
-APP_VERSION = "0.1.8"
+APP_VERSION = "0.1.9"
 
 module.exports = class ReplicatorConfig extends Backbone.Model
     constructor: (@replicator) ->
