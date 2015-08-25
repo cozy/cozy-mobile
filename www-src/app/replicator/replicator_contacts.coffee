@@ -147,13 +147,20 @@ module.exports =
         # delete, update or create....
         navigator.contacts.find [navigator.contacts.fieldType.dirty]
         , (contacts) =>
+            processed = 0
+            @set 'backup_step', 'contacts_sync_to_pouch'
+            @set 'backup_step_total', contacts.length
+            log.info "syncPhone2Pouch #{contacts.length} contacts."
+            # contact to update number. contacts.length
             async.eachSeries contacts, (contact, cb) =>
-                if contact.deleted
-                    @_deleteInPouch contact, cb
-                else if contact.sourceId
-                    @_updateInPouch contact, cb
-                else
-                    @_createInPouch contact, cb
+                @set 'backup_step_done', processed++
+                setImmediate => # helps refresh UI
+                    if contact.deleted
+                        @_deleteInPouch contact, cb
+                    else if contact.sourceId
+                        @_updateInPouch contact, cb
+                    else
+                        @_createInPouch contact, cb
             , callback
 
         , callback
@@ -163,6 +170,8 @@ module.exports =
     # Sync app's pouchDB with cozy's couchDB with a replication.
     syncToCozy: (callback) ->
         log.info "enter sync2Cozy"
+        @set 'backup_step_done', null
+        @set 'backup_step', 'contacts_sync_to_cozy'
 
         replication = @db.replicate.to @config.remote,
             batch_size: 20
@@ -210,6 +219,8 @@ module.exports =
                 , new ContactFindOptions sourceId, false, [], ACCOUNT_TYPE, ACCOUNT_NAME
 
         async.eachSeries docs, (doc, cb) =>
+            # precondition: backup_step_done initialized to 0.
+            @set 'backup_step_done', @get('backup_step_done') + 1
             getFromPhoneBySourceId doc._id, (err, contact) =>
                 return cb err if err
                 if doc._deleted
@@ -230,6 +241,10 @@ module.exports =
         log.info "enter syncCozy2Phone"
         replicationDone = false
 
+        total = 0
+        @set 'backup_step', 'contacts_sync_to_phone'
+        @set 'backup_step_done', 0
+
         # Ues a queue because contact save to phone doesn't support well
         # concurrency.
         applyToPhoneQueue = async.queue @_applyChangeToPhone.bind @
@@ -246,8 +261,13 @@ module.exports =
             since: @config.get 'contactsPullCheckpointed'
 
         replication.on 'change', (changes) =>
-            # hack whitout doc becomes _id value !
+            # hack: whitout it, doc becomes _id value !
             applyToPhoneQueue.push $.extend true, {}, changes.docs
+            total += changes.docs?.length
+            @set 'backup_step_total', total
+            log.info "sync2Phone #{total} contacts."
+
+
 
         replication.on 'error', callback
         replication.on 'complete', (result) =>
@@ -284,13 +304,14 @@ module.exports =
                         cb null, doc
                 , (err, docs) =>
                     return callback err if err
-
                     async.mapSeries docs, (doc, cb) =>
                         @db.put doc, 'new_edits':false, cb
-
                     , (err, contacts) =>
                         return callback err if err
+                        @set 'backup_step', null # hide header: first-sync view
                         @_applyChangeToPhone docs, (err) =>
+                            # clean backup_step_done after applyChanges
+                            @set 'backup_step_done', null
                             @config.save contactsPullCheckpointed: lastSeq
                             , (err) =>
                                 @deleteObsoletePhoneContacts callback

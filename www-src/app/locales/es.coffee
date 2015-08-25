@@ -23,9 +23,12 @@ module.exports =
     "pull to sync":"""Arrastrar para sincronizar"""
     "syncing":"""En curso de sincronización"""
     "contacts_sync":"""Sincronización de los contactos"""
+    "contacts_sync_to_pouch" : "Sincronización de los contactos -> Cozy"
+    "contacts_sync_to_cozy"  : "Sincronización de los contactos -> Cozy ..."
+    "contacts_sync_to_phone" : "Sincronización de los contactos <- Cozy"
     "pictures_sync":"""Sincronización de las imágenes"""
     "cache_update":"""Actualización de la caché"""
-
+    "destroying database": "Destrucción de la base de datos"
     "synchronized with":"""Sincronizado con"""
     "this folder is empty":"""Esta carpeta está vacía"""
     "no results":"""No hay resultados"""

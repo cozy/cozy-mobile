@@ -161,7 +161,10 @@ module.exports = {
     })(this));
   },
   regularStart: function() {
+    var conf;
     app.foreground = true;
+    conf = app.replicator.config.attributes;
+    log.info("Start v" + (app.replicator.config.appVersion()) + "--sync_contacts:" + conf.syncContacts + ",sync_images:" + conf.syncImages + ",sync_on_wifi:" + conf.syncOnWifi + ",cozy_notifications:" + conf.cozyNotifications);
     document.addEventListener("resume", (function(_this) {
       return function() {
         log.info("RESUME EVENT");
@@ -1252,6 +1255,8 @@ function b64_enc (data) {
 
     // assume utf8 data
     // data = this.utf8_encode(data+'');
+    // Fix cozy 2015-08-25 : escape to UTF8
+    data = unescape(encodeURIComponent(data));
 
     do { // pack three octets into four hexets
         o1 = data.charCodeAt(i++);
@@ -1283,6 +1288,7 @@ function b64_enc (data) {
     return enc;
 }
 module.exports = request;
+
 });
 
 require.register("lib/utils", function(exports, require, module) {
@@ -1443,8 +1449,12 @@ module.exports = {
   "pull to sync": "Pull to sync",
   "syncing": "Syncing",
   "contacts_sync": "Syncing contacts",
+  "contacts_sync_to_pouch": "Syncing contacts -> Cozy",
+  "contacts_sync_to_cozy": "Syncing contacts -> Cozy ...",
+  "contacts_sync_to_phone": "Syncing contacts <- Cozy",
   "pictures_sync": "Syncing pictures",
   "cache_sync": "Updating cache",
+  "destroying database": "Destroying database",
   "synchronized with": "Synchronized with ",
   "this folder is empty": "This folder is empty.",
   "no results": "No results",
@@ -1506,93 +1516,11 @@ module.exports = {
 });
 
 require.register("locales/es", function(exports, require, module) {
-module.exports = {
-  "app name": "Cozy movil",
-  "cozy url": "Dirección de Cozy",
-  "cozy password": "Contraseña",
-  "name device": "Dar un nombre al periférico",
-  "device name": "Nombre del periférico",
-  "search": "buscar",
-  "config": "Configuración",
-  "never": "Nunca",
-  "phone2cozy title": "Hacer copia de seguridad del contenido del teléfono",
-  "contacts sync label": "Hacer copia de seguridad de los contactos",
-  "images sync label": "Hacer copia de seguridad de las imágenes del teléfono",
-  "wifi sync label": "Hacer copia de seguridad solamente si Wifi",
-  "cozy notifications sync label": "Sincronizar las notificaciones Cozy",
-  "home": "Inicio",
-  "about": "Acerca de",
-  "last backup": "Última copia de seguridad:",
-  "reset title": "Reinicializar",
-  "reset action": "Reinicializar",
-  "retry synchro": "Sincronizar",
-  "synchro warning": "Esto relanzará una sincronización desde el comienzo. Puede tomar mucho tiempo.",
-  "reset warning": "Esto suprimirá todos los datos cozy de su teléfono.",
-  "pull to sync": "Arrastrar para sincronizar",
-  "syncing": "En curso de sincronización",
-  "contacts_sync": "Sincronización de los contactos",
-  "pictures_sync": "Sincronización de las imágenes",
-  "cache_update": "Actualización de la caché",
-  "synchronized with": "Sincronizado con",
-  "this folder is empty": "Esta carpeta está vacía",
-  "no results": "No hay resultados",
-  "loading": "Cargando",
-  "remove local": "Suprimir del teléfono",
-  "download": "Cargar",
-  "sync": "Recargar",
-  "backup": "Copia de seguridad",
-  "save": "Guardar",
-  "done": "Hecho",
-  "photos": "Fotos desde los periféricos",
-  "confirm message": "¿Está usted seguro(a)?",
-  "confirm exit message": "¿Quiere usted salir de la aplicación?",
-  "replication complete": "Reproducción terminada",
-  "no activity found": "Ninguna aplicación se ha encontrado en el teléfono para este tipo de archivos.",
-  "not enough space": "No hay suficiente espacio disco en su teléfono.",
-  "no battery": "La copia de seguridad no se hará ya que su teléfono no tiene suficiente batería.",
-  "no wifi": "La copia de seguridad no se hará porque no hay conexión Wifi.",
-  "no connection": "La copia de seguridad no se hará porque usted no está conectado.",
-  "next": "Siguiente",
-  "back": "Atrás",
-  "connection failure": "Falla en la conexión",
-  "setup 1/3": "Configuración 1/3",
-  "password placeholder": "Su contraseña",
-  "authenticating...": "Verificación de los identificadores...",
-  "setup 2/3": "Configuración 2/3",
-  "device name explanation": "Escoger un nombre de uso de este periférico para poderlo administrar desde su Cozy.",
-  "device name placeholder": "mi-teléfono",
-  "registering...": "Registrando...",
-  "setup 3/3": "Configuración 3/3",
-  "setup end": "Fin de la configuración",
-  "message step 0": "Etapa 1/5: Sincronización de los archivos.",
-  "message step 1": "Etapa 2/5: Sincronización de las carpetas.",
-  "message step 2": "Etapa 3/5: Sincronización de las notificaciones.",
-  "message step 3": "Etapa 4/5: Sincronización de los contactos.",
-  "message step 4": "Etapa 5/5: Preparación de los documentos.",
-  "wait message device": "Configuración del periférico...",
-  "ready message": "¡La aplicación está lista para su uso!",
-  "waiting...": "En espera...",
-  "filesystem bug error": "Error en el sistema de archivos. Tratar de reinicializar su teléfono.",
-  "end": "Fin",
-  "all fields are required": "Todas las casillas son obligatorias",
-  "cozy need patch": "Cozy necesita un correctivo",
-  "wrong password": "Contraseña incorrecta",
-  "device name already exist": "Ese nombre de periférico ya existe",
-  "An error happened (UNKNOWN)": "Un error ha ocurrido",
-  "An error happened (NOT FOUND)": "Un error ha ocurrido (no identificado)",
-  "An error happened (INVALID URL)": "Un error ha ocurrido (url inválida)",
-  "This file isnt available offline": "Este archivo no está disponible fuera de línea.",
-  "ABORTED": "El procedimiento se ha interrumpido.",
-  "photo folder not replicated yet": "La inicialización aún no ha terminado.",
-  "Not Found": "Error en la inicialización. ¿Ha usted instalado la aplicación Archivos en su Cozy?",
-  "connexion error": "La conexión a su cozy ha fallado. Revisar que su periférico esté conectado a internet, que la dirección de su cozy esté bien escrita y si su cozy funciona. Para los usuarios avezados con cozy en sus propios servidores, consultar la <a href='http://cozy.io/en/mobile/files.html#note-about-self-signed-certificates' target='_system'>documentación sobre los certificados auto-firmados </a>",
-  "no images in DCIM": "Copia de seguridad de imágenes: no se ha encontrado ninguna imagen en el directorio DCIM.",
-  "Document update conflict": "Conflicto durante una operación de base de datos. Reinicie la aplicación para arreglarlo."
-};
+
 
 });
 
-require.register("locales/fr", function(exports, require, module) {
+;require.register("locales/fr", function(exports, require, module) {
 module.exports = {
   "app name": "Cozy mobile",
   "cozy url": "Adresse Cozy",
@@ -1621,8 +1549,12 @@ module.exports = {
   "pull to sync": "Tirer pour synchroniser",
   "syncing": "En cours de synchronisation",
   "contacts_sync": "Synchronisation des contacts",
+  "contacts_sync_to_pouch": "Synchronisation des contacts -> Cozy",
+  "contacts_sync_to_cozy": "Synchronisation des contacts -> Cozy ...",
+  "contacts_sync_to_phone": "Synchronisation des contacts <- Cozy",
   "pictures_sync": "Synchronisation des images",
   "cache_update": "Mise à jour du cache",
+  "destroying database": "Destruction de la base de données",
   "synchronized with": "Synchronisé avec ",
   "this folder is empty": "Ce dossier est vide.",
   "no results": "Pas de résultats",
@@ -1797,8 +1729,6 @@ module.exports = Contact = {
   },
   _cozy2CordovaOptions: function(cozyContact) {
     var cordovaContact;
-    log.debug("\n cozy2cordova : cozyContact \n");
-    log.debug(JSON.stringify(cozyContact, null, 2));
     cordovaContact = {
       displayName: cozyContact.fn,
       name: Contact._n2ContactName(cozyContact.n),
@@ -1818,8 +1748,6 @@ module.exports = Contact = {
     if (!cordovaContact.displayName) {
       cordovaContact.displayName = "--";
     }
-    log.debug("\n cozy2cordova : cordovaContact \n");
-    log.debug(JSON.stringify(cordovaContact, null, 2));
     return cordovaContact;
   },
   cozy2Cordova: function(cozyContact) {
@@ -1906,8 +1834,6 @@ module.exports = Contact = {
   },
   cordova2Cozy: function(cordovaContact, callback) {
     var cozyContact, img, photo, _ref;
-    log.debug("\n cordova2cozy : cordovaContact \n");
-    log.debug(JSON.stringify(cordovaContact, null, 2));
     cozyContact = {
       docType: 'contact',
       _id: cordovaContact.sourceId,
@@ -1923,8 +1849,6 @@ module.exports = Contact = {
     };
     Contact._organizations2Cozy(cordovaContact.organizations, cozyContact);
     Contact._cordova2Datapoints(cordovaContact, cozyContact);
-    log.debug("\n cordova2cozy : cozyContact \n");
-    log.debug(JSON.stringify(cozyContact, null, 2));
     if (!(((_ref = cordovaContact.photos) != null ? _ref.length : void 0) > 0)) {
       return callback(null, cozyContact);
     }
@@ -2433,6 +2357,7 @@ module.exports = Replicator = (function(_super) {
   };
 
   Replicator.prototype.checkCredentials = function(config, callback) {
+    log.info(config);
     return request.post({
       uri: "https://" + config.cozyURL + "/login",
       json: {
@@ -2453,6 +2378,8 @@ module.exports = Replicator = (function(_super) {
   };
 
   Replicator.prototype.registerRemote = function(config, callback) {
+    log.info(config);
+    log.info(config.password);
     return request.post({
       uri: "https://" + config.cozyURL + "/device/",
       auth: {
@@ -3080,6 +3007,7 @@ log = require('/lib/persistent_log')({
 
 module.exports = {
   backup: function(options, callback) {
+    var e;
     if (callback == null) {
       callback = function() {};
     }
@@ -3089,27 +3017,33 @@ module.exports = {
     options = options || {
       force: false
     };
-    this.set('inBackup', true);
-    this.set('backup_step', null);
-    this.stopRealtime();
-    return this._backup(options.force, (function(_this) {
-      return function(err) {
-        _this.set('backup_step', null);
-        _this.set('inBackup', false);
-        if (!options.background) {
-          _this.startRealtime();
-        }
-        if (err) {
-          return callback(err);
-        }
-        return _this.config.save({
-          lastBackup: new Date().toString()
-        }, function(err) {
-          log.info("Backup done.");
-          return callback(null);
-        });
-      };
-    })(this));
+    try {
+      this.set('inBackup', true);
+      this.set('backup_step', null);
+      this.stopRealtime();
+      return this._backup(options.force, (function(_this) {
+        return function(err) {
+          _this.set('backup_step', null);
+          _this.set('backup_step_done', null);
+          _this.set('inBackup', false);
+          if (!options.background) {
+            _this.startRealtime();
+          }
+          if (err) {
+            return callback(err);
+          }
+          return _this.config.save({
+            lastBackup: new Date().toString()
+          }, function(err) {
+            log.info("Backup done.");
+            return callback(null);
+          });
+        };
+      })(this));
+    } catch (_error) {
+      e = _error;
+      return log.error(e, e.stack);
+    }
   },
   _backup: function(force, callback) {
     return DeviceStatus.checkReadyForSync(true, (function(_this) {
@@ -3182,84 +3116,86 @@ module.exports = {
     log.info("sync pictures");
     this.set('backup_step', 'pictures_scan');
     this.set('backup_step_done', null);
-    return setImmediate((function(_this) {
-      return function() {
-        return async.series([
-          _this.ensureDeviceFolder.bind(_this), ImagesBrowser.getImagesList, function(callback) {
-            return _this.photosDB.query('PhotosByLocalId', {}, callback);
-          }, function(cb) {
-            return _this.db.query('FilesAndFolder', {
-              startkey: ['/' + t('photos')],
-              endkey: ['/' + t('photos'), {}]
-            }, cb);
-          }
-        ], function(err, results) {
-          var dbImages, dbPictures, device, images, myDownloadFolder, toUpload, _ref;
-          if (err) {
-            return callback(err);
-          }
-          device = results[0], images = results[1], (_ref = results[2], dbImages = _ref.rows), dbPictures = results[3];
-          dbImages = dbImages.map(function(row) {
-            return row.key;
-          });
-          dbPictures = dbPictures.rows.map(function(row) {
-            var _ref1;
-            return (_ref1 = row.key[1]) != null ? _ref1.slice(2) : void 0;
-          });
-          myDownloadFolder = _this.downloads.toURL().replace('file://', '');
-          toUpload = [];
-          images = images.filter(function(path) {
-            return path.indexOf('/DCIM/') !== -1;
-          });
-          if (images.length === 0) {
-            return callback(new Error('no images in DCIM'));
-          }
-          return async.eachSeries(images, function(path, cb) {
-            if (__indexOf.call(dbImages, path) >= 0) {
-              return cb();
-            } else {
-              return fs.getFileFromPath(path, function(err, file) {
-                var _ref1, _ref2;
+    return async.series([
+      this.ensureDeviceFolder.bind(this), ImagesBrowser.getImagesList, (function(_this) {
+        return function(callback) {
+          return _this.photosDB.query('PhotosByLocalId', {}, callback);
+        };
+      })(this), (function(_this) {
+        return function(cb) {
+          return _this.db.query('FilesAndFolder', {
+            startkey: ['/' + t('photos')],
+            endkey: ['/' + t('photos'), {}]
+          }, cb);
+        };
+      })(this)
+    ], (function(_this) {
+      return function(err, results) {
+        var dbImages, dbPictures, device, images, myDownloadFolder, toUpload, _ref;
+        if (err) {
+          return callback(err);
+        }
+        device = results[0], images = results[1], (_ref = results[2], dbImages = _ref.rows), dbPictures = results[3];
+        dbImages = dbImages.map(function(row) {
+          return row.key;
+        });
+        dbPictures = dbPictures.rows.map(function(row) {
+          var _ref1;
+          return (_ref1 = row.key[1]) != null ? _ref1.slice(2) : void 0;
+        });
+        myDownloadFolder = _this.downloads.toURL().replace('file://', '');
+        toUpload = [];
+        images = images.filter(function(path) {
+          return (path != null) && path.indexOf('/DCIM/') !== -1;
+        });
+        if (images.length === 0) {
+          return callback(new Error('no images in DCIM'));
+        }
+        return async.eachSeries(images, function(path, cb) {
+          if (__indexOf.call(dbImages, path) >= 0) {
+            return cb();
+          } else {
+            return fs.getFileFromPath(path, function(err, file) {
+              var _ref1, _ref2;
+              if (err) {
+                return cb(err);
+              }
+              if (_ref1 = (_ref2 = file.name) != null ? _ref2.toLowerCase() : void 0, __indexOf.call(dbPictures, _ref1) >= 0) {
+                _this.createPhoto(path);
+              } else {
+                toUpload.push(path);
+              }
+              return DeviceStatus.checkReadyForSync(function(err, ready, msg) {
                 if (err) {
                   return cb(err);
                 }
-                if (_ref1 = (_ref2 = file.name) != null ? _ref2.toLowerCase() : void 0, __indexOf.call(dbPictures, _ref1) >= 0) {
-                  _this.createPhoto(path);
-                } else {
-                  toUpload.push(path);
+                if (!ready) {
+                  return cb(new Error(msg));
                 }
-                return DeviceStatus.checkReadyForSync(function(err, ready, msg) {
-                  if (err) {
-                    return cb(err);
-                  }
-                  if (!ready) {
-                    return cb(new Error(msg));
-                  }
-                  return setImmediate(cb);
-                });
+                return setImmediate(cb);
               });
-            }
-          }, function() {
-            var processed;
-            log.info("SYNC IMAGES : " + images.length + " " + toUpload.length);
-            processed = 0;
-            _this.set('backup_step', 'pictures_sync');
-            _this.set('backup_step_total', toUpload.length);
-            return async.eachSeries(toUpload, function(path, cb) {
-              _this.set('backup_step_done', processed++);
-              log.info("UPLOADING " + path);
-              return _this.uploadPicture(path, device, function(err) {
-                if (err) {
-                  log.error("ERROR " + path + " " + err);
-                }
-                if (DeviceStatus.readyForSync) {
-                  return setImmediate(cb);
-                } else {
-                  return cb(DeviceStatus.readyForSyncMsg);
-                }
-              });
-            }, callback);
-          });
+            });
+          }
+        }, function() {
+          var processed;
+          log.info("SYNC IMAGES : " + images.length + " " + toUpload.length);
+          processed = 0;
+          _this.set('backup_step', 'pictures_sync');
+          _this.set('backup_step_total', toUpload.length);
+          return async.eachSeries(toUpload, function(path, cb) {
+            _this.set('backup_step_done', processed++);
+            log.info("UPLOADING " + path);
+            return _this.uploadPicture(path, device, function(err) {
+              if (err) {
+                log.error("ERROR " + path + " " + err);
+              }
+              if (DeviceStatus.readyForSync) {
+                return setImmediate(cb);
+              } else {
+                return cb(DeviceStatus.readyForSyncMsg);
+              }
+            });
+          }, callback);
         });
       };
     })(this));
@@ -3431,11 +3367,13 @@ module.exports = {
 });
 
 require.register("replicator/replicator_config", function(exports, require, module) {
-var ReplicatorConfig, basic,
+var APP_VERSION, ReplicatorConfig, basic,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   __hasProp = {}.hasOwnProperty;
 
 basic = require('../lib/basic');
+
+APP_VERSION = "0.1.8";
 
 module.exports = ReplicatorConfig = (function(_super) {
   __extends(ReplicatorConfig, _super);
@@ -3512,6 +3450,10 @@ module.exports = ReplicatorConfig = (function(_super) {
     return new PouchDB({
       name: this.get('fullRemoteURL')
     });
+  };
+
+  ReplicatorConfig.prototype.appVersion = function() {
+    return APP_VERSION;
   };
 
   return ReplicatorConfig;
@@ -3680,14 +3622,22 @@ module.exports = {
     log.info("enter syncPhone2Pouch");
     return navigator.contacts.find([navigator.contacts.fieldType.dirty], (function(_this) {
       return function(contacts) {
+        var processed;
+        processed = 0;
+        _this.set('backup_step', 'contacts_sync_to_pouch');
+        _this.set('backup_step_total', contacts.length);
+        log.info("syncPhone2Pouch " + contacts.length + " contacts.");
         return async.eachSeries(contacts, function(contact, cb) {
-          if (contact.deleted) {
-            return _this._deleteInPouch(contact, cb);
-          } else if (contact.sourceId) {
-            return _this._updateInPouch(contact, cb);
-          } else {
-            return _this._createInPouch(contact, cb);
-          }
+          _this.set('backup_step_done', processed++);
+          return setImmediate(function() {
+            if (contact.deleted) {
+              return _this._deleteInPouch(contact, cb);
+            } else if (contact.sourceId) {
+              return _this._updateInPouch(contact, cb);
+            } else {
+              return _this._createInPouch(contact, cb);
+            }
+          });
         }, callback);
       };
     })(this), callback, new ContactFindOptions("1", true, [], ACCOUNT_TYPE, ACCOUNT_NAME));
@@ -3695,6 +3645,8 @@ module.exports = {
   syncToCozy: function(callback) {
     var replication;
     log.info("enter sync2Cozy");
+    this.set('backup_step_done', null);
+    this.set('backup_step', 'contacts_sync_to_cozy');
     replication = this.db.replicate.to(this.config.remote, {
       batch_size: 20,
       batches_limit: 5,
@@ -3740,6 +3692,7 @@ module.exports = {
     };
     return async.eachSeries(docs, (function(_this) {
       return function(doc, cb) {
+        _this.set('backup_step_done', _this.get('backup_step_done') + 1);
         return getFromPhoneBySourceId(doc._id, function(err, contact) {
           if (err) {
             return cb(err);
@@ -3762,9 +3715,12 @@ module.exports = {
     });
   },
   syncFromCozyToPouchToPhone: function(callback) {
-    var applyToPhoneQueue, replication, replicationDone;
+    var applyToPhoneQueue, replication, replicationDone, total;
     log.info("enter syncCozy2Phone");
     replicationDone = false;
+    total = 0;
+    this.set('backup_step', 'contacts_sync_to_phone');
+    this.set('backup_step_done', 0);
     applyToPhoneQueue = async.queue(this._applyChangeToPhone.bind(this));
     applyToPhoneQueue.drain = function() {
       if (replicationDone) {
@@ -3783,7 +3739,11 @@ module.exports = {
     });
     replication.on('change', (function(_this) {
       return function(changes) {
-        return applyToPhoneQueue.push($.extend(true, {}, changes.docs));
+        var _ref;
+        applyToPhoneQueue.push($.extend(true, {}, changes.docs));
+        total += (_ref = changes.docs) != null ? _ref.length : void 0;
+        _this.set('backup_step_total', total);
+        return log.info("sync2Phone " + total + " contacts.");
       };
     })(this));
     replication.on('error', callback);
@@ -3840,7 +3800,9 @@ module.exports = {
               if (err) {
                 return callback(err);
               }
+              _this.set('backup_step', null);
               return _this._applyChangeToPhone(docs, function(err) {
+                _this.set('backup_step_done', null);
                 return _this.config.save({
                   contactsPullCheckpointed: lastSeq
                 }, function(err) {
@@ -4796,13 +4758,11 @@ module.exports = BreadcrumbsView = (function(_super) {
 });
 
 require.register("views/config", function(exports, require, module) {
-var APP_VERSION, BaseView, ConfigView, log,
+var BaseView, ConfigView, log,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   __hasProp = {}.hasOwnProperty;
 
 BaseView = require('../lib/base_view');
-
-APP_VERSION = "0.1.8";
 
 log = require('/lib/persistent_log')({
   prefix: "config view",
@@ -4841,7 +4801,7 @@ module.exports = ConfigView = (function(_super) {
       lastBackup: this.formatDate(config != null ? config.lastBackup : void 0),
       firstRun: app.isFirstRun,
       locale: app.locale,
-      appVersion: APP_VERSION
+      appVersion: app.replicator.config.appVersion()
     });
   };
 
@@ -4864,6 +4824,8 @@ module.exports = ConfigView = (function(_super) {
 
   ConfigView.prototype.redBtn = function() {
     if (confirm(t('confirm message'))) {
+      app.replicator.set('inSync', true);
+      app.replicator.set('backup_step', 'destroying database');
       return app.replicator.destroyDB((function(_this) {
         return function(err) {
           if (err) {
@@ -4878,14 +4840,14 @@ module.exports = ConfigView = (function(_super) {
 
   ConfigView.prototype.synchroBtn = function() {
     if (confirm(t('confirm message'))) {
+      app.router.navigate('first-sync', {
+        trigger: true
+      });
       return app.replicator.resetSynchro((function(_this) {
         return function(err) {
           if (err) {
             return alert(err.message);
           }
-          return app.router.navigate('first-sync', {
-            trigger: true
-          });
         };
       })(this));
     }
@@ -4894,7 +4856,7 @@ module.exports = ConfigView = (function(_super) {
   ConfigView.prototype.sendlogBtn = function() {
     var query;
     query = {
-      subject: "Log from cozy-mobile v" + APP_VERSION,
+      subject: "Log from cozy-mobile v" + app.replicator.config.appVersion(),
       body: "Describe the problem here:\n\n\n########################\n# Log Trace: please don't touch (or tell us what)\n##\n\n" + (log.getTraces().join('\n'))
     };
     return window.open("mailto:guillaume@cozycloud.cc?" + $.param(query), "_system");

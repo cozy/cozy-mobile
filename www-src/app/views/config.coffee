@@ -1,6 +1,5 @@
 BaseView = require '../lib/base_view'
 
-APP_VERSION = "0.1.8"
 
 log = require('/lib/persistent_log')
     prefix: "config view"
@@ -32,7 +31,7 @@ module.exports = class ConfigView extends BaseView
             lastBackup: @formatDate config?.lastBackup
             firstRun: app.isFirstRun
             locale: app.locale
-            appVersion: APP_VERSION
+            appVersion: app.replicator.config.appVersion()
 
     # format a object as a readable date string
     # return t('never') if undefined
@@ -51,22 +50,24 @@ module.exports = class ConfigView extends BaseView
     redBtn: ->
         if confirm t 'confirm message'
             #@TODO delete device on remote ?
+            app.replicator.set 'inSync', true # run the spinner
+            app.replicator.set 'backup_step', 'destroying database'
             app.replicator.destroyDB (err) =>
                 return alert err.message if err
                 $('#redbtn').text t 'done'
                 window.location.reload(true);
 
-    # confirm, destroy the DB, force refresh the page (show login form)
+    # confirm, launch initial replication, navigate to first sync UI.
     synchroBtn: ->
         if confirm t 'confirm message'
             #@TODO delete device on remote ?
+            app.router.navigate 'first-sync', trigger: true
             app.replicator.resetSynchro (err) =>
                 return alert err.message if err
-                app.router.navigate 'first-sync', trigger: true
 
     sendlogBtn: ->
         query =
-            subject: "Log from cozy-mobile v" + APP_VERSION
+            subject: "Log from cozy-mobile v" + app.replicator.config.appVersion()
             body: """
             Describe the problem here:
 

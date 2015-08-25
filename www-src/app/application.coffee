@@ -59,6 +59,12 @@ module.exports =
 
     regularStart: ->
         app.foreground = true
+        conf = app.replicator.config.attributes
+        # Display config to help remote debuging.
+        log.info "Start v#{app.replicator.config.appVersion()}--\
+        sync_contacts:#{conf.syncContacts},sync_images:#{conf.syncImages},\
+        sync_on_wifi:#{conf.syncOnWifi},\
+        cozy_notifications:#{conf.cozyNotifications}"
 
         document.addEventListener "resume", =>
             log.info "RESUME EVENT"

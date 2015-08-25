@@ -117,9 +117,6 @@ module.exports = Contact =
     # Do the actual cordova contact build, without to much plugin dependency,
     # for testing
     _cozy2CordovaOptions: (cozyContact) ->
-        log.debug "\n cozy2cordova : cozyContact \n"
-        log.debug JSON.stringify cozyContact, null, 2
-
         # Build cordova contact.
         cordovaContact =
             # vCard FullName = display name
@@ -148,8 +145,6 @@ module.exports = Contact =
         unless cordovaContact.displayName
             cordovaContact.displayName = "--"
 
-        log.debug "\n cozy2cordova : cordovaContact \n"
-        log.debug JSON.stringify cordovaContact, null, 2
         return cordovaContact
 
 
@@ -227,9 +222,6 @@ module.exports = Contact =
 
     # Convert a cordova contact to cozy contact (asynchronous).
     cordova2Cozy: (cordovaContact, callback) ->
-        log.debug "\n cordova2cozy : cordovaContact \n"
-        log.debug JSON.stringify cordovaContact, null, 2
-
         cozyContact =
             docType: 'contact'
             _id: cordovaContact.sourceId
@@ -250,9 +242,6 @@ module.exports = Contact =
         Contact._organizations2Cozy cordovaContact.organizations, cozyContact
 
         Contact._cordova2Datapoints cordovaContact, cozyContact
-
-        log.debug "\n cordova2cozy : cozyContact \n"
-        log.debug JSON.stringify cozyContact, null, 2
 
         unless cordovaContact.photos?.length > 0
 

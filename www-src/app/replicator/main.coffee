@@ -48,7 +48,7 @@ module.exports = class Replicator extends Backbone.Model
                 fs.rmrf @downloads, callback
 
 
-    # Refetch all data has while app configuration.
+    # Refetch all data as while app configuration.
     resetSynchro: (callback) ->
         @stopRealtime()
         @initialReplication (err) =>
@@ -59,6 +59,7 @@ module.exports = class Replicator extends Backbone.Model
 
     # pings the cozy to check the credentials without creating a device
     checkCredentials: (config, callback) ->
+        log.info config
         request.post
             uri: "https://#{config.cozyURL}/login"
             json:
@@ -79,6 +80,8 @@ module.exports = class Replicator extends Backbone.Model
 
     # Register the device in cozy.
     registerRemote: (config, callback) ->
+        log.info config
+        log.info config.password
         request.post
             uri: "https://#{config.cozyURL}/device/",
             auth:

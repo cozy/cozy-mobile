@@ -21,18 +21,21 @@ module.exports =
         return callback null if @get 'inBackup'
 
         options = options or { force: false }
-
-        @set 'inBackup', true
-        @set 'backup_step', null
-        @stopRealtime()
-        @_backup options.force, (err) =>
+        try
+            @set 'inBackup', true
             @set 'backup_step', null
-            @set 'inBackup', false
-            @startRealtime() unless options.background
-            return callback err if err
-            @config.save lastBackup: new Date().toString(), (err) =>
-                log.info "Backup done."
-                callback null
+            @stopRealtime()
+            @_backup options.force, (err) =>
+                @set 'backup_step', null
+                @set 'backup_step_done', null
+                @set 'inBackup', false
+                @startRealtime() unless options.background
+                return callback err if err
+                @config.save lastBackup: new Date().toString(), (err) =>
+                    log.info "Backup done."
+                    callback null
+        catch e
+            log.error e, e.stack
 
 
     _backup: (force, callback) ->
@@ -89,7 +92,7 @@ module.exports =
         @set 'backup_step', 'pictures_scan'
         @set 'backup_step_done', null
 
-        setImmediate => async.series [ # Allows quicker header display.
+        async.series [
             @ensureDeviceFolder.bind this
             ImagesBrowser.getImagesList
             (callback) => @photosDB.query 'PhotosByLocalId', {}, callback
@@ -113,7 +116,8 @@ module.exports =
 
             # Filter images : keep only the ones from Camera
             # TODO: Android Specific !
-            images = images.filter (path) -> path.indexOf('/DCIM/') != -1
+            images = images.filter (path) ->
+                return path? and path.indexOf('/DCIM/') != -1
 
             if images.length is 0
                 return callback new Error 'no images in DCIM'
