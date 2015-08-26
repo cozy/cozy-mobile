@@ -1754,8 +1754,24 @@ module.exports = Contact = {
     }
     return [];
   },
+  _adr2ContactAddress: function(datapoint) {
+    var countryPart, formatted, street, structuredToFlat;
+    structuredToFlat = function(t) {
+      t = t.filter(function(part) {
+        return (part != null) && part !== '';
+      });
+      return t.join(', ');
+    };
+    street = structuredToFlat(datapoint.value.slice(0, 3));
+    countryPart = structuredToFlat(datapoint.value.slice(3, 7));
+    formatted = street;
+    if (countryPart !== '') {
+      formatted += '\n' + countryPart;
+    }
+    return new ContactAddress(void 0, datapoint.type, formatted, street, datapoint.value[3], datapoint.value[4], datapoint.value[5], datapoint.value[6]);
+  },
   _dataPoints2Cordova: function(cozyContact, cordovaContact) {
-    var addContactField, countryPart, datapoint, formatted, i, name, street, structuredToFlat, _ref, _results;
+    var addContactField, datapoint, i, name, _ref, _results;
     addContactField = function(cordovaField, datapoint) {
       var field;
       if (!cordovaContact[cordovaField]) {
@@ -1780,19 +1796,7 @@ module.exports = Contact = {
           if (!cordovaContact.addresses) {
             cordovaContact.addresses = [];
           }
-          structuredToFlat = function(t) {
-            t = t.filter(function(part) {
-              return (part != null) && part !== '';
-            });
-            return t.join(', ');
-          };
-          street = structuredToFlat(datapoint.value.slice(0, 3));
-          countryPart = structuredToFlat(datapoint.value.slice(3, 7));
-          formatted = street;
-          if (countryPart !== '') {
-            formatted += '\n' + countryPart;
-          }
-          _results.push(cordovaContact.addresses.push(new ContactAddress(void 0, datapoint.type, formatted, street, datapoint.value[3], datapoint.value[4], datapoint.value[5], datapoint.value[6])));
+          _results.push(cordovaContact.addresses.push(this._adr2ContactAddress(datapoint)));
           break;
         case 'CHAT':
           _results.push(addContactField('ims', datapoint));

@@ -67,6 +67,19 @@ module.exports = Contact =
 
         return [];
 
+    _adr2ContactAddress: (datapoint) ->
+        structuredToFlat = (t) ->
+            t = t.filter (part) -> return part? and part isnt ''
+            return t.join ', '
+        street = structuredToFlat datapoint.value[0..2]
+        countryPart = structuredToFlat datapoint.value[3..6]
+        formatted = street
+        formatted += '\n' + countryPart if countryPart isnt ''
+
+        return new ContactAddress undefined
+        , datapoint.type
+        , formatted, street, datapoint.value[3], datapoint.value[4]
+        , datapoint.value[5], datapoint.value[6]
 
     # loop trought the cozy's datapoints list and fill up the cordovaContact
     # with
@@ -88,18 +101,7 @@ module.exports = Contact =
                     addContactField 'emails', datapoint
                 when 'ADR'
                     cordovaContact.addresses = [] unless cordovaContact.addresses
-                    structuredToFlat = (t) ->
-                        t = t.filter (part) -> return part? and part isnt ''
-                        return t.join ', '
-                    street = structuredToFlat datapoint.value[0..2]
-                    countryPart = structuredToFlat datapoint.value[3..6]
-                    formatted = street
-                    formatted += '\n' + countryPart if countryPart isnt ''
-
-                    cordovaContact.addresses.push new ContactAddress undefined
-                    , datapoint.type
-                    , formatted, street, datapoint.value[3], datapoint.value[4]
-                    , datapoint.value[5], datapoint.value[6]
+                    cordovaContact.addresses.push @_adr2ContactAddress datapoint
 
                 when 'CHAT'
                     addContactField 'ims', datapoint
