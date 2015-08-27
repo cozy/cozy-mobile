@@ -43,6 +43,10 @@ module.exports = class ConfigView extends BaseView
 
     # only happens after the first config (post install)
     configDone: ->
+        log.info 'starting first replication'
+        app.replicator.initialReplication (err) ->
+            alert t err.message if err
+
         app.router.navigate 'first-sync', trigger: true
 
 

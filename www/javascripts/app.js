@@ -3460,7 +3460,7 @@ var APP_VERSION, ReplicatorConfig, basic,
 
 basic = require('../lib/basic');
 
-APP_VERSION = "0.1.9";
+APP_VERSION = "0.1.10";
 
 module.exports = ReplicatorConfig = (function(_super) {
   __extends(ReplicatorConfig, _super);
@@ -4904,6 +4904,12 @@ module.exports = ConfigView = (function(_super) {
   };
 
   ConfigView.prototype.configDone = function() {
+    log.info('starting first replication');
+    app.replicator.initialReplication(function(err) {
+      if (err) {
+        return alert(t(err.message));
+      }
+    });
     return app.router.navigate('first-sync', {
       trigger: true
     });
@@ -5037,12 +5043,6 @@ module.exports = DeviceNamePickerView = (function(_super) {
         } else {
           delete app.loginConfig;
           app.isFirstRun = true;
-          log.info('starting first replication');
-          app.replicator.initialReplication(function(err) {
-            if (err) {
-              return alert(t(err.message));
-            }
-          });
           return app.router.navigate('config', {
             trigger: true
           });

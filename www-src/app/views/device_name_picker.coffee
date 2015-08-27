@@ -44,10 +44,6 @@ module.exports = class DeviceNamePickerView extends BaseView
                 delete app.loginConfig
                 app.isFirstRun = true
 
-                log.info 'starting first replication'
-                app.replicator.initialReplication (err) ->
-                    alert t err.message if err
-
                 app.router.navigate 'config', trigger: true
 
     onCompleteDefaultValue: ->
