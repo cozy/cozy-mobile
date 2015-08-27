@@ -1,13 +1,20 @@
+# intialize module which initialize global vars.
+require '/lib/utils'
+
 Replicator = require './replicator/main'
 LayoutView = require './views/layout'
 ServiceManager = require './service/service_manager'
 Notifications = require '../views/notifications'
 
+log = require('/lib/persistent_log')
+    prefix: "application"
+    date: true
+    processusTag: "Application"
+
 module.exports =
 
     initialize: ->
         window.app = this
-        overrideLog()
 
         # Monkey patch for browser debugging
         if window.isBrowserDebugging
@@ -34,7 +41,7 @@ module.exports =
 
             @replicator.init (err, config) =>
                 if err
-                    console.log err, err.stack
+                    log.error err.message, err.stack
                     return alert err.message or err
 
                 @notificationManager = new Notifications()
@@ -52,51 +59,41 @@ module.exports =
 
     regularStart: ->
         app.foreground = true
+        conf = app.replicator.config.attributes
+        # Display config to help remote debuging.
+        log.info "Start v#{app.replicator.config.appVersion()}--\
+        sync_contacts:#{conf.syncContacts},sync_images:#{conf.syncImages},\
+        sync_on_wifi:#{conf.syncOnWifi},\
+        cozy_notifications:#{conf.cozyNotifications}"
 
         document.addEventListener "resume", =>
-            console.log "#{new Date().toISOString()} RESUME EVENT"
+            log.info "RESUME EVENT"
             app.foreground = true
             if app.backFromOpen
                 app.backFromOpen = false
                 app.replicator.startRealtime()
             else
-                app.replicator.backup {}, (err) -> console.log err if err
+                app.replicator.backup {}, (err) -> log.error err.message if err
         , false
         document.addEventListener "pause", =>
-            console.log "#{new Date().toISOString()} PAUSE EVENT"
+            log.info "PAUSE EVENT"
             app.foreground = false
             app.replicator.stopRealtime()
 
         , false
         document.addEventListener 'offline', ->
-            device_status = require './lib/device_status'
-            device_status.update()
+            DeviceStatus = require './lib/device_status'
+            DeviceStatus.update()
         , false
         document.addEventListener 'online', ->
-            device_status = require './lib/device_status'
-            device_status.update()
+            DeviceStatus = require './lib/device_status'
+            DeviceStatus.update()
             backup = () ->
-                app.replicator.backup {}, (err) -> console.log err if err
+                app.replicator.backup {}, (err) -> log.error err.message if err
                 window.removeEventListener 'realtime:onChange', backup, false
             window.addEventListener 'realtime:onChange', backup, false
         , false
 
         @router.navigate 'folder/', trigger: true
         @router.once 'collectionfetched', =>
-            app.replicator.backup {}, (err) -> console.log err if err
-
-
-overrideLog = () ->
-    oldLog = console.log
-    console.log = () ->
-
-        # Keep log.
-        unless window.app.logTrace?
-            window.app.logTrace = []
-
-        # oldLog "here in overrideLog"
-        window.app.logTrace.push Array.prototype.slice.call(arguments).join ' - '
-
-        # Call regular console.log.
-        oldLog.apply console, arguments
-
+            app.replicator.backup {}, (err) -> log.error err.message if err

@@ -441,6 +441,8 @@ function b64_enc (data) {
 
     // assume utf8 data
     // data = this.utf8_encode(data+'');
+    // Fix cozy 2015-08-25 : escape to UTF8
+    data = unescape(encodeURIComponent(data));
 
     do { // pack three octets into four hexets
         o1 = data.charCodeAt(i++);

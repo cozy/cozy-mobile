@@ -5,20 +5,27 @@ Contact = require '../models/contact'
 ACCOUNT_TYPE = 'io.cozy'
 ACCOUNT_NAME = 'myCozy'
 
+log = require('/lib/persistent_log')
+    prefix: "contacts replicator"
+    date: true
+
 
 module.exports =
 
+    # 'main' function for contact synchronisation.
     syncContacts: (callback) ->
         return callback null unless @config.get 'syncContacts'
 
+        # Feedback to the user.
         @set 'backup_step', 'contacts_sync'
         @set 'backup_step_done', null
-        # Phone is right on conflict.
-        # Contact sync has 3 phases
-        # 1 - Phone2Pouch
-        # 2 - Pouch <-> Couch (cozy)
-        # 3 - Pouch2Phone.
 
+        # Phone is right on conflict.
+        # Contact sync has 4 phases
+        # 1 - contacts initialisation (if necessary)
+        # 2 - sync Phone --> in app PouchDB
+        # 3 - sync in app PouchDB --> Cozy couchDB
+        # 4 - sync Cozy couchDB to phone (and app PouchDB)
         async.series [
             (cb) =>
                 if @config.has('contactsPullCheckpointed')
@@ -32,19 +39,23 @@ module.exports =
                         @initContactsInPhone body.last_seq, cb
 
             (cb) => @syncPhone2Pouch cb
-            (cb) => @_syncToCozy cb
+            (cb) => @syncToCozy cb
             (cb) => @syncFromCozyToPouchToPhone cb
         ], (err) ->
-            console.log "#{new Date().toISOString()} Sync contacts done"
+            log.info "Sync contacts done"
             callback err
 
+
+    # Create the myCozyCloud account in android.
     createAccount: (callback) =>
         navigator.contacts.createAccount ACCOUNT_TYPE, ACCOUNT_NAME
         , ->
             callback null
         , callback
 
-    # Sync phone to pouch components
+
+    # Update contact in pouchDB with specified contact from phone.
+    # @param phoneContact cordova contact format.
     _updateInPouch: (phoneContact, callback) ->
         async.parallel
             fromPouch: (cb) =>
@@ -55,6 +66,7 @@ module.exports =
         , (err, res) =>
             return callback err if err
 
+            # _.extend : Keeps no android compliant data of the 'cozy'-contact
             contact = _.extend res.fromPouch, res.fromPhone
 
             if contact._attachments?.picture?
@@ -70,8 +82,8 @@ module.exports =
             @db.put contact, contact._id, contact._rev, (err, idNrev) =>
                 if err
                     if err.status is 409 # conflict, bad _rev
-                        console.log "UpdateInPouch, immediate conflict with #{contact._id}."
-                        console.log err
+                        log.error "UpdateInPouch, immediate conflict with \
+                            #{contact._id}.", err
                         # no error, no undirty, will try again next step.
                         return callback null
                     else
@@ -80,6 +92,8 @@ module.exports =
                 @_undirty phoneContact, idNrev, callback
 
 
+    # Create a new contact in app's pouchDB from newly created phone contact.
+    # @param phoneContact cordova contact format.
     _createInPouch: (phoneContact, callback) ->
         Contact.cordova2Cozy phoneContact, (err, fromPhone) =>
             contact = _.extend
@@ -95,6 +109,9 @@ module.exports =
                 @_undirty phoneContact, idNrev, callback
 
 
+    # Notify to Android that the contact have been synchronized with the server.
+    # @param dirtyContact cordova contact format.
+    # @param idNrew object with id and rev of pouchDB contact.
     _undirty: (dirtyContact, idNrev, callback) ->
         # undirty and set id and rev on phone contact.
         dirtyContact.dirty = false
@@ -110,6 +127,8 @@ module.exports =
             callerIsSyncAdapter: true
 
 
+    # Delete the specified contact in app's pouchdb.
+    # @param phoneContact cordova contact format.
     _deleteInPouch: (phoneContact, callback) ->
         toDelete =
             docType: 'contact'
@@ -121,61 +140,78 @@ module.exports =
             phoneContact.remove (-> callback()), callback, callerIsSyncAdapter: true
 
 
+    # Sync dirty (modified) phone contact to app's pouchDB.
     syncPhone2Pouch: (callback) ->
-        console.log "#{new Date().toISOString()} enter syncPhone2Pouch"
+        log.info "enter syncPhone2Pouch"
         # Go through modified contacts (dirtys)
         # delete, update or create....
         navigator.contacts.find [navigator.contacts.fieldType.dirty]
         , (contacts) =>
+            processed = 0
+            @set 'backup_step', 'contacts_sync_to_pouch'
+            @set 'backup_step_total', contacts.length
+            log.info "syncPhone2Pouch #{contacts.length} contacts."
+            # contact to update number. contacts.length
             async.eachSeries contacts, (contact, cb) =>
-                if contact.deleted
-                    @_deleteInPouch contact, cb
-                else if contact.sourceId
-                    @_updateInPouch contact, cb
-                else
-                    @_createInPouch contact, cb
+                @set 'backup_step_done', processed++
+                setImmediate => # helps refresh UI
+                    if contact.deleted
+                        @_deleteInPouch contact, cb
+                    else if contact.sourceId
+                        @_updateInPouch contact, cb
+                    else
+                        @_createInPouch contact, cb
             , callback
 
         , callback
         , new ContactFindOptions "1", true, [], ACCOUNT_TYPE, ACCOUNT_NAME
 
 
-    _syncToCozy: (callback) ->
-        console.log "#{new Date().toISOString()} enter sync2Cozy"
-        # Get contacts from the cozy (couch -> pouch replication)
-        replication = app.replicator.db.replicate.to app.replicator.config.remote,
+    # Sync app's pouchDB with cozy's couchDB with a replication.
+    syncToCozy: (callback) ->
+        log.info "enter sync2Cozy"
+        @set 'backup_step_done', null
+        @set 'backup_step', 'contacts_sync_to_cozy'
+
+        replication = @db.replicate.to @config.remote,
             batch_size: 20
             batches_limit: 5
             filter: (doc) ->
                 return doc? and doc.docType?.toLowerCase() is 'contact'
             live: false
-            since: app.replicator.config.get 'contactsPushCheckpointed'
+            since: @config.get 'contactsPushCheckpointed'
 
-        replication.on 'change', (e) => return
+        #TODO : replication.on 'change', (e) => return
         replication.on 'error', callback
         replication.on 'complete', (result) =>
-            app.replicator.config.save contactsPushCheckpointed: result.last_seq,  callback
+            @config.save contactsPushCheckpointed: result.last_seq, callback
 
+
+    # Create or update phoneConctact with cozyContact data.
+    # @param cozyContact in cozy's format
+    # @param phoneContact in cordova contact format.
     _saveContactInPhone: (cozyContact, phoneContact, callback) ->
-        toSave = Contact.cozy2Cordova cozyContact
+        toSaveInPhone = Contact.cozy2Cordova cozyContact
 
         if phoneContact
-            toSave.id = phoneContact.id
-            toSave.rawId = phoneContact.rawId
+            toSaveInPhone.id = phoneContact.id
+            toSaveInPhone.rawId = phoneContact.rawId
 
         options =
             accountType: ACCOUNT_TYPE
             accountName: ACCOUNT_NAME
-            callerIsSyncAdapter: true
-            resetFields: true
+            callerIsSyncAdapter: true # apply immediately
+            resetFields: true # remove all fields before update
 
-        toSave.save (contact)->
+        toSaveInPhone.save (contact)->
             callback null, contact
         , callback, options
 
 
+    # Update contacts in phone with specified docs.
+    # @param docs list of contact in cozy's format.
     _applyChangeToPhone: (docs, callback) ->
-        getBySourceId = (sourceId, cb) ->
+        getFromPhoneBySourceId = (sourceId, cb) ->
             navigator.contacts.find [navigator.contacts.fieldType.sourceId]
                 , (contacts) ->
                     cb null, contacts[0]
@@ -183,10 +219,14 @@ module.exports =
                 , new ContactFindOptions sourceId, false, [], ACCOUNT_TYPE, ACCOUNT_NAME
 
         async.eachSeries docs, (doc, cb) =>
-            getBySourceId doc._id, (err, contact) =>
+            # precondition: backup_step_done initialized to 0.
+            @set 'backup_step_done', @get('backup_step_done') + 1
+            getFromPhoneBySourceId doc._id, (err, contact) =>
                 return cb err if err
                 if doc._deleted
                     if contact?
+                        # Use callerIsSyncAdapter flag to apply immediately in
+                        # android(no dirty flag cycle)
                         contact.remove (-> cb()), cb, callerIsSyncAdapter: true
                     # else already done.
 
@@ -196,13 +236,20 @@ module.exports =
             callback err
 
 
+    # Sync cozy's contact to phone.
     syncFromCozyToPouchToPhone: (callback) ->
-        console.log "#{new Date().toISOString()} enter syncCozy2Phone"
+        log.info "enter syncCozy2Phone"
         replicationDone = false
 
-        q = async.queue @_applyChangeToPhone.bind @
+        total = 0
+        @set 'backup_step', 'contacts_sync_to_phone'
+        @set 'backup_step_done', 0
 
-        q.drain = -> callback() if replicationDone
+        # Ues a queue because contact save to phone doesn't support well
+        # concurrency.
+        applyToPhoneQueue = async.queue @_applyChangeToPhone.bind @
+
+        applyToPhoneQueue.drain = -> callback() if replicationDone
 
         # Get contacts from the cozy (couch -> pouch replication)
         replication = @db.replicate.from @config.remote,
@@ -213,19 +260,26 @@ module.exports =
             live: false
             since: @config.get 'contactsPullCheckpointed'
 
-        replication.on 'change', (e) =>
-            q.push $.extend(true, {}, e.docs) # whitout doc become _id value !
+        replication.on 'change', (changes) =>
+            # hack: whitout it, doc becomes _id value !
+            applyToPhoneQueue.push $.extend true, {}, changes.docs
+            total += changes.docs?.length
+            @set 'backup_step_total', total
+            log.info "sync2Phone #{total} contacts."
+
+
 
         replication.on 'error', callback
         replication.on 'complete', (result) =>
             @config.save contactsPullCheckpointed: result.last_seq, ->
                 replicationDone = true
-                if q.idle()
-                    q.drain = null
+                if applyToPhoneQueue.idle()
+                    applyToPhoneQueue.drain = null
                     callback()
 
 
     # Initial replication task.
+    # @param lastSeq lastseq in remote couchDB.
     initContactsInPhone: (lastSeq, callback) ->
         unless @config.get 'syncContacts'
             return callback()
@@ -241,7 +295,8 @@ module.exports =
                     doc = row.value
                     # fetch attachments if exists.
                     if doc._attachments?.picture?
-                        request.get @config.makeUrl("/#{doc._id}?attachments=true")
+                        request.get @config.makeUrl(
+                            "/#{doc._id}?attachments=true")
                         , (err, res, body) ->
                             return cb err if err
                             cb null, body
@@ -249,18 +304,22 @@ module.exports =
                         cb null, doc
                 , (err, docs) =>
                     return callback err if err
-
                     async.mapSeries docs, (doc, cb) =>
                         @db.put doc, 'new_edits':false, cb
-
                     , (err, contacts) =>
                         return callback err if err
+                        @set 'backup_step', null # hide header: first-sync view
                         @_applyChangeToPhone docs, (err) =>
-                            @config.save contactsPullCheckpointed: lastSeq, (err) =>
+                            # clean backup_step_done after applyChanges
+                            @set 'backup_step_done', null
+                            @config.save contactsPullCheckpointed: lastSeq
+                            , (err) =>
                                 @deleteObsoletePhoneContacts callback
+
 
     # Synchronise delete state between pouch and the phone.
     deleteObsoletePhoneContacts: (callback) ->
+        log.info "enter deleteObsoletePhoneContacts"
         async.parallel
             phone: (cb) ->
                 navigator.contacts.find [navigator.contacts.fieldType.id]
@@ -273,17 +332,14 @@ module.exports =
 
         , (err, contacts) =>
             return callback err if err
-            console.log contacts
             idsInPouch = {}
             for row in contacts.pouch.rows
                 idsInPouch[row.id] = true
 
             async.eachSeries contacts.phone, (contact, cb) =>
                 unless contact.sourceId of idsInPouch
+                    log.info "Delete contact: #{contact.sourceId}"
                     return contact.remove (-> cb()), cb, \
                         callerIsSyncAdapter: true
                 return cb()
             , callback
-
-
-

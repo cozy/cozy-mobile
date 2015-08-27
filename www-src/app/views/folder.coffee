@@ -90,7 +90,6 @@ module.exports = class FolderView extends CollectionView
         @collection.cancelFetchAdditional()
 
     displaySlider: (event) =>
-        console.log "DISPLAY SLIDER"
         # simulate a drag effect on the line to display the hidden button
         op = new ionic.SlideDrag(el: @ionicView.el, canSwipe: -> true)
         op.start target: event.target

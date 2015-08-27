@@ -1,5 +1,7 @@
 basic = require '../lib/basic'
 
+APP_VERSION = "0.1.9"
+
 module.exports = class ReplicatorConfig extends Backbone.Model
     constructor: (@replicator) ->
         super null
@@ -45,3 +47,5 @@ module.exports = class ReplicatorConfig extends Backbone.Model
     createRemotePouchInstance: ->
         new PouchDB
             name: @get 'fullRemoteURL'
+
+    appVersion: -> return APP_VERSION

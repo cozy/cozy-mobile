@@ -6,6 +6,10 @@ FirstSyncView = require './views/first_sync'
 ConfigView = require './views/config'
 FolderCollection = require './collections/files'
 
+log = require('/lib/persistent_log')
+    prefix: "replicator"
+    date: true
+
 module.exports = class Router extends Backbone.Router
 
     routes:
@@ -36,7 +40,7 @@ module.exports = class Router extends Backbone.Router
         @display new FolderView {collection}
         collection.search (err) =>
             if err
-                console.log err.stack
+                log.error err.stack
                 return alert(err)
 
             $('#search-input').blur() # close keyboard

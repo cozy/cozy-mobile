@@ -1,6 +1,11 @@
+basic = require '../lib/basic'
+
 DOWNLOADS_FOLDER = 'cozy-downloads'
 
-basic = require '../lib/basic'
+log = require('/lib/persistent_log')
+    prefix: "replicator mapreduce"
+    date: true
+
 module.exports = fs = {}
 
 getFileSystem = (callback) ->
@@ -24,8 +29,8 @@ module.exports.initialize = (callback) ->
 
             # prevent android from adding the download folders to the gallery
             downloads.getFile '.nomedia', {create: true, exclusive: false},
-                -> console.log "NOMEDIA FILE CREATED"
-                -> console.log "NOMEDIA FILE NOT CREATED"
+                -> log.info "NOMEDIA FILE CREATED"
+                -> log.info "NOMEDIA FILE NOT CREATED"
 
             fs.getChildren downloads, (err, children) =>
                 return callback readable err if err

@@ -4,7 +4,7 @@ exports.config =
 
     paths:
         public:  '../www'
-        test: 'tests'
+        test: 'test'
 
     plugins:
         coffeelint:
@@ -19,7 +19,6 @@ exports.config =
             joinTo:
                 'javascripts/app.js': /^app/
                 'javascripts/vendor.js': /^vendor/
-                '../tests/tests.js': /^test.*\.coffee/
             order:
                 # Files in `vendor` directories are compiled before other files
                 # even if they aren't specified in order.

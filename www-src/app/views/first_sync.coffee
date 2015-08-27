@@ -1,6 +1,11 @@
 BaseView = require '../lib/base_view'
 
 LAST_STEP = 5
+
+log = require('/lib/persistent_log')
+    prefix: "FirstSyncView"
+    date: true
+
 module.exports = class FirstSyncView extends BaseView
 
     className: 'list'
@@ -11,7 +16,7 @@ module.exports = class FirstSyncView extends BaseView
 
     getRenderData: () ->
         step = app.replicator.get 'initialReplicationStep'
-        console.log "onChange : #{step}"
+        log.info "onChange : #{step}"
 
         if step is LAST_STEP
             messageText = t 'ready message'
@@ -19,7 +24,7 @@ module.exports = class FirstSyncView extends BaseView
         else
             messageText = t "message step #{step}"
             buttonText = t 'waiting...'
-        #@render()
+
         return {messageText, buttonText}
 
     initialize: ->
@@ -32,7 +37,7 @@ module.exports = class FirstSyncView extends BaseView
 
     end: ->
         step = parseInt(app.replicator.get('initialReplicationStep'))
-        console.log "end #{step}"
+        log.info "end #{step}"
         return if step isnt LAST_STEP
 
         app.isFirstRun = false

@@ -7,6 +7,10 @@ DBNAME = "cozy-files.db"
 DBPHOTOS = "cozy-photos.db"
 DBOPTIONS = if window.isBrowserDebugging then {} else adapter: 'websql'
 
+log = require('/lib/persistent_log')
+    prefix: "replicator"
+    date: true
+
 #Replicator extends Model to watch/set inBackup, inSync
 module.exports = class Replicator extends Backbone.Model
 
@@ -22,20 +26,6 @@ module.exports = class Replicator extends Backbone.Model
         inSync: false
         inBackup: false
 
-    destroyDB: (callback) ->
-        @db.destroy (err) =>
-            return callback err if err
-            @photosDB.destroy (err) =>
-                return callback err if err
-                fs.rmrf @downloads, callback
-
-    resetSynchro: (callback) ->
-        @stopRealtime()
-        # remove all files/folders then call initialReplication
-        @initialReplication (err) =>
-            @startRealtime()
-            callback err
-
 
     init: (callback) ->
         fs.initialize (err, downloads, cache) =>
@@ -49,22 +39,45 @@ module.exports = class Replicator extends Backbone.Model
                 @config = new ReplicatorConfig(this)
                 @config.fetch callback
 
-    # Find all files in (recursively) the specified folder.
-    getDbFilesOfFolder: (folder, callback) ->
-        path = folder.path
-        path += '/' + folder.name
-        options =
-            startkey: [path]
-            endkey: [path + '/\uffff', {}]
-            include_docs: true
 
-        @db.query 'FilesAndFolder', options, (err, results) ->
+    destroyDB: (callback) ->
+        @db.destroy (err) =>
             return callback err if err
-            docs = results.rows.map (row) -> row.doc
-            files = docs.filter (doc) -> doc.docType?.toLowerCase() is 'file'
+            @photosDB.destroy (err) =>
+                return callback err if err
+                fs.rmrf @downloads, callback
 
-            callback null, files
 
+    # Refetch all data as while app configuration.
+    resetSynchro: (callback) ->
+        @stopRealtime()
+        @initialReplication (err) =>
+            @startRealtime()
+            callback err
+
+
+
+    # pings the cozy to check the credentials without creating a device
+    checkCredentials: (config, callback) ->
+        request.post
+            uri: "https://#{config.cozyURL}/login"
+            json:
+                username: 'owner'
+                password: config.password
+        , (err, response, body) ->
+            if response?.status is 0
+                error = t 'connexion error'
+
+            else if response?.statusCode isnt 200
+                error = err?.message or body.error or body.message
+
+            else
+                error = null
+
+            callback error
+
+
+    # Register the device in cozy.
     registerRemote: (config, callback) ->
         request.post
             uri: "https://#{config.cozyURL}/device/",
@@ -96,41 +109,10 @@ module.exports = class Replicator extends Backbone.Model
 
                 @config.save config, callback
 
-    # pings the cozy to check the credentials without creating a device
-    checkCredentials: (config, callback) ->
-        request.post
-            uri: "https://#{config.cozyURL}/login"
-            json:
-                username: 'owner'
-                password: config.password
-        , (err, response, body) ->
-            if response?.status is 0
-                error = t 'connexion error'
-
-            else if response?.statusCode isnt 200
-                error = err?.message or body.error or body.message
-
-            else
-                error = null
-
-            callback error
-
-    updateIndex: (callback) ->
-        # build the search index
-        @db.search
-            build: true
-            fields: ['name']
-        , (err) =>
-            console.log "INDEX BUILT"
-            console.log err if err
-            # build pouch's map indexes
-            @db.query 'FilesAndFolder', {}, =>
-                # build pouch's map indexes
-                @db.query 'LocalPath', {}, ->
-                    callback null
-
+    # Fetch current state of replicated views. Avoid pouchDB bug with heavy
+    # change list.
     initialReplication: (callback) ->
-        console.log "initialReplication"
+        log.info "enter initialReplication"
         @set 'initialReplicationStep', 0
         options = @config.makeUrl '/_changes?descending=true&limit=1'
         request.get options, (err, res, body) =>
@@ -141,7 +123,6 @@ module.exports = class Replicator extends Backbone.Model
             async.series [
                 # Force checkpoint to 0
                 (cb) => @copyView 'file', cb
-                #(cb) => @config.save checkpointed: 0, cb
                 (cb) => @set('initialReplicationStep', 1) and cb null
                 (cb) => @copyView 'folder', cb
 
@@ -161,15 +142,16 @@ module.exports = class Replicator extends Backbone.Model
                 (cb) => @db.query 'NotificationsTemporary', {}, cb
 
             ], (err) =>
-                console.log "end of inital replication #{Date.now()}"
+                log.info "end of inital replication"
                 @set 'initialReplicationStep', 5
                 callback err
                 # updateIndex In background
-                @updateIndex -> console.log "Index built"
+                @updateIndex -> log.info "Index built"
 
-
+    # Copy docs of specified model, using couchDB view, initialized by some
+    # cozy application (sych as Files, Home, ...).
     copyView: (model, callback) ->
-        console.log "copyView #{Date.now()}"
+        log.info "enter copyView for #{model}."
 
         # To get around case problems and various cozy's generations,
         # try view _view/files-all, if it doesn't exist, use _view/all.
@@ -179,15 +161,13 @@ module.exports = class Replicator extends Backbone.Model
         else
             options = @config.makeUrl "/_design/#{model}/_view/all/"
 
-
         handleResponse = (err, res, body) =>
-
             if not err and res.status > 399
-                console.log res
+                log.info "Unexpected response: #{res}"
                 err = new Error res.statusText
-
             return callback err if err
             return callback null unless body.rows?.length
+
             async.eachSeries body.rows, (doc, cb) =>
                 doc = doc.value
                 @db.put doc, 'new_edits':false, (err, file) =>
@@ -202,16 +182,43 @@ module.exports = class Replicator extends Backbone.Model
                 handleResponse(err, res, body)
 
 
+    # update index for further speeds up.
+    updateIndex: (callback) ->
+        # build the search index
+        @db.search
+            build: true
+            fields: ['name']
+        , (err) =>
+            log.info "INDEX BUILT"
+            log.warn err if err
+            # build pouch's map indexes
+            @db.query 'FilesAndFolder', {}, =>
+                # build pouch's map indexes
+                @db.query 'LocalPath', {}, ->
+                    callback null
+
+# END initialisations methods
+
+# BEGIN Cache methods
+
+    # Return the conventionnal name of the in filesystem folder for the
+    # specified file.
+    # @param file a cozy file document.
+    fileToEntryName: (file) ->
+        return file.binary.file.id + '-' + file.binary.file.rev
+
+    # Check if any version of the file is present in cache.
+    # @param file a cozy file document.
     fileInFileSystem: (file) =>
         if file.docType.toLowerCase() is 'file'
-            @cache.some (entry) ->
+            return @cache.some (entry) ->
                 entry.name.indexOf(file.binary.file.id) isnt -1
 
 
     fileVersion: (file) =>
         if file.docType.toLowerCase() is 'file'
-            @cache.some (entry) ->
-                entry.name is file.binary.file.id + '-' + file.binary.file.rev
+            @cache.some (entry) =>
+                entry.name is @fileToEntryName file
 
 
     folderInFileSystem: (path, callback) =>
@@ -228,12 +235,23 @@ module.exports = class Replicator extends Backbone.Model
                 row.value in fsCacheFolder
 
 
+    # Remove specified entry from @cache.
+    # @param entry an entry of the @cache to remove.
+    removeFromCacheList: (entryName) ->
+        for currentEntry, index in @cache \
+           when currentEntry.name is entryName
+            @cache.splice index, 1
+            break
 
+
+    # Download the binary of the specified file in cache.
+    # @param model cozy File document
+    # @param progressback progress callback.
     getBinary: (model, progressback, callback) ->
-        binary_id = model.binary.file.id
-        binary_rev = model.binary.file.rev
-        fs.getOrCreateSubFolder @downloads, binary_id + '-' + binary_rev, (err, binfolder) =>
-            return callback err if err and err.code isnt FileError.PATH_EXISTS_ERR
+        fs.getOrCreateSubFolder @downloads, @fileToEntryName(model)
+        , (err, binfolder) =>
+            if err and err.code isnt FileError.PATH_EXISTS_ERR
+                return callback err
             unless model.name
                 return callback new Error('no model name :' + JSON.stringify(model))
 
@@ -241,12 +259,15 @@ module.exports = class Replicator extends Backbone.Model
                 return callback null, entry.toURL() if entry
 
                 # getFile failed, let's download
-                options = @config.makeUrl "/#{binary_id}/file"
+                options = @config.makeUrl "/#{model.binary.file.id}/file"
                 options.path = binfolder.toURL() + '/' + model.name
 
+                log.info "download binary of #{model.name}"
                 fs.download options, progressback, (err, entry) =>
-                    if err?.message? and err.message is "This file isnt available offline" and
-                        @fileInFileSystem model
+                    # TODO : Is it reachable code ? https://github.com/cozy/cozy-mobile/commit/7f46ac90c671f0704887bce7d83483c5f323056a
+                    if err?.message? and
+                       err.message is "This file isnt available offline" and
+                       @fileInFileSystem model
                             found = false
                             @cache.some (entry) ->
                                 if entry.name.indexOf(binary_id) isnt -1
@@ -262,8 +283,29 @@ module.exports = class Replicator extends Backbone.Model
                     else
                         @cache.push binfolder
                         callback null, entry.toURL()
-                        @removeAllLocal binary_id, binary_rev, ->
+                        @removeAllLocal model, ->
 
+
+    # Remove all versions in saved locally of the specified file-id, except the
+    # specified rev.
+    removeAllLocal: (file, callback) ->
+        id =
+        async.eachSeries @cache, (entry, cb) =>
+            if entry.name.indexOf(file.binary.file.id) isnt -1 and
+               entry.name isnt @fileToEntryName(file)
+                fs.getDirectory @downloads, entry.name, (err, binfolder) =>
+                    return cb err if err
+                    fs.rmrf binfolder, (err) =>
+                        @removeFromCacheList entry.name
+                        cb()
+            else
+                cb()
+        , callback
+
+
+    # Download recursively all files in the specified folder.
+    # @param folder cozy folder document of the subtree's root
+    # @param progressback progress callback
     getBinaryFolder: (folder, progressback, callback) ->
         @getDbFilesOfFolder folder, (err, files) =>
             return callback err if err
@@ -273,10 +315,11 @@ module.exports = class Replicator extends Backbone.Model
             fs.freeSpace (err, available) =>
                 return callback err if err
                 if totalSize > available * 1024 # available is in KB
+                    log.warn 'not enough space'
                     alert t 'not enough space'
                     callback null
-                else
 
+                else
                     progressHandlers = {}
                     reportProgress = (id, done, total) ->
                         progressHandlers[id] = [done, total]
@@ -286,31 +329,32 @@ module.exports = class Replicator extends Backbone.Model
                             total += status[1]
                         progressback done, total
 
-
                     async.eachLimit files, 5, (file, cb) =>
-                        console.log "DOWNLOAD #{file.name}"
                         pb = reportProgress.bind null, file._id
                         @getBinary file, pb, cb
                     , callback
 
-    # Remove all versions in saved locally of the specified file-id, except the
-    # specified rev.
-    removeAllLocal: (id, rev, callback) ->
-        async.eachSeries @cache, (entry, cb) =>
-            if entry.name.indexOf(id) isnt -1 and entry.name isnt id + '-' + rev
-                fs.getDirectory @downloads, entry.name, (err, binfolder) =>
-                    return cb err if err
-                    fs.rmrf binfolder, (err) =>
-                        # remove from @cache
-                        for currentEntry, index in @cache when currentEntry.name is entry.name
-                            @cache.splice index, 1
-                            break
-                        cb()
-            else
-                cb()
-        , callback
+
+    # Find all files in (recursively) the specified folder.
+    # @param folder cozy folder document of the subtree's root
+    getDbFilesOfFolder: (folder, callback) ->
+        path = folder.path
+        path += '/' + folder.name
+        options =
+            startkey: [path]
+            endkey: [path + '/\uffff', {}]
+            include_docs: true
+
+        @db.query 'FilesAndFolder', options, (err, results) ->
+            return callback err if err
+            docs = results.rows.map (row) -> row.doc
+            files = docs.filter (doc) -> doc.docType?.toLowerCase() is 'file'
+
+            callback null, files
+
 
     # Update the local copy  (options.entry) of the file (options.file)
+    # @param options object with entry and file (cozy doc)
     updateLocal: (options, callback) =>
         file = options.file
         entry = options.entry
@@ -321,14 +365,13 @@ module.exports = class Replicator extends Backbone.Model
             @removeLocal file, callback
 
         # check binary revs
-        else if entry.name isnt file.binary.file.id + '-' + file.binary.file.rev
+        else if entry.name isnt @fileToEntryName(file)
             # Don't update the binary if "no wifi"
-            DeviceStatus.checkReadyForSync (err, ready, msg) =>
-                if ready
-                    # Download the new version.
-                    @getBinary file, noop, callback
-                else
-                    callback()
+            if DeviceStatus.getStatus().readyForSync
+                # Download the new version.
+                @getBinary file, noop, callback
+            else
+                callback()
 
         else # check filename
             fs.getChildren entry, (err, children) =>
@@ -336,28 +379,26 @@ module.exports = class Replicator extends Backbone.Model
 
                 if children.length is 0
                     # it's anormal but download it !
+                    log.warn "Missing file #{file.name} on device, fetching it."
                     @getBinary file, noop, callback
 
                 else if children[0].name is file.name
                     callback()
-                else
+                else # rename the file.
                     fs.moveTo children[0], entry, file.name, callback
 
 
-    removeLocal: (model, callback) ->
-        binary_id = model.binary.file.id
-        binary_rev = model.binary.file.rev
-        console.log "REMOVE LOCAL"
-        console.log binary_id
 
-        fs.getDirectory @downloads, binary_id + '-' + binary_rev, (err, binfolder) =>
+    # Remove from cache specified file.
+    # @param file a cozy file document.
+    removeLocal: (file, callback) ->
+        log.info "remove #{file.name} from cache."
+
+        fs.getDirectory @downloads, @fileToEntryName(file), (err, binfolder) =>
             return callback err if err
             fs.rmrf binfolder, (err) =>
-                # remove from @cache
-                for entry, index in @cache when entry.name is binary_id + '-' + binary_rev
-                    @cache.splice index, 1
-                    break
-                callback null
+                @removeFromCacheList @fileToEntryName(file)
+                callback err
 
 
     removeLocalFolder: (folder, callback) ->
@@ -371,10 +412,12 @@ module.exports = class Replicator extends Backbone.Model
 
     # Get the entry (if in cache) related to the specified files list.
     # return a list of objects {file, entry}
+    # @param docs a list of file or folder documents.
     _filesNEntriesInCache: (docs) ->
         fileNEntriesInCache = []
         for file in docs
-            if file.docType.toLowerCase() is 'file'
+            # early created file may not have binary property yet.
+            if file.docType.toLowerCase() is 'file' and file.binary?
                 entries = @cache.filter (entry) ->
                     entry.name.indexOf(file.binary.file.id) isnt -1
                 if entries.length isnt 0
@@ -383,6 +426,7 @@ module.exports = class Replicator extends Backbone.Model
                         entry: entries[0]
 
         return fileNEntriesInCache
+
 
     _replicationFilter: ->
         if @config.get 'cozyNotifications'
@@ -399,14 +443,16 @@ module.exports = class Replicator extends Backbone.Model
 
         return filter
 
+
     # wrapper around _sync to maintain the state of inSync
     sync: (options, callback) ->
         return callback null if @get 'inSync'
-        console.log "SYNC CALLED"
+        log.info "start a sync"
         @set 'inSync', true
         @_sync options, (err) =>
             @set 'inSync', false
             callback err
+
 
     # One-shot replication
     # Called for :
@@ -414,7 +460,6 @@ module.exports = class Replicator extends Backbone.Model
     #    * replication at each start
     #    * replication force by user
     _sync: (options, callback) ->
-        console.log "BEGIN SYNC"
         total_count = 0
         @stopRealtime()
         changedDocs = []
@@ -428,11 +473,11 @@ module.exports = class Replicator extends Backbone.Model
             since: checkpoint
 
         replication.on 'change', (change) =>
-            console.log "REPLICATION CHANGE"
+            log.info "changes received while sync"
             changedDocs = changedDocs.concat change.docs
 
         replication.once 'error', (err) =>
-            console.log "REPLICATOR ERROR #{JSON.stringify(err)} #{err.stack}"
+            log.error "error while replication in sync", err
             if err?.result?.status? and err.result.status is 'aborted'
                 replication?.cancel()
                 @_sync options, callback
@@ -440,19 +485,18 @@ module.exports = class Replicator extends Backbone.Model
                 callback err
 
         replication.once 'complete', (result) =>
-            console.log "REPLICATION COMPLETED"
+            log.info "replication in sync completed."
             async.eachSeries @_filesNEntriesInCache(changedDocs), \
               @updateLocal, (err) =>
                 # Continue on cache update error, 'syncCache' call on next
                 # backup may fix it.
-                console.log err if err
+                log.warn err if err
                 @config.save checkpointed: result.last_seq, (err) =>
                     callback err
                     unless options.background
                         app.router.forceRefresh()
                         # updateIndex In background
                         @updateIndex =>
-                            console.log 'start Realtime'
                             @startRealtime()
 
     # realtime
@@ -464,13 +508,10 @@ module.exports = class Replicator extends Backbone.Model
     realtimeBackupCoef = 1
 
     startRealtime: =>
-        # TODO : STUB !
-        return
-
         if @liveReplication or not app.foreground
             return
 
-        console.log 'REALTIME START'
+        log.info 'REALTIME START'
 
         @liveReplication = @db.replicate.from @config.remote,
             batch_size: 20
@@ -486,8 +527,11 @@ module.exports = class Replicator extends Backbone.Model
 
             @set 'inSync', true
             fileNEntriesInCache = @_filesNEntriesInCache change.docs
-            async.eachSeries fileNEntriesInCache, @updateLocal, =>
-                console.log "FILES UPDATED"
+            async.eachSeries fileNEntriesInCache, @updateLocal, (err) =>
+                if err
+                    log.error err
+                else
+                    log.info "updated binary in realtime"
 
 
         @liveReplication.on 'uptodate', (e) =>
@@ -495,10 +539,10 @@ module.exports = class Replicator extends Backbone.Model
             @set 'inSync', false
             app.router.forceRefresh()
             # @TODO : save last_seq ?
-            console.log "UPTODATE", e
+            log.info "UPTODATE relatime", e
 
         @liveReplication.once 'complete', (e) =>
-            console.log "LIVE REPLICATION CANCELLED"
+            log.info "REALTIME CANCELLED"
             @set 'inSync', false
             @liveReplication = null
 
@@ -506,7 +550,7 @@ module.exports = class Replicator extends Backbone.Model
             @liveReplication = null
             realtimeBackupCoef++ if realtimeBackupCoef < 6
             timeout = 1000 * (1 << realtimeBackupCoef)
-            console.log "REALTIME BROKE, TRY AGAIN IN #{timeout} #{e.toString()}"
+            log.error "REALTIME BROKE, TRY AGAIN IN #{timeout} #{e.toString()}"
             @realtimeBackOff = setTimeout @startRealtime, timeout
 
     stopRealtime: =>
@@ -516,7 +560,7 @@ module.exports = class Replicator extends Backbone.Model
         # Kill backoff if exists.
         clearTimeout @realtimeBackOff
 
-    # Update cache files with outdated revisions.
+    # Update cache files with outdated revisions. Called while backup
     syncCache:  (callback) =>
         @set 'backup_step', 'cache_update'
         @set 'backup_step_done', null

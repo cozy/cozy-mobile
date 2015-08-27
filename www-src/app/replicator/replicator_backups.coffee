@@ -1,8 +1,10 @@
 DeviceStatus = require '../lib/device_status'
-Utils = require './utils'
 fs = require './filesystem'
 request = require '../lib/request'
 
+log = require('/lib/persistent_log')
+    prefix: "replicator backup"
+    date: true
 
 # This files contains all replicator functions liked to backup
 # use the ImagesBrowser cordova plugin to fetch images & contacts
@@ -19,26 +21,29 @@ module.exports =
         return callback null if @get 'inBackup'
 
         options = options or { force: false }
-
-        @set 'inBackup', true
-        @set 'backup_step', null
-        @stopRealtime()
-        @_backup options.force, (err) =>
+        try
+            @set 'inBackup', true
             @set 'backup_step', null
-            @set 'inBackup', false
-            @startRealtime() unless options.background
-            return callback err if err
-            @config.save lastBackup: new Date().toString(), (err) =>
-                console.log "#{new Date().toISOString()} Backup done."
-                callback null
+            @stopRealtime()
+            @_backup options.force, (err) =>
+                @set 'backup_step', null
+                @set 'backup_step_done', null
+                @set 'inBackup', false
+                @startRealtime() unless options.background
+                return callback err if err
+                @config.save lastBackup: new Date().toString(), (err) =>
+                    log.info "Backup done."
+                    callback null
+        catch e
+            log.error e, e.stack
 
 
     _backup: (force, callback) ->
         DeviceStatus.checkReadyForSync true, (err, ready, msg) =>
-            console.log "SYNC STATUS", err, ready, msg
+            log.info "SYNC STATUS", err, ready, msg
             return callback err if err
             return callback new Error(msg) unless ready
-            console.log "WE ARE READY FOR SYNC"
+            log.info "WE ARE READY FOR SYNC"
 
             # async series with non blocking errors
             errors = []
@@ -46,7 +51,7 @@ module.exports =
                 (cb) =>
                     @syncPictures force, (err) ->
                         if err
-                            console.log err
+                            log.error "in syncPictures: ", err.message
                             errors.push err
                         cb()
                 (cb) =>
@@ -54,7 +59,7 @@ module.exports =
                     if status.readyForSync
                         @syncCache (err) ->
                             if err
-                                console.log err
+                                log.error "in syncCache", err.message
                                 errors.push err
                             cb()
                     else
@@ -65,7 +70,7 @@ module.exports =
                     if status.readyForSync
                         @syncContacts (err) ->
                             if err
-                                console.log err
+                                log.error "in syncContacts", err.message
                                 errors.push err
                             cb()
                     else
@@ -83,9 +88,10 @@ module.exports =
     syncPictures: (force, callback) ->
         return callback null unless @config.get 'syncImages'
 
-        console.log "SYNC PICTURES"
+        log.info "sync pictures"
         @set 'backup_step', 'pictures_scan'
         @set 'backup_step_done', null
+
         async.series [
             @ensureDeviceFolder.bind this
             ImagesBrowser.getImagesList
@@ -110,7 +116,8 @@ module.exports =
 
             # Filter images : keep only the ones from Camera
             # TODO: Android Specific !
-            images = images.filter (path) -> path.indexOf('/DCIM/') != -1
+            images = images.filter (path) ->
+                return path? and path.indexOf('/DCIM/') != -1
 
             if images.length is 0
                 return callback new Error 'no images in DCIM'
@@ -137,22 +144,22 @@ module.exports =
                             return cb err if err
                             return cb new Error msg unless ready
 
-                            setTimeout cb, 1 # don't freeze UI
+                            setImmediate cb # don't freeze UI
 
 
             , =>
                 # step 2 upload one by one
-                console.log "SYNC IMAGES : #{images.length} #{toUpload.length}"
+                log.info "SYNC IMAGES : #{images.length} #{toUpload.length}"
                 processed = 0
                 @set 'backup_step', 'pictures_sync'
                 @set 'backup_step_total', toUpload.length
                 async.eachSeries toUpload, (path, cb) =>
                     @set 'backup_step_done', processed++
-                    console.log "UPLOADING #{path}"
+                    log.info "UPLOADING #{path}"
                     @uploadPicture path, device, (err) =>
-                        console.log "ERROR #{path} #{err}" if err
+                        log.error "ERROR #{path} #{err}" if err
                         if DeviceStatus.readyForSync
-                            setTimeout cb, 1  # don't freeze UI.
+                            setImmediate cb  # don't freeze UI.
                         else
                             # stop uploading if leaves wifi and ...
                             cb DeviceStatus.readyForSyncMsg
@@ -222,10 +229,13 @@ module.exports =
                 if not err?
                     callback()
                 else
-                    findDevice id, callback
+                    # Busy waiting for device folder creation
+                    setTimeout (-> findDevice id, callback ), 200
 
+
+        # Creates 'photos' folder in cozy, and wait for its creation.
         createNew = () =>
-            console.log "MAKING ONE"
+            log.info "creating 'photos' folder"
             # no device folder, lets make it
             folder =
                 docType          : 'Folder'
@@ -247,7 +257,7 @@ module.exports =
             return callback err if err
             if results.rows.length > 0
                 device = results.rows[0]
-                console.log "DEVICE FOLDER EXISTS"
+                log.info "DEVICE FOLDER EXISTS"
                 return callback null, device
             else
                 # TODO : relies on byFullPath folder view of cozy-file !
@@ -259,6 +269,7 @@ module.exports =
                     if body?.rows?.length is 0
                         createNew()
                     else
-                        # already exist remote, but not locally...
+                        # should not reach here: already exist remote, but not
+                        # present in replicated @db ...
                         callback new Error 'photo folder not replicated yet'
 

@@ -2,6 +2,10 @@ File = require '../models/file'
 
 PAGE_LENGTH = 20
 
+log = require('/lib/persistent_log')
+    prefix: "files collections"
+    date: true
+
 module.exports = class FileAndFolderCollection extends Backbone.Collection
     model: File
 
@@ -136,28 +140,25 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
         # memcache children, check if they are in filesystem
         toBeCached = @filter (model) ->
             model.get('docType')?.toLowerCase() is 'folder'
-        # console.log "FETCH ADDITIONAL #{toBeCached.length}"
         async.eachSeries toBeCached, (folder, cb) =>
             return cb new Error('cancelled') if @cancelled
             path = folder.wholePath()
             @_fetch path, (err, items) ->
                 return cb new Error('cancelled') if @cancelled
-                # console.log "CACHING "+ JSON.stringify(path)
                 FileAndFolderCollection.cache[path] = items unless err
                 app.replicator.folderInFileSystem path, (err, incache) ->
                     return cb new Error('cancelled') if @cancelled
-                    console.log err if err
+                    log.error err.message if err
                     folder.set 'incache', incache
 
-                    setTimeout cb, 10 # don't freeze UI
+                    setImmediate cb # don't freeze UI
 
         , (err) =>
             return if @cancelled
-            console.log err if err
+            log.error err.message if err
 
             # memcache the parent
             path = (@path or '').split('/')[0..-2].join('/')
-            # console.log "CACHING "+ path
             @_fetch path, (err, items) =>
                 return if @cancelled
                 FileAndFolderCollection.cache[path] = items unless err

@@ -26,8 +26,12 @@ module.exports =
     "pull to sync"        : "Pull to sync"
     "syncing"             : "Syncing"
     "contacts_sync"       : "Syncing contacts"
+    "contacts_sync_to_pouch" : "Syncing contacts -> Cozy"
+    "contacts_sync_to_cozy" : "Syncing contacts -> Cozy ..."
+    "contacts_sync_to_phone" : "Syncing contacts <- Cozy"
     "pictures_sync"       : "Syncing pictures"
     "cache_sync"          : "Updating cache"
+    "destroying database" : "Destroying database"
 
     "synchronized with"   : "Synchronized with "
     "this folder is empty": "This folder is empty."

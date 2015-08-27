@@ -1,3 +1,7 @@
+log = require('/lib/persistent_log')
+    prefix: "notifications"
+    date: true
+
 module.exports = class Notifications
     _.extend Notifications.prototype, Backbone.Events
 
@@ -39,10 +43,7 @@ module.exports = class Notifications
     markAsShown: (notification) =>
         app.replicator.db.remove notification, (err) ->
             if err
-                console.log "Error while removing notification."
-                console.log err
-
-            return console.log err.message if err
+                log.error "Error while removing notification.", err.message
 
     showNotification: (notification) =>
         # generate id : android require an 'int' id, we generate it from the
