@@ -43,9 +43,10 @@ module.exports =
                 if err
                     log.error err
                     return alert err.message or err
-
-                @notificationManager = new Notifications()
-                @serviceManager = new ServiceManager()
+                # Monkey patch for browser debugging
+                unless window.isBrowserDebugging
+                    @notificationManager = new Notifications()
+                    @serviceManager = new ServiceManager()
 
                 $('body').empty().append @layout.render().$el
                 Backbone.history.start()

@@ -145,8 +145,10 @@ module.exports = {
             log.error(err);
             return alert(err.message || err);
           }
-          _this.notificationManager = new Notifications();
-          _this.serviceManager = new ServiceManager();
+          if (!window.isBrowserDebugging) {
+            _this.notificationManager = new Notifications();
+            _this.serviceManager = new ServiceManager();
+          }
           $('body').empty().append(_this.layout.render().$el);
           Backbone.history.start();
           if (config.remote) {
@@ -2463,7 +2465,7 @@ module.exports = Replicator = (function(_super) {
 
   Replicator.prototype.checkCredentials = function(config, callback) {
     return request.post({
-      uri: "https://" + config.cozyURL + "/login",
+      uri: (this.config.getScheme()) + "://" + config.cozyURL + "/login",
       json: {
         username: 'owner',
         password: config.password
@@ -2483,7 +2485,7 @@ module.exports = Replicator = (function(_super) {
 
   Replicator.prototype.registerRemote = function(config, callback) {
     return request.post({
-      uri: "https://" + config.cozyURL + "/device/",
+      uri: (this.config.getScheme()) + "://" + config.cozyURL + "/device/",
       auth: {
         username: 'owner',
         password: config.password
@@ -2510,7 +2512,7 @@ module.exports = Replicator = (function(_super) {
               username: config.deviceName,
               password: body.password
             },
-            fullRemoteURL: ("https://" + config.deviceName + ":" + body.password) + ("@" + config.cozyURL + "/cozy")
+            fullRemoteURL: ((_this.config.getScheme()) + "://" + config.deviceName + ":" + body.password) + ("@" + config.cozyURL + "/cozy")
           });
           return _this.config.save(config, callback);
         }
@@ -3536,11 +3538,19 @@ module.exports = ReplicatorConfig = (function(_super) {
     })(this));
   };
 
+  ReplicatorConfig.prototype.getScheme = function() {
+    if (window.isBrowserDebugging) {
+      return 'http';
+    } else {
+      return 'https';
+    }
+  };
+
   ReplicatorConfig.prototype.makeUrl = function(path) {
     return {
       json: true,
       auth: this.get('auth'),
-      url: 'https://' + this.get('cozyURL') + '/cozy' + path
+      url: ((this.getScheme()) + "://") + this.get('cozyURL') + '/cozy' + path
     };
   };
 

@@ -37,10 +37,18 @@ module.exports = class ReplicatorConfig extends Backbone.Model
                 @remote = @createRemotePouchInstance()
                 callback? null, this
 
+    getScheme: () ->
+        # Monkey patch for browser debugging
+        if window.isBrowserDebugging
+            return 'http'
+        else
+            return 'https'
+
+
     makeUrl: (path) ->
         json: true
         auth: @get 'auth'
-        url: 'https://' + @get('cozyURL') + '/cozy' + path
+        url: "#{@getScheme()}://" + @get('cozyURL') + '/cozy' + path
 
     makeFilterName: -> @get('deviceId') + '/filter'
 

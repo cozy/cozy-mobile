@@ -60,7 +60,7 @@ module.exports = class Replicator extends Backbone.Model
     # pings the cozy to check the credentials without creating a device
     checkCredentials: (config, callback) ->
         request.post
-            uri: "https://#{config.cozyURL}/login"
+            uri: "#{@config.getScheme()}://#{config.cozyURL}/login"
             json:
                 username: 'owner'
                 password: config.password
@@ -80,7 +80,7 @@ module.exports = class Replicator extends Backbone.Model
     # Register the device in cozy.
     registerRemote: (config, callback) ->
         request.post
-            uri: "https://#{config.cozyURL}/device/",
+            uri: "#{@config.getScheme()}://#{config.cozyURL}/device/",
             auth:
                 username: 'owner'
                 password: config.password
@@ -104,7 +104,7 @@ module.exports = class Replicator extends Backbone.Model
                         username: config.deviceName
                         password: body.password
                     fullRemoteURL:
-                        "https://#{config.deviceName}:#{body.password}" +
+                        "#{@config.getScheme()}://#{config.deviceName}:#{body.password}" +
                         "@#{config.cozyURL}/cozy"
 
                 @config.save config, callback
