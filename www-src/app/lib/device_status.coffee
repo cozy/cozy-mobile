@@ -1,9 +1,12 @@
-
 callbacks = []
 initialized = false
 readyForSync = null
 readyForSyncMsg = ""
 battery = null
+
+log = require('/lib/persistent_log')
+    prefix: "device status"
+    date: true
 
 callbackWaiting = (err, ready, msg) ->
     readyForSync = ready
@@ -15,11 +18,14 @@ module.exports.update = update = ->
     return unless battery?
 
     unless (battery.level > 20 or battery.isPlugged)
+        log.info "NOT ready on battery low."
         return callbackWaiting null, false, 'no battery'
     if app.replicator.config.get('syncOnWifi') and
-        (not (navigator.connection.type is Connection.WIFI))
-            return callbackWaiting null, false, 'no wifi'
+       (not (navigator.connection.type is Connection.WIFI))
+        log.info "NOT ready on no wifi."
+        return callbackWaiting null, false, 'no wifi'
 
+    log.info "ready to sync."
     callbackWaiting null, true
 
 module.exports.checkReadyForSync = (force, callback) ->

@@ -41,7 +41,7 @@ module.exports = Service =
             @replicator = new Replicator()
             @replicator.init (err, config) =>
                 if err
-                    log.error err.message, err.stack
+                    log.error err
                     return window.service.workDone()
 
                 if config.remote
@@ -57,7 +57,7 @@ module.exports = Service =
 
 
                     delayedQuit = (err) ->
-                        log.error err.message if err
+                        log.error err if err
                         # give some time to finish and close things.
                         setTimeout ->
                             # call this javabinding directly on object to avoid
@@ -81,7 +81,7 @@ document.addEventListener 'deviceready', ->
         Service.initialize()
 
     catch error
-        log.error 'EXCEPTION SERVICE INITIALIZATION : ', err.message
+        log.error 'EXCEPTION SERVICE INITIALIZATION : ', err
 
     finally
         # "Watchdog" : in all cases, kill service after 10'

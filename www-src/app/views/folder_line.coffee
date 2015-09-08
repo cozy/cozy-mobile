@@ -64,7 +64,10 @@ module.exports = class FolderLineView extends BaseView
         callback = callback or ->
         return (err, url) =>
             @hideProgress()
-            return alert t(err.message) if err
+
+            if err
+                log.error err
+                return alert t(err.message)
             @model.set incache: true
             @model.set version: app.replicator.fileVersion @model.attributes
             callback(err, url)
@@ -91,8 +94,8 @@ module.exports = class FolderLineView extends BaseView
                 (err) ->
                     if 0 is err?.indexOf 'No Activity found'
                         err = t 'no activity found'
-                    alert err
-                    log.error err.message
+                    alert err.message
+                    log.error err
 
     addToCache: =>
         return true if @downloading

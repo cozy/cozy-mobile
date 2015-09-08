@@ -56,6 +56,7 @@ module.exports =
 
     # Update contact in pouchDB with specified contact from phone.
     # @param phoneContact cordova contact format.
+    # @param retry retry lighter update after a failed one.
     _updateInPouch: (phoneContact, callback) ->
         async.parallel
             fromPouch: (cb) =>
@@ -66,7 +67,7 @@ module.exports =
         , (err, res) =>
             return callback err if err
 
-            # _.extend : Keeps no android compliant data of the 'cozy'-contact
+            # _.extend : Keeps not android compliant data of the 'cozy'-contact
             contact = _.extend res.fromPouch, res.fromPhone
 
             if contact._attachments?.picture?
@@ -78,13 +79,17 @@ module.exports =
                         picture.revpos = oldPicture.revpos
                     else
                         picture.revpos = 1 + parseInt contact._rev.split('-')[0]
-
             @db.put contact, contact._id, contact._rev, (err, idNrev) =>
                 if err
                     if err.status is 409 # conflict, bad _rev
                         log.error "UpdateInPouch, immediate conflict with \
                             #{contact._id}.", err
                         # no error, no undirty, will try again next step.
+                        return callback null
+                    else if err.message is "Some query argument is invalid"
+                        log.error "While retrying update contact in pouch"
+                        , err
+                        # Continue with next one.
                         return callback null
                     else
                         return callback err
@@ -94,6 +99,7 @@ module.exports =
 
     # Create a new contact in app's pouchDB from newly created phone contact.
     # @param phoneContact cordova contact format.
+    # @param retry retry lighter update after a failed one.
     _createInPouch: (phoneContact, callback) ->
         Contact.cordova2Cozy phoneContact, (err, fromPhone) =>
             contact = _.extend
@@ -105,7 +111,15 @@ module.exports =
                 contact._attachments.picture.revpos = 1
 
             @db.post contact, (err, idNrev) =>
-                return callback err if err
+                if err
+                    if err.message is "Some query argument is invalid"
+                        log.error "While retrying create contact in pouch"
+                        , err
+                        # Continue with next one.
+                        return callback null
+                    else
+                        return callback err
+
                 @_undirty phoneContact, idNrev, callback
 
 

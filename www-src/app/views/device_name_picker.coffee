@@ -39,6 +39,7 @@ module.exports = class DeviceNamePickerView extends BaseView
         $('#btn-save').text t 'registering...'
         app.replicator.registerRemote config, (err) =>
             if err?
+                log.error err
                 @displayError t err.message
             else
                 delete app.loginConfig

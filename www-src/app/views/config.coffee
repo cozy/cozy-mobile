@@ -45,7 +45,9 @@ module.exports = class ConfigView extends BaseView
     configDone: ->
         log.info 'starting first replication'
         app.replicator.initialReplication (err) ->
-            alert t err.message if err
+            if err
+                log.error err
+                alert t err.message
 
         app.router.navigate 'first-sync', trigger: true
 
@@ -57,7 +59,9 @@ module.exports = class ConfigView extends BaseView
             app.replicator.set 'inSync', true # run the spinner
             app.replicator.set 'backup_step', 'destroying database'
             app.replicator.destroyDB (err) =>
-                return alert err.message if err
+                if err
+                    log.error err
+                    return alert err.message
                 $('#redbtn').text t 'done'
                 window.location.reload(true);
 
@@ -67,7 +71,10 @@ module.exports = class ConfigView extends BaseView
             #@TODO delete device on remote ?
             app.router.navigate 'first-sync', trigger: true
             app.replicator.resetSynchro (err) =>
-                return alert err.message if err
+                if err
+                    log.error err
+                    return alert err.message
+
 
     sendlogBtn: ->
         query =

@@ -30,7 +30,12 @@ class Logger
 
 
     stringify: (text) ->
-        if text instanceof Object
+        if text instanceof Error
+            err = text
+            text = err.message
+            if err.stack?
+                text += "\n" + err.stack
+        else if text instanceof Object
             text = JSON.stringify text
         return text
 
