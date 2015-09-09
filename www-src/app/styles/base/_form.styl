@@ -1,0 +1,21 @@
+// Inputs
+// ----------------------------------------------------------------------------
+
+.card input
+    padding 6px 0
+    min-height 58px
+    border-bottom 1px solid #dedede
+    font-size 16px
+
+    &:focus
+        border-color blue
+
+// A weird block appears on the login screen when an input
+// is on focus and we scroll.
+// The display none allows to hide it.
+.card .cloned-text-input
+    display none
+
+#deviceNamePicker .item-stacked-label input
+    // overrides ionic default
+    padding-left 0

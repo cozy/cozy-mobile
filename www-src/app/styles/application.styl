@@ -1,8 +1,21 @@
 // nib is a powerful lib for stylus that provides cross-browser css3 mixins.
 @import 'nib'
 
-// #mainContent
-// height 100%
+@import 'base/_colors'
+@import 'base/_background'
+@import 'base/_foreground'
+@import 'base/_buttons'
+@import 'base/_form'
+
+@import 'components/_list-item'
+@import 'components/_toolbar'
+@import 'components/_errors'
+
+// ----------------------------------------------------------------------------
+
+a
+    color blue
+    text-decoration none
 
 .scroll .list
     position absolute
@@ -19,26 +32,6 @@
     transform translate3d(-100%, 0, 0)
     transition all ease-in-out 250ms
 
-// blue
-basecolor = #3fbaf4
-basecolor-alpha = rgba(49, 156, 256, 0.5)
-
-// green
-contrastcolor = #5C5
-
-// orange
-actioncolor = #fe8800
-actioncolor-alpha = rgba(254,128,0,0.5)
-
-// gray and dark gray
-lightcolor = #fcfcfc
-mediumcolor = #BDBDBD
-mediumcolor-contrast = #428bca
-darkcolor = #444
-
-darkbase = basecolor - 20%
-.button.button-calm
-    background-color basecolor
 
 #close-menu
     width 100%
@@ -46,32 +39,35 @@ darkbase = basecolor - 20%
     line-height 48px
     font-size 17px
 
-.bar.bar-calm
-    background-color basecolor
-    border-color darkbase
-    background-image linear-gradient(top, darkbase, darkbase 50%, transparent 50%);
 
-.button.button-energized
-    background-color actioncolor
-    border-color actioncolor - 20%
-
-.button.button-balanced
-    background-color contrastcolor
-    border-color contrastcolor - 20%
-
+// Cache
 .cache-indicator
-    color mediumcolor
+    color grey-03
 
 .cache-indicator-version
-    color actioncolor
+    color blue
 
 .cache-indicator
     img
         width 25px
 
+// reset
+.no-shadow
+    // overrides ionic default
+    box-shadow 0 0
 
-.icon.ion-chevron-right
-    left auto
+.card
+    border-radius 4px
+
+    &.more-spacing
+        margin 30px
+
+    &.flat > *
+        background-color grey-01
+        // overrides ionic default
+        border 0
+
+
 
 img.backup
     left 9px
@@ -86,13 +82,6 @@ img.backup
 .pull-right
     float right
 
-// overrides ionic default
-.input-label
-    flex 1 0 130px
-
-// overrides inonic default
-#deviceNamePicker .item-stacked-label input
-    padding-left 0
 
 .item-progress
     position: absolute
@@ -105,175 +94,13 @@ img.backup
 
     .item-progress-bar
         position absolute
-        height: 100%
-        background-color basecolor-alpha
+        height 100%
+        background-color rgba(blue,.5)
 
 #splash-screen
     width: 100%
 
-#bar-header
-    border-bottom 3px solid basecolor
 
-#btn-menu
-    height: 44px
-    margin-left: -7px
-    margin-top: -5px
-    padding: 0px
-    margin-right: 4px
-
-#title
-    text-align: left
-    padding-left: 60px
-    color: basecolor
-    font-size: 20px
-    margin-top: -2px
-
-#btn-menu:focus, #btn-menu:active, #btn-menu.activated
-    background-color: basecolor + 60%
-
-#breadcrumbs
-    position relative
-    width 100%
-    height 30px
-    top 2px
-    margin-left 6px
-
-    #crumbs
-        position absolute
-        display inline-block
-        top 0px
-        left 28px
-        right 0px
-        overflow-x scroll
-        overflow-y hidden
-        height 30px
-        z-index 0
-
-    #crumbs::-webkit-scrollbar
-        display none
-
-
-    
-
-    ul
-        margin-bottom 0px
-        padding-left 0
-        list-style none
-        display inline
-        white-space nowrap
-
-        li
-            display inline
-
-            a
-                position relative
-                line-height 30px
-                padding 6px 5px 6px 22px
-
-                &:after
-                    content ""
-                    border-top 15px solid transparent
-                    border-bottom 15px solid transparent
-                    border-left 15px solid basecolor
-                    position absolute
-                    right -15px
-                    top 0
-                    z-index 1
-                &:before
-                    content ""
-                    border-top 15px solid transparent
-                    border-bottom 15px solid transparent
-                    border-left 15px solid white
-                    position absolute
-                    left 0
-                    top 0
-
-            &:last-child
-                a
-                    padding-right 20px
-                    border-top-right-radius 10px
-                    border-bottom-right-radius 10px
-                    margin-right 10px
-                    &:after
-                        display none
-
-    a
-        background basecolor
-        text-align center
-        
-        margin-right 3px
-        font-size 15px
-        text-decoration none
-        color #fff
-    
-    a.activated
-        background actioncolor
-        &:after
-            border-left-color actioncolor
-
-    .home
-        position absolute
-        height 30px
-        width 26px
-        padding 6px 0px 6px 10px
-        border-top-left-radius 10px
-        border-bottom-left-radius 10px
-        z-index 3
-
-
-    #truncated
-        position absolute
-        height 30px
-        width 36px
-
-        left 28px
-        line-height 30px
-        padding-left 16px
-        z-index 1
-    
-        &:before
-            content ""
-            border-top 15px solid transparent
-            border-bottom 15px solid transparent
-            border-left 15px solid white
-            position absolute
-            left 0
-            top 0
-
-    .white-arrow
-        border-top 15px solid transparent
-        border-bottom 15px solid transparent
-        border-left 15px solid white
-        position absolute
-        width 15px
-        top 0
-        height 30px
-        z-index 1
-
-    .blue-arrow
-        border-top 15px solid transparent
-        border-bottom 15px solid transparent
-        border-left 15px solid basecolor
-        position absolute
-        width 16px
-        top 0
-        height 30px
-        z-index 2
-
-    .activated .blue-arrow
-        border-left 15px solid actioncolor
-
-    .round
-        top 0
-        height 30px
-        position absolute
-        width 11px
-        border-top-right-radius 10px
-        border-bottom-right-radius 10px
-        background basecolor
-
-    .activated .round
-        background actioncolor        
 
 #shadow
     position absolute
@@ -289,27 +116,3 @@ img.backup
     padding 4px
     background-color white
     height 32px
-    
-
-.error-msg
-    background-color actioncolor
-    color white
-
-    margin-top 10px
-    margin-bottom 10px
-    
-    line-height 20px
-    padding 10px
-    text-align center
-    text-overflow ellipsis
-    font-size 16px
-
-    border-style solid
-    border-color actioncolor - 20%
-    border-width 1px
-    
-    a
-        color white
-
-    
-
