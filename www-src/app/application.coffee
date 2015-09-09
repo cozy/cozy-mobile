@@ -41,11 +41,12 @@ module.exports =
 
             @replicator.init (err, config) =>
                 if err
-                    log.error err.message, err.stack
+                    log.error err
                     return alert err.message or err
-
-                @notificationManager = new Notifications()
-                @serviceManager = new ServiceManager()
+                # Monkey patch for browser debugging
+                unless window.isBrowserDebugging
+                    @notificationManager = new Notifications()
+                    @serviceManager = new ServiceManager()
 
                 $('body').empty().append @layout.render().$el
                 Backbone.history.start()
@@ -73,7 +74,7 @@ module.exports =
                 app.backFromOpen = false
                 app.replicator.startRealtime()
             else
-                app.replicator.backup {}, (err) -> log.error err.message if err
+                app.replicator.backup {}, (err) -> log.error err if err
         , false
         document.addEventListener "pause", =>
             log.info "PAUSE EVENT"
@@ -89,11 +90,11 @@ module.exports =
             DeviceStatus = require './lib/device_status'
             DeviceStatus.update()
             backup = () ->
-                app.replicator.backup {}, (err) -> log.error err.message if err
+                app.replicator.backup {}, (err) -> log.error err if err
                 window.removeEventListener 'realtime:onChange', backup, false
             window.addEventListener 'realtime:onChange', backup, false
         , false
 
         @router.navigate 'folder/', trigger: true
         @router.once 'collectionfetched', =>
-            app.replicator.backup {}, (err) -> log.error err.message if err
+            app.replicator.backup {}, (err) -> log.error err if err

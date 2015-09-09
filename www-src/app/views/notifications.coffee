@@ -43,7 +43,7 @@ module.exports = class Notifications
     markAsShown: (notification) =>
         app.replicator.db.remove notification, (err) ->
             if err
-                log.error "Error while removing notification.", err.message
+                log.error "Error while removing notification.", err
 
     showNotification: (notification) =>
         # generate id : android require an 'int' id, we generate it from the

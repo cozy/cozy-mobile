@@ -148,14 +148,14 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
                 FileAndFolderCollection.cache[path] = items unless err
                 app.replicator.folderInFileSystem path, (err, incache) ->
                     return cb new Error('cancelled') if @cancelled
-                    log.error err.message if err
+                    log.error err if err
                     folder.set 'incache', incache
 
                     setImmediate cb # don't freeze UI
 
         , (err) =>
             return if @cancelled
-            log.error err.message if err
+            log.error err if err
 
             # memcache the parent
             path = (@path or '').split('/')[0..-2].join('/')

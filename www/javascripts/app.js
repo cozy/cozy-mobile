@@ -142,11 +142,13 @@ module.exports = {
         _this.layout = new LayoutView();
         return _this.replicator.init(function(err, config) {
           if (err) {
-            log.error(err.message, err.stack);
+            log.error(err);
             return alert(err.message || err);
           }
-          _this.notificationManager = new Notifications();
-          _this.serviceManager = new ServiceManager();
+          if (!window.isBrowserDebugging) {
+            _this.notificationManager = new Notifications();
+            _this.serviceManager = new ServiceManager();
+          }
           $('body').empty().append(_this.layout.render().$el);
           Backbone.history.start();
           if (config.remote) {
@@ -175,7 +177,7 @@ module.exports = {
         } else {
           return app.replicator.backup({}, function(err) {
             if (err) {
-              return log.error(err.message);
+              return log.error(err);
             }
           });
         }
@@ -200,7 +202,7 @@ module.exports = {
       backup = function() {
         app.replicator.backup({}, function(err) {
           if (err) {
-            return log.error(err.message);
+            return log.error(err);
           }
         });
         return window.removeEventListener('realtime:onChange', backup, false);
@@ -214,7 +216,7 @@ module.exports = {
       return function() {
         return app.replicator.backup({}, function(err) {
           if (err) {
-            return log.error(err.message);
+            return log.error(err);
           }
         });
       };
@@ -422,7 +424,7 @@ module.exports = FileAndFolderCollection = (function(_super) {
               return cb(new Error('cancelled'));
             }
             if (err) {
-              log.error(err.message);
+              log.error(err);
             }
             folder.set('incache', incache);
             return setImmediate(cb);
@@ -436,7 +438,7 @@ module.exports = FileAndFolderCollection = (function(_super) {
           return;
         }
         if (err) {
-          log.error(err.message);
+          log.error(err);
         }
         path = (_this.path || '').split('/').slice(0, -1).join('/');
         return _this._fetch(path, function(err, items) {
@@ -558,7 +560,7 @@ module.exports = basic = function(auth) {
 });
 
 require.register("lib/device_status", function(exports, require, module) {
-var battery, callbackWaiting, callbacks, initialized, readyForSync, readyForSyncMsg, update;
+var battery, callbackWaiting, callbacks, initialized, log, readyForSync, readyForSyncMsg, update;
 
 callbacks = [];
 
@@ -569,6 +571,11 @@ readyForSync = null;
 readyForSyncMsg = "";
 
 battery = null;
+
+log = require('/lib/persistent_log')({
+  prefix: "device status",
+  date: true
+});
 
 callbackWaiting = function(err, ready, msg) {
   var callback, _i, _len;
@@ -586,11 +593,14 @@ module.exports.update = update = function() {
     return;
   }
   if (!(battery.level > 20 || battery.isPlugged)) {
+    log.info("NOT ready on battery low.");
     return callbackWaiting(null, false, 'no battery');
   }
   if (app.replicator.config.get('syncOnWifi') && (!(navigator.connection.type === Connection.WIFI))) {
+    log.info("NOT ready on no wifi.");
     return callbackWaiting(null, false, 'no wifi');
   }
+  log.info("ready to sync.");
   return callbackWaiting(null, true);
 };
 
@@ -687,7 +697,14 @@ Logger = (function() {
   }
 
   Logger.prototype.stringify = function(text) {
-    if (text instanceof Object) {
+    var err;
+    if (text instanceof Error) {
+      err = text;
+      text = err.message;
+      if (err.stack != null) {
+        text += "\n" + err.stack;
+      }
+    } else if (text instanceof Object) {
       text = JSON.stringify(text);
     }
     return text;
@@ -2448,7 +2465,7 @@ module.exports = Replicator = (function(_super) {
 
   Replicator.prototype.checkCredentials = function(config, callback) {
     return request.post({
-      uri: "https://" + config.cozyURL + "/login",
+      uri: (this.config.getScheme()) + "://" + config.cozyURL + "/login",
       json: {
         username: 'owner',
         password: config.password
@@ -2468,7 +2485,7 @@ module.exports = Replicator = (function(_super) {
 
   Replicator.prototype.registerRemote = function(config, callback) {
     return request.post({
-      uri: "https://" + config.cozyURL + "/device/",
+      uri: (this.config.getScheme()) + "://" + config.cozyURL + "/device/",
       auth: {
         username: 'owner',
         password: config.password
@@ -2495,7 +2512,7 @@ module.exports = Replicator = (function(_super) {
               username: config.deviceName,
               password: body.password
             },
-            fullRemoteURL: ("https://" + config.deviceName + ":" + body.password) + ("@" + config.cozyURL + "/cozy")
+            fullRemoteURL: ((_this.config.getScheme()) + "://" + config.deviceName + ":" + body.password) + ("@" + config.cozyURL + "/cozy")
           });
           return _this.config.save(config, callback);
         }
@@ -3149,7 +3166,7 @@ module.exports = {
           function(cb) {
             return _this.syncPictures(force, function(err) {
               if (err) {
-                log.error("in syncPictures: ", err.message);
+                log.error("in syncPictures: ", err);
                 errors.push(err);
               }
               return cb();
@@ -3160,7 +3177,7 @@ module.exports = {
             if (status.readyForSync) {
               return _this.syncCache(function(err) {
                 if (err) {
-                  log.error("in syncCache", err.message);
+                  log.error("in syncCache", err);
                   errors.push(err);
                 }
                 return cb();
@@ -3174,7 +3191,7 @@ module.exports = {
             if (status.readyForSync) {
               return _this.syncContacts(function(err) {
                 if (err) {
-                  log.error("in syncContacts", err.message);
+                  log.error("in syncContacts", err);
                   errors.push(err);
                 }
                 return cb();
@@ -3460,7 +3477,7 @@ var APP_VERSION, ReplicatorConfig, basic,
 
 basic = require('../lib/basic');
 
-APP_VERSION = "0.1.9";
+APP_VERSION = "0.1.10";
 
 module.exports = ReplicatorConfig = (function(_super) {
   __extends(ReplicatorConfig, _super);
@@ -3521,11 +3538,19 @@ module.exports = ReplicatorConfig = (function(_super) {
     })(this));
   };
 
+  ReplicatorConfig.prototype.getScheme = function() {
+    if (window.isBrowserDebugging) {
+      return 'http';
+    } else {
+      return 'https';
+    }
+  };
+
   ReplicatorConfig.prototype.makeUrl = function(path) {
     return {
       json: true,
       auth: this.get('auth'),
-      url: 'https://' + this.get('cozyURL') + '/cozy' + path
+      url: ((this.getScheme()) + "://") + this.get('cozyURL') + '/cozy' + path
     };
   };
 
@@ -3646,6 +3671,9 @@ module.exports = {
             if (err.status === 409) {
               log.error("UpdateInPouch, immediate conflict with " + contact._id + ".", err);
               return callback(null);
+            } else if (err.message === "Some query argument is invalid") {
+              log.error("While retrying update contact in pouch", err);
+              return callback(null);
             } else {
               return callback(err);
             }
@@ -3668,7 +3696,12 @@ module.exports = {
         }
         return _this.db.post(contact, function(err, idNrev) {
           if (err) {
-            return callback(err);
+            if (err.message === "Some query argument is invalid") {
+              log.error("While retrying create contact in pouch", err);
+              return callback(null);
+            } else {
+              return callback(err);
+            }
           }
           return _this._undirty(phoneContact, idNrev, callback);
         });
@@ -4311,7 +4344,7 @@ module.exports = Service = {
         return _this.replicator.init(function(err, config) {
           var DeviceStatus, delayedQuit;
           if (err) {
-            log.error(err.message, err.stack);
+            log.error(err);
             return window.service.workDone();
           }
           if (config.remote) {
@@ -4324,7 +4357,7 @@ module.exports = Service = {
             }
             delayedQuit = function(err) {
               if (err) {
-                log.error(err.message);
+                log.error(err);
               }
               return setTimeout(function() {
                 return window.service.workDone();
@@ -4356,7 +4389,7 @@ document.addEventListener('deviceready', function() {
     return Service.initialize();
   } catch (_error) {
     error = _error;
-    return log.error('EXCEPTION SERVICE INITIALIZATION : ', err.message);
+    return log.error('EXCEPTION SERVICE INITIALIZATION : ', err);
   } finally {
     setTimeout(function() {
       return window.service.workDone();
@@ -4904,6 +4937,13 @@ module.exports = ConfigView = (function(_super) {
   };
 
   ConfigView.prototype.configDone = function() {
+    log.info('starting first replication');
+    app.replicator.initialReplication(function(err) {
+      if (err) {
+        log.error(err);
+        return alert(t(err.message));
+      }
+    });
     return app.router.navigate('first-sync', {
       trigger: true
     });
@@ -4916,6 +4956,7 @@ module.exports = ConfigView = (function(_super) {
       return app.replicator.destroyDB((function(_this) {
         return function(err) {
           if (err) {
+            log.error(err);
             return alert(err.message);
           }
           $('#redbtn').text(t('done'));
@@ -4933,6 +4974,7 @@ module.exports = ConfigView = (function(_super) {
       return app.replicator.resetSynchro((function(_this) {
         return function(err) {
           if (err) {
+            log.error(err);
             return alert(err.message);
           }
         };
@@ -5033,16 +5075,11 @@ module.exports = DeviceNamePickerView = (function(_super) {
     return app.replicator.registerRemote(config, (function(_this) {
       return function(err) {
         if (err != null) {
+          log.error(err);
           return _this.displayError(t(err.message));
         } else {
           delete app.loginConfig;
           app.isFirstRun = true;
-          log.info('starting first replication');
-          app.replicator.initialReplication(function(err) {
-            if (err) {
-              return alert(t(err.message));
-            }
-          });
           return app.router.navigate('config', {
             trigger: true
           });
@@ -5447,6 +5484,7 @@ module.exports = FolderLineView = (function(_super) {
       return function(err, url) {
         _this.hideProgress();
         if (err) {
+          log.error(err);
           return alert(t(err.message));
         }
         _this.model.set({
@@ -5483,8 +5521,8 @@ module.exports = FolderLineView = (function(_super) {
           if (0 === (err != null ? err.indexOf('No Activity found') : void 0)) {
             err = t('no activity found');
           }
-          alert(err);
-          return log.error(err.message);
+          alert(err.message);
+          return log.error(err);
         });
       };
     })(this)));
@@ -5898,9 +5936,7 @@ module.exports = Menu = (function(_super) {
     return app.replicator.sync({}, function(err) {
       var _ref, _ref1;
       if (err) {
-        log.error(err.message, err.stack);
-      }
-      if (err) {
+        log.error(err);
         alert(t(err.message != null ? err.message : "no connection"));
       }
       return (_ref = app.layout.currentView) != null ? (_ref1 = _ref.collection) != null ? _ref1.fetch() : void 0 : void 0;
@@ -5926,7 +5962,7 @@ module.exports = Menu = (function(_super) {
         return function(err) {
           var _ref, _ref1;
           if (err) {
-            log.error(err.message, err.stack);
+            log.error(err);
             alert(t(err.message));
             return;
           }
@@ -6030,7 +6066,7 @@ module.exports = Notifications = (function() {
   Notifications.prototype.markAsShown = function(notification) {
     return app.replicator.db.remove(notification, function(err) {
       if (err) {
-        return log.error("Error while removing notification.", err.message);
+        return log.error("Error while removing notification.", err);
       }
     });
   };

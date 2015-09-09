@@ -51,7 +51,7 @@ module.exports =
                 (cb) =>
                     @syncPictures force, (err) ->
                         if err
-                            log.error "in syncPictures: ", err.message
+                            log.error "in syncPictures: ", err
                             errors.push err
                         cb()
                 (cb) =>
@@ -59,7 +59,7 @@ module.exports =
                     if status.readyForSync
                         @syncCache (err) ->
                             if err
-                                log.error "in syncCache", err.message
+                                log.error "in syncCache", err
                                 errors.push err
                             cb()
                     else
@@ -70,7 +70,7 @@ module.exports =
                     if status.readyForSync
                         @syncContacts (err) ->
                             if err
-                                log.error "in syncContacts", err.message
+                                log.error "in syncContacts", err
                                 errors.push err
                             cb()
                     else
