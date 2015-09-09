@@ -5,7 +5,7 @@ This is the native mobile client for Cozy.
 ## Install
 
 Get it from the play store.
-Or head over to the [Releases page](https://github.com/cozy-labs/cozy-mobile/releases)
+Or head over to the [Releases page](https://github.com/cozy/cozy-mobile/releases)
 
 ## Built with
 - cordova  @4.3.1
@@ -13,7 +13,7 @@ New cordova 5.1.1 doesn't comply with the custom plugins of cozy-mobile. Please 
 
 ## Hack
 
-    git clone https://github.com/aenario/cozy-files-mobile
+    git clone https://github.com/cozy/cozy-mobile
     sudo npm install -g cordova coffee-script brunch
     # see cordova doc on how to set up the SDKs
     cake platforms && cake plugins
@@ -52,7 +52,7 @@ Cozy Mobile Client is developed by Cozy Cloud and distributed under the AGPL v3 
 
 ## What is Cozy?
 
-![Cozy Logo](https://raw.github.com/mycozycloud/cozy-setup/gh-pages/assets/images/happycloud.png)
+![Cozy Logo](https://raw.github.com/cozy/cozy-setup/gh-pages/assets/images/happycloud.png)
 
 [Cozy](http://cozy.io) is a platform that brings all your web services in the
 same private space.  With it, your web apps and your devices can share data
