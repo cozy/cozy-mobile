@@ -1,14 +1,14 @@
 //- config screen template
 
 .list
-    .card
-        .item.item-text-wrap.welcome
-    .card
-        label.item.item-input
-            span.input-label= t('cozy url')
-            input#input-url(type="url", placeholder="john.cozycloud.cc", value="#{defaultValue.cozyURL}")
-        label.item.item-input
-            span.input-label= t('cozy password')
+    .card.no-shadow.more-spacing.flat
+        .item.item-text-wrap
+            h2.welcome
+            p.welcome-message
+    .card.no-shadow.more-spacing
+        label
+            input#input-url(type="url", placeholder="#{t('url placeholder')}", value="#{defaultValue.cozyURL}")
+        label
             input#input-pass(type="password", placeholder="#{t('password placeholder')}", value="#{defaultValue.password}")
 
-        button#btn-save.button.button-block.button-balanced.item= t('next')
+        button#btn-save.button.button-block.button-balanced= t('next')

@@ -52,6 +52,7 @@ module.exports =
     "back":"""Atrás"""
     "connection failure":"""Falla en la conexión"""
     "setup 1/3":"""Configuración 1/3"""
+    "url placeholder":"""Su cozy"""
     "password placeholder":"""Su contraseña"""
     "authenticating...":"""Verificación de los identificadores..."""
     "setup 2/3":"""Configuración 2/3"""

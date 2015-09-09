@@ -16,6 +16,7 @@ module.exports = class LoginView extends BaseView
 
     afterRender: ->
         @$('.welcome').html t 'cozy welcome'
+        @$('.welcome-message').html t 'cozy welcome message'
 
     doComplete: ->
         url = @$('#input-url').val()

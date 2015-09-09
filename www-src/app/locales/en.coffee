@@ -71,15 +71,15 @@ module.exports =
 
     # --- login
     "setup 1/3"             : "Setup 1/3"
-    "cozy welcome"          : """Welcome ! <br> Cozy, a Personal Cloud you can host, customize and fully control. If you already have a Cozy instance, follow the steps to sync your mobile with your Cozy. Otherwise, visit <a target='_system' href='http://cozy.io/en/'>cozy.io</a> for more."""
-    "password placeholder"  : "your password"
+    "cozy welcome"          : "Welcome!"
+    "cozy welcome message"  : """Cozy is your Personal Cloud you can host, customize and fully control. <br>If you don't already have a Cozy instance, visit <a target='_system' href='http://cozy.io/en/'>cozy.io</a> for more details."""
+    "url placeholder"       : "Your Cozy Address"
+    "password placeholder"  : "Your Password"
     "authenticating..."     : "Authenticating..."
 
     # -- device name picker
     "setup 2/3"                 : "Setup 2/3"
-    "device name explanation"   : """
-        Choose a display name for this device so you can easily manage it from your Cozy.
-    """
+    "device name explanation"   : "Choose a display name for this device so you can easily manage it from your Cozy."
     "device name placeholder"   : "my-phone"
     "registering..."            : "Registering..."
 
