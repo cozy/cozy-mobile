@@ -1,59 +1,42 @@
-(function() {
+(function(/*! Brunch !*/) {
   'use strict';
 
-  var globals = typeof window === 'undefined' ? global : window;
+  var globals = typeof window !== 'undefined' ? window : global;
   if (typeof globals.require === 'function') return;
 
   var modules = {};
   var cache = {};
-  var has = ({}).hasOwnProperty;
 
-  var aliases = {};
-
-  var endsWith = function(str, suffix) {
-    return str.indexOf(suffix, str.length - suffix.length) !== -1;
+  var has = function(object, name) {
+    return ({}).hasOwnProperty.call(object, name);
   };
 
-  var unalias = function(alias, loaderPath) {
-    var start = 0;
-    if (loaderPath) {
-      if (loaderPath.indexOf('components/' === 0)) {
-        start = 'components/'.length;
-      }
-      if (loaderPath.indexOf('/', start) > 0) {
-        loaderPath = loaderPath.substring(start, loaderPath.indexOf('/', start));
+  var expand = function(root, name) {
+    var results = [], parts, part;
+    if (/^\.\.?(\/|$)/.test(name)) {
+      parts = [root, name].join('/').split('/');
+    } else {
+      parts = name.split('/');
+    }
+    for (var i = 0, length = parts.length; i < length; i++) {
+      part = parts[i];
+      if (part === '..') {
+        results.pop();
+      } else if (part !== '.' && part !== '') {
+        results.push(part);
       }
     }
-    var result = aliases[alias + '/index.js'] || aliases[loaderPath + '/deps/' + alias + '/index.js'];
-    if (result) {
-      return 'components/' + result.substring(0, result.length - '.js'.length);
-    }
-    return alias;
+    return results.join('/');
   };
 
-  var expand = (function() {
-    var reg = /^\.\.?(\/|$)/;
-    return function(root, name) {
-      var results = [], parts, part;
-      parts = (reg.test(name) ? root + '/' + name : name).split('/');
-      for (var i = 0, length = parts.length; i < length; i++) {
-        part = parts[i];
-        if (part === '..') {
-          results.pop();
-        } else if (part !== '.' && part !== '') {
-          results.push(part);
-        }
-      }
-      return results.join('/');
-    };
-  })();
   var dirname = function(path) {
     return path.split('/').slice(0, -1).join('/');
   };
 
   var localRequire = function(path) {
     return function(name) {
-      var absolute = expand(dirname(path), name);
+      var dir = dirname(path);
+      var absolute = expand(dir, name);
       return globals.require(absolute, path);
     };
   };
@@ -68,26 +51,21 @@
   var require = function(name, loaderPath) {
     var path = expand(name, '.');
     if (loaderPath == null) loaderPath = '/';
-    path = unalias(name, loaderPath);
 
-    if (has.call(cache, path)) return cache[path].exports;
-    if (has.call(modules, path)) return initModule(path, modules[path]);
+    if (has(cache, path)) return cache[path].exports;
+    if (has(modules, path)) return initModule(path, modules[path]);
 
     var dirIndex = expand(path, './index');
-    if (has.call(cache, dirIndex)) return cache[dirIndex].exports;
-    if (has.call(modules, dirIndex)) return initModule(dirIndex, modules[dirIndex]);
+    if (has(cache, dirIndex)) return cache[dirIndex].exports;
+    if (has(modules, dirIndex)) return initModule(dirIndex, modules[dirIndex]);
 
     throw new Error('Cannot find module "' + name + '" from '+ '"' + loaderPath + '"');
   };
 
-  require.alias = function(from, to) {
-    aliases[to] = from;
-  };
-
-  require.register = require.define = function(bundle, fn) {
+  var define = function(bundle, fn) {
     if (typeof bundle === 'object') {
       for (var key in bundle) {
-        if (has.call(bundle, key)) {
+        if (has(bundle, key)) {
           modules[key] = bundle[key];
         }
       }
@@ -96,21 +74,24 @@
     }
   };
 
-  require.list = function() {
+  var list = function() {
     var result = [];
     for (var item in modules) {
-      if (has.call(modules, item)) {
+      if (has(modules, item)) {
         result.push(item);
       }
     }
     return result;
   };
 
-  require.brunch = true;
   globals.require = require;
+  globals.require.define = define;
+  globals.require.register = define;
+  globals.require.list = list;
+  globals.require.brunch = true;
 })();
 require.register("application", function(exports, require, module) {
-var LayoutView, Notifications, Replicator, ServiceManager, log;
+var DeviceStatus, LayoutView, Notifications, Replicator, ServiceManager, log;
 
 require('/lib/utils');
 
@@ -121,6 +102,8 @@ LayoutView = require('./views/layout');
 ServiceManager = require('./service/service_manager');
 
 Notifications = require('../views/notifications');
+
+DeviceStatus = require('./lib/device_status');
 
 log = require('/lib/persistent_log')({
   prefix: "application",
@@ -171,7 +154,19 @@ module.exports = {
           $('body').empty().append(_this.layout.render().$el);
           Backbone.history.start();
           if (config.remote) {
-            return app.regularStart();
+            if (!_this.replicator.config.has('checkpointed')) {
+              log.info('Launch first replication again.');
+              app.replicator.initialReplication(function(err) {});
+              if (err) {
+                log.error(err);
+                alert(t(err.message));
+              }
+              return app.router.navigate('first-sync', {
+                trigger: true
+              });
+            } else {
+              return app.regularStart();
+            }
           } else {
             return _this.router.navigate('login', {
               trigger: true
@@ -183,6 +178,7 @@ module.exports = {
   },
   regularStart: function() {
     var conf;
+    DeviceStatus.initialize();
     app.foreground = true;
     conf = app.replicator.config.attributes;
     log.info("Start v" + (app.replicator.config.appVersion()) + "--sync_contacts:" + conf.syncContacts + ",sync_images:" + conf.syncImages + ",sync_on_wifi:" + conf.syncOnWifi + ",cozy_notifications:" + conf.cozyNotifications);
@@ -209,15 +205,8 @@ module.exports = {
         return app.replicator.stopRealtime();
       };
     })(this), false);
-    document.addEventListener('offline', function() {
-      var DeviceStatus;
-      DeviceStatus = require('./lib/device_status');
-      return DeviceStatus.update();
-    }, false);
     document.addEventListener('online', function() {
-      var DeviceStatus, backup;
-      DeviceStatus = require('./lib/device_status');
-      DeviceStatus.update();
+      var backup;
       backup = function() {
         app.replicator.backup({}, function(err) {
           if (err) {
@@ -579,27 +568,21 @@ module.exports = basic = function(auth) {
 });
 
 require.register("lib/device_status", function(exports, require, module) {
-var battery, callbackWaiting, callbacks, initialized, log, readyForSync, readyForSyncMsg, update;
-
-callbacks = [];
-
-initialized = false;
-
-readyForSync = null;
-
-readyForSyncMsg = "";
-
-battery = null;
+var battery, callbackWaiting, callbacks, checkReadyForSync, log, timeout;
 
 log = require('/lib/persistent_log')({
   prefix: "device status",
   date: true
 });
 
+callbacks = [];
+
+battery = null;
+
+timeout = true;
+
 callbackWaiting = function(err, ready, msg) {
   var callback, _i, _len;
-  readyForSync = ready;
-  readyForSyncMsg = msg;
   for (_i = 0, _len = callbacks.length; _i < _len; _i++) {
     callback = callbacks[_i];
     callback(err, ready, msg);
@@ -607,8 +590,31 @@ callbackWaiting = function(err, ready, msg) {
   return callbacks = [];
 };
 
-module.exports.update = update = function() {
+module.exports.initialize = function() {
+  timeout = true;
+  log.info("initialize device status.");
+  return window.addEventListener('batterystatus', (function(_this) {
+    return function(newStatus) {
+      timeout = false;
+      battery = newStatus;
+      return checkReadyForSync();
+    };
+  })(this));
+};
+
+module.exports.checkReadyForSync = checkReadyForSync = function(callback) {
+  if (callback != null) {
+    callbacks.push(callback);
+  }
   if (battery == null) {
+    setTimeout((function(_this) {
+      return function() {
+        if (timeout) {
+          timeout = false;
+          return callbackWaiting(new Error("No battery informations"));
+        }
+      };
+    })(this), 4 * 1000);
     return;
   }
   if (!(battery.level > 20 || battery.isPlugged)) {
@@ -621,56 +627,6 @@ module.exports.update = update = function() {
   }
   log.info("ready to sync.");
   return callbackWaiting(null, true);
-};
-
-module.exports.checkReadyForSync = function(force, callback) {
-  var timeout;
-  if (arguments.length === 1) {
-    callback = force;
-    force = false;
-  }
-  if (force) {
-    update();
-  }
-  if (readyForSync != null) {
-    callback(null, readyForSync, readyForSyncMsg);
-  } else if (window.isBrowserDebugging) {
-    callback(null, true);
-  } else {
-    callbacks.push(callback);
-  }
-  if (!initialized) {
-    timeout = true;
-    setTimeout((function(_this) {
-      return function() {
-        if (timeout) {
-          timeout = false;
-          initialized = false;
-          return callback(null, true);
-        }
-      };
-    })(this), 4 * 1000);
-    window.addEventListener('batterystatus', (function(_this) {
-      return function(newStatus) {
-        if (timeout) {
-          timeout = false;
-          battery = newStatus;
-          return update();
-        }
-      };
-    })(this), false);
-    app.replicator.config.on('change:syncOnWifi', update);
-    return initialized = true;
-  }
-};
-
-module.exports.getStatus = function() {
-  return {
-    initialized: initialized,
-    readyForSync: readyForSync,
-    readyForSyncMsg: readyForSyncMsg,
-    battery: battery
-  };
 };
 
 });
@@ -2860,11 +2816,18 @@ module.exports = Replicator = (function(_super) {
     if (file._deleted) {
       return this.removeLocal(file, callback);
     } else if (entry.name !== this.fileToEntryName(file)) {
-      if (DeviceStatus.getStatus().readyForSync) {
-        return this.getBinary(file, noop, callback);
-      } else {
-        return callback();
-      }
+      return DeviceStatus.checkReadyForSync((function(_this) {
+        return function(err, ready, msg) {
+          if (err) {
+            return callback(err);
+          }
+          if (ready) {
+            return _this.getBinary(file, noop, callback);
+          } else {
+            return callback(new Error(msg));
+          }
+        };
+      })(this));
     } else {
       return fs.getChildren(entry, (function(_this) {
         return function(err, children) {
@@ -2952,6 +2915,9 @@ module.exports = Replicator = (function(_super) {
     if (this.get('inSync')) {
       return callback(null);
     }
+    if (!this.config.has('checkpointed')) {
+      return callback(new Error("Database not initialized before sync."));
+    }
     log.info("start a sync");
     this.set('inSync', true);
     return this._sync(options, (function(_this) {
@@ -2967,7 +2933,7 @@ module.exports = Replicator = (function(_super) {
     total_count = 0;
     this.stopRealtime();
     changedDocs = [];
-    checkpoint = options.checkpoint || this.config.get('checkpointed');
+    checkpoint = this.config.get('checkpointed');
     replication = this.db.replicate.from(this.config.remote, {
       batch_size: 20,
       batches_limit: 5,
@@ -3024,6 +2990,24 @@ module.exports = Replicator = (function(_super) {
     if (this.liveReplication || !app.foreground) {
       return;
     }
+    log.info("checkpoint: " + (this.config.get('checkpointed')));
+    if (!this.config.has('checkpointed')) {
+      log.error(new Error("Database not initialized before realtime"));
+      if (confirm(t('Database not initialized. Do it now ?'))) {
+        app.router.navigate('first-sync', {
+          trigger: true
+        });
+        this.resetSynchro((function(_this) {
+          return function(err) {
+            if (err) {
+              log.error(err);
+              return alert(err.message);
+            }
+          };
+        })(this));
+      }
+      return;
+    }
     log.info('REALTIME START');
     this.liveReplication = this.db.replicate.from(this.config.remote, {
       batch_size: 20,
@@ -3054,7 +3038,7 @@ module.exports = Replicator = (function(_super) {
         realtimeBackupCoef = 1;
         _this.set('inSync', false);
         app.router.forceRefresh();
-        return log.info("UPTODATE relatime", e);
+        return log.info("UPTODATE realtime", e);
       };
     })(this));
     this.liveReplication.once('complete', (function(_this) {
@@ -3139,7 +3123,7 @@ log = require('/lib/persistent_log')({
 
 module.exports = {
   backup: function(options, callback) {
-    var e;
+    var e, err;
     if (callback == null) {
       callback = function() {};
     }
@@ -3149,6 +3133,28 @@ module.exports = {
     options = options || {
       force: false
     };
+    if (!this.config.has('checkpointed')) {
+      err = new Error("Database not initialized before realtime");
+      if (options.background) {
+        callback(err);
+      } else {
+        log.warn(err);
+        if (confirm(t('Database not initialized. Do it now ?'))) {
+          app.router.navigate('first-sync', {
+            trigger: true
+          });
+          this.resetSynchro((function(_this) {
+            return function(err) {
+              if (err) {
+                log.error(err);
+                return alert(err.message);
+              }
+            };
+          })(this));
+        }
+      }
+      return;
+    }
     try {
       this.set('inBackup', true);
       this.set('backup_step', null);
@@ -3174,11 +3180,11 @@ module.exports = {
       })(this));
     } catch (_error) {
       e = _error;
-      return log.error(e, e.stack);
+      return log.error("Error in backup: ", e);
     }
   },
   _backup: function(force, callback) {
-    return DeviceStatus.checkReadyForSync(true, (function(_this) {
+    return DeviceStatus.checkReadyForSync((function(_this) {
       return function(err, ready, msg) {
         var errors;
         log.info("SYNC STATUS", err, ready, msg);
@@ -3200,9 +3206,13 @@ module.exports = {
               return cb();
             });
           }, function(cb) {
-            var status;
-            status = DeviceStatus.getStatus();
-            if (status.readyForSync) {
+            return DeviceStatus.checkReadyForSync(function(err, ready, msg) {
+              if (!(ready || err)) {
+                err = new Error(msg);
+              }
+              if (err) {
+                return cb(err);
+              }
               return _this.syncCache(function(err) {
                 if (err) {
                   log.error("in syncCache", err);
@@ -3210,13 +3220,15 @@ module.exports = {
                 }
                 return cb();
               });
-            } else {
-              return cb(status.readyForSyncMsg);
-            }
+            });
           }, function(cb) {
-            var status;
-            status = DeviceStatus.getStatus();
-            if (status.readyForSync) {
+            return DeviceStatus.checkReadyForSync(function(err, ready, msg) {
+              if (!(ready || err)) {
+                err = new Error(msg);
+              }
+              if (err) {
+                resultsrn(cb(err));
+              }
               return _this.syncContacts(function(err) {
                 if (err) {
                   log.error("in syncContacts", err);
@@ -3224,9 +3236,7 @@ module.exports = {
                 }
                 return cb();
               });
-            } else {
-              return cb(status.readyForSyncMsg);
-            }
+            });
           }
         ], function(err) {
           if (err) {
@@ -4327,13 +4337,15 @@ module.exports = Router = (function(_super) {
 });
 
 require.register("service/service", function(exports, require, module) {
-var Notifications, Replicator, Service, log;
+var DeviceStatus, Notifications, Replicator, Service, log;
 
 require('/lib/utils');
 
 Replicator = require('../replicator/main');
 
 Notifications = require('../views/notifications');
+
+DeviceStatus = require('../lib/device_status');
 
 log = require('/lib/persistent_log')({
   prefix: "application",
@@ -4370,16 +4382,17 @@ module.exports = Service = {
         window.t = _this.polyglot.t.bind(_this.polyglot);
         _this.replicator = new Replicator();
         return _this.replicator.init(function(err, config) {
-          var DeviceStatus, delayedQuit;
+          var delayedQuit;
           if (err) {
             log.error(err);
             return window.service.workDone();
           }
           if (config.remote) {
-            DeviceStatus = require('../lib/device_status');
-            document.addEventListener('offline', function() {
-              return DeviceStatus.update();
-            }, false);
+            if (!_this.replicator.config.has('checkpointed')) {
+              log.error(new Error("Database not initialized"));
+              return window.service.workDone();
+            }
+            DeviceStatus.initialize();
             if (config.get('cozyNotifications')) {
               _this.notificationManager = new Notifications();
             }
@@ -4395,6 +4408,7 @@ module.exports = Service = {
               background: true
             }, function(err) {
               if (err) {
+                log.error("Error launching backup: ", err);
                 return delayedQuit();
               } else {
                 return app.replicator.sync({
@@ -5014,6 +5028,7 @@ module.exports = ConfigView = (function(_super) {
 
   ConfigView.prototype.saveChanges = function() {
     var checkboxes;
+    log.info("Save changes");
     checkboxes = this.$('#contactSyncCheck, #imageSyncCheck,' + '#wifiSyncCheck, #cozyNotificationsCheck' + '#configDone');
     checkboxes.prop('disabled', true);
     return app.replicator.config.save({

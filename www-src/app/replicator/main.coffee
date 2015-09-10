@@ -367,11 +367,14 @@ module.exports = class Replicator extends Backbone.Model
         # check binary revs
         else if entry.name isnt @fileToEntryName(file)
             # Don't update the binary if "no wifi"
-            if DeviceStatus.getStatus().readyForSync
-                # Download the new version.
-                @getBinary file, noop, callback
-            else
-                callback()
+            DeviceStatus.checkReadyForSync (err, ready, msg) =>
+                return callback err if err
+
+                if ready
+                    # Download the new version.
+                    @getBinary file, noop, callback
+                else
+                    callback new Error msg
 
         else # check filename
             fs.getChildren entry, (err, children) =>
@@ -447,6 +450,13 @@ module.exports = class Replicator extends Backbone.Model
     # wrapper around _sync to maintain the state of inSync
     sync: (options, callback) ->
         return callback null if @get 'inSync'
+
+
+        unless @config.has('checkpointed')
+            return callback new Error "Database not initialized before sync."
+
+
+
         log.info "start a sync"
         @set 'inSync', true
         @_sync options, (err) =>
@@ -463,7 +473,7 @@ module.exports = class Replicator extends Backbone.Model
         total_count = 0
         @stopRealtime()
         changedDocs = []
-        checkpoint = options.checkpoint or @config.get 'checkpointed'
+        checkpoint = @config.get 'checkpointed'
 
         replication = @db.replicate.from @config.remote,
             batch_size: 20
@@ -511,6 +521,22 @@ module.exports = class Replicator extends Backbone.Model
         if @liveReplication or not app.foreground
             return
 
+
+        log.info "checkpoint: #{@config.get('checkpointed')}"
+
+        unless @config.has('checkpointed')
+            log.error new Error "Database not initialized before realtime"
+
+            if confirm t 'Database not initialized. Do it now ?'
+                app.router.navigate 'first-sync', trigger: true
+                @resetSynchro (err) =>
+                    if err
+                        log.error err
+                        return alert err.message
+
+            return
+
+
         log.info 'REALTIME START'
 
         @liveReplication = @db.replicate.from @config.remote,
@@ -539,7 +565,7 @@ module.exports = class Replicator extends Backbone.Model
             @set 'inSync', false
             app.router.forceRefresh()
             # @TODO : save last_seq ?
-            log.info "UPTODATE relatime", e
+            log.info "UPTODATE realtime", e
 
         @liveReplication.once 'complete', (e) =>
             log.info "REALTIME CANCELLED"

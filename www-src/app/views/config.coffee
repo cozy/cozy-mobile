@@ -95,6 +95,7 @@ module.exports = class ConfigView extends BaseView
     # save config changes in local pouchdb
     # prevent simultaneous changes by disabling checkboxes
     saveChanges: ->
+        log.info "Save changes"
         checkboxes = @$ '#contactSyncCheck, #imageSyncCheck,' +
                         '#wifiSyncCheck, #cozyNotificationsCheck' +
                         '#configDone'
