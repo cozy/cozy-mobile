@@ -53,6 +53,7 @@ module.exports = class Layout extends BaseView
 
         @backButton = @container.find '#btn-back'
         @menuButton = @container.find '#btn-menu'
+        @iconLogo = @container.find '#icon-logo'
         @spinner = @container.find '#headerSpinner'
         @spinner.hide()
         @title = @container.find '#title'
@@ -97,6 +98,7 @@ module.exports = class Layout extends BaseView
     setBreadcrumbs: (path) ->
         @$('#breadcrumbs').remove()
         @title.hide()
+        @iconLogo.hide()
         breadcrumbsView = new BreadcrumbsView path: path
         @title.after breadcrumbsView.render().$el
         breadcrumbsView.scrollLeft()
