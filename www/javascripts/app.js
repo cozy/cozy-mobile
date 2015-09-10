@@ -153,6 +153,7 @@ module.exports = {
           }
           $('body').empty().append(_this.layout.render().$el);
           Backbone.history.start();
+          DeviceStatus.initialize();
           if (config.remote) {
             if (!_this.replicator.config.has('checkpointed')) {
               log.info('Launch first replication again.');
@@ -178,7 +179,6 @@ module.exports = {
   },
   regularStart: function() {
     var conf;
-    DeviceStatus.initialize();
     app.foreground = true;
     conf = app.replicator.config.attributes;
     log.info("Start v" + (app.replicator.config.appVersion()) + "--sync_contacts:" + conf.syncContacts + ",sync_images:" + conf.syncImages + ",sync_on_wifi:" + conf.syncOnWifi + ",cozy_notifications:" + conf.cozyNotifications);
@@ -1462,11 +1462,6 @@ module.exports = {
   "confirm message": "Are you sure?",
   "confirm exit message": "Do you want to Exit?",
   "replication complete": "Replication complete",
-  "no activity found": "No application on phone for this kind of file.",
-  "not enough space": "Not enough disk space, remove some files from cache.",
-  "no battery": "Not enough battery, Backup cancelled.",
-  "no wifi": "No Wifi, Backup cancelled.",
-  "no connection": "No connection, Backup cancelled.",
   "next": "Next",
   "back": "Back",
   "connection failure": "Connection failure",
@@ -1506,7 +1501,13 @@ module.exports = {
   "Not Found": "Error while initializing. Did you install the Files application in your Cozy ?",
   "connexion error": "We failed to connect to your cozy. Please check that your device is connected to the internet, the address of your cozy is spelled correctly and your cozy is running. If you are an advanced user with a self hosted cozy, refer to the <a href='http://cozy.io/en/mobile/files.html#note-about-self-signed-certificates' target='_system'>doc to handle self-signed certificates</a>.",
   "no images in DCIM": "Backup images : no image found in DCIM dir.",
-  "Document update conflict": "Update conflict in database, you could try to restart the app to fix it."
+  "Document update conflict": "Update conflict in database, you could try to restart the app to fix it.",
+  "Database not initialized. Confirm initialize": "Initialization didn't finish correctly. Retry ?",
+  "no activity found": "No application on phone for this kind of file.",
+  "not enough space": "Not enough disk space, remove some files from cache.",
+  "no battery": "Not enough battery, Sync cancelled.",
+  "no wifi": "No Wifi, Sync cancelled.",
+  "no connection": "No connection, Sync cancelled."
 };
 
 });
@@ -1653,11 +1654,6 @@ module.exports = {
   "confirm message": "Êtes-vous sûr(e) ?",
   "confirm exit message": "Voulez-vous quitter l'application ?",
   "replication complete": "Reproduction terminée.",
-  "no activity found": "Aucune application n'a été trouvée sur ce téléphone pour ce type de fichier.",
-  "not enough space": "Il n'y a pas suffisament d'espace disque sur votre mobile.",
-  "no battery": "La sauvegarde n'aura pas lieu car vous n'avez pas assez de batterie.",
-  "no wifi": "La sauvegarde n'aura pas lieu car vous n'êtes pas en wifi.",
-  "no connection": "La sauvegarde n'aura pas lieu car vous n'avez pas de connexion.",
   "next": "Suivant",
   "back": "Retour",
   "connection failure": "Échec de la connexion",
@@ -1697,7 +1693,13 @@ module.exports = {
   "Not Found": "Erreur à l'initialisation. Avez-vous installé l'application Files sur votre Cozy ?",
   "connexion error": "La connection à votre cozy a échoué. Vérifiez que votre terminal est connecté à internet, que l'adresse de votre cozy est bien écrite et que votre cozy fonctionne. Pour les utilisateurs avancés avec un cozy auto-hébergé, consulter la <a href='http://cozy.io/fr/mobile/files.html#a-propos-des-certificats-auto-sign-s' target='_system'>documentation à propos des certificats autosignés</a>",
   "no images in DCIM": "Sauvegarde des images : aucune image trouvée dans le répertoire DCIM.",
-  "Document update conflict": "Conflit lors d'une opération en base de données. Essayez de redémarrer l'application pour le résoudre."
+  "Document update conflict": "Conflit lors d'une opération en base de données. Essayez de redémarrer l'application pour le résoudre.",
+  "Database not initialized. Confirm initialize": "L'initialisation ne s'est pas déroulé conrectement. Réessayer ?",
+  "no activity found": "Aucune application n'a été trouvée sur ce téléphone pour ce type de fichier.",
+  "not enough space": "Il n'y a pas suffisament d'espace disque sur votre mobile.",
+  "no battery": "La synchronisation n'aura pas lieu car vous n'avez pas assez de batterie.",
+  "no wifi": "La synchronisation n'aura pas lieu car vous n'êtes pas en wifi.",
+  "no connection": "La synchronisation n'aura pas lieu car vous n'avez pas de connexion."
 };
 
 });
@@ -2437,16 +2439,6 @@ module.exports = Replicator = (function(_super) {
     })(this));
   };
 
-  Replicator.prototype.resetSynchro = function(callback) {
-    this.stopRealtime();
-    return this.initialReplication((function(_this) {
-      return function(err) {
-        _this.startRealtime();
-        return callback(err);
-      };
-    })(this));
-  };
-
   Replicator.prototype.checkCredentials = function(config, callback) {
     return request.post({
       uri: "" + (this.config.getScheme()) + "://" + config.cozyURL + "/login",
@@ -2505,49 +2497,58 @@ module.exports = Replicator = (function(_super) {
   };
 
   Replicator.prototype.initialReplication = function(callback) {
-    var options;
-    log.info("enter initialReplication");
-    this.set('initialReplicationStep', 0);
-    options = this.config.makeUrl('/_changes?descending=true&limit=1');
-    return request.get(options, (function(_this) {
-      return function(err, res, body) {
-        var last_seq;
+    return DeviceStatus.checkReadyForSync((function(_this) {
+      return function(err, ready, msg) {
+        var options;
         if (err) {
           return callback(err);
         }
-        last_seq = body.last_seq;
-        return async.series([
-          function(cb) {
-            return _this.copyView('file', cb);
-          }, function(cb) {
-            return _this.set('initialReplicationStep', 1) && cb(null);
-          }, function(cb) {
-            return _this.copyView('folder', cb);
-          }, function(cb) {
-            return _this.set('initialReplicationStep', 2) && cb(null);
-          }, function(cb) {
-            return _this.copyView('notification', cb);
-          }, function(cb) {
-            return _this.set('initialReplicationStep', 3) && cb(null);
-          }, function(cb) {
-            return _this.initContactsInPhone(last_seq, cb);
-          }, function(cb) {
-            return _this.set('initialReplicationStep', 4) && cb(null);
-          }, function(cb) {
-            return _this.config.save({
-              checkpointed: last_seq
-            }, cb);
-          }, function(cb) {
-            return _this.db.query('FilesAndFolder', {}, cb);
-          }, function(cb) {
-            return _this.db.query('NotificationsTemporary', {}, cb);
+        if (!ready) {
+          return callback(new Error(msg));
+        }
+        log.info("enter initialReplication");
+        _this.stopRealtime();
+        _this.set('initialReplicationStep', 0);
+        options = _this.config.makeUrl('/_changes?descending=true&limit=1');
+        return request.get(options, function(err, res, body) {
+          var last_seq;
+          if (err) {
+            return callback(err);
           }
-        ], function(err) {
-          log.info("end of inital replication");
-          _this.set('initialReplicationStep', 5);
-          callback(err);
-          return _this.updateIndex(function() {
-            return log.info("Index built");
+          last_seq = body.last_seq;
+          return async.series([
+            function(cb) {
+              return _this.copyView('file', cb);
+            }, function(cb) {
+              return _this.set('initialReplicationStep', 1) && cb(null);
+            }, function(cb) {
+              return _this.copyView('folder', cb);
+            }, function(cb) {
+              return _this.set('initialReplicationStep', 2) && cb(null);
+            }, function(cb) {
+              return _this.copyView('notification', cb);
+            }, function(cb) {
+              return _this.set('initialReplicationStep', 3) && cb(null);
+            }, function(cb) {
+              return _this.initContactsInPhone(last_seq, cb);
+            }, function(cb) {
+              return _this.set('initialReplicationStep', 4) && cb(null);
+            }, function(cb) {
+              return _this.config.save({
+                checkpointed: last_seq
+              }, cb);
+            }, function(cb) {
+              return _this.db.query('FilesAndFolder', {}, cb);
+            }, function(cb) {
+              return _this.db.query('NotificationsTemporary', {}, cb);
+            }
+          ], function(err) {
+            log.info("end of inital replication");
+            _this.set('initialReplicationStep', 5);
+            callback(err);
+            return _this.updateIndex(function() {
+              return log.info("Index built");
+            });
           });
         });
       };
@@ -2916,7 +2917,7 @@ module.exports = Replicator = (function(_super) {
       return callback(null);
     }
     if (!this.config.has('checkpointed')) {
-      return callback(new Error("Database not initialized before sync."));
+      return callback(new Error("database not initialized"));
     }
     log.info("start a sync");
     this.set('inSync', true);
@@ -2990,21 +2991,12 @@ module.exports = Replicator = (function(_super) {
     if (this.liveReplication || !app.foreground) {
       return;
     }
-    log.info("checkpoint: " + (this.config.get('checkpointed')));
     if (!this.config.has('checkpointed')) {
-      log.error(new Error("Database not initialized before realtime"));
+      log.error(new Error("database not initialized"));
       if (confirm(t('Database not initialized. Do it now ?'))) {
         app.router.navigate('first-sync', {
           trigger: true
         });
-        this.resetSynchro((function(_this) {
-          return function(err) {
-            if (err) {
-              log.error(err);
-              return alert(err.message);
-            }
-          };
-        })(this));
       }
       return;
     }
@@ -3143,14 +3135,6 @@ module.exports = {
           app.router.navigate('first-sync', {
             trigger: true
           });
-          this.resetSynchro((function(_this) {
-            return function(err) {
-              if (err) {
-                log.error(err);
-                return alert(err.message);
-              }
-            };
-          })(this));
         }
       }
       return;
@@ -4972,13 +4956,6 @@ module.exports = ConfigView = (function(_super) {
   };
 
   ConfigView.prototype.configDone = function() {
-    log.info('starting first replication');
-    app.replicator.initialReplication(function(err) {
-      if (err) {
-        log.error(err);
-        return alert(t(err.message));
-      }
-    });
     return app.router.navigate('first-sync', {
       trigger: true
     });
@@ -5003,17 +4980,9 @@ module.exports = ConfigView = (function(_super) {
 
   ConfigView.prototype.synchroBtn = function() {
     if (confirm(t('confirm message'))) {
-      app.router.navigate('first-sync', {
+      return app.router.navigate('first-sync', {
         trigger: true
       });
-      return app.replicator.resetSynchro((function(_this) {
-        return function(err) {
-          if (err) {
-            log.error(err);
-            return alert(err.message);
-          }
-        };
-      })(this));
     }
   };
 
@@ -5209,14 +5178,28 @@ module.exports = FirstSyncView = (function(_super) {
   };
 
   FirstSyncView.prototype.initialize = function() {
-    return this.listenTo(app.replicator, 'change:initialReplicationStep', this.onChange);
+    this.listenTo(app.replicator, 'change:initialReplicationStep', this.onChange);
+    log.info('starting first replication');
+    return app.replicator.initialReplication(function(err) {
+      if (err) {
+        log.error(err);
+        alert(t(err.message));
+        return setImmediate(function() {
+          return app.router.navigate('config', {
+            trigger: true
+          });
+        });
+      }
+    });
   };
 
   FirstSyncView.prototype.onChange = function(replicator) {
     var step;
     step = replicator.get('initialReplicationStep');
     this.$('#finishSync .progress').text(t("message step " + step));
-    return (this.render() === step && step === LAST_STEP);
+    if (step === LAST_STEP) {
+      return this.render();
+    }
   };
 
   FirstSyncView.prototype.end = function() {

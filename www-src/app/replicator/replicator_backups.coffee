@@ -31,10 +31,10 @@ module.exports =
 
                 if confirm t 'Database not initialized. Do it now ?'
                     app.router.navigate 'first-sync', trigger: true
-                    @resetSynchro (err) =>
-                        if err
-                            log.error err
-                            return alert err.message
+                    # @resetSynchro (err) =>
+                    #     if err
+                    #         log.error err
+                    #         return alert err.message
 
             return
 

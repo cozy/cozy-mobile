@@ -43,11 +43,11 @@ module.exports = class ConfigView extends BaseView
 
     # only happens after the first config (post install)
     configDone: ->
-        log.info 'starting first replication'
-        app.replicator.initialReplication (err) ->
-            if err
-                log.error err
-                alert t err.message
+        # log.info 'starting first replication'
+        # app.replicator.initialReplication (err) ->
+        #     if err
+        #         log.error err
+        #         alert t err.message
 
         app.router.navigate 'first-sync', trigger: true
 
@@ -70,10 +70,10 @@ module.exports = class ConfigView extends BaseView
         if confirm t 'confirm message'
             #@TODO delete device on remote ?
             app.router.navigate 'first-sync', trigger: true
-            app.replicator.resetSynchro (err) =>
-                if err
-                    log.error err
-                    return alert err.message
+            # app.replicator.resetSynchro (err) =>
+            #     if err
+            #         log.error err
+            #         return alert err.message
 
 
     sendlogBtn: ->

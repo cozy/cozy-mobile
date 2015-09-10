@@ -29,11 +29,18 @@ module.exports = class FirstSyncView extends BaseView
 
     initialize: ->
         @listenTo app.replicator, 'change:initialReplicationStep', @onChange
+        log.info 'starting first replication'
+        app.replicator.initialReplication (err) ->
+            if err
+                log.error err
+                alert t err.message
+                setImmediate ->
+                    app.router.navigate 'config', trigger: true
 
     onChange: (replicator) ->
         step = replicator.get 'initialReplicationStep'
         @$('#finishSync .progress').text t "message step #{step}"
-        @render() is step is LAST_STEP
+        @render() if step is LAST_STEP
 
     end: ->
         step = parseInt(app.replicator.get('initialReplicationStep'))

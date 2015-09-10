@@ -47,21 +47,7 @@ module.exports =
     "confirm message"     : "Êtes-vous sûr(e) ?"
     "confirm exit message": "Voulez-vous quitter l'application ?"
     "replication complete" : "Reproduction terminée."
-    "no activity found"   : """
-        Aucune application n'a été trouvée sur ce téléphone pour ce type de fichier.
-    """
-    "not enough space"    : """
-        Il n'y a pas suffisament d'espace disque sur votre mobile.
-    """
-    "no battery"  : """
-        La sauvegarde n'aura pas lieu car vous n'avez pas assez de batterie.
-    """
-    "no wifi"  : """
-        La sauvegarde n'aura pas lieu car vous n'êtes pas en wifi.
-    """
-    "no connection"  : """
-        La sauvegarde n'aura pas lieu car vous n'avez pas de connexion.
-    """
+
 
   # fist connection wizard
     # -- generic
@@ -119,3 +105,19 @@ module.exports =
     "connexion error": "La connection à votre cozy a échoué. Vérifiez que votre terminal est connecté à internet, que l'adresse de votre cozy est bien écrite et que votre cozy fonctionne. Pour les utilisateurs avancés avec un cozy auto-hébergé, consulter la <a href='http://cozy.io/fr/mobile/files.html#a-propos-des-certificats-auto-sign-s' target='_system'>documentation à propos des certificats autosignés</a>"
     "no images in DCIM": "Sauvegarde des images : aucune image trouvée dans le répertoire DCIM."
     "Document update conflict": "Conflit lors d'une opération en base de données. Essayez de redémarrer l'application pour le résoudre."
+    "Database not initialized. Confirm initialize": "L'initialisation ne s'est pas déroulé conrectement. Réessayer ?"
+    "no activity found"   : """
+        Aucune application n'a été trouvée sur ce téléphone pour ce type de fichier.
+    """
+    "not enough space"    : """
+        Il n'y a pas suffisament d'espace disque sur votre mobile.
+    """
+    "no battery"  : """
+        La synchronisation n'aura pas lieu car vous n'avez pas assez de batterie.
+    """
+    "no wifi"  : """
+        La synchronisation n'aura pas lieu car vous n'êtes pas en wifi.
+    """
+    "no connection"  : """
+        La synchronisation n'aura pas lieu car vous n'avez pas de connexion.
+    """

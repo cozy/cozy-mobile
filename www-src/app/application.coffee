@@ -52,6 +52,8 @@ module.exports =
                 $('body').empty().append @layout.render().$el
                 Backbone.history.start()
 
+                DeviceStatus.initialize()
+
                 if config.remote
                     unless @replicator.config.has('checkpointed')
                         log.info 'Launch first replication again.'
@@ -69,7 +71,6 @@ module.exports =
                     @router.navigate 'login', trigger: true
 
     regularStart: ->
-        DeviceStatus.initialize()
         app.foreground = true
         conf = app.replicator.config.attributes
         # Display config to help remote debuging.
