@@ -1,22 +1,14 @@
-.bar.bar-header.bar-dark
-    h1.title
-        a#close-menu.button()
-            = 'Menu'
-
-.content.has-header
+.content
     div.item.item-input-inset
         label.item-input-wrapper
             input#search-input(type="text", placeholder=t("search"))
-        a#btn-search.button.button-icon.icon.ion-search
+        a#btn-search.btn-search
 
-    a.item.item-icon-left(href="#folder/")
-        i.icon.ion-home
-        = t('home')
+    a.item.icon-folder(href="#folder/")
+        = t('files')
 
-    a.item.item-icon-left(href="#config")
-        i.icon.ion-wrench
+    a.item.icon-cog(href="#config")
         = t('config')
 
-    a#syncButton.item.item-icon-left
-        img.backup(src="img/sync.png")
+    a#syncButton.item.icon-sync
         = t('sync')

@@ -13,6 +13,7 @@ module.exports =
     "wifi sync label"     : "Backup on Wifi only"
     "cozy notifications sync label": "Sync Cozy notifications"
     "home"                : "Home"
+    "files"               : "Files"
     "about"               : "About"
     "last backup"         : "Last was :"
     "reset title"         : "Reset"
@@ -79,7 +80,7 @@ module.exports =
 
     # -- device name picker
     "setup 2/3"                 : "Setup 2/3"
-    "device name explanation"   : "Choose a display name for this device so you can easily manage it from your Cozy."
+    "device name explanation"   : "Choose a display name for this device so you can easily manage it."
     "device name placeholder"   : "my-phone"
     "registering..."            : "Registering..."
 

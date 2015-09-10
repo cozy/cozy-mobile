@@ -1,11 +1,12 @@
-// Inputs
-// ----------------------------------------------------------------------------
+
+// Text input
+// --------------------------------------------------------
 
 .card input
     padding 6px 0
     min-height 58px
-    border-bottom 1px solid #dedede
-    font-size 16px
+    border-bottom 1px solid grey-03
+    font-size 1rem
 
     &:focus
         border-color blue
@@ -19,3 +20,54 @@
 #deviceNamePicker .item-stacked-label input
     // overrides ionic default
     padding-left 0
+
+
+
+// search input
+// --------------------------------------------------------
+.menu .item-input-inset .item-input-wrapper
+    input
+        padding 0
+        min-height 48px
+        border-bottom 1px solid grey-08
+        font-size 1rem
+        color grey-01
+
+        &:focus
+            border-color blue
+
+        &::-webkit-input-placeholder
+            color grey-05
+
+
+
+// Checkboxes
+// --------------------------------------------------------
+.checkbox input
+    // overrides ionic default
+    width 24px
+    height 24px
+
+    &:before
+        box-shadow    inset 0 0 0 2px grey-03
+        transition    all 350ms cubic-bezier(0, 0.89, 0.44, 1)
+        // overrides ionic default
+        border 0
+        border-radius 2px
+
+    &:checked:before
+        box-shadow inset 0 0 0 30px blue
+
+    &:after
+        opacity    0
+        transition opacity .2s
+        // overrides ionic default
+        top 24%
+        left 20%
+        width 17px
+        height 8px
+        border-width 2px
+
+
+    &:checked:after
+        opacity   1

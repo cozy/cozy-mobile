@@ -4,11 +4,13 @@
 @import 'base/_colors'
 @import 'base/_background'
 @import 'base/_foreground'
+@import 'base/_icons'
 @import 'base/_buttons'
 @import 'base/_form'
 
 @import 'components/_list-item'
 @import 'components/_toolbar'
+@import 'components/_menu'
 @import 'components/_errors'
 
 // ----------------------------------------------------------------------------
@@ -97,22 +99,19 @@ img.backup
         height 100%
         background-color rgba(blue,.5)
 
-#splash-screen
-    width: 100%
+.pane
+    box-shadow 0 0 30px grey-08, -1px 0 6px grey-08
 
+.item
+    p
+        // overrides ionic default
+        color grey-06
 
-
-#shadow
-    position absolute
-    width 10px
-    height 30px
-    right 0px
-    top 0px
-    background linear-gradient(left, rgba(255,255,255,0), white);
-
-#headerSpinner
-    position absolute
-    right 0px
-    padding 4px
-    background-color white
-    height 32px
+    &.item-divider
+        text-transform uppercase
+        font-size (13/16)em
+        // overrides ionic default
+        padding (8/16)em 1rem
+        background-color grey-01
+        border-color grey-02
+        color grey-06

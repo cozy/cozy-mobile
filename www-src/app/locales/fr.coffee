@@ -13,6 +13,7 @@ module.exports =
     "wifi sync label"     : "Sauvegarde uniquement en Wifi"
     "cozy notifications sync label": "Synchroniser les notifications Cozy"
     "home"                : "Accueil"
+    "files"               : "Fichiers"
     "about"               : "À propos"
     "last backup"         : "Derniere sauvegarde :"
     "reset title"         : "Remise à zéro"
@@ -80,7 +81,7 @@ module.exports =
     # -- device name picker
     "setup 2/3"                 : "Configuration 2/3"
     "device name explanation"   : """
-        Choisissez un nom d'usage pour ce périphérique pour pouvoir le gérer facilement depuis votre Cozy.
+        Choisissez un nom pour ce périphérique afin de le gérer facilement.
     """
     "device name placeholder"   : "mon-telephone"
     "registering..."            : "Enregistrement…"

@@ -1,0 +1,44 @@
+// Menu
+// ----------------------------------------------------------------------------
+
+.menu
+    background-color grey-07
+
+
+    .item
+        // overrides ionic default
+        display flex
+        align-items center
+        padding (12/16)em 1em
+        background-color transparent
+        border-color transparent
+        color grey-01
+
+        &.icon-folder::before
+            margin-right (10/16)em
+            @extend $icon-folder
+
+        &.icon-cog::before
+            margin-right (10/16)em
+            @extend $icon-cog
+
+        &.icon-sync::before
+            margin-right (10/16)em
+            @extend $icon-sync
+
+    .item-input-inset
+        // overrides ionic default
+        padding 0
+        margin-bottom 1em
+
+        .item-input-wrapper
+            // overrides ionic default
+            padding 0 1em
+            background-color transparent
+
+    a
+    button
+        &.item:after
+            // hide right arrow on the side menu
+            display none
+
