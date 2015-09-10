@@ -14,16 +14,17 @@
         border-color transparent
         color grey-01
 
-        &.icon-folder::before
+        &::before
+            opacity .8
             margin-right (10/16)em
+
+        &.icon-folder::before
             @extend $icon-folder
 
         &.icon-cog::before
-            margin-right (10/16)em
             @extend $icon-cog
 
         &.icon-sync::before
-            margin-right (10/16)em
             @extend $icon-sync
 
     .item-input-inset
