@@ -21,18 +21,18 @@ a
 
 .scroll .list
     position absolute
-    top 0px
+    top 0
     width 100%
     transform translate3d(0, 0, 0)
     transition all ease-in-out 250ms
 
-.scroll .list.sliding-next
-    transform translate3d(100%, 0, 0)
-    transition all ease-in-out 250ms
+    &.sliding-next
+        transform translate3d(100%, 0, 0)
+        transition all ease-in-out 250ms
 
-.scroll .list.sliding-prev
-    transform translate3d(-100%, 0, 0)
-    transition all ease-in-out 250ms
+    &.sliding-prev
+        transform translate3d(-100%, 0, 0)
+        transition all ease-in-out 250ms
 
 
 #close-menu
@@ -46,12 +46,12 @@ a
 .cache-indicator
     color grey-03
 
+    img
+        width 25px
+
 .cache-indicator-version
     color blue
 
-.cache-indicator
-    img
-        width 25px
 
 // reset
 .no-shadow
@@ -106,6 +106,7 @@ img.backup
     p
         // overrides ionic default
         color grey-06
+        white-space normal
 
     &.item-divider
         text-transform uppercase
@@ -115,3 +116,19 @@ img.backup
         background-color grey-01
         border-color grey-02
         color grey-06
+
+    .icon-backup
+        flex none
+        width (24/16)em
+        height (24/16)em
+        margin-right (18/16)em
+        @extend $icon-backup
+
+    &.item-icon
+        display flex
+        align-items center
+
+        .text
+            overflow hidden
+            text-overflow ellipsis
+
