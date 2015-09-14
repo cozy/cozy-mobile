@@ -31,10 +31,6 @@ module.exports =
 
                 if confirm t 'Database not initialized. Do it now ?'
                     app.router.navigate 'first-sync', trigger: true
-                    # @resetSynchro (err) =>
-                    #     if err
-                    #         log.error err
-                    #         return alert err.message
 
             return
 
@@ -177,11 +173,13 @@ module.exports =
                     log.info "UPLOADING #{path}"
                     @uploadPicture path, device, (err) =>
                         log.error "ERROR #{path} #{err}" if err
-                        if DeviceStatus.readyForSync
-                            setImmediate cb  # don't freeze UI.
-                        else
-                            # stop uploading if leaves wifi and ...
-                            cb DeviceStatus.readyForSyncMsg
+                        DeviceStatus.checkReadyForSync (err, ready, msg) ->
+                            return cb err if err
+                            if ready
+                                setImmediate cb  # don't freeze UI.
+                            else
+                                # stop uploading if leaves wifi and ...
+                                cb new Error msg
 
                 , callback
 
