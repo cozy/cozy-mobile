@@ -8,6 +8,7 @@ log = require('/lib/persistent_log')
 
 module.exports = fs = {}
 
+
 getFileSystem = (callback) ->
     onSuccess = (fs) -> callback null, fs
     onError = (err) -> callback err
@@ -16,7 +17,8 @@ getFileSystem = (callback) ->
 
 readable = (err) ->
     for name, code of FileError when code is err.code
-        return new Error name.replace('_ERR', '').replace('_', ' ')
+        err.message = 'File error: ' + name.replace('_ERR', '').replace('_', ' ')
+        return err
 
     return new Error JSON.stringify err
 
@@ -60,7 +62,7 @@ module.exports.getDirectory = (parent, name, callback) ->
 
 module.exports.getOrCreateSubFolder = (parent, name, callback) ->
     onSuccess = (entry) -> callback null, entry
-    onError = (err) -> callback err
+    onError = (err) -> callback readable err
     parent.getDirectory name, {create: true}, onSuccess, (err) ->
         return callback err if err.code isnt FileError.PATH_EXISTS_ERR
         parent.getDirectory name, {}, onSuccess, (err) ->
@@ -73,28 +75,28 @@ module.exports.getChildren = (directory, callback) ->
     # assume we are using cordova-file-plugin and call reader only once
     reader = directory.createReader()
     onSuccess = (entries) -> callback null, entries
-    onError = (err) -> callback err
+    onError = (err) -> callback readable err
     reader.readEntries onSuccess, onError
 
 module.exports.rmrf = (directory, callback) ->
-    onError = (err) -> callback err
+    onError = (err) -> callback readable err
     onSuccess = -> callback null
     directory.removeRecursively onSuccess, onError
 
 module.exports.freeSpace = (callback) ->
-    onError = (err) -> callback err
+    onError = (err) -> callback readable err
     onSuccess = -> callback null
     cordova.exec onSuccess, onError, 'File', 'getFreeDiskSpace', []
 
 
 module.exports.entryFromPath = (path, callback) ->
     onSuccess = (entry) -> callback null, entry
-    onError = (err) -> callback err
+    onError = (err) -> callback readable err
     resolveLocalFileSystemURL 'file://' + path, onSuccess, onError
 
 module.exports.fileFromEntry = (entry, callback) ->
     onSuccess = (file) -> callback null, file
-    onError = (err) -> callback err
+    onError = (err) -> callback readable err
     entry.file onSuccess, onError
 
 module.exports.contentFromFile = (file, callback) ->
@@ -110,7 +112,7 @@ module.exports.getFileFromPath = (path, callback) ->
 
 module.exports.metadataFromEntry = (entry, callback) ->
     onSuccess = (file) -> callback null, file
-    onError = (err) -> callback err
+    onError = (err) -> callback readable err
     entry.getMetadata onSuccess, onError
 
 

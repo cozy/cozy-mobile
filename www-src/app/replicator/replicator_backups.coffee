@@ -137,15 +137,23 @@ module.exports =
             if images.length is 0
                 return callback new Error 'no images in DCIM'
 
+            # Don't stop on some errors, but keep them to display them.
+            errors = []
             # step 1 scan all images, find the new ones
             async.eachSeries images, (path, cb) =>
                 #Check if pictures is in dbImages
                 if path in dbImages
                     cb()
+
                 else
                     # Check if pictures is already present (old installation)
+
                     fs.getFileFromPath path, (err, file) =>
-                        return cb err if err
+                        if err
+                            err.message = err.message + ' - ' + path
+                            log.info err
+                            errors.push err # store the error for future display
+                            return cb() # continue
 
                         # We test only on filename, case-insensitive
                         if file.name?.toLowerCase() in dbPictures
@@ -162,7 +170,8 @@ module.exports =
                             setImmediate cb # don't freeze UI
 
 
-            , =>
+            , (err) =>
+                return callback err if err
                 # step 2 upload one by one
                 log.info "SYNC IMAGES : #{images.length} #{toUpload.length}"
                 processed = 0
@@ -172,7 +181,11 @@ module.exports =
                     @set 'backup_step_done', processed++
                     log.info "UPLOADING #{path}"
                     @uploadPicture path, device, (err) =>
-                        log.error "ERROR #{path} #{err}" if err
+                        if err
+                            log.error "ERROR #{path} #{err}"
+                            err.message = err.message + ' - ' + path
+                            errors.push err
+
                         DeviceStatus.checkReadyForSync (err, ready, msg) ->
                             return cb err if err
                             if ready
@@ -181,7 +194,14 @@ module.exports =
                                 # stop uploading if leaves wifi and ...
                                 cb new Error msg
 
-                , callback
+                , (err) ->
+                    return callback err if err
+                    if errors.length > 0
+                        messages = (errors.map (err) -> err.message).join '; '
+                        return callback new Error messages
+
+                    callback()
+
 
     uploadPicture: (path, device, callback) ->
         fs.getFileFromPath path, (err, file) =>

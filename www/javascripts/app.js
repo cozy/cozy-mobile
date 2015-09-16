@@ -2059,9 +2059,11 @@ readable = function(err) {
   var code, name;
   for (name in FileError) {
     code = FileError[name];
-    if (code === err.code) {
-      return new Error(name.replace('_ERR', '').replace('_', ' '));
+    if (!(code === err.code)) {
+      continue;
     }
+    err.message = 'File error: ' + name.replace('_ERR', '').replace('_', ' ');
+    return err;
   }
   return new Error(JSON.stringify(err));
 };
@@ -2146,7 +2148,7 @@ module.exports.getOrCreateSubFolder = function(parent, name, callback) {
     return callback(null, entry);
   };
   onError = function(err) {
-    return callback(err);
+    return callback(readable(err));
   };
   return parent.getDirectory(name, {
     create: true
@@ -2170,7 +2172,7 @@ module.exports.getChildren = function(directory, callback) {
     return callback(null, entries);
   };
   onError = function(err) {
-    return callback(err);
+    return callback(readable(err));
   };
   return reader.readEntries(onSuccess, onError);
 };
@@ -2178,7 +2180,7 @@ module.exports.getChildren = function(directory, callback) {
 module.exports.rmrf = function(directory, callback) {
   var onError, onSuccess;
   onError = function(err) {
-    return callback(err);
+    return callback(readable(err));
   };
   onSuccess = function() {
     return callback(null);
@@ -2189,7 +2191,7 @@ module.exports.rmrf = function(directory, callback) {
 module.exports.freeSpace = function(callback) {
   var onError, onSuccess;
   onError = function(err) {
-    return callback(err);
+    return callback(readable(err));
   };
   onSuccess = function() {
     return callback(null);
@@ -2203,7 +2205,7 @@ module.exports.entryFromPath = function(path, callback) {
     return callback(null, entry);
   };
   onError = function(err) {
-    return callback(err);
+    return callback(readable(err));
   };
   return resolveLocalFileSystemURL('file://' + path, onSuccess, onError);
 };
@@ -2214,7 +2216,7 @@ module.exports.fileFromEntry = function(entry, callback) {
     return callback(null, file);
   };
   onError = function(err) {
-    return callback(err);
+    return callback(readable(err));
   };
   return entry.file(onSuccess, onError);
 };
@@ -2244,7 +2246,7 @@ module.exports.metadataFromEntry = function(entry, callback) {
     return callback(null, file);
   };
   onError = function(err) {
-    return callback(err);
+    return callback(readable(err));
   };
   return entry.getMetadata(onSuccess, onError);
 };
@@ -3257,7 +3259,7 @@ module.exports = {
       })(this)
     ], (function(_this) {
       return function(err, results) {
-        var dbImages, dbPictures, device, images, myDownloadFolder, toUpload, _ref;
+        var dbImages, dbPictures, device, errors, images, myDownloadFolder, toUpload, _ref;
         if (err) {
           return callback(err);
         }
@@ -3277,6 +3279,7 @@ module.exports = {
         if (images.length === 0) {
           return callback(new Error('no images in DCIM'));
         }
+        errors = [];
         return async.eachSeries(images, function(path, cb) {
           if (__indexOf.call(dbImages, path) >= 0) {
             return cb();
@@ -3284,7 +3287,10 @@ module.exports = {
             return fs.getFileFromPath(path, function(err, file) {
               var _ref1, _ref2;
               if (err) {
-                return cb(err);
+                err.message = err.message + ' - ' + path;
+                log.info(err);
+                errors.push(err);
+                return cb();
               }
               if (_ref1 = (_ref2 = file.name) != null ? _ref2.toLowerCase() : void 0, __indexOf.call(dbPictures, _ref1) >= 0) {
                 _this.createPhoto(path);
@@ -3302,8 +3308,11 @@ module.exports = {
               });
             });
           }
-        }, function() {
+        }, function(err) {
           var processed;
+          if (err) {
+            return callback(err);
+          }
           log.info("SYNC IMAGES : " + images.length + " " + toUpload.length);
           processed = 0;
           _this.set('backup_step', 'pictures_sync');
@@ -3314,14 +3323,33 @@ module.exports = {
             return _this.uploadPicture(path, device, function(err) {
               if (err) {
                 log.error("ERROR " + path + " " + err);
+                err.message = err.message + ' - ' + path;
+                errors.push(err);
               }
-              if (DeviceStatus.readyForSync) {
-                return setImmediate(cb);
-              } else {
-                return cb(DeviceStatus.readyForSyncMsg);
-              }
+              return DeviceStatus.checkReadyForSync(function(err, ready, msg) {
+                if (err) {
+                  return cb(err);
+                }
+                if (ready) {
+                  return setImmediate(cb);
+                } else {
+                  return cb(new Error(msg));
+                }
+              });
             });
-          }, callback);
+          }, function(err) {
+            var messages;
+            if (err) {
+              return callback(err);
+            }
+            if (errors.length > 0) {
+              messages = (errors.map(function(err) {
+                return err.message;
+              })).join('; ');
+              return callback(new Error(messages));
+            }
+            return callback();
+          });
         });
       };
     })(this));
