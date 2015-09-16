@@ -603,6 +603,9 @@ module.exports.initialize = function() {
 };
 
 module.exports.checkReadyForSync = checkReadyForSync = function(callback) {
+  if (window.isBrowserDebugging) {
+    return callback(null, true);
+  }
   if (callback != null) {
     callbacks.push(callback);
   }
@@ -3410,6 +3413,7 @@ module.exports = {
       name: cordovaFile.name,
       path: "/" + t('photos'),
       "class": this.fileClassFromMime(cordovaFile.type),
+      mime: cordovaFile.type,
       lastModification: new Date(cordovaFile.lastModified).toISOString(),
       creationDate: new Date(cordovaFile.lastModified).toISOString(),
       size: cordovaFile.size,

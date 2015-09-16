@@ -236,6 +236,7 @@ module.exports =
             name             : cordovaFile.name
             path             : "/" + t('photos')
             class            : @fileClassFromMime cordovaFile.type
+            mime             : cordovaFile.type
             lastModification : new Date(cordovaFile.lastModified).toISOString()
             creationDate     : new Date(cordovaFile.lastModified).toISOString()
             size             : cordovaFile.size
@@ -259,6 +260,7 @@ module.exports =
             when 'video' then "video"
             when 'text', 'application' then "document"
             else "file"
+
 
     ensureDeviceFolder: (callback) ->
         findDevice = (id, callback) =>

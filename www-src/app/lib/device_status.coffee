@@ -29,6 +29,9 @@ module.exports.initialize = ->
 # - on wifi if syncOnWifi[only] options is activated.
 # Callback should have (err, (boolean)ready, message) signature.
 module.exports.checkReadyForSync = checkReadyForSync = (callback)->
+    if window.isBrowserDebugging
+        return callback null, true
+
     callbacks.push callback if callback?
 
     # if we don't have informations about battery status, wait for it

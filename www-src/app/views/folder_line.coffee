@@ -6,6 +6,8 @@ log = require('/lib/persistent_log')
 
 module.exports = class FolderLineView extends BaseView
 
+
+
     tagName: 'a'
     template: require '../templates/folder_line'
     events:
