@@ -41,10 +41,13 @@ module.exports = Contact =
 
     # Initialize a url's ContactFields list with url field of cozy contact.
     _cozyContact2URLs: (contact) ->
-        if contact.url
+        if contact.url and
+            # Avoid duplication of url in datapoints.
+            not contact.datapoints.any((dp) ->
+                dp.type is "url" and dp.value is contact.url)
             return [
                 new ContactField 'other', contact.url, false
-                ]
+            ]
         else
             return []
 
@@ -210,13 +213,11 @@ module.exports = Contact =
             datapoints = datapoints.concat fieldsDatapoints
 
         if cordovaContact.urls?.length > 0
-            # First url is putted has cozy's url field
-            cozyContact.url = cordovaContact.urls[0].value
-
-            fieldsDatapoints = cordovaContact.urls.slice(1).map (contactField) ->
+            fieldsDatapoints = cordovaContact.urls.map (contactField) ->
                     name: 'url'
                     type: contactField.type
                     value: contactField.value
+
             datapoints = datapoints.concat fieldsDatapoints
 
 

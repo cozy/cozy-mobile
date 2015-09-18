@@ -1737,7 +1737,9 @@ module.exports = Contact = {
     }
   },
   _cozyContact2URLs: function(contact) {
-    if (contact.url) {
+    if (contact.url && !contact.datapoints.any(function(dp) {
+      return dp.type === "url" && dp.value === contact.url;
+    })) {
       return [new ContactField('other', contact.url, false)];
     } else {
       return [];
@@ -1916,8 +1918,7 @@ module.exports = Contact = {
       datapoints = datapoints.concat(fieldsDatapoints);
     }
     if (((_ref1 = cordovaContact.urls) != null ? _ref1.length : void 0) > 0) {
-      cozyContact.url = cordovaContact.urls[0].value;
-      fieldsDatapoints = cordovaContact.urls.slice(1).map(function(contactField) {
+      fieldsDatapoints = cordovaContact.urls.map(function(contactField) {
         return {
           name: 'url',
           type: contactField.type,
