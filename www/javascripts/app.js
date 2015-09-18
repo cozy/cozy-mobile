@@ -3279,6 +3279,9 @@ module.exports = {
         images = images.filter(function(path) {
           return (path != null) && path.indexOf('/DCIM/') !== -1;
         });
+        images = images.filter(function(path) {
+          return path.indexOf(':') === -1;
+        });
         if (images.length === 0) {
           return callback(new Error('no images in DCIM'));
         }

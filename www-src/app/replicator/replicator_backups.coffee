@@ -132,7 +132,12 @@ module.exports =
             # Filter images : keep only the ones from Camera
             # TODO: Android Specific !
             images = images.filter (path) ->
-                return path? and path.indexOf('/DCIM/') != -1
+                return path? and path.indexOf('/DCIM/') isnt -1
+
+            # Filter pathes with ':' (colon), as cordova plugin won't pick them
+            # especially ':nopm:' ending files,
+            # which may be google+ 's NO Photo Manager
+            images = images.filter (path) -> path.indexOf(':') is -1
 
             if images.length is 0
                 return callback new Error 'no images in DCIM'
