@@ -1,0 +1,14 @@
+//- config screen template
+
+.list
+    .card
+        .item.item-text-wrap.welcome
+    .card
+        label.item.item-input
+            span.input-label= t('cozy url')
+            input#input-url(type="url", placeholder="john.cozycloud.cc", value="#{defaultValue.cozyURL}")
+        label.item.item-input
+            span.input-label= t('cozy password')
+            input#input-pass(type="password", placeholder="#{t('password placeholder')}", value="#{defaultValue.password}")
+
+        button#btn-save.button.button-block.button-balanced.item= t('next')

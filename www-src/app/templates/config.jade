@@ -1,0 +1,52 @@
+.list
+
+    .item.item-divider= t('phone2cozy title')
+
+    //- if locale == 'digidisk'
+    .item.item-checkbox= t('contacts sync label')
+        label.checkbox: input#contactSyncCheck(type="checkbox", checked=syncContacts)
+
+    .item.item-checkbox= t('images sync label')
+        label.checkbox: input#imageSyncCheck(type="checkbox", checked=syncImages)
+
+    .item.item-checkbox= t('wifi sync label')
+        label.checkbox: input#wifiSyncCheck(type="checkbox", checked=syncOnWifi)
+
+    .item.item-checkbox= t('cozy notifications sync label')
+        label.checkbox: input#cozyNotificationsCheck(type="checkbox", checked=cozyNotifications)
+
+    if firstRun
+
+        .item
+            button#configDone.button.button-block.button-balanced= t('next')
+
+    else
+        #doBackup.item.item-icon-left
+            i.icon.ion-clock
+            span.text
+                = t('last backup')
+                | &nbsp;#{lastBackup}.
+
+        .item.item-divider= t('about')
+
+        .item= t('synchronized with') + " " + cozyURL
+        .item= t('device name') + ' : ' + deviceName
+        .item= t('app name') + ' v' + appVersion
+
+        .item.item-divider= t('reset title')
+
+        .item.item-button-left(style="padding-left: 95px; white-space: normal;")
+            button#synchrobtn.button.button-assertive= t('retry synchro')
+            = t('synchro warning')
+
+        .item.item-button-left(style="padding-left: 95px; white-space: normal;")
+            button#redbtn.button.button-assertive= t('reset action')
+            = t('reset warning')
+
+        .item.item-divider= t('support')
+
+        .item.item-button-left(style="padding-left: 95px; white-space: normal;")
+            button#sendlogbtn.button.button-assertive(style="font-size:15px;")= t('send log')
+            = t('send log info')
+
+

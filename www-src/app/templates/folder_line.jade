@@ -1,0 +1,30 @@
+//- one folder or file in folder view
+
+.item-content
+
+    if isFolder
+        i.icon.ion-folder
+    else
+        i.icon.ion-document
+    span= model.name
+
+    if isFolder
+        i.cache-indicator.icon.ion-ios7-cloud-download-outline
+    else if model.incache && model.version
+        i.cache-indicator.icon.ion-iphone
+    else if model.incache
+        i.cache-indicator-version.icon.ion-iphone
+    else
+        i.cache-indicator.icon.ion-ios7-cloud-download-outline
+
+
+.item-options.invisible
+    if model.incache == 'loading'
+        .button
+            = t('loading')
+    else if model.incache
+        .button.uncache
+            = t('remove local')
+    else
+        .button.download
+            = t('download')

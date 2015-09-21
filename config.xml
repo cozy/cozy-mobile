@@ -1,0 +1,42 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget android-versionCode="110"
+    android-versionName="0.1.10"
+    id="io.cozy.files-client"
+    version="0.1.10"
+    xmlns="http://www.w3.org/ns/widgets"
+    xmlns:cdv="http://cordova.apache.org/ns/1.0">
+
+    <name>Cozy</name>
+    <description>Sync files from your cozycloud</description>
+    <!-- <name>Cozy-files</name>
+    <description>Sync files from cozy files</description> -->
+    <author email="contact@cozycloud.cc" href="https://cozy.io">Cozy Cloud</author>
+    <preference name="Orientation" value="default" />
+    <preference name="android-minSdkVersion" value="14" />
+    
+    <content src="index.html"/>
+    <platform name="android">
+        <icon density="ldpi" src="res/icons/icon2.png"/>
+        <icon density="mdpi" src="res/icons/icon2.png"/>
+        <icon density="hdpi" src="res/icons/icon2.png"/>
+        <icon density="xhdpi" src="res/icons/icon2.png"/>
+        <!-- <icon density="ldpi" src="res/icons/icon-36-ldpi.png"/>
+        <icon density="mdpi" src="res/icons/icon-48-mdpi.png"/>
+        <icon density="hdpi" src="res/icons/icon-72-hdpi.png"/>
+        <icon density="xhdpi" src="res/icons/icon-96-xhdpi.png"/> -->
+        <!-- <icon density="ldpi" src="res/icons-dd/icon.png"/>
+        <icon density="mdpi" src="res/icons-dd/icon.png"/>
+        <icon density="hdpi" src="res/icons-dd/icon.png"/>
+        <icon density="xhdpi" src="res/icons-dd/icon.png"/> -->
+    </platform>
+    <platform name="ios">
+        <!-- iPhone / iPod Touch -->
+        <icon height="57" src="res/icons/icon-57-ios.png" width="57"/>
+        <icon height="114" src="res/ios/icon-114-ios.png" width="144"/>
+        <!-- iPad -->
+        <icon height="72" src="res/icons/icon-72-ios.png" width="72"/>
+        <icon height="144" src="res/ios/icon-144-ios.png" width="144"/>
+    </platform>
+    <access origin="mailto:*" launch-external="yes"/>
+    <access origin="*"/>
+</widget>
