@@ -22,11 +22,10 @@
         "coffee-script-brunch": "> 1.0 < 1.5",
         "jade-brunch": "> 1.0 < 1.5",
         "stylus-brunch": ">= 1.0 < 1.4",
-
         "uglify-js-brunch": "> 1.0 < 1.5",
         "clean-css-brunch": "> 1.0 < 1.5",
-
-        "auto-reload-brunch": "> 1.0 < 1.5"
+        "auto-reload-brunch": "> 1.0 < 1.5",
+        "json-brunch": "^1.5.4"
     },
     "devDependencies": {
         "coffee-script": "1.8.0",
