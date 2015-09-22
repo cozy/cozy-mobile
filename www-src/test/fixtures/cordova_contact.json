@@ -1,0 +1,328 @@
+{
+  "id": null,
+  "rawId": null,
+  "version": null,
+  "displayName": "Mr AAAgoogleFirst Middleone Middletwo von AAALast Jr",
+  "name": {
+    "formatted": "von AAALast AAAgoogleFirst Middleone Middletwo Mr Jr",
+    "familyName": "von AAALast",
+    "givenName": "AAAgoogleFirst",
+    "middleName": "Middleone Middletwo",
+    "honorificPrefix": "Mr",
+    "honorificSuffix": "Jr"
+  },
+  "phoneNumbers": [
+    {
+      "id": null,
+      "type": "home",
+      "value": "+1 860 355 3887",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "work",
+      "value": "+1 860 350 0301",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "cell",
+      "value": "+1 203 207 1047",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "main",
+      "value": "+1 212 555 1234",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "work fax",
+      "value": "+1 212 555 2345",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "home fax",
+      "value": "+1 212 555 3456",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "grand_central",
+      "value": "+1 212 555 4567",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "pager",
+      "value": "+1 212 555 0000",
+      "pref": false
+    }
+  ],
+  "emails": [
+    {
+      "id": null,
+      "type": "home",
+      "value": "homeEmail@example.com",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "work",
+      "value": "workEmail@example.com",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "arbitrary string",
+      "value": "customEmail@example.com",
+      "pref": false
+    }
+  ],
+  "addresses": [
+    {
+      "id": null,
+      "pref": false,
+      "type": "home",
+      "formatted": "678 Plain Home Address\nAll one field 354\nBridgeport CT 06",
+      "streetAddress": "678 Plain Home Address\nAll one field 354\nBridgeport CT 06",
+      "locality": null,
+      "region": null,
+      "postalCode": null,
+      "country": null
+    },
+    {
+      "id": null,
+      "pref": false,
+      "type": "work",
+      "formatted": "POB 999, Northville, 80 Maple Road\nDanbury, CT, 06810, USA",
+      "streetAddress": "POB 999, Northville, 80 Maple Road",
+      "locality": "Danbury",
+      "region": "CT",
+      "postalCode": "06810",
+      "country": "USA"
+    },
+    {
+      "id": null,
+      "pref": false,
+      "type": "weekends",
+      "formatted": "678 Elm Street\nApt 354\n\nBridgeport, CT, 06834, USA",
+      "streetAddress": "678 Elm Street\nApt 354\n",
+      "locality": "Bridgeport",
+      "region": "CT",
+      "postalCode": "06834",
+      "country": "USA"
+    }
+  ],
+  "ims": [
+    {
+      "id": null,
+      "type": "aim",
+      "value": "AIM",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "gtalk",
+      "value": "gTalk",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "yahoo",
+      "value": "Yahoo",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "jabber",
+      "value": "Jabber",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "msn",
+      "value": "MSN",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "skype",
+      "value": "Skype",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "qq",
+      "value": "QQ",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "icq",
+      "value": "ICQ",
+      "pref": false
+    }
+  ],
+  "organizations": [
+    {
+      "id": null,
+      "pref": false,
+      "type": null,
+      "name": "SuperCorp",
+      "department": null,
+      "title": "Chairman"
+    }
+  ],
+  "birthday": "1961-04-05",
+  "note": "Blah, blah\n\nblah blah blah.\n\nblahblah\nCustom: Custom field data",
+  "photos": [],
+  "categories": [],
+  "urls": [
+    {
+      "id": null,
+      "type": "other",
+      "value": "http://profile.example.com/",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "blog",
+      "value": "http://blog.example.com/",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "homepage",
+      "value": "http://home.example.com/",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "work",
+      "value": "http\\://work.example.com/",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "arbitrarystring",
+      "value": "http://custom.example.com/",
+      "pref": false
+    }
+  ],
+  "about": [
+    {
+      "id": null,
+      "type": "died",
+      "value": "2014-12-31",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "anniversary",
+      "value": "2001-01-01",
+      "pref": false
+    }
+  ],
+  "relations": [
+    {
+      "id": null,
+      "type": "spouse",
+      "value": "Spouse",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "child",
+      "value": "Child One",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "mother",
+      "value": "Mom",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "father",
+      "value": "Dad",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "parent",
+      "value": "Step-parent",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "brother",
+      "value": "Big Bro",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "sister",
+      "value": "Lil Sis",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "friend",
+      "value": "Good Friend",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "relative",
+      "value": "Some Relative",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "manager",
+      "value": "Big Boss",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "assistant",
+      "value": "Personal Assistant",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "referred_by",
+      "value": "Referred By",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "partner",
+      "value": "Partner",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "domestic_partner",
+      "value": "Domestic Partner",
+      "pref": false
+    },
+    {
+      "id": null,
+      "type": "arbitrary-string",
+      "value": "Custom",
+      "pref": false
+    }
+  ],
+  "sourceId": "4684779e6f31f8a63c79aff448003671",
+  "dirty": false,
+  "deleted": false,
+  "sync1": null,
+  "sync2": "1-e1015c1d31426917e85c274c8013dc26",
+  "sync3": null,
+  "sync4": null
+}

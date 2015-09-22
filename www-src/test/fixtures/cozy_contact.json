@@ -1,0 +1,252 @@
+{
+  "_id": "4684779e6f31f8a63c79aff448003671",
+  "_rev": "1-e1015c1d31426917e85c274c8013dc26",
+  "fn": "Mr AAAgoogleFirst Middleone Middletwo von AAALast Jr",
+  "n": "von AAALast;AAAgoogleFirst;Middleone Middletwo;Mr;Jr",
+  "org": "SuperCorp",
+  "title": "Chairman",
+  "bday": "1961-04-05",
+  "url": "http://profile.example.com/",
+  "revision": "2015-08-24T08:07:02.639Z",
+  "datapoints": [
+     {
+         "name": "email",
+         "value": "homeEmail@example.com",
+         "type": "home"
+     },
+     {
+         "name": "email",
+         "value": "workEmail@example.com",
+         "type": "work"
+     },
+     {
+         "name": "chat",
+         "value": "AIM",
+         "type": "aim"
+     },
+     {
+         "name": "chat",
+         "value": "gTalk",
+         "type": "gtalk"
+     },
+     {
+         "name": "chat",
+         "value": "Yahoo",
+         "type": "yahoo"
+     },
+     {
+         "name": "chat",
+         "value": "Jabber",
+         "type": "jabber"
+     },
+     {
+         "name": "chat",
+         "value": "MSN",
+         "type": "msn"
+     },
+     {
+         "name": "chat",
+         "value": "Skype",
+         "type": "skype"
+     },
+     {
+         "name": "chat",
+         "value": "QQ",
+         "type": "qq"
+     },
+     {
+         "name": "chat",
+         "value": "ICQ",
+         "type": "icq"
+     },
+     {
+         "name": "email",
+         "value": "customEmail@example.com",
+         "type": "arbitrary string"
+     },
+     {
+         "name": "tel",
+         "value": "+1 860 355 3887",
+         "type": "home"
+     },
+     {
+         "name": "tel",
+         "value": "+1 860 350 0301",
+         "type": "work"
+     },
+     {
+         "name": "tel",
+         "value": "+1 203 207 1047",
+         "type": "cell"
+     },
+     {
+         "name": "tel",
+         "value": "+1 212 555 1234",
+         "type": "main"
+     },
+     {
+         "name": "tel",
+         "value": "+1 212 555 2345",
+         "type": "work fax"
+     },
+     {
+         "name": "tel",
+         "value": "+1 212 555 3456",
+         "type": "home fax"
+     },
+     {
+         "name": "tel",
+         "value": "+1 212 555 4567",
+         "type": "grand_central"
+     },
+     {
+         "name": "tel",
+         "value": "+1 212 555 0000",
+         "type": "pager"
+     },
+     {
+         "name": "adr",
+         "value": [
+             "",
+             "",
+             "678 Plain Home Address\nAll one field 354\nBridgeport CT 06"
+         ],
+         "type": "home"
+     },
+     {
+         "name": "adr",
+         "value": [
+             "POB 999",
+             "Northville",
+             "80 Maple Road",
+             "Danbury",
+             "CT",
+             "06810",
+             "USA"
+         ],
+         "type": "work"
+     },
+     {
+        "name": "adr",
+        "value": [
+            "",
+            "",
+            "678 Elm Street\nApt 354\n",
+            "Bridgeport",
+            "CT",
+            "06834",
+            "USA"
+        ],
+        "type": "weekends"
+    },
+    {
+        "name": "url",
+        "value": "http://blog.example.com/",
+        "type": "blog"
+    },
+    {
+        "name": "url",
+        "value": "http://home.example.com/",
+        "type": "homepage"
+    },
+    {
+        "name": "url",
+        "value": "http\\://work.example.com/",
+        "type": "work"
+    },
+    {
+        "name": "url",
+        "value": "http://custom.example.com/",
+        "type": "arbitrarystring"
+    },
+    {
+        "name": "about",
+        "value": "2014-12-31",
+        "type": "died"
+    },
+    {
+        "name": "about",
+        "value": "2001-01-01",
+        "type": "anniversary"
+    },
+    {
+        "name": "relation",
+        "value": "Spouse",
+        "type": "spouse"
+    },
+    {
+        "name": "relation",
+        "value": "Child One",
+        "type": "child"
+    },
+    {
+        "name": "relation",
+        "value": "Mom",
+        "type": "mother"
+    },
+    {
+        "name": "relation",
+        "value": "Dad",
+        "type": "father"
+    },
+    {
+        "name": "relation",
+        "value": "Step-parent",
+        "type": "parent"
+    },
+    {
+        "name": "relation",
+        "value": "Big Bro",
+        "type": "brother"
+    },
+    {
+        "name": "relation",
+        "value": "Lil Sis",
+        "type": "sister"
+    },
+    {
+        "name": "relation",
+        "value": "Good Friend",
+        "type": "friend"
+    },
+    {
+        "name": "relation",
+        "value": "Some Relative",
+        "type": "relative"
+    },
+    {
+        "name": "relation",
+        "value": "Big Boss",
+        "type": "manager"
+    },
+    {
+        "name": "relation",
+        "value": "Personal Assistant",
+        "type": "assistant"
+    },
+    {
+        "name": "relation",
+        "value": "Referred By",
+        "type": "referred_by"
+    },
+    {
+        "name": "relation",
+        "value": "Partner",
+        "type": "partner"
+    },
+    { 
+      "name": "relation",
+      "value": "Domestic Partner",
+      "type": "domestic_partner"
+    },
+    {
+      "name": "relation",
+      "value": "Custom",
+      "type": "arbitrary-string"
+    }
+  ],
+  "note": "Blah, blah\n\nblah blah blah.\n\nblahblah\nCustom: Custom field data",
+  "tags": [
+  ],
+  "docType": "contact"
+  }

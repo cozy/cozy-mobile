@@ -1,0 +1,13 @@
+//- config screen template
+
+#deviceNamePicker.list
+    .card
+        .item.item-text-wrap= t('device name explanation')
+    .card
+        label.item.item-input.item-stacked-label
+            span.input-label= t('name device')
+            input#input-device(type="text", value="#{t('device name placeholder')}")
+
+    .button-bar.item-input
+        button#btn-back.button.button-dark.icon-left.ion-chevron-left.button-clear= t('back')
+        button#btn-save.button.button-balanced= t('next')
