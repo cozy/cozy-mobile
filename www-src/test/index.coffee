@@ -158,8 +158,9 @@ describe 'Convert Cordova contact to Cozy tests', ->
                 obtained.bday.should.eql expected.bday
             it "note", ->
                 obtained.note.should.eql expected.note
-            it "url", ->
-                obtained.url.should.eql expected.url
+            # url field deprecated with contact-2.0
+            # it "url", ->
+            #     obtained.url.should.eql expected.url
             it "org", ->
                 obtained.org.should.eql expected.org
             it "title", ->

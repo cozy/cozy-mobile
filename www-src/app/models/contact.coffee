@@ -43,7 +43,7 @@ module.exports = Contact =
     _cozyContact2URLs: (contact) ->
         if contact.url and
             # Avoid duplication of url in datapoints.
-            not contact.datapoints.any((dp) ->
+            not contact.datapoints.some((dp) ->
                 dp.type is "url" and dp.value is contact.url)
             return [
                 new ContactField 'other', contact.url, false
