@@ -1486,9 +1486,9 @@ module.exports = {
   "pull to sync": "Pull to sync",
   "syncing": "Syncing",
   "contacts_sync": "Syncing contacts",
-  "contacts_sync_to_pouch": "Syncing contacts -> Cozy",
-  "contacts_sync_to_cozy": "Syncing contacts -> Cozy ...",
-  "contacts_sync_to_phone": "Syncing contacts <- Cozy",
+  "contacts_sync_to_pouch": "Syncing contacts",
+  "contacts_sync_to_cozy": "Syncing contacts",
+  "contacts_sync_to_phone": "Syncing contacts",
   "pictures_sync": "Syncing pictures",
   "cache_sync": "Updating cache",
   "destroying database": "Destroying database",
@@ -1676,9 +1676,9 @@ module.exports = {
   "pull to sync": "Tirer pour synchroniser",
   "syncing": "En cours de synchronisation",
   "contacts_sync": "Synchronisation des contacts",
-  "contacts_sync_to_pouch": "Synchronisation des contacts -> Cozy",
-  "contacts_sync_to_cozy": "Synchronisation des contacts -> Cozy ...",
-  "contacts_sync_to_phone": "Synchronisation des contacts <- Cozy",
+  "contacts_sync_to_pouch": "Synchronisation des contacts",
+  "contacts_sync_to_cozy": "Synchronisation des contacts",
+  "contacts_sync_to_phone": "Synchronisation des contacts",
   "pictures_sync": "Synchronisation des images",
   "cache_update": "Mise à jour du cache",
   "destroying database": "Destruction de la base de données",
@@ -5463,7 +5463,7 @@ module.exports = FolderLineView = (function(_super) {
 
   FolderLineView.prototype.displayProgress = function() {
     this.downloading = true;
-    this.setCacheIcon('<img src="img/spinner.svg"></img>');
+    this.setCacheIcon('<img src="img/spinner-grey.svg"></img>');
     this.progresscontainer = $('<div class="item-progress"></div>').append(this.progressbar = $('<div class="item-progress-bar"></div>'));
     return this.progresscontainer.appendTo(this.$el);
   };

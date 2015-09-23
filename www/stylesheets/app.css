@@ -6670,6 +6670,11 @@ body {
 .error-msg a {
   color: #fff;
 }
+.bar.bar-calm {
+  background-color: #acb8c5;
+  border-color: #acb8c5;
+  background-image: none;
+}
 a {
   color: #33a6ff;
   text-decoration: none;
