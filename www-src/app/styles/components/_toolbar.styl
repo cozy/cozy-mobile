@@ -1,0 +1,100 @@
+// Header
+.bar
+    // overrides inonic default header's height
+    height 48px
+
+.has-header
+    // overrides inonic default header's height
+    top 48px
+
+
+.bar-header
+    background-image none
+    background-color blue
+    box-shadow depth01
+
+    h1.title
+        padding-left 2em
+
+        text-align left
+        color white
+        font-size (20/16)em
+        line-height 48px
+
+    .spinner
+        position absolute
+        right 0
+        margin 6px 10px
+        height 26px
+        width 26px
+
+        img
+            width 100%
+
+// logo icon used in the setup screens (on boarding)
+.icon-logo
+    width 42px
+    height 38px
+    @extend $icon-logo
+
+
+
+// breadcrumbs
+#breadcrumbs
+    display flex
+    align-items center
+    width 100%
+
+    a
+        color #fff
+        text-decoration none
+
+    .home
+        flex none
+        position relative
+        font-weight bold
+        line-height 28px
+
+    #crumbs
+        width 52vw
+        margin-left 24px
+
+        &::-webkit-scrollbar
+            display none
+
+    ul
+        list-style none
+        white-space nowrap
+
+        li
+            display none
+            overflow hidden
+            text-overflow ellipsis
+            color #fff
+
+            &:last-child
+                display block
+
+    .white-arrow
+        z-index 1
+        position absolute
+        top 5px
+        right -17px
+        width 10px
+        height 20px
+
+        border-top 10px solid transparent
+        border-bottom 10px solid transparent
+        border-left 10px solid white
+
+    .blue-arrow
+        z-index 2
+        position absolute
+        top 5px
+        right -15px
+        width 10px
+        height 20px
+
+        border-top 10px solid transparent
+        border-bottom 10px solid transparent
+        border-left 10px solid blue

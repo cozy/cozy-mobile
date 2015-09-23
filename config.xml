@@ -13,29 +13,23 @@
     <author email="contact@cozycloud.cc" href="https://cozy.io">Cozy Cloud</author>
     <preference name="Orientation" value="default" />
     <preference name="android-minSdkVersion" value="14" />
-    
+
     <content src="index.html"/>
     <platform name="android">
-        <icon density="ldpi" src="res/icons/icon2.png"/>
-        <icon density="mdpi" src="res/icons/icon2.png"/>
-        <icon density="hdpi" src="res/icons/icon2.png"/>
-        <icon density="xhdpi" src="res/icons/icon2.png"/>
-        <!-- <icon density="ldpi" src="res/icons/icon-36-ldpi.png"/>
         <icon density="mdpi" src="res/icons/icon-48-mdpi.png"/>
-        <icon density="hdpi" src="res/icons/icon-72-hdpi.png"/>
-        <icon density="xhdpi" src="res/icons/icon-96-xhdpi.png"/> -->
-        <!-- <icon density="ldpi" src="res/icons-dd/icon.png"/>
-        <icon density="mdpi" src="res/icons-dd/icon.png"/>
-        <icon density="hdpi" src="res/icons-dd/icon.png"/>
-        <icon density="xhdpi" src="res/icons-dd/icon.png"/> -->
+        <icon density="hdpi" src="res/icons/icon-72-hdpi"/>
+        <icon density="xhdpi" src="res/icons/icon-96-xhdpi.png"/>
+        <icon density="xxhdpi" src="res/icons/icon-144-xxhdpi.png"/>
+        <icon density="xxxhdpi" src="res/icons/icon-192-xxxhdpi.png"/>
     </platform>
     <platform name="ios">
         <!-- iPhone / iPod Touch -->
-        <icon height="57" src="res/icons/icon-57-ios.png" width="57"/>
-        <icon height="114" src="res/ios/icon-114-ios.png" width="144"/>
+        <icon height="120" src="res/icons/icon-120-ios.png" width="120"/>
+        <icon height="180" src="res/icons/icon-180-ios.png" width="180"/>
         <!-- iPad -->
-        <icon height="72" src="res/icons/icon-72-ios.png" width="72"/>
-        <icon height="144" src="res/ios/icon-144-ios.png" width="144"/>
+        <icon height="76" src="res/icons/icon-76-ios.png" width="76"/>
+        <icon height="152" src="res/icons/icon-152-ios.png" width="152"/>
+        <icon height="167" src="res/icons/icon-167-ios.png" width="167"/>
     </platform>
     <access origin="mailto:*" launch-external="yes"/>
     <access origin="*"/>

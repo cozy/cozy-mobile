@@ -21,8 +21,8 @@
             button#configDone.button.button-block.button-balanced= t('next')
 
     else
-        #doBackup.item.item-icon-left
-            i.icon.ion-clock
+        #doBackup.item.item-icon
+            .icon-backup
             span.text
                 = t('last backup')
                 | &nbsp;#{lastBackup}.
@@ -35,18 +35,18 @@
 
         .item.item-divider= t('reset title')
 
-        .item.item-button-left(style="padding-left: 95px; white-space: normal;")
-            button#synchrobtn.button.button-assertive= t('retry synchro')
-            = t('synchro warning')
+        .item
+            p= t('synchro warning')
+            button#synchrobtn.button.button-grey.button-full-width= t('retry synchro')
 
-        .item.item-button-left(style="padding-left: 95px; white-space: normal;")
-            button#redbtn.button.button-assertive= t('reset action')
-            = t('reset warning')
+        .item
+            p= t('reset warning')
+            button#redbtn.button.button-energized.button-full-width= t('reset action')
 
         .item.item-divider= t('support')
 
-        .item.item-button-left(style="padding-left: 95px; white-space: normal;")
-            button#sendlogbtn.button.button-assertive(style="font-size:15px;")= t('send log')
-            = t('send log info')
+        .item
+            p= t('send log info')
+            button#sendlogbtn.button.button-grey.button-full-width= t('send log')
 
 

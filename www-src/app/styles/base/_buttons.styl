@@ -1,0 +1,81 @@
+/*
+ * BUTTONS
+ * =======
+ *
+ * This file contains every styles related to buttons.
+ */
+
+.button
+    text-transform uppercase
+    font-weight bold
+    box-shadow depth01
+    // overrides ionic default
+    font-size 14px
+
+    &.button-energized
+        background-color red
+        border-color red - 20%
+
+    &.button-balanced
+        background-color blue
+        border-color blue - 10%
+
+    &.button-grey
+        background-color grey-04
+        border-color grey-04 - 10%
+        color white
+
+    &.button-dark.button-clear
+        // overrides ionic default
+        background grey-01
+        border-color grey-02
+
+    &.button-calm
+        background-color blue
+
+.button-full-width
+    width 100%
+
+.button-bar > .button
+    &:first-child
+        // overrides ionic default
+        border-radius 2px
+        margin-right 4px
+
+    &:last-child
+        // overrides ionic default
+        border-right-width 0
+        border-radius 2px
+        margin-left 4px
+
+.item-options .button
+    line-height 50px
+    background-color grey-01
+    color grey-08
+
+#btn-save
+#btn-back
+    margin-top 30px
+
+.bar-header
+    .button
+        background-color transparent
+        box-shadow 0 0
+        border 0
+
+.btn-menu
+    z-index 100
+    flex none
+    width 42px
+    height 38px
+    margin-right 0.5em
+    @extend $icon-menu
+
+.btn-search
+    z-index 100
+    opacity .4
+    position absolute
+    right 12px
+    width 42px
+    height 46px
+    @extend $icon-magnifier

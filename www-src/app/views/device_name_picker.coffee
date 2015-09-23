@@ -62,6 +62,6 @@ module.exports = class DeviceNamePickerView extends BaseView
         @saving = false
         @error.remove() if @error
         text = t 'connection failure' if ~text.indexOf('CORS request rejected')
-        @error = $('<div>').addClass('button button-full button-energized')
+        @error = $('<div>').addClass('error-msg')
         @error.text text
         @$(field or 'label').after @error

@@ -66,5 +66,3 @@ module.exports = class BreadcrumbsView extends BaseView
 
     scrollRight: ->
         @crumbsElem.scrollLeft -20
-
-

@@ -3,19 +3,21 @@
 .item-content
 
     if isFolder
-        i.icon.ion-folder
-    else
-        i.icon.ion-document
+        i.icon.icon-type.type-folder
+
+    else model.mime && this.mimeClasses[model.mime]
+       i(class="icon icon-type #{this.mimeClasses[model.mime]}")
+
     span= model.name
 
     if isFolder
-        i.cache-indicator.icon.ion-ios7-cloud-download-outline
+        i.cache-indicator.icon.icon-download
     else if model.incache && model.version
-        i.cache-indicator.icon.ion-iphone
+        i.cache-indicator.icon.icon-phone
     else if model.incache
-        i.cache-indicator-version.icon.ion-iphone
+        i.cache-indicator-version.icon.icon-phone
     else
-        i.cache-indicator.icon.ion-ios7-cloud-download-outline
+        i.cache-indicator.icon.icon-download
 
 
 .item-options.invisible

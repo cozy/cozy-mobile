@@ -10,12 +10,23 @@
     <script src="cordova.js"></script>
     <script src="javascripts/vendor.js"></script>
     <script src="javascripts/app.js"></script>
+    <style>
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #3CA8FC;
+      }
+      .splash-screen {
+        max-width: 60%;
+        max-height: 70%;
+      }
+    </style>
   </head>
 
   <body>
 
-
-    <img id="splash-screen" src="img/icon.png" />
+    <img id="splash-screen" class="splash-screen" src="img/splashscreen.svg" />
 
     <script>require('initialize');</script>
   </body>

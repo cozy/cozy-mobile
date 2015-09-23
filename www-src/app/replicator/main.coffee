@@ -581,3 +581,4 @@ module.exports = class Replicator extends Backbone.Model
                 @set 'backup_step_done', processed++
                 @updateLocal fileNEntry, cb
             , callback
+

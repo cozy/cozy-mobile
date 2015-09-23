@@ -1,42 +1,59 @@
-(function(/*! Brunch !*/) {
+(function() {
   'use strict';
 
-  var globals = typeof window !== 'undefined' ? window : global;
+  var globals = typeof window === 'undefined' ? global : window;
   if (typeof globals.require === 'function') return;
 
   var modules = {};
   var cache = {};
+  var has = ({}).hasOwnProperty;
 
-  var has = function(object, name) {
-    return ({}).hasOwnProperty.call(object, name);
+  var aliases = {};
+
+  var endsWith = function(str, suffix) {
+    return str.indexOf(suffix, str.length - suffix.length) !== -1;
   };
 
-  var expand = function(root, name) {
-    var results = [], parts, part;
-    if (/^\.\.?(\/|$)/.test(name)) {
-      parts = [root, name].join('/').split('/');
-    } else {
-      parts = name.split('/');
-    }
-    for (var i = 0, length = parts.length; i < length; i++) {
-      part = parts[i];
-      if (part === '..') {
-        results.pop();
-      } else if (part !== '.' && part !== '') {
-        results.push(part);
+  var unalias = function(alias, loaderPath) {
+    var start = 0;
+    if (loaderPath) {
+      if (loaderPath.indexOf('components/' === 0)) {
+        start = 'components/'.length;
+      }
+      if (loaderPath.indexOf('/', start) > 0) {
+        loaderPath = loaderPath.substring(start, loaderPath.indexOf('/', start));
       }
     }
-    return results.join('/');
+    var result = aliases[alias + '/index.js'] || aliases[loaderPath + '/deps/' + alias + '/index.js'];
+    if (result) {
+      return 'components/' + result.substring(0, result.length - '.js'.length);
+    }
+    return alias;
   };
 
+  var expand = (function() {
+    var reg = /^\.\.?(\/|$)/;
+    return function(root, name) {
+      var results = [], parts, part;
+      parts = (reg.test(name) ? root + '/' + name : name).split('/');
+      for (var i = 0, length = parts.length; i < length; i++) {
+        part = parts[i];
+        if (part === '..') {
+          results.pop();
+        } else if (part !== '.' && part !== '') {
+          results.push(part);
+        }
+      }
+      return results.join('/');
+    };
+  })();
   var dirname = function(path) {
     return path.split('/').slice(0, -1).join('/');
   };
 
   var localRequire = function(path) {
     return function(name) {
-      var dir = dirname(path);
-      var absolute = expand(dir, name);
+      var absolute = expand(dirname(path), name);
       return globals.require(absolute, path);
     };
   };
@@ -51,21 +68,26 @@
   var require = function(name, loaderPath) {
     var path = expand(name, '.');
     if (loaderPath == null) loaderPath = '/';
+    path = unalias(name, loaderPath);
 
-    if (has(cache, path)) return cache[path].exports;
-    if (has(modules, path)) return initModule(path, modules[path]);
+    if (has.call(cache, path)) return cache[path].exports;
+    if (has.call(modules, path)) return initModule(path, modules[path]);
 
     var dirIndex = expand(path, './index');
-    if (has(cache, dirIndex)) return cache[dirIndex].exports;
-    if (has(modules, dirIndex)) return initModule(dirIndex, modules[dirIndex]);
+    if (has.call(cache, dirIndex)) return cache[dirIndex].exports;
+    if (has.call(modules, dirIndex)) return initModule(dirIndex, modules[dirIndex]);
 
     throw new Error('Cannot find module "' + name + '" from '+ '"' + loaderPath + '"');
   };
 
-  var define = function(bundle, fn) {
+  require.alias = function(from, to) {
+    aliases[to] = from;
+  };
+
+  require.register = require.define = function(bundle, fn) {
     if (typeof bundle === 'object') {
       for (var key in bundle) {
-        if (has(bundle, key)) {
+        if (has.call(bundle, key)) {
           modules[key] = bundle[key];
         }
       }
@@ -74,21 +96,18 @@
     }
   };
 
-  var list = function() {
+  require.list = function() {
     var result = [];
     for (var item in modules) {
-      if (has(modules, item)) {
+      if (has.call(modules, item)) {
         result.push(item);
       }
     }
     return result;
   };
 
+  require.brunch = true;
   globals.require = require;
-  globals.require.define = define;
-  globals.require.register = define;
-  globals.require.list = list;
-  globals.require.brunch = true;
 })();
 require.register("application", function(exports, require, module) {
 var LayoutView, Notifications, Replicator, ServiceManager, log;
@@ -228,8 +247,8 @@ module.exports = {
 
 require.register("collections/files", function(exports, require, module) {
 var File, FileAndFolderCollection, PAGE_LENGTH, log,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __hasProp = {}.hasOwnProperty;
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 File = require('../models/file');
 
@@ -473,8 +492,8 @@ document.addEventListener('deviceready', function() {
 
 require.register("lib/base_view", function(exports, require, module) {
 var BaseView,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __hasProp = {}.hasOwnProperty;
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 module.exports = BaseView = (function(_super) {
   __extends(BaseView, _super);
@@ -683,8 +702,8 @@ levelColors = {
 };
 
 Logger = (function() {
-  function Logger(_at_options) {
-    this.options = _at_options;
+  function Logger(options) {
+    this.options = options;
     if (this.options == null) {
       this.options = {};
     }
@@ -722,13 +741,13 @@ Logger = (function() {
       return _results;
     }).call(this)).join(" ");
     if (this.options.prefix != null) {
-      text = this.options.prefix + " | " + text;
+      text = "" + this.options.prefix + " | " + text;
     }
     if (level) {
-      text = level + " - " + text;
+      text = "" + level + " - " + text;
     }
     if (Logger.processusTag) {
-      text = Logger.processusTag + "> " + text;
+      text = "" + Logger.processusTag + "> " + text;
     }
     if (this.options.date) {
       date = new Date().toISOString();
@@ -1318,8 +1337,8 @@ window.setImmediate = window.setImmediate || function(callback) {
 require.register("lib/view_collection", function(exports, require, module) {
 var BaseView, ViewCollection,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __hasProp = {}.hasOwnProperty;
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 BaseView = require('lib/base_view');
 
@@ -1453,22 +1472,23 @@ module.exports = {
   "wifi sync label": "Backup on Wifi only",
   "cozy notifications sync label": "Sync Cozy notifications",
   "home": "Home",
+  "files": "Files",
   "about": "About",
   "last backup": "Last was :",
   "reset title": "Reset",
   "reset action": "Reset",
   "retry synchro": "Sync",
-  "synchro warning": "This start a replication from the beginning. It can take a long time.",
-  "reset warning": "This will erase all cozy-generated data on your phone.",
+  "synchro warning": "Launch a replication from the beginning. It may take a while.",
+  "reset warning": "Erase all Cozy-generated data on your phone.",
   "support": "Support",
-  "send log": "Send",
+  "send log": "Send Log",
   "send log info": "Send an email with application log to help us improve its quality and stability.",
   "pull to sync": "Pull to sync",
   "syncing": "Syncing",
   "contacts_sync": "Syncing contacts",
-  "contacts_sync_to_pouch": "Syncing contacts -> Cozy",
-  "contacts_sync_to_cozy": "Syncing contacts -> Cozy ...",
-  "contacts_sync_to_phone": "Syncing contacts <- Cozy",
+  "contacts_sync_to_pouch": "Syncing contacts",
+  "contacts_sync_to_cozy": "Syncing contacts",
+  "contacts_sync_to_phone": "Syncing contacts",
   "pictures_sync": "Syncing pictures",
   "cache_sync": "Updating cache",
   "destroying database": "Destroying database",
@@ -1495,11 +1515,13 @@ module.exports = {
   "back": "Back",
   "connection failure": "Connection failure",
   "setup 1/3": "Setup 1/3",
-  "cozy welcome": "Welcome ! <br> Cozy, a Personal Cloud you can host, customize and fully control. If you already have a Cozy instance, follow the steps to sync your mobile with your Cozy. Otherwise, visit <a target='_system' href='http://cozy.io/en/'>cozy.io</a> for more.",
-  "password placeholder": "your password",
+  "cozy welcome": "Welcome!",
+  "cozy welcome message": "Cozy is your Personal Cloud you can host, customize and fully control. <br>If you don't already have a Cozy instance, visit <a target='_system' href='http://cozy.io/en/'>cozy.io</a> for more details.",
+  "url placeholder": "Your Cozy Address",
+  "password placeholder": "Your Password",
   "authenticating...": "Authenticating...",
   "setup 2/3": "Setup 2/3",
-  "device name explanation": "Choose a display name for this device so you can easily manage it from your Cozy.",
+  "device name explanation": "Choose a display name for this device so you can easily manage it.",
   "device name placeholder": "my-phone",
   "registering...": "Registering...",
   "setup 3/3": "Setup 3/3",
@@ -1587,6 +1609,7 @@ module.exports = {
   "back": "Atrás",
   "connection failure": "Falla en la conexión",
   "setup 1/3": "Configuración 1/3",
+  "url placeholder": "Su cozy",
   "password placeholder": "Su contraseña",
   "authenticating...": "Verificación de los identificadores...",
   "setup 2/3": "Configuración 2/3",
@@ -1639,22 +1662,23 @@ module.exports = {
   "wifi sync label": "Sauvegarde uniquement en Wifi",
   "cozy notifications sync label": "Synchroniser les notifications Cozy",
   "home": "Accueil",
+  "files": "Fichiers",
   "about": "À propos",
   "last backup": "Derniere sauvegarde :",
   "reset title": "Remise à zéro",
-  "reset action": "R.à.Z",
-  "retry synchro": "Sync",
-  "synchro warning": "Cela relancera une synchronisation depuis le début. Cela peut prendre du temps.",
-  "reset warning": "Cela supprimera toutes les données cozy sur votre mobile (dont votre appareil).",
+  "reset action": "Remise à Zéro",
+  "retry synchro": "Synchroniser",
+  "synchro warning": "Relancer une synchronisation depuis le début. Cela peut prendre du temps.",
+  "reset warning": "Supprimer toutes les données Cozy sur votre mobile.",
   "support": "Support",
-  "send log": "Envoyer",
+  "send log": "Envoyer Journal",
   "send log info": "Envoyer un email avec le journal de l'application afin de nous aider à améliorer sa qualité et sa fiabilité.",
   "pull to sync": "Tirer pour synchroniser",
   "syncing": "En cours de synchronisation",
   "contacts_sync": "Synchronisation des contacts",
-  "contacts_sync_to_pouch": "Synchronisation des contacts -> Cozy",
-  "contacts_sync_to_cozy": "Synchronisation des contacts -> Cozy ...",
-  "contacts_sync_to_phone": "Synchronisation des contacts <- Cozy",
+  "contacts_sync_to_pouch": "Synchronisation des contacts",
+  "contacts_sync_to_cozy": "Synchronisation des contacts",
+  "contacts_sync_to_phone": "Synchronisation des contacts",
   "pictures_sync": "Synchronisation des images",
   "cache_update": "Mise à jour du cache",
   "destroying database": "Destruction de la base de données",
@@ -1681,11 +1705,13 @@ module.exports = {
   "back": "Retour",
   "connection failure": "Échec de la connexion",
   "setup 1/3": "Configuration 1/3",
-  "cozy welcome": "Bienvenue ! <br> Cozy, un Cloud personnel que vous pouvez héberger, personnaliser et entièrement contrôler. Si vous avez déjà une instance Cozy, suivez les étapes pour synchroniser votre mobile avec votre Cozy. Sinon, rendez-vous sur <a target='_system' href='http://cozy.io/fr/'>cozy.io</a> pour en savoir plus.",
-  "password placeholder": "votre mot de passe",
+  "cozy welcome": "Bienvenue !",
+  "cozy welcome message": "Cozy est votre Cloud personnel que vous pouvez héberger, personnaliser et entièrement contrôler. <br>Si vous n'avez pas encore d'instance Cozy, rendez-vous sur <a target='_system' href='http://cozy.io/fr/'>cozy.io</a> pour en savoir plus.",
+  "url placeholder": "Votre Adresse Cozy",
+  "password placeholder": "Votre Mot de Passe",
   "authenticating...": "Vérification des identifiants…",
   "setup 2/3": "Configuration 2/3",
-  "device name explanation": "Choisissez un nom d'usage pour ce périphérique pour pouvoir le gérer facilement depuis votre Cozy.",
+  "device name explanation": "Choisissez un nom pour ce périphérique afin de le gérer facilement.",
   "device name placeholder": "mon-telephone",
   "registering...": "Enregistrement…",
   "setup 3/3": "Configuration 3/3",
@@ -1997,8 +2023,8 @@ module.exports = Contact = {
 
 require.register("models/file", function(exports, require, module) {
 var File,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __hasProp = {}.hasOwnProperty;
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 module.exports = File = (function(_super) {
   __extends(File, _super);
@@ -2029,7 +2055,7 @@ module.exports = File = (function(_super) {
     var name, path;
     name = this.get('name');
     if (path = this.get('path')) {
-      return (path.slice(1)) + "/" + name;
+      return "" + (path.slice(1)) + "/" + name;
     } else {
       return name;
     }
@@ -2358,8 +2384,8 @@ __chromeSafe = function() {
 require.register("replicator/main", function(exports, require, module) {
 var DBNAME, DBOPTIONS, DBPHOTOS, DeviceStatus, Replicator, ReplicatorConfig, fs, log, makeDesignDocs, request,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
 request = require('../lib/request');
@@ -2465,7 +2491,7 @@ module.exports = Replicator = (function(_super) {
 
   Replicator.prototype.checkCredentials = function(config, callback) {
     return request.post({
-      uri: (this.config.getScheme()) + "://" + config.cozyURL + "/login",
+      uri: "" + (this.config.getScheme()) + "://" + config.cozyURL + "/login",
       json: {
         username: 'owner',
         password: config.password
@@ -2485,7 +2511,7 @@ module.exports = Replicator = (function(_super) {
 
   Replicator.prototype.registerRemote = function(config, callback) {
     return request.post({
-      uri: (this.config.getScheme()) + "://" + config.cozyURL + "/device/",
+      uri: "" + (this.config.getScheme()) + "://" + config.cozyURL + "/device/",
       auth: {
         username: 'owner',
         password: config.password
@@ -2512,7 +2538,7 @@ module.exports = Replicator = (function(_super) {
               username: config.deviceName,
               password: body.password
             },
-            fullRemoteURL: ((_this.config.getScheme()) + "://" + config.deviceName + ":" + body.password) + ("@" + config.cozyURL + "/cozy")
+            fullRemoteURL: ("" + (_this.config.getScheme()) + "://" + config.deviceName + ":" + body.password) + ("@" + config.cozyURL + "/cozy")
           });
           return _this.config.save(config, callback);
         }
@@ -3472,8 +3498,8 @@ module.exports = {
 
 require.register("replicator/replicator_config", function(exports, require, module) {
 var APP_VERSION, ReplicatorConfig, basic,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __hasProp = {}.hasOwnProperty;
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 basic = require('../lib/basic');
 
@@ -3482,8 +3508,8 @@ APP_VERSION = "0.1.10";
 module.exports = ReplicatorConfig = (function(_super) {
   __extends(ReplicatorConfig, _super);
 
-  function ReplicatorConfig(_at_replicator) {
-    this.replicator = _at_replicator;
+  function ReplicatorConfig(replicator) {
+    this.replicator = replicator;
     ReplicatorConfig.__super__.constructor.call(this, null);
     this.remote = null;
   }
@@ -3550,7 +3576,7 @@ module.exports = ReplicatorConfig = (function(_super) {
     return {
       json: true,
       auth: this.get('auth'),
-      url: ((this.getScheme()) + "://") + this.get('cozyURL') + '/cozy' + path
+      url: ("" + (this.getScheme()) + "://") + this.get('cozyURL') + '/cozy' + path
     };
   };
 
@@ -4171,8 +4197,8 @@ module.exports = function(db, photosDB, callback) {
 
 require.register("router", function(exports, require, module) {
 var ConfigView, DeviceNamePickerView, FirstSyncView, FolderCollection, FolderView, LoginView, Router, app, log,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __hasProp = {}.hasOwnProperty;
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 app = require('application');
 
@@ -4401,8 +4427,8 @@ document.addEventListener('deviceready', function() {
 
 require.register("service/service_manager", function(exports, require, module) {
 var ServiceManager, log, repeatingPeriod,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __hasProp = {}.hasOwnProperty;
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 log = require('/lib/persistent_log')({
   prefix: "ServiceManager",
@@ -4499,7 +4525,10 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<a href="#folder/" class="home"><div class="ion-home"></div><div style="display: none;" class="arrow"><div style="left:25px;" class="blue-arrow"></div><div style="left:28px;" class="white-arrow"></div></div><div style="left: 25px;" class="round"></div></a><a id="truncated" style="display: none;">...<div class="arrow"><div style="left:35px;" class="blue-arrow"></div><div style="left:38px;" class="white-arrow"></div></div></a><div id="crumbs"><ul></ul></div><div id="shadow"></div>');
+buf.push('<a href="#folder/" class="home"><div class="span">');
+var __val__ = t('files')
+buf.push(escape(null == __val__ ? "" : __val__));
+buf.push('</div><div style="display: none;" class="arrow"><div class="blue-arrow"></div><div class="white-arrow"></div></div></a><div id="crumbs"><ul></ul></div>');
 }
 return buf.join("");
 };
@@ -4558,7 +4587,7 @@ buf.push('</button></div>');
 }
 else
 {
-buf.push('<div id="doBackup" class="item item-icon-left"><i class="icon ion-clock"></i><span class="text">');
+buf.push('<div id="doBackup" class="item item-icon"><div class="icon-backup"></div><span class="text">');
 var __val__ = t('last backup')
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('&nbsp;' + escape((interp = lastBackup) == null ? '' : interp) + '.</span></div><div class="item item-divider">');
@@ -4576,28 +4605,28 @@ buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</div><div class="item item-divider">');
 var __val__ = t('reset title')
 buf.push(escape(null == __val__ ? "" : __val__));
-buf.push('</div><div style="padding-left: 95px; white-space: normal;" class="item item-button-left"><button id="synchrobtn" class="button button-assertive">');
-var __val__ = t('retry synchro')
-buf.push(escape(null == __val__ ? "" : __val__));
-buf.push('</button>');
+buf.push('</div><div class="item"><p>');
 var __val__ = t('synchro warning')
 buf.push(escape(null == __val__ ? "" : __val__));
-buf.push('</div><div style="padding-left: 95px; white-space: normal;" class="item item-button-left"><button id="redbtn" class="button button-assertive">');
-var __val__ = t('reset action')
+buf.push('</p><button id="synchrobtn" class="button button-grey button-full-width">');
+var __val__ = t('retry synchro')
 buf.push(escape(null == __val__ ? "" : __val__));
-buf.push('</button>');
+buf.push('</button></div><div class="item"><p>');
 var __val__ = t('reset warning')
 buf.push(escape(null == __val__ ? "" : __val__));
-buf.push('</div><div class="item item-divider">');
+buf.push('</p><button id="redbtn" class="button button-energized button-full-width">');
+var __val__ = t('reset action')
+buf.push(escape(null == __val__ ? "" : __val__));
+buf.push('</button></div><div class="item item-divider">');
 var __val__ = t('support')
 buf.push(escape(null == __val__ ? "" : __val__));
-buf.push('</div><div style="padding-left: 95px; white-space: normal;" class="item item-button-left"><button id="sendlogbtn" style="font-size:15px;" class="button button-assertive">');
-var __val__ = t('send log')
-buf.push(escape(null == __val__ ? "" : __val__));
-buf.push('</button>');
+buf.push('</div><div class="item"><p>');
 var __val__ = t('send log info')
 buf.push(escape(null == __val__ ? "" : __val__));
-buf.push('</div>');
+buf.push('</p><button id="sendlogbtn" class="button button-grey button-full-width">');
+var __val__ = t('send log')
+buf.push(escape(null == __val__ ? "" : __val__));
+buf.push('</button></div>');
 }
 buf.push('</div>');
 }
@@ -4611,21 +4640,18 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<div id="deviceNamePicker" class="list"><div class="card"><div class="item item-text-wrap">');
+buf.push('<div id="deviceNamePicker" class="list"><div class="card no-shadow more-spacing flat"><div class="item item-text-wrap">');
 var __val__ = t('device name explanation')
 buf.push(escape(null == __val__ ? "" : __val__));
-buf.push('</div></div><div class="card"><label class="item item-input item-stacked-label"><span class="input-label">');
-var __val__ = t('name device')
-buf.push(escape(null == __val__ ? "" : __val__));
-buf.push('</span><input');
+buf.push('</div></div><div class="card no-shadow more-spacing"><label><input');
 buf.push(attrs({ 'id':('input-device'), 'type':("text"), 'value':("" + (t('device name placeholder')) + "") }, {"type":true,"value":true}));
-buf.push('/></label></div><div class="button-bar item-input"><button id="btn-back" class="button button-dark icon-left ion-chevron-left button-clear">');
+buf.push('/></label><div class="button-bar"><button id="btn-back" class="button button-dark button-clear">');
 var __val__ = t('back')
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</button><button id="btn-save" class="button button-balanced">');
 var __val__ = t('next')
 buf.push(escape(null == __val__ ? "" : __val__));
-buf.push('</button></div></div>');
+buf.push('</button></div></div></div>');
 }
 return buf.join("");
 };
@@ -4637,10 +4663,10 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<div class="list"><div id="finishSync" class="card"><div class="progress item item-text-wrap">');
+buf.push('<div class="list"><div id="finishSync" class="card no-shadow more-spacing flat"><div class="progress item item-text-wrap">');
 var __val__ = messageText
 buf.push(escape(null == __val__ ? "" : __val__));
-buf.push('</div></div><div class="item-input"><button id="btn-end" class="button button-block button-balanced">');
+buf.push('</div></div><div class="card no-shadow more-spacing"><button id="btn-end" class="button button-block button-balanced">');
 var __val__ = buttonText
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</button></div></div>');
@@ -4658,11 +4684,13 @@ var interp;
 buf.push('<div class="item-content">');
 if ( isFolder)
 {
-buf.push('<i class="icon ion-folder"></i>');
+buf.push('<i class="icon icon-type type-folder"></i>');
 }
 else
 {
-buf.push('<i class="icon ion-document"></i>');
+buf.push('<i');
+buf.push(attrs({ "class": ("icon icon-type " + (this.mimeClasses[model.mime]) + "") }, {"class":true}));
+buf.push('></i>');
 }
 buf.push('<span>');
 var __val__ = model.name
@@ -4670,19 +4698,19 @@ buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</span>');
 if ( isFolder)
 {
-buf.push('<i class="cache-indicator icon ion-ios7-cloud-download-outline"></i>');
+buf.push('<i class="cache-indicator icon icon-download"></i>');
 }
 else if ( model.incache && model.version)
 {
-buf.push('<i class="cache-indicator icon ion-iphone"></i>');
+buf.push('<i class="cache-indicator icon icon-phone"></i>');
 }
 else if ( model.incache)
 {
-buf.push('<i class="cache-indicator-version icon ion-iphone"></i>');
+buf.push('<i class="cache-indicator-version icon icon-phone"></i>');
 }
 else
 {
-buf.push('<i class="cache-indicator icon ion-ios7-cloud-download-outline"></i>');
+buf.push('<i class="cache-indicator icon icon-download"></i>');
 }
 buf.push('</div><div class="item-options invisible">');
 if ( model.incache == 'loading')
@@ -4718,7 +4746,7 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<div id="container" class="pane"><div id="bar-header" class="bar bar-header"><a id="btn-menu" class="button button-icon"><img src="img/menu-icon.svg" width="58"/></a><h1 id="title" class="title">Loading</h1><div id="breadcrumbs"></div><a id="headerSpinner" class="button button-icon"><div id="shadow" style="right: 30px;"></div><img src="img/spinner.svg" width="25"/></a></div><div class="bar bar-subheader bar-calm"><h2 id="backupIndicator" class="title"></h2></div><div id="viewsPlaceholder" class="scroll-content has-header"><div class="scroll"></div></div></div>');
+buf.push('<div id="container" class="pane"><div id="bar-header" class="bar bar-header"><a id="btn-menu" class="btn-menu"></a><div id="icon-logo" class="icon-logo"></div><h1 id="title" class="title">Loading</h1><div id="breadcrumbs"></div><a id="headerSpinner" class="spinner"><img src="img/spinner.svg"/></a></div><div class="bar bar-subheader bar-calm"><h2 id="backupIndicator" class="title"></h2></div><div id="viewsPlaceholder" class="scroll-content has-header"><div class="scroll"></div></div></div>');
 }
 return buf.join("");
 };
@@ -4730,17 +4758,11 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<div class="list"><div class="card"><div class="item item-text-wrap welcome"></div></div><div class="card"><label class="item item-input"><span class="input-label">');
-var __val__ = t('cozy url')
-buf.push(escape(null == __val__ ? "" : __val__));
-buf.push('</span><input');
-buf.push(attrs({ 'id':('input-url'), 'type':("url"), 'placeholder':("john.cozycloud.cc"), 'value':("" + (defaultValue.cozyURL) + "") }, {"type":true,"placeholder":true,"value":true}));
-buf.push('/></label><label class="item item-input"><span class="input-label">');
-var __val__ = t('cozy password')
-buf.push(escape(null == __val__ ? "" : __val__));
-buf.push('</span><input');
+buf.push('<div class="list"><div class="card no-shadow more-spacing flat"><div class="item item-text-wrap"><h2 class="welcome"></h2><p class="welcome-message"></p></div></div><div class="card no-shadow more-spacing"><label><input');
+buf.push(attrs({ 'id':('input-url'), 'type':("url"), 'placeholder':("" + (t('url placeholder')) + ""), 'value':("" + (defaultValue.cozyURL) + "") }, {"type":true,"placeholder":true,"value":true}));
+buf.push('/></label><label><input');
 buf.push(attrs({ 'id':('input-pass'), 'type':("password"), 'placeholder':("" + (t('password placeholder')) + ""), 'value':("" + (defaultValue.password) + "") }, {"type":true,"placeholder":true,"value":true}));
-buf.push('/></label><button id="btn-save" class="button button-block button-balanced item">');
+buf.push('/></label><button id="btn-save" class="button button-block button-balanced">');
 var __val__ = t('next')
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</button></div></div>');
@@ -4755,18 +4777,15 @@ attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow |
 var buf = [];
 with (locals || {}) {
 var interp;
-buf.push('<div class="bar bar-header bar-dark"><h1 class="title"><a id="close-menu" class="button">');
-var __val__ = 'Menu'
-buf.push(escape(null == __val__ ? "" : __val__));
-buf.push('</a></h1></div><div class="content has-header"><div class="item item-input-inset"><label class="item-input-wrapper"><input');
+buf.push('<div class="content"><div class="item item-input-inset"><label class="item-input-wrapper"><input');
 buf.push(attrs({ 'id':('search-input'), 'type':("text"), 'placeholder':(t("search")) }, {"type":true,"placeholder":true}));
-buf.push('/></label><a id="btn-search" class="button button-icon icon ion-search"></a></div><a href="#folder/" class="item item-icon-left"><i class="icon ion-home"></i>');
-var __val__ = t('home')
+buf.push('/></label><a id="btn-search" class="btn-search"></a></div><a href="#folder/" class="item icon-folder">');
+var __val__ = t('files')
 buf.push(escape(null == __val__ ? "" : __val__));
-buf.push('</a><a href="#config" class="item item-icon-left"><i class="icon ion-wrench"></i>');
+buf.push('</a><a href="#config" class="item icon-cog">');
 var __val__ = t('config')
 buf.push(escape(null == __val__ ? "" : __val__));
-buf.push('</a><a id="syncButton" class="item item-icon-left"><img src="img/sync.png" class="backup"/>');
+buf.push('</a><a id="syncButton" class="item icon-sync">');
 var __val__ = t('sync')
 buf.push(escape(null == __val__ ? "" : __val__));
 buf.push('</a></div>');
@@ -4777,8 +4796,8 @@ return buf.join("");
 
 require.register("views/breadcrumbs", function(exports, require, module) {
 var BaseView, BreadcrumbsView,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __hasProp = {}.hasOwnProperty;
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 BaseView = require('../lib/base_view');
 
@@ -4879,8 +4898,8 @@ module.exports = BreadcrumbsView = (function(_super) {
 
 require.register("views/config", function(exports, require, module) {
 var BaseView, ConfigView, log,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __hasProp = {}.hasOwnProperty;
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 BaseView = require('../lib/base_view');
 
@@ -5013,8 +5032,8 @@ module.exports = ConfigView = (function(_super) {
 
 require.register("views/device_name_picker", function(exports, require, module) {
 var BaseView, DeviceNamePickerView, log,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __hasProp = {}.hasOwnProperty;
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 BaseView = require('../lib/base_view');
 
@@ -5113,7 +5132,7 @@ module.exports = DeviceNamePickerView = (function(_super) {
     if (~text.indexOf('CORS request rejected')) {
       text = t('connection failure');
     }
-    this.error = $('<div>').addClass('button button-full button-energized');
+    this.error = $('<div>').addClass('error-msg');
     this.error.text(text);
     return this.$(field || 'label').after(this.error);
   };
@@ -5126,8 +5145,8 @@ module.exports = DeviceNamePickerView = (function(_super) {
 
 require.register("views/first_sync", function(exports, require, module) {
 var BaseView, FirstSyncView, LAST_STEP, log,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __hasProp = {}.hasOwnProperty;
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 BaseView = require('../lib/base_view');
 
@@ -5203,8 +5222,8 @@ module.exports = FirstSyncView = (function(_super) {
 require.register("views/folder", function(exports, require, module) {
 var CollectionView, FolderView,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __hasProp = {}.hasOwnProperty;
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 CollectionView = require('../lib/view_collection');
 
@@ -5376,8 +5395,8 @@ module.exports = FolderView = (function(_super) {
 require.register("views/folder_line", function(exports, require, module) {
 var BaseView, FolderLineView, log,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __hasProp = {}.hasOwnProperty;
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 BaseView = require('../lib/base_view');
 
@@ -5444,7 +5463,7 @@ module.exports = FolderLineView = (function(_super) {
 
   FolderLineView.prototype.displayProgress = function() {
     this.downloading = true;
-    this.setCacheIcon('<img src="img/spinner.svg"></img>');
+    this.setCacheIcon('<img src="img/spinner-grey.svg"></img>');
     this.progresscontainer = $('<div class="item-progress"></div>').append(this.progressbar = $('<div class="item-progress-bar"></div>'));
     return this.progresscontainer.appendTo(this.$el);
   };
@@ -5564,6 +5583,75 @@ module.exports = FolderLineView = (function(_super) {
     }
   };
 
+  FolderLineView.prototype.mimeClasses = {
+    'application/octet-stream': 'type-file',
+    'application/x-binary': 'type-binary',
+    'text/plain': 'type-text',
+    'text/richtext': 'type-text',
+    'application/x-rtf': 'type-text',
+    'application/rtf': 'type-text',
+    'application/msword': 'type-text',
+    'application/x-iwork-pages-sffpages': 'type-text',
+    'application/mspowerpoint': 'type-presentation',
+    'application/vnd.ms-powerpoint': 'type-presentation',
+    'application/x-mspowerpoint': 'type-presentation',
+    'application/x-iwork-keynote-sffkey': 'type-presentation',
+    'application/excel': 'type-spreadsheet',
+    'application/x-excel': 'type-spreadsheet',
+    'aaplication/vnd.ms-excel': 'type-spreadsheet',
+    'application/x-msexcel': 'type-spreadsheet',
+    'application/x-iwork-numbers-sffnumbers': 'type-spreadsheet',
+    'application/pdf': 'type-pdf',
+    'text/html': 'type-code',
+    'text/asp': 'type-code',
+    'text/css': 'type-code',
+    'application/x-javascript': 'type-code',
+    'application/x-lisp': 'type-code',
+    'application/xml': 'type-code',
+    'text/xml': 'type-code',
+    'application/x-sh': 'type-code',
+    'text/x-script.python': 'type-code',
+    'application/x-bytecode.python': 'type-code',
+    'text/x-java-source': 'type-code',
+    'application/postscript': 'type-image',
+    'image/gif': 'type-image',
+    'image/jpg': 'type-image',
+    'image/jpeg': 'type-image',
+    'image/pjpeg': 'type-image',
+    'image/x-pict': 'type-image',
+    'image/pict': 'type-image',
+    'image/png': 'type-image',
+    'image/x-pcx': 'type-image',
+    'image/x-portable-pixmap': 'type-image',
+    'image/x-tiff': 'type-image',
+    'image/tiff': 'type-image',
+    'audio/aiff': 'type-audio',
+    'audio/x-aiff': 'type-audio',
+    'audio/midi': 'type-audio',
+    'audio/x-midi': 'type-audio',
+    'audio/x-mid': 'type-audio',
+    'audio/mpeg': 'type-audio',
+    'audio/x-mpeg': 'type-audio',
+    'audio/mpeg3': 'type-audio',
+    'audio/x-mpeg3': 'type-audio',
+    'audio/wav': 'type-audio',
+    'audio/x-wav': 'type-audio',
+    'video/avi': 'type-video',
+    'video/mpeg': 'type-video',
+    'video/mp4': 'type-video',
+    'application/zip': 'type-archive',
+    'multipart/x-zip': 'type-archive',
+    'multipart/x-zip': 'type-archive',
+    'application/x-bzip': 'type-archive',
+    'application/x-bzip2': 'type-archive',
+    'application/x-gzip': 'type-archive',
+    'application/x-compress': 'type-archive',
+    'application/x-compressed': 'type-archive',
+    'application/x-zip-compressed': 'type-archive',
+    'application/x-apple-diskimage': 'type-archive',
+    'multipart/x-gzip': 'type-archive'
+  };
+
   return FolderLineView;
 
 })(BaseView);
@@ -5573,8 +5661,8 @@ module.exports = FolderLineView = (function(_super) {
 require.register("views/layout", function(exports, require, module) {
 var BaseView, BreadcrumbsView, FolderView, Layout, Menu,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __hasProp = {}.hasOwnProperty;
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 BaseView = require('../lib/base_view');
 
@@ -5650,6 +5738,7 @@ module.exports = Layout = (function(_super) {
     this.viewsBlock = this.viewsPlaceholder.find('.scroll');
     this.backButton = this.container.find('#btn-back');
     this.menuButton = this.container.find('#btn-menu');
+    this.iconLogo = this.container.find('#icon-logo');
     this.spinner = this.container.find('#headerSpinner');
     this.spinner.hide();
     this.title = this.container.find('#title');
@@ -5698,6 +5787,7 @@ module.exports = Layout = (function(_super) {
     var breadcrumbsView;
     this.$('#breadcrumbs').remove();
     this.title.hide();
+    this.iconLogo.hide();
     breadcrumbsView = new BreadcrumbsView({
       path: path
     });
@@ -5772,8 +5862,8 @@ module.exports = Layout = (function(_super) {
 
 require.register("views/login", function(exports, require, module) {
 var BaseView, LoginView,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __hasProp = {}.hasOwnProperty;
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 BaseView = require('../lib/base_view');
 
@@ -5808,7 +5898,8 @@ module.exports = LoginView = (function(_super) {
   };
 
   LoginView.prototype.afterRender = function() {
-    return this.$('.welcome').html(t('cozy welcome'));
+    this.$('.welcome').html(t('cozy welcome'));
+    return this.$('.welcome-message').html(t('cozy welcome message'));
   };
 
   LoginView.prototype.doComplete = function() {
@@ -5888,8 +5979,8 @@ module.exports = LoginView = (function(_super) {
 require.register("views/menu", function(exports, require, module) {
 var BaseView, Menu, log,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-  __hasProp = {}.hasOwnProperty;
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 BaseView = require('../lib/base_view');
 
