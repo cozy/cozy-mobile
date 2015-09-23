@@ -35,7 +35,7 @@ module.exports = class FolderLineView extends BaseView
 
     displayProgress: =>
         @downloading = true
-        @setCacheIcon '<img src="img/spinner.svg"></img>'
+        @setCacheIcon '<img src="img/spinner-grey.svg"></img>'
         @progresscontainer = $('<div class="item-progress"></div>')
             .append @progressbar = $('<div class="item-progress-bar"></div>')
 
