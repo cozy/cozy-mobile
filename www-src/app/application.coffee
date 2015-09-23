@@ -50,6 +50,7 @@ module.exports =
                     @serviceManager = new ServiceManager()
 
                 $('body').empty().append @layout.render().$el
+                $('body').css 'background-color', 'white'
                 Backbone.history.start()
 
                 DeviceStatus.initialize()

@@ -152,6 +152,7 @@ module.exports = {
             _this.serviceManager = new ServiceManager();
           }
           $('body').empty().append(_this.layout.render().$el);
+          $('body').css('background-color', 'white');
           Backbone.history.start();
           DeviceStatus.initialize();
           if (config.remote) {
@@ -280,6 +281,7 @@ module.exports = FileAndFolderCollection = (function(_super) {
       return function(err, items) {
         return _this.slowReset(items, function(err) {
           _this.notloaded = false;
+          _this.allPagesLoaded = true;
           _this.trigger('sync');
           return callback(err);
         });
@@ -1737,7 +1739,7 @@ module.exports = Contact = {
     }
   },
   _cozyContact2URLs: function(contact) {
-    if (contact.url && !contact.datapoints.any(function(dp) {
+    if (contact.url && !contact.datapoints.some(function(dp) {
       return dp.type === "url" && dp.value === contact.url;
     })) {
       return [new ContactField('other', contact.url, false)];
@@ -4564,21 +4566,14 @@ var interp;
 buf.push('<a href="#folder/" class="home"><div class="span">');
 var __val__ = t('files')
 buf.push(escape(null == __val__ ? "" : __val__));
-buf.push('</div><div style="display: none;" class="arrow"><div class="blue-arrow"></div><div class="white-arrow"></div></div></a><div id="crumbs"><ul></ul></div>');
+buf.push('</div><div style="display: none;" class="arrow"><div class="blue-arrow"></div><div class="white-arrow"></div></div></a><div id="crumbs">');
+if ( hasFolder)
+{
+buf.push('<ul><li><a');
+buf.push(attrs({ 'href':("#folder" + (folder.path) + "") }, {"href":true}));
+buf.push('></a>' + escape((interp = folder.name) == null ? '' : interp) + '</li></ul>');
 }
-return buf.join("");
-};
-});
-
-require.register("templates/breadcrumbs_element", function(exports, require, module) {
-module.exports = function anonymous(locals, attrs, escape, rethrow, merge) {
-attrs = attrs || jade.attrs; escape = escape || jade.escape; rethrow = rethrow || jade.rethrow; merge = merge || jade.merge;
-var buf = [];
-with (locals || {}) {
-var interp;
-buf.push('<li><a');
-buf.push(attrs({ 'href':("#folder" + (model.path) + "") }, {"href":true}));
-buf.push('>' + escape((interp = model.name) == null ? '' : interp) + '</a></li>');
+buf.push('</div>');
 }
 return buf.join("");
 };
@@ -4848,82 +4843,31 @@ module.exports = BreadcrumbsView = (function(_super) {
 
   BreadcrumbsView.prototype.template = require('../templates/breadcrumbs');
 
-  BreadcrumbsView.prototype.itemview = require('../templates/breadcrumbs_element');
-
-  BreadcrumbsView.prototype.events = {
-    'click #truncated': 'scrollRight'
+  BreadcrumbsView.prototype.initialize = function(options) {
+    if (options.path != null) {
+      return this.folder = {
+        name: options.path.split('/').slice(-1)[0],
+        path: options.path
+      };
+    }
   };
 
-  BreadcrumbsView.prototype.initialize = function(options) {
-    var reduction;
-    if (options.path == null) {
-      return this.collection = [];
-    } else {
-      reduction = options.path.split('/').reduce(function(agg, name) {
-        agg.path += '/' + name;
-        agg.collection.push({
-          name: name,
-          path: agg.path
-        });
-        return agg;
-      }, {
-        collection: [],
-        path: ''
-      });
-      return this.collection = reduction.collection;
-    }
+  BreadcrumbsView.prototype.getRenderData = function() {
+    return {
+      hasFolder: this.folder != null,
+      folder: this.folder
+    };
   };
 
   BreadcrumbsView.prototype.afterRender = function() {
-    var folder, _i, _len, _ref;
-    this.crumbsElem = this.$('#crumbs');
-    if (this.collection.length === 0) {
-      this.toggleHomeEdge('round');
-      return this;
+    if (this.folder) {
+      this.$('#crumbs').show();
+      this.$('.home .arrow').show();
+    } else {
+      this.$('#crumbs').hide();
+      this.$('.home .arrow').hide();
     }
-    this.toggleHomeEdge('arrow');
-    _ref = this.collection;
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      folder = _ref[_i];
-      this.$('#crumbs ul').append(this.itemview({
-        model: folder
-      }));
-    }
-    this.crumbsElem.scroll((function(_this) {
-      return function(ev) {
-        if (ev.target.scrollLeft === 0) {
-          return _this.toggleHomeEdge('arrow');
-        } else {
-          return _this.toggleHomeEdge('truncated');
-        }
-      };
-    })(this));
     return this;
-  };
-
-  BreadcrumbsView.prototype.toggleHomeEdge = function(edgeStyle) {
-    switch (edgeStyle) {
-      case 'truncated':
-        this.$('.home .round').hide();
-        this.$('.home .arrow').show();
-        return this.$('#truncated').show();
-      case 'arrow':
-        this.$('.home .round').hide();
-        this.$('.home .arrow').show();
-        return this.$('#truncated').hide();
-      case 'round':
-        this.$('.home .round').show();
-        this.$('.home .arrow').hide();
-        return this.$('#truncated').hide();
-    }
-  };
-
-  BreadcrumbsView.prototype.scrollLeft = function() {
-    return this.crumbsElem.scrollLeft(this.crumbsElem.outerWidth());
-  };
-
-  BreadcrumbsView.prototype.scrollRight = function() {
-    return this.crumbsElem.scrollLeft(-20);
   };
 
   return BreadcrumbsView;
@@ -5328,16 +5272,13 @@ module.exports = FolderView = (function(_super) {
             gesture.angle = 90;
             gesture.distance = gesture.deltaY;
             gesture.velocityX = 0;
-          } else if (gesture.direction === 'left') {
-            gesture.deltaY = 0;
-            gesture.angle = 180;
-            gesture.distance = gesture.deltaX;
-            gesture.velocityY = 0;
-          } else if (gesture.direction === 'right') {
-            gesture.deltaY = 0;
-            gesture.angle = 0;
-            gesture.distance = gesture.deltaX;
-            gesture.velocityY = 0;
+          } else {
+            gesture.direction = 'down';
+            gesture.deltaX = 0;
+            gesture.angle = 90;
+            gesture.distance = 0;
+            gesture.velocityX = 0;
+            gesture.deltaX = 0;
           }
           _this.checkScroll();
           if (!(app.layout.isMenuOpen() || e.gesture.deltaX > 0)) {
@@ -5827,8 +5768,7 @@ module.exports = Layout = (function(_super) {
     breadcrumbsView = new BreadcrumbsView({
       path: path
     });
-    this.title.after(breadcrumbsView.render().$el);
-    return breadcrumbsView.scrollLeft();
+    return this.title.after(breadcrumbsView.render().$el);
   };
 
   Layout.prototype.transitionTo = function(view) {

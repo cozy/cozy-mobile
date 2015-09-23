@@ -27,9 +27,7 @@ module.exports = class FolderView extends CollectionView
         @ionicView = new ionic.views.ListView
             el: @$el[0]
             _handleDrag: (e) =>
-
-                # Avoid floating feeling during scroll:
-                # scroll vertically OR horizontally but not both.
+                # Avoid horizontal scroll, and slide to open menu.
                 gesture = e.gesture
                 if gesture.direction is 'up'
                     gesture.deltaX = 0
@@ -41,18 +39,13 @@ module.exports = class FolderView extends CollectionView
                     gesture.angle = 90
                     gesture.distance = gesture.deltaY
                     gesture.velocityX = 0
-
-                else if gesture.direction is 'left'
-                    gesture.deltaY = 0
-                    gesture.angle = 180
-                    gesture.distance = gesture.deltaX
-                    gesture.velocityY = 0
-
-                else if gesture.direction is 'right'
-                    gesture.deltaY = 0
-                    gesture.angle = 0
-                    gesture.distance = gesture.deltaX
-                    gesture.velocityY = 0
+                else
+                    gesture.direction = 'down'
+                    gesture.deltaX = 0
+                    gesture.angle = 90
+                    gesture.distance = 0
+                    gesture.velocityX = 0
+                    gesture.deltaX = 0
 
                 @checkScroll()
 

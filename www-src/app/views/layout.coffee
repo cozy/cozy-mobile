@@ -101,7 +101,7 @@ module.exports = class Layout extends BaseView
         @iconLogo.hide()
         breadcrumbsView = new BreadcrumbsView path: path
         @title.after breadcrumbsView.render().$el
-        breadcrumbsView.scrollLeft()
+        # breadcrumbsView.scrollLeft()
 
     transitionTo: (view) ->
         @closeMenu()
