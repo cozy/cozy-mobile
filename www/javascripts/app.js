@@ -4328,6 +4328,7 @@ module.exports = Router = (function(_super) {
 
   Router.prototype.config = function() {
     var titleKey;
+    console.log("router.config");
     $('#btn-back').hide();
     titleKey = app.isFirstRun ? 'setup 3/3' : 'config';
     app.layout.setTitle(t(titleKey));
@@ -5272,13 +5273,16 @@ module.exports = FolderView = (function(_super) {
             gesture.angle = 90;
             gesture.distance = gesture.deltaY;
             gesture.velocityX = 0;
-          } else {
-            gesture.direction = 'down';
-            gesture.deltaX = 0;
-            gesture.angle = 90;
-            gesture.distance = 0;
-            gesture.velocityX = 0;
-            gesture.deltaX = 0;
+          } else if (gesture.direction === 'left') {
+            gesture.deltaY = 0;
+            gesture.angle = 180;
+            gesture.distance = gesture.deltaX;
+            gesture.velocityY = 0;
+          } else if (gesture.direction === 'right') {
+            gesture.deltaY = 0;
+            gesture.angle = 0;
+            gesture.distance = gesture.deltaX;
+            gesture.velocityY = 0;
           }
           _this.checkScroll();
           if (!(app.layout.isMenuOpen() || e.gesture.deltaX > 0)) {
@@ -5788,7 +5792,8 @@ module.exports = Layout = (function(_super) {
       }
       this.viewsBlock.append($next);
       this.ionicScroll.hintResize();
-      return this.currentView = view;
+      this.currentView = view;
+      return this.ionicScroll.scrollTo(0, 0, false, null);
     } else {
       nextClass = type === 'left' ? 'sliding-next' : 'sliding-prev';
       currClass = type === 'left' ? 'sliding-prev' : 'sliding-next';
@@ -5802,7 +5807,7 @@ module.exports = Layout = (function(_super) {
         return function() {
           _this.currentView.remove();
           _this.currentView = view;
-          return _this.ionicScroll.scrollTo(0, 0, true, null);
+          return _this.ionicScroll.scrollTo(0, 0, false, null);
         };
       })(this)));
     }
