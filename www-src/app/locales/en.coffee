@@ -120,3 +120,4 @@ module.exports =
     "no connection"  : """
         No connection, Sync cancelled.
     """
+    "bad credentials, did you enter an email address": "Bad credentials. Did you enter an email instead of the url of your Cozy?"

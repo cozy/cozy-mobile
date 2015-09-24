@@ -56,7 +56,15 @@ module.exports = class Replicator extends Backbone.Model
                 username: 'owner'
                 password: config.password
         , (err, response, body) ->
-            if response?.status is 0
+            if err
+                if config.cozyURL.indexOf('@') isnt -1
+                    error = t 'bad credentials, did you enter an email address'
+                else
+                    # Unexpected error, just show it to the user.
+                    log.error err
+                    return callback err.message
+
+            else if response?.status is 0
                 error = t 'connexion error'
 
             else if response?.statusCode isnt 200

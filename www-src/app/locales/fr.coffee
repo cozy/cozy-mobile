@@ -121,3 +121,4 @@ module.exports =
     "no connection"  : """
         La synchronisation n'aura pas lieu car vous n'avez pas de connexion.
     """
+    "bad credentials, did you enter an email address": "Adresse ou mot de passe incorrect. Aviez-vous entré un email à la place de l'url de vorte Cozy ?"

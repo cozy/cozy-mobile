@@ -1512,7 +1512,8 @@ module.exports = {
   "not enough space": "Not enough disk space, remove some files from cache.",
   "no battery": "Not enough battery, Sync cancelled.",
   "no wifi": "No Wifi, Sync cancelled.",
-  "no connection": "No connection, Sync cancelled."
+  "no connection": "No connection, Sync cancelled.",
+  "bad credentials, did you enter an email address": "Bad credentials. Did you enter an email instead of the url of your Cozy?"
 };
 
 });
@@ -1704,7 +1705,8 @@ module.exports = {
   "not enough space": "Il n'y a pas suffisament d'espace disque sur votre mobile.",
   "no battery": "La synchronisation n'aura pas lieu car vous n'avez pas assez de batterie.",
   "no wifi": "La synchronisation n'aura pas lieu car vous n'êtes pas en wifi.",
-  "no connection": "La synchronisation n'aura pas lieu car vous n'avez pas de connexion."
+  "no connection": "La synchronisation n'aura pas lieu car vous n'avez pas de connexion.",
+  "bad credentials, did you enter an email address": "Adresse ou mot de passe incorrect. Aviez-vous entré un email à la place de l'url de vorte Cozy ?"
 };
 
 });
@@ -2456,7 +2458,14 @@ module.exports = Replicator = (function(_super) {
       }
     }, function(err, response, body) {
       var error;
-      if ((response != null ? response.status : void 0) === 0) {
+      if (err) {
+        if (config.cozyURL.indexOf('@') !== -1) {
+          error = t('bad credentials, did you enter an email address');
+        } else {
+          log.error(err);
+          return callback(err.message);
+        }
+      } else if ((response != null ? response.status : void 0) === 0) {
         error = t('connexion error');
       } else if ((response != null ? response.statusCode : void 0) !== 200) {
         error = (err != null ? err.message : void 0) || body.error || body.message;
