@@ -72,7 +72,8 @@ module.exports =
     # --- login
     "setup 1/3"             : "Configuration 1/3"
     "cozy welcome"          : "Bienvenue !"
-    "cozy welcome message"  : """Cozy est votre Cloud personnel que vous pouvez héberger, personnaliser et entièrement contrôler. <br>Si vous n'avez pas encore d'instance Cozy, rendez-vous sur <a target='_system' href='http://cozy.io/fr/'>cozy.io</a> pour en savoir plus."""
+    "cozy welcome message"  : """L'application Cozy vous permet de: <ul><li>Consulter vos Fichiers</li><li>Synchroniser vos Contacts</li><li>Sauvegarder vos Photos</li></ul>"""
+    "cozy welcome no account" : """Si vous n'avez pas encore d'instance Cozy, rendez-vous sur <a target='_system' href='http://cozy.io/fr/'>cozy.io</a> pour en savoir plus."""
 
     "url placeholder"       : "Votre Adresse Cozy"
     "password placeholder"  : "Votre Mot de Passe"
