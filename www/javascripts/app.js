@@ -1516,7 +1516,8 @@ module.exports = {
   "connection failure": "Connection failure",
   "setup 1/3": "Setup 1/3",
   "cozy welcome": "Welcome!",
-  "cozy welcome message": "Cozy is your Personal Cloud you can host, customize and fully control. <br>If you don't already have a Cozy instance, visit <a target='_system' href='http://cozy.io/en/'>cozy.io</a> for more details.",
+  "cozy welcome message": "Cozy App enables you to: <ul><li>View your Files</li><li>Synchronize your Contacts</li><li>Backup your Photos</li></ul>",
+  "cozy welcome no account": "If you don't already have a Cozy instance, visit <a target='_system' href='http://cozy.io/en/'>cozy.io</a> for more details.",
   "url placeholder": "Your Cozy Address",
   "password placeholder": "Your Password",
   "authenticating...": "Authenticating...",
@@ -1706,7 +1707,8 @@ module.exports = {
   "connection failure": "Échec de la connexion",
   "setup 1/3": "Configuration 1/3",
   "cozy welcome": "Bienvenue !",
-  "cozy welcome message": "Cozy est votre Cloud personnel que vous pouvez héberger, personnaliser et entièrement contrôler. <br>Si vous n'avez pas encore d'instance Cozy, rendez-vous sur <a target='_system' href='http://cozy.io/fr/'>cozy.io</a> pour en savoir plus.",
+  "cozy welcome message": "L'application Cozy vous permet de: <ul><li>Consulter vos Fichiers</li><li>Synchroniser vos Contacts</li><li>Sauvegarder vos Photos</li></ul>",
+  "cozy welcome no account": "Si vous n'avez pas encore d'instance Cozy, rendez-vous sur <a target='_system' href='http://cozy.io/fr/'>cozy.io</a> pour en savoir plus.",
   "url placeholder": "Votre Adresse Cozy",
   "password placeholder": "Votre Mot de Passe",
   "authenticating...": "Vérification des identifiants…",
@@ -4765,7 +4767,7 @@ buf.push(attrs({ 'id':('input-pass'), 'type':("password"), 'placeholder':("" + (
 buf.push('/></label><button id="btn-save" class="button button-block button-balanced">');
 var __val__ = t('next')
 buf.push(escape(null == __val__ ? "" : __val__));
-buf.push('</button></div></div>');
+buf.push('</button></div><div class="card no-shadow more-spacing"><div class="item item-text-wrap"><p class="no-account"></p></div></div></div>');
 }
 return buf.join("");
 };
@@ -5899,7 +5901,8 @@ module.exports = LoginView = (function(_super) {
 
   LoginView.prototype.afterRender = function() {
     this.$('.welcome').html(t('cozy welcome'));
-    return this.$('.welcome-message').html(t('cozy welcome message'));
+    this.$('.welcome-message').html(t('cozy welcome message'));
+    return this.$('.no-account').html(t('cozy welcome no account'));
   };
 
   LoginView.prototype.doComplete = function() {

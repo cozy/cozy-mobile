@@ -6748,6 +6748,10 @@ a {
   background-color: #eaeef2;
   border: 0;
 }
+.welcome-message ul {
+  list-style: disc;
+  padding-left: 1.25em;
+}
 img.backup {
   left: 9px;
   width: 30px;
