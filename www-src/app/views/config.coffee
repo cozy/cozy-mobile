@@ -39,16 +39,11 @@ module.exports = class ConfigView extends BaseView
         unless date then return t 'never'
         else
             date = new Date(date) unless date instanceof Date
-            return date.toLocaleDateString() + ' ' + date.toTimeString()
+            return date.toISOString().slice(0, 19).replace('T', ' ')
+
 
     # only happens after the first config (post install)
     configDone: ->
-        # log.info 'starting first replication'
-        # app.replicator.initialReplication (err) ->
-        #     if err
-        #         log.error err
-        #         alert t err.message
-
         app.router.navigate 'first-sync', trigger: true
 
 
@@ -65,15 +60,11 @@ module.exports = class ConfigView extends BaseView
                 $('#redbtn').text t 'done'
                 window.location.reload(true);
 
+
     # confirm, launch initial replication, navigate to first sync UI.
     synchroBtn: ->
         if confirm t 'confirm message'
-            #@TODO delete device on remote ?
             app.router.navigate 'first-sync', trigger: true
-            # app.replicator.resetSynchro (err) =>
-            #     if err
-            #         log.error err
-            #         return alert err.message
 
 
     sendlogBtn: ->
