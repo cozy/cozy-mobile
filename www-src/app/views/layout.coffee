@@ -101,7 +101,7 @@ module.exports = class Layout extends BaseView
         @iconLogo.hide()
         breadcrumbsView = new BreadcrumbsView path: path
         @title.after breadcrumbsView.render().$el
-        breadcrumbsView.scrollLeft()
+        # breadcrumbsView.scrollLeft()
 
     transitionTo: (view) ->
         @closeMenu()
@@ -121,6 +121,8 @@ module.exports = class Layout extends BaseView
             @viewsBlock.append $next
             @ionicScroll.hintResize()
             @currentView = view
+            @ionicScroll.scrollTo 0, 0, false, null
+
         else
 
             nextClass = if type is 'left' then 'sliding-next' else 'sliding-prev'
@@ -138,7 +140,8 @@ module.exports = class Layout extends BaseView
             $next.one transitionend, _.once =>
                 @currentView.remove()
                 @currentView = view
-                @ionicScroll.scrollTo 0, 0, true, null
+                @ionicScroll.scrollTo 0, 0, false, null
+
 
     onMenuButtonClicked: =>
         @menu.reset()

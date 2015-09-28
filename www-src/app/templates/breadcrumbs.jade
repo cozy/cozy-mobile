@@ -6,6 +6,10 @@ a.home(href="#folder/")
 
 //- Current folder
 #crumbs
+  if hasFolder
     ul
+      li
+        a(href="#folder#{folder.path}")
+        | #{folder.name}
 
 

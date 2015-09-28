@@ -21,6 +21,19 @@ module.exports =
         return callback null if @get 'inBackup'
 
         options = options or { force: false }
+
+        unless @config.has('checkpointed')
+            err = new Error "Database not initialized before realtime"
+            if options.background
+                callback err
+            else
+                log.warn err
+
+                if confirm t 'Database not initialized. Do it now ?'
+                    app.router.navigate 'first-sync', trigger: true
+
+            return
+
         try
             @set 'inBackup', true
             @set 'backup_step', null
@@ -35,11 +48,11 @@ module.exports =
                     log.info "Backup done."
                     callback null
         catch e
-            log.error e, e.stack
+            log.error "Error in backup: ", e
 
 
     _backup: (force, callback) ->
-        DeviceStatus.checkReadyForSync true, (err, ready, msg) =>
+        DeviceStatus.checkReadyForSync (err, ready, msg) =>
             log.info "SYNC STATUS", err, ready, msg
             return callback err if err
             return callback new Error(msg) unless ready
@@ -55,26 +68,28 @@ module.exports =
                             errors.push err
                         cb()
                 (cb) =>
-                    status = DeviceStatus.getStatus()
-                    if status.readyForSync
+                    DeviceStatus.checkReadyForSync (err, ready, msg) =>
+                        unless ready or err
+                            err = new Error msg
+                        return cb err if err
+
                         @syncCache (err) ->
                             if err
                                 log.error "in syncCache", err
                                 errors.push err
                             cb()
-                    else
-                        cb status.readyForSyncMsg
 
                 (cb) =>
-                    status = DeviceStatus.getStatus()
-                    if status.readyForSync
+                    DeviceStatus.checkReadyForSync (err, ready, msg) =>
+                        unless ready or err
+                            err = new Error msg
+                        resultsrn cb err if err
+
                         @syncContacts (err) ->
                             if err
                                 log.error "in syncContacts", err
                                 errors.push err
                             cb()
-                    else
-                        cb status.readyForSyncMsg
 
             ], (err) ->
                 return callback err if err
@@ -117,20 +132,33 @@ module.exports =
             # Filter images : keep only the ones from Camera
             # TODO: Android Specific !
             images = images.filter (path) ->
-                return path? and path.indexOf('/DCIM/') != -1
+                return path? and path.indexOf('/DCIM/') isnt -1
+
+            # Filter pathes with ':' (colon), as cordova plugin won't pick them
+            # especially ':nopm:' ending files,
+            # which may be google+ 's NO Photo Manager
+            images = images.filter (path) -> path.indexOf(':') is -1
 
             if images.length is 0
                 return callback new Error 'no images in DCIM'
 
+            # Don't stop on some errors, but keep them to display them.
+            errors = []
             # step 1 scan all images, find the new ones
             async.eachSeries images, (path, cb) =>
                 #Check if pictures is in dbImages
                 if path in dbImages
                     cb()
+
                 else
                     # Check if pictures is already present (old installation)
+
                     fs.getFileFromPath path, (err, file) =>
-                        return cb err if err
+                        if err
+                            err.message = err.message + ' - ' + path
+                            log.info err
+                            errors.push err # store the error for future display
+                            return cb() # continue
 
                         # We test only on filename, case-insensitive
                         if file.name?.toLowerCase() in dbPictures
@@ -147,7 +175,8 @@ module.exports =
                             setImmediate cb # don't freeze UI
 
 
-            , =>
+            , (err) =>
+                return callback err if err
                 # step 2 upload one by one
                 log.info "SYNC IMAGES : #{images.length} #{toUpload.length}"
                 processed = 0
@@ -157,14 +186,27 @@ module.exports =
                     @set 'backup_step_done', processed++
                     log.info "UPLOADING #{path}"
                     @uploadPicture path, device, (err) =>
-                        log.error "ERROR #{path} #{err}" if err
-                        if DeviceStatus.readyForSync
-                            setImmediate cb  # don't freeze UI.
-                        else
-                            # stop uploading if leaves wifi and ...
-                            cb DeviceStatus.readyForSyncMsg
+                        if err
+                            log.error "ERROR #{path} #{err}"
+                            err.message = err.message + ' - ' + path
+                            errors.push err
 
-                , callback
+                        DeviceStatus.checkReadyForSync (err, ready, msg) ->
+                            return cb err if err
+                            if ready
+                                setImmediate cb  # don't freeze UI.
+                            else
+                                # stop uploading if leaves wifi and ...
+                                cb new Error msg
+
+                , (err) ->
+                    return callback err if err
+                    if errors.length > 0
+                        messages = (errors.map (err) -> err.message).join '; '
+                        return callback new Error messages
+
+                    callback()
+
 
     uploadPicture: (path, device, callback) ->
         fs.getFileFromPath path, (err, file) =>
@@ -199,6 +241,7 @@ module.exports =
             name             : cordovaFile.name
             path             : "/" + t('photos')
             class            : @fileClassFromMime cordovaFile.type
+            mime             : cordovaFile.type
             lastModification : new Date(cordovaFile.lastModified).toISOString()
             creationDate     : new Date(cordovaFile.lastModified).toISOString()
             size             : cordovaFile.size
@@ -222,6 +265,7 @@ module.exports =
             when 'video' then "video"
             when 'text', 'application' then "document"
             else "file"
+
 
     ensureDeviceFolder: (callback) ->
         findDevice = (id, callback) =>

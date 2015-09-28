@@ -48,15 +48,6 @@ module.exports = class Replicator extends Backbone.Model
                 fs.rmrf @downloads, callback
 
 
-    # Refetch all data as while app configuration.
-    resetSynchro: (callback) ->
-        @stopRealtime()
-        @initialReplication (err) =>
-            @startRealtime()
-            callback err
-
-
-
     # pings the cozy to check the credentials without creating a device
     checkCredentials: (config, callback) ->
         request.post
@@ -65,7 +56,15 @@ module.exports = class Replicator extends Backbone.Model
                 username: 'owner'
                 password: config.password
         , (err, response, body) ->
-            if response?.status is 0
+            if err
+                if config.cozyURL.indexOf('@') isnt -1
+                    error = t 'bad credentials, did you enter an email address'
+                else
+                    # Unexpected error, just show it to the user.
+                    log.error err
+                    return callback err.message
+
+            else if response?.status is 0
                 error = t 'connexion error'
 
             else if response?.statusCode isnt 200
@@ -112,41 +111,49 @@ module.exports = class Replicator extends Backbone.Model
     # Fetch current state of replicated views. Avoid pouchDB bug with heavy
     # change list.
     initialReplication: (callback) ->
-        log.info "enter initialReplication"
-        @set 'initialReplicationStep', 0
-        options = @config.makeUrl '/_changes?descending=true&limit=1'
-        request.get options, (err, res, body) =>
+        DeviceStatus.checkReadyForSync (err, ready, msg) =>
             return callback err if err
-            # we store last_seq before copying files & folder
-            # to avoid losing changes occuring during replication
-            last_seq = body.last_seq
-            async.series [
-                # Force checkpoint to 0
-                (cb) => @copyView 'file', cb
-                (cb) => @set('initialReplicationStep', 1) and cb null
-                (cb) => @copyView 'folder', cb
+            unless ready
+                return callback new Error msg
 
-                (cb) => @set('initialReplicationStep', 2) and cb null
-                # TODO: it copies all notifications (persistent ones too).
-                (cb) => @copyView 'notification', cb
+            log.info "enter initialReplication"
+            # initialReplication may be called to re-sync data...
+            @stopRealtime()
 
-                (cb) => @set('initialReplicationStep', 3) and cb null
+            @set 'initialReplicationStep', 0
+            options = @config.makeUrl '/_changes?descending=true&limit=1'
+            request.get options, (err, res, body) =>
+                return callback err if err
+                # we store last_seq before copying files & folder
+                # to avoid losing changes occuring during replication
+                last_seq = body.last_seq
+                async.series [
+                    # Force checkpoint to 0
+                    (cb) => @copyView 'file', cb
+                    (cb) => @set('initialReplicationStep', 1) and cb null
+                    (cb) => @copyView 'folder', cb
 
-                (cb) => @initContactsInPhone last_seq, cb
+                    (cb) => @set('initialReplicationStep', 2) and cb null
+                    # TODO: it copies all notifications (persistent ones too).
+                    (cb) => @copyView 'notification', cb
 
-                (cb) => @set('initialReplicationStep', 4) and cb null
-                # Save last sequences
-                (cb) => @config.save checkpointed: last_seq, cb
-                # build the initial state of FilesAndFolder view index
-                (cb) => @db.query 'FilesAndFolder', {}, cb
-                (cb) => @db.query 'NotificationsTemporary', {}, cb
+                    (cb) => @set('initialReplicationStep', 3) and cb null
 
-            ], (err) =>
-                log.info "end of inital replication"
-                @set 'initialReplicationStep', 5
-                callback err
-                # updateIndex In background
-                @updateIndex -> log.info "Index built"
+                    (cb) => @initContactsInPhone last_seq, cb
+
+                    (cb) => @set('initialReplicationStep', 4) and cb null
+                    # Save last sequences
+                    (cb) => @config.save checkpointed: last_seq, cb
+                    # build the initial state of FilesAndFolder view index
+                    (cb) => @db.query 'FilesAndFolder', {}, cb
+                    (cb) => @db.query 'NotificationsTemporary', {}, cb
+
+                ], (err) =>
+                    log.info "end of inital replication"
+                    @set 'initialReplicationStep', 5
+                    callback err
+                    # updateIndex In background
+                    @updateIndex -> log.info "Index built"
 
     # Copy docs of specified model, using couchDB view, initialized by some
     # cozy application (sych as Files, Home, ...).
@@ -367,11 +374,14 @@ module.exports = class Replicator extends Backbone.Model
         # check binary revs
         else if entry.name isnt @fileToEntryName(file)
             # Don't update the binary if "no wifi"
-            if DeviceStatus.getStatus().readyForSync
-                # Download the new version.
-                @getBinary file, noop, callback
-            else
-                callback()
+            DeviceStatus.checkReadyForSync (err, ready, msg) =>
+                return callback err if err
+
+                if ready
+                    # Download the new version.
+                    @getBinary file, noop, callback
+                else
+                    callback new Error msg
 
         else # check filename
             fs.getChildren entry, (err, children) =>
@@ -447,6 +457,13 @@ module.exports = class Replicator extends Backbone.Model
     # wrapper around _sync to maintain the state of inSync
     sync: (options, callback) ->
         return callback null if @get 'inSync'
+
+
+        unless @config.has('checkpointed')
+            return callback new Error "database not initialized"
+
+
+
         log.info "start a sync"
         @set 'inSync', true
         @_sync options, (err) =>
@@ -463,7 +480,7 @@ module.exports = class Replicator extends Backbone.Model
         total_count = 0
         @stopRealtime()
         changedDocs = []
-        checkpoint = options.checkpoint or @config.get 'checkpointed'
+        checkpoint = @config.get 'checkpointed'
 
         replication = @db.replicate.from @config.remote,
             batch_size: 20
@@ -511,6 +528,19 @@ module.exports = class Replicator extends Backbone.Model
         if @liveReplication or not app.foreground
             return
 
+        unless @config.has('checkpointed')
+            log.error new Error "database not initialized"
+
+            if confirm t 'Database not initialized. Do it now ?'
+                app.router.navigate 'first-sync', trigger: true
+                # @resetSynchro (err) =>
+                #     if err
+                #         log.error err
+                #         return alert err.message
+
+            return
+
+
         log.info 'REALTIME START'
 
         @liveReplication = @db.replicate.from @config.remote,
@@ -539,7 +569,7 @@ module.exports = class Replicator extends Backbone.Model
             @set 'inSync', false
             app.router.forceRefresh()
             # @TODO : save last_seq ?
-            log.info "UPTODATE relatime", e
+            log.info "UPTODATE realtime", e
 
         @liveReplication.once 'complete', (e) =>
             log.info "REALTIME CANCELLED"

@@ -1,21 +1,50 @@
-callbacks = []
-initialized = false
-readyForSync = null
-readyForSyncMsg = ""
-battery = null
-
 log = require('/lib/persistent_log')
     prefix: "device status"
     date: true
 
+# Store callbacks, while waiting (with timeout) for battery event.
+callbacks = []
+battery = null
+timeout = true
+
+# Dispatch on each callback.
 callbackWaiting = (err, ready, msg) ->
-    readyForSync = ready
-    readyForSyncMsg = msg
     callback err, ready, msg  for callback in callbacks
     callbacks = []
 
-module.exports.update = update = ->
-    return unless battery?
+
+# Register to battery events. To call after 'deviceRedy' event.
+module.exports.initialize = ->
+    timeout = true
+
+    log.info "initialize device status."
+    window.addEventListener 'batterystatus', (newStatus) =>
+        # timeout watchdog isn't usefull anymore, so we turn the flag
+        timeout = false
+        battery = newStatus
+        checkReadyForSync()
+
+# Check if device is ready for heavy works:
+# - battery as more than 20%
+# - on wifi if syncOnWifi[only] options is activated.
+# Callback should have (err, (boolean)ready, message) signature.
+module.exports.checkReadyForSync = checkReadyForSync = (callback)->
+    if window.isBrowserDebugging
+        return callback null, true
+
+    callbacks.push callback if callback?
+
+    # if we don't have informations about battery status, wait for it
+    # with a 4' timeout.
+    unless battery? #
+        setTimeout () =>
+            if timeout
+                # We reached timeout, and a batterystatus event hasn't fired yet
+                timeout = false
+                callbackWaiting new Error "No battery informations"
+        , 4 * 1000
+
+        return
 
     unless (battery.level > 20 or battery.isPlugged)
         log.info "NOT ready on battery low."
@@ -27,39 +56,3 @@ module.exports.update = update = ->
 
     log.info "ready to sync."
     callbackWaiting null, true
-
-module.exports.checkReadyForSync = (force, callback) ->
-    # force is optionnal
-    if arguments.length is 1
-        callback = force
-        force = false
-
-    update() if force
-
-    if readyForSync?
-        callback null, readyForSync, readyForSyncMsg
-    else if window.isBrowserDebugging
-        callback null, true
-    else
-        callbacks.push callback
-
-
-    unless initialized
-        timeout = true
-        setTimeout () =>
-            if timeout
-                timeout = false
-                initialized = false
-                callback null, true
-        , 4 * 1000
-        window.addEventListener 'batterystatus', (newStatus) =>
-            if timeout
-                timeout = false
-                battery = newStatus
-                update()
-        , false
-        app.replicator.config.on 'change:syncOnWifi', update
-        initialized = true
-
-module.exports.getStatus = () ->
-    return { initialized, readyForSync, readyForSyncMsg, battery }

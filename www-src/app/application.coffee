@@ -5,6 +5,7 @@ Replicator = require './replicator/main'
 LayoutView = require './views/layout'
 ServiceManager = require './service/service_manager'
 Notifications = require '../views/notifications'
+DeviceStatus = require './lib/device_status'
 
 log = require('/lib/persistent_log')
     prefix: "application"
@@ -49,10 +50,17 @@ module.exports =
                     @serviceManager = new ServiceManager()
 
                 $('body').empty().append @layout.render().$el
+                $('body').css 'background-color', 'white'
                 Backbone.history.start()
 
+                DeviceStatus.initialize()
+
                 if config.remote
-                    app.regularStart()
+                    unless @replicator.config.has('checkpointed')
+                        log.info 'Launch first replication again.'
+                        app.router.navigate 'first-sync', trigger: true
+                    else
+                        app.regularStart()
 
                 else
                     # App's first start
@@ -82,13 +90,7 @@ module.exports =
             app.replicator.stopRealtime()
 
         , false
-        document.addEventListener 'offline', ->
-            DeviceStatus = require './lib/device_status'
-            DeviceStatus.update()
-        , false
         document.addEventListener 'online', ->
-            DeviceStatus = require './lib/device_status'
-            DeviceStatus.update()
             backup = () ->
                 app.replicator.backup {}, (err) -> log.error err if err
                 window.removeEventListener 'realtime:onChange', backup, false

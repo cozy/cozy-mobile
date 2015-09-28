@@ -6,7 +6,6 @@
   "org": "SuperCorp",
   "title": "Chairman",
   "bday": "1961-04-05",
-  "url": "http://profile.example.com/",
   "revision": "2015-08-24T08:07:02.639Z",
   "datapoints": [
      {
@@ -138,6 +137,11 @@
             "USA"
         ],
         "type": "weekends"
+    },
+    {
+        "name": "url",
+        "value": "http://profile.example.com/",
+        "type": "other"
     },
     {
         "name": "url",

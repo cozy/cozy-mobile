@@ -28,6 +28,7 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
         app.replicator.db.search params, (err, items) =>
             @slowReset items, (err) =>
                 @notloaded = false
+                @allPagesLoaded = true
                 @trigger 'sync'
                 callback err
 

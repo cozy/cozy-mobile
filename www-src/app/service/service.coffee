@@ -3,6 +3,8 @@ require '/lib/utils'
 
 Replicator = require '../replicator/main'
 Notifications = require '../views/notifications'
+DeviceStatus = require '../lib/device_status'
+
 
 log = require('/lib/persistent_log')
     prefix: "application"
@@ -45,11 +47,11 @@ module.exports = Service =
                     return window.service.workDone()
 
                 if config.remote
+                    unless @replicator.config.has('checkpointed')
+                        log.error new Error "Database not initialized"
+                        return window.service.workDone()
 
-                    DeviceStatus = require '../lib/device_status'
-                    document.addEventListener 'offline', ->
-                        DeviceStatus.update()
-                    , false
+                    DeviceStatus.initialize()
 
                     if config.get 'cozyNotifications'
                         # Activate notifications handling
@@ -67,13 +69,13 @@ module.exports = Service =
 
                     app.replicator.backup { background: true }, (err) ->
                         if err
+                            log.error "Error launching backup: ", err
                             delayedQuit()
                         else
                             app.replicator.sync {background: true}, delayedQuit
 
                 else
                     window.service.workDone()
-
 
 
 document.addEventListener 'deviceready', ->

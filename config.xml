@@ -17,7 +17,7 @@
     <content src="index.html"/>
     <platform name="android">
         <icon density="mdpi" src="res/icons/icon-48-mdpi.png"/>
-        <icon density="hdpi" src="res/icons/icon-72-hdpi"/>
+        <icon density="hdpi" src="res/icons/icon-72-hdpi.png"/>
         <icon density="xhdpi" src="res/icons/icon-96-xhdpi.png"/>
         <icon density="xxhdpi" src="res/icons/icon-144-xxhdpi.png"/>
         <icon density="xxxhdpi" src="res/icons/icon-192-xxxhdpi.png"/>
