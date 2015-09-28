@@ -158,11 +158,6 @@ module.exports = {
           if (config.remote) {
             if (!_this.replicator.config.has('checkpointed')) {
               log.info('Launch first replication again.');
-              app.replicator.initialReplication(function(err) {});
-              if (err) {
-                log.error(err);
-                alert(t(err.message));
-              }
               return app.router.navigate('first-sync', {
                 trigger: true
               });

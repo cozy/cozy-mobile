@@ -52,14 +52,6 @@ module.exports = class FolderView extends CollectionView
                     gesture.distance = gesture.deltaX
                     gesture.velocityY = 0
 
-                # else
-                #     gesture.direction = 'down'
-                #     gesture.deltaX = 0
-                #     gesture.angle = 90
-                #     gesture.distance = 0
-                #     gesture.velocityX = 0
-                #     gesture.deltaX = 0
-
                 @checkScroll()
 
                 # unless menu is open or slide to right

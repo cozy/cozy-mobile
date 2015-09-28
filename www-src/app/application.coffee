@@ -58,11 +58,6 @@ module.exports =
                 if config.remote
                     unless @replicator.config.has('checkpointed')
                         log.info 'Launch first replication again.'
-                        app.replicator.initialReplication (err) ->
-                        if err
-                            log.error err
-                            alert t err.message
-
                         app.router.navigate 'first-sync', trigger: true
                     else
                         app.regularStart()
@@ -95,13 +90,7 @@ module.exports =
             app.replicator.stopRealtime()
 
         , false
-        # document.addEventListener 'offline', ->
-        #     DeviceStatus = require './lib/device_status'
-        #     DeviceStatus.update()
-        # , false
         document.addEventListener 'online', ->
-            # DeviceStatus = require './lib/device_status'
-            # DeviceStatus.update()
             backup = () ->
                 app.replicator.backup {}, (err) -> log.error err if err
                 window.removeEventListener 'realtime:onChange', backup, false
