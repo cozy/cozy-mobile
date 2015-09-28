@@ -111,6 +111,7 @@ module.exports = class Replicator extends Backbone.Model
     # Fetch current state of replicated views. Avoid pouchDB bug with heavy
     # change list.
     initialReplication: (callback) ->
+        @set 'initialReplicationStep', 0
         DeviceStatus.checkReadyForSync (err, ready, msg) =>
             return callback err if err
             unless ready
@@ -120,7 +121,6 @@ module.exports = class Replicator extends Backbone.Model
             # initialReplication may be called to re-sync data...
             @stopRealtime()
 
-            @set 'initialReplicationStep', 0
             options = @config.makeUrl '/_changes?descending=true&limit=1'
             request.get options, (err, res, body) =>
                 return callback err if err

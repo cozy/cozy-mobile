@@ -58,6 +58,9 @@ module.exports = class ConfigView extends BaseView
                     log.error err
                     return alert err.message
                 $('#redbtn').text t 'done'
+
+                # DeviceStatus has to be stopped to restart properly.
+                require('lib/device_status').shutdown()
                 window.location.reload(true);
 
 
