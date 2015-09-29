@@ -565,7 +565,7 @@ module.exports = basic = function(auth) {
 });
 
 require.register("lib/device_status", function(exports, require, module) {
-var battery, callbackWaiting, callbacks, checkReadyForSync, log, timeout;
+var battery, callbackWaiting, callbacks, checkReadyForSync, log, onBatteryStatus, timeout;
 
 log = require('/lib/persistent_log')({
   prefix: "device status",
@@ -576,7 +576,7 @@ callbacks = [];
 
 battery = null;
 
-timeout = true;
+timeout = false;
 
 callbackWaiting = function(err, ready, msg) {
   var callback, _i, _len;
@@ -587,16 +587,26 @@ callbackWaiting = function(err, ready, msg) {
   return callbacks = [];
 };
 
+onBatteryStatus = (function(_this) {
+  return function(newStatus) {
+    timeout = false;
+    battery = newStatus;
+    return checkReadyForSync();
+  };
+})(this);
+
 module.exports.initialize = function() {
+  if (timeout || (battery != null)) {
+    log.info("already initialized");
+    return;
+  }
   timeout = true;
   log.info("initialize device status.");
-  return window.addEventListener('batterystatus', (function(_this) {
-    return function(newStatus) {
-      timeout = false;
-      battery = newStatus;
-      return checkReadyForSync();
-    };
-  })(this));
+  return window.addEventListener('batterystatus', onBatteryStatus);
+};
+
+module.exports.shutdown = function() {
+  return window.removeEventListener('batterystatus', onBatteryStatus);
 };
 
 module.exports.checkReadyForSync = checkReadyForSync = function(callback) {
@@ -610,7 +620,6 @@ module.exports.checkReadyForSync = checkReadyForSync = function(callback) {
     setTimeout((function(_this) {
       return function() {
         if (timeout) {
-          timeout = false;
           return callbackWaiting(new Error("No battery informations"));
         }
       };
@@ -1701,7 +1710,7 @@ module.exports = {
   "no battery": "La synchronisation n'aura pas lieu car vous n'avez pas assez de batterie.",
   "no wifi": "La synchronisation n'aura pas lieu car vous n'êtes pas en wifi.",
   "no connection": "La synchronisation n'aura pas lieu car vous n'avez pas de connexion.",
-  "bad credentials, did you enter an email address": "Adresse ou mot de passe incorrect. Aviez-vous entré un email à la place de l'url de vorte Cozy ?"
+  "bad credentials, did you enter an email address": "Adresse ou mot de passe incorrect. Etes vous sûr d'avoir bien renseigné l'url de votre Cozy ?"
 };
 
 });
@@ -2509,6 +2518,7 @@ module.exports = Replicator = (function(_super) {
   };
 
   Replicator.prototype.initialReplication = function(callback) {
+    this.set('initialReplicationStep', 0);
     return DeviceStatus.checkReadyForSync((function(_this) {
       return function(err, ready, msg) {
         var options;
@@ -2520,7 +2530,6 @@ module.exports = Replicator = (function(_super) {
         }
         log.info("enter initialReplication");
         _this.stopRealtime();
-        _this.set('initialReplicationStep', 0);
         options = _this.config.makeUrl('/_changes?descending=true&limit=1');
         return request.get(options, function(err, res, body) {
           var last_seq;
@@ -3541,7 +3550,7 @@ var APP_VERSION, ReplicatorConfig, basic,
 
 basic = require('../lib/basic');
 
-APP_VERSION = "0.1.10";
+APP_VERSION = "0.1.11";
 
 module.exports = ReplicatorConfig = (function(_super) {
   __extends(ReplicatorConfig, _super);
@@ -4322,11 +4331,13 @@ module.exports = Router = (function(_super) {
 
   Router.prototype.deviceNamePicker = function() {
     app.layout.setTitle(t('setup 2/3'));
+    $('#btn-menu, #btn-back').hide();
     return this.display(new DeviceNamePickerView());
   };
 
   Router.prototype.firstSync = function() {
     app.layout.setTitle(t('setup end'));
+    $('#btn-menu, #btn-back').hide();
     return this.display(new FirstSyncView());
   };
 
@@ -4957,6 +4968,7 @@ module.exports = ConfigView = (function(_super) {
             return alert(err.message);
           }
           $('#redbtn').text(t('done'));
+          require('lib/device_status').shutdown();
           return window.location.reload(true);
         };
       })(this));
