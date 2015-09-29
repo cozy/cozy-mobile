@@ -52,10 +52,12 @@ module.exports = class Router extends Backbone.Router
 
     deviceNamePicker: ->
         app.layout.setTitle t 'setup 2/3'
+        $('#btn-menu, #btn-back').hide()
         @display new DeviceNamePickerView()
 
     firstSync: ->
         app.layout.setTitle t 'setup end'
+        $('#btn-menu, #btn-back').hide()
         @display new FirstSyncView()
 
     config: ->
