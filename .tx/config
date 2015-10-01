@@ -1,0 +1,8 @@
+[main]
+host = https://www.transifex.com
+
+[cozy-mobile.enjson]
+file_filter = www-src/app/locales/<lang>.json
+source_file = www-src/app/locales/en.json
+source_lang = en
+type = KEYVALUEJSON

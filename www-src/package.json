@@ -23,7 +23,8 @@
     "jade-brunch": "> 1.0 < 1.5",
     "javascript-brunch": "> 1.0 < 1.5",
     "stylus-brunch": "^1.8.1",
-    "uglify-js-brunch": "> 1.0 < 1.5"
+    "uglify-js-brunch": "> 1.0 < 1.5",
+    "json-brunch": "^1.5.4"
   },
   "devDependencies": {
     "coffee-script": "1.8.0",
