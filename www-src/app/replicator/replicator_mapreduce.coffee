@@ -79,6 +79,17 @@ ContactsDesignDoc =
                     emit doc._id
 
 
+CalendarsDesignDoc =
+    _id: '_design/Calendars'
+    version: 2
+    views:
+        'Calendars':
+            map: Object.toString.apply (doc) ->
+                if doc.docType?.toLowerCase() is 'event'
+                    emit doc.tags?[0]
+
+
+
 PhotosByLocalIdDesignDoc =
     _id: '_design/PhotosByLocalId'
     version: 1
@@ -99,5 +110,6 @@ module.exports = (db, photosDB, callback) ->
         (cb) -> createOrUpdateDesign db, LocalPathDesignDoc, cb
         (cb) -> createOrUpdateDesign db, PathToBinaryDesignDoc, cb
         (cb) -> createOrUpdateDesign db, ContactsDesignDoc, cb
+        (cb) -> createOrUpdateDesign db, CalendarsDesignDoc, cb
         (cb) -> createOrUpdateDesign photosDB, PhotosByLocalIdDesignDoc, cb
     ], callback

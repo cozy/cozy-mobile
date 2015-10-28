@@ -9,6 +9,7 @@ module.exports = class ReplicatorConfig extends Backbone.Model
     defaults: ->
         _id: '_local/appconfig'
         syncContacts: true
+        syncCalendars: true
         syncImages: true
         syncOnWifi: true
         cozyNotifications: false

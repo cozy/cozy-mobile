@@ -24,6 +24,7 @@ module.exports = class Replicator extends Backbone.Model
     _.extend Replicator.prototype, require './replicator_backups'
     # Contact sync functions are in replicator_contacts
     _.extend Replicator.prototype, require './replicator_contacts'
+    _.extend Replicator.prototype, require './replicator_calendars'
 
     _.extend Replicator.prototype, require './replicator_migration'
 

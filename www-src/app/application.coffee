@@ -24,7 +24,6 @@ module.exports =
             window.navigator.globalization = window.navigator.globalization or {}
             window.navigator.globalization.getPreferredLanguage = (callback) -> callback value: 'fr-FR'
 
-
         navigator.globalization.getPreferredLanguage (properties) =>
             [@locale] = properties.value.split '-'
 

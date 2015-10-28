@@ -64,6 +64,13 @@ module.exports =
             errors = []
             async.series [
                 (cb) =>
+                    @syncCalendars (err) ->
+                        if err
+                            log.error "in syncCalendars", err
+                            errors.push err
+                        cb()
+
+                (cb) =>
                     @syncPictures force, (err) ->
                         if err
                             log.error "in syncPictures: ", err

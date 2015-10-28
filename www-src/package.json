@@ -23,11 +23,12 @@
     "jquery": "1.9.1",
     "json-brunch": "^1.5.4",
     "node-polyglot": "0.2.0",
-    "pouchdb": "3.3.1",
+    "pouchdb": "5.1.0",
     "pouchdb-quick-search": "0.3.2",
     "stylus-brunch": "^1.8.1",
     "uglify-js-brunch": "> 1.0 < 1.5",
-    "underscore": "1.4.4"
+    "underscore": "1.4.4",
+    "moment-timezone": "0.4.1"
   },
   "devDependencies": {
     "coffee-script": "1.10.0",
