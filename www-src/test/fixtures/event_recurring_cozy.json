@@ -1,0 +1,22 @@
+{
+   "_id": "d8dde00c9ba594f7d8d242d7a200b897",
+   "_rev": "1-4e6e627c30ff3df264112c16a819bd2c",
+   "start": "2014-11-06T12:00:00.000",
+   "end": "2014-11-06T13:00:00.000",
+   "place": "Hidden dungeon",
+   "details": "Crawling a hidden dungeon",
+   "description": "Recurring event",
+   "rrule": "FREQ=WEEKLY;INTERVAL=1;UNTIL=20150101T000000Z;BYDAY=TH",
+   "tags": [
+       "calendar 1"
+   ],
+   "attendees": [
+   ],
+   "related": null,
+   "timezone": "Europe/Paris",
+   "alarms": [
+   ],
+   "created": "2015-10-30T09:05:34.278Z",
+   "lastModification": "2015-10-30T09:05:34.278Z",
+   "docType": "event"
+}

@@ -1,0 +1,37 @@
+{
+   "_id": "d8dde00c9ba594f7d8d242d7a200bfb2",
+   "_rev": "1-396cb5fe83923904a38e0a8a4265e307",
+   "start": "2014-11-07",
+   "end": "2014-11-08",
+   "place": "Friend's appartment",
+   "details": "Bring a present!",
+   "description": "Friend's birthday",
+   "rrule": "FREQ=YEARLY;INTERVAL=1",
+   "tags": [
+       "calendar 1"
+   ],
+   "attendees": [
+       {
+           "id": 1,
+           "email": "randomgirl@provider.tld",
+           "contactid": null,
+           "status": "INVITATION-NOT-SENT"
+       },
+       {
+           "id": 2,
+           "email": "randomguy@provider.tld",
+           "contactid": null,
+           "status": "INVITATION-NOT-SENT"
+       }
+   ],
+   "related": null,
+   "alarms": [
+       {
+           "trigg": "-P1W",
+           "action": "DISPLAY"
+       }
+   ],
+   "created": "2015-10-30T09:05:34.323Z",
+   "lastModification": "2015-10-30T09:05:34.323Z",
+   "docType": "event"
+}

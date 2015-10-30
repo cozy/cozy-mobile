@@ -1,0 +1,29 @@
+{
+   "_id": "d8dde00c9ba594f7d8d242d7a200b46c",
+   "_rev": "1-e8e99869019a07830118f93cf252c817",
+   "start": "2014-11-05T14:00:00.000Z",
+   "end": "2014-11-05T15:00:00.000Z",
+   "place": "Dentist office",
+   "details": "",
+   "description": "Dentist",
+   "rrule": "",
+   "tags": [
+       "calendar 1"
+   ],
+   "attendees": [
+   ],
+   "related": null,
+   "alarms": [
+       {
+           "trigg": "-PT15M",
+           "action": "DISPLAY"
+       },
+       {
+           "trigg": "-P1D",
+           "action": "EMAIL"
+       }
+   ],
+   "created": "2015-10-30T09:05:34.247Z",
+   "lastModification": "2015-10-30T09:05:34.247Z",
+   "docType": "event"
+}

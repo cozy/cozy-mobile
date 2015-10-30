@@ -1,4 +1,6 @@
-log = require('lib/persistent_log')
+random = require './random'
+
+log = require('./persistent_log')
     prefix: "android calendar helper"
     date: true
 
@@ -49,10 +51,20 @@ module.exports = ACH =
 
         return android
 
+    # Android may ommit the 'T' in PT3600S, which is required by momentjs
+    # Return a moment.duration
+    android2Duration: (duration) ->
+        if 'T' not in duration and not /[YMD]/.test(duration)
+            duration = 'PT' + duration.slice 1
+
+        return moment.duration duration
+
+
 
     event2Android: (cozy, calendarsIds) ->
         # Android
         allDay = undefined # 1 == allday
+        rrule = undefined
         dtstart = undefined # Unix millisecond timestamp
         dtend = undefined # Unix millisecond timestamp
         eventTimezone = 'UTC'
@@ -60,16 +72,18 @@ module.exports = ACH =
         if cozy.start.length is 10 # Allday
             allDay = 1
 
-        if cozy.rrule?
+        if cozy.rrule? and cozy.rrule isnt ''
+            rrule = cozy.rrule
             eventTimezone = cozy.timezone
             duration = moment(cozy.end).diff cozy.start
             duration = moment.duration duration
-            duration = "P#{duration.asSeconds()}S"
-            dtstart = moment.tz(cozy.start, cozy.timezone).format 'x'
+            duration = JSON.stringify duration
+            duration = duration.replace /"/g, ''
+            dtstart = parseInt moment.tz(cozy.start, cozy.timezone).format 'x'
 
         else
-            dtstart = moment(cozy.start).format 'x'
-            dtend = moment(cozy.end).format 'x'
+            dtstart = parseInt moment(cozy.start).format 'x'
+            dtend = parseInt moment(cozy.end).format 'x'
 
         # attendees
 
@@ -122,7 +136,7 @@ module.exports = ACH =
             duration: duration
             eventTimezone: eventTimezone
             allDay: allDay
-            rrule: cozy.rrule
+            rrule: rrule
         # "accessLevel": 0,
         # "availability": 0,
         # "guestsCanModify": 0,
@@ -147,16 +161,18 @@ module.exports = ACH =
 
         if android.rrule
             startMoment = moment.tz android.dtstart, android.eventTimezone
-
-            duration = parseInt android.duration.replace /[^\d]/g, ''
+            duration = ACH.android2Duration android.duration
+            #duration = parseInt android.duration.replace /[^\d]/g, ''
             endMoment = moment startMoment
-            endMoment = endMoment.add duration, 'seconds'
+            endMoment = endMoment.add duration
         else
-            startMoment = moment android.dtstart
-            endMoment = moment android.dtend
+            startMoment = moment.tz android.dtstart, android.eventTimezone
+            endMoment = moment.tz android.dtend, android.eventTimezone
 
         if android.allDay
             start = startMoment.format DATE_FORMAT
+            # # Hack to help moving to the next day.
+            # endMoment.add 10, 'seconds'
             end = endMoment.format DATE_FORMAT
 
         else if android.rrule
@@ -187,12 +203,14 @@ module.exports = ACH =
                     status: ATTENDEE_STATUS_2_COZY[attendee.attendeeStatus] or \
                             'NEEDS-ACTION'
                     email: attendee.attendeeEmail
+                return transcripted
 
 
         alarms = android.reminders.map (reminder) ->
             action = REMINDERS_METHOD_2_COZY[reminder.method] or 'DISPLAY'
-            trigg = moment.duration reminder.minutes, 'minutes'
-            trigg = '-' + JSON.stringify trigg
+            trigg = moment.duration reminder.minutes * -1, 'minutes'
+            trigg = JSON.stringify trigg
+            trigg = trigg.replace /"/g, ''
 
             return { action, trigg }
 

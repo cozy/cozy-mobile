@@ -20,3 +20,51 @@
     <script>require('initialize');</script>
   </body>
 </html>
+': null,
+      'cordova_contact': null,
+      'event_punctual_cozy': null,
+      'event_punctual_android': null,
+      'event_recurring_cozy': null,
+      'event_recurring_android': null,
+      'event_recurringallday_cozy': null,
+      'event_recurringallday_android': null,      
+    };
+
+    function loadFixtures(err) {
+      if (err) { console.log(err); }
+
+      // Fetch fixtures
+      async.each(Object.keys(jsonFixtures), function(name, callback) {
+        $.getJSON('../fixtures/' + name + '.json', function(data) {
+          jsonFixtures[name] = data;
+          callback();
+        });
+      }, loadTests);
+    };
+
+
+    var tests = [ 'contacts.coffee', 'calendars.coffee' ];
+
+    function loadTests(err) {
+      if (err) { console.log(err); }
+      mocha.setup('bdd');
+      async.each(tests, function(testName, callback) {
+        $.get('../' + testName, function(data) {
+          eval(CoffeeScript.compile(data));
+          callback();
+        });
+      }, runTests);
+    }
+
+
+    function runTests(err) {
+      if (err) { console.log(err); }
+      mocha.checkLeaks();
+      mocha.run();
+    }
+
+    $(document).ready(loadCordovaDependencies);
+
+  </script>
+</body>
+</html>

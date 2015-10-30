@@ -1,15 +1,4 @@
-should = require('chai').Should()
-expect = require('chai').expect
-
-# Hack to plugin dependency.
-global.ContactAddress = require '../../plugins/io.cozy.contacts/www/ContactAddress'
-global.ContactField = require '../../plugins/io.cozy.contacts/www/ContactField'
-global.ContactFieldType = require '../../plugins/io.cozy.contacts/www/ContactFieldType'
-global.ContactName = require '../../plugins/io.cozy.contacts/www/ContactName'
-global.ContactOrganization = require '../../plugins/io.cozy.contacts/www/ContactOrganization'
-
-
-Contact = require '../app/models/contact'
+Contact = require 'models/contact'
 
 # Helpers
 structuredToFlat = (t) ->
@@ -99,8 +88,8 @@ describe 'Unit tests', ->
 
 describe 'Convert Cozy contact to cordova tests', ->
     describe 'Cozy2Cordova', ->
-        cozyContact = require './fixtures/cozy_contact.json'
-        expected = require './fixtures/cordova_contact.json'
+        cozyContact = jsonFixtures.cozy_contact
+        expected = jsonFixtures.cordova_contact
         obtained = Contact._cozy2CordovaOptions cozyContact
 
         it "name", ->
@@ -141,8 +130,8 @@ describe 'Convert Cozy contact to cordova tests', ->
 
 describe 'Convert Cordova contact to Cozy tests', ->
     describe 'Cordova2Cozy', ->
-        cordovaContact = require './fixtures/cordova_contact.json' # TODO !
-        expected = require './fixtures/cozy_contact.json'
+        cordovaContact = jsonFixtures.cordova_contact
+        expected = jsonFixtures.cozy_contact
         Contact.cordova2Cozy cordovaContact, (err, obtained) ->
             it "fn", ->
                 obtained.fn.should.eql expected.fn

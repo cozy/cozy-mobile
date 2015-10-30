@@ -99,7 +99,7 @@ module.exports =
                 return callback err if err
 
                 @calendarIds[name] = calendarId
-                console.log @calendarIds
+                @calendarNames[calendarId] = name
                 callback null, calendarId
 
 
@@ -252,20 +252,17 @@ module.exports =
                 key: calendar.calendar_displayName
                 limit: 1
             , (err, res) =>
-                console.log "after qeury"
-                console.log err
-                console.log res
                 return cb err if err
                 if res.rows.length > 0
                     return cb()
 
                 navigator.calendarsync.deleteCalendar calendar, ACCOUNT
                 , (err, deletedCount) =>
-                    console.log "after delete"
                     if err or deletedCount isnt 1
                         return cb err
 
                     delete @calendarIds[calendar.calendar_displayName]
+                    delete @calendarNames[calendar._id]
                     cb()
         , callback
 
@@ -292,7 +289,8 @@ module.exports =
                     if aEvent?
                         calendarDeletions[aEvent.calendar_id] = true
                         navigator.calendarsync.deleteEvent aEvent, options, cb
-                    # else already done.
+                    else # already done.
+                        cb()
 
                 else
                     @_saveEventInPhone doc, aEvent, cb
@@ -302,7 +300,7 @@ module.exports =
             calendars = Object.keys(calendarDeletions).map (calendarId) =>
                 calendar =
                     _id: calendarId
-                    calendar_displayName: _.invert(@calendarIds)[calendarId]
+                    calendar_displayName: @calendarNames[calendarId]
             @cleanCalendars calendars, callback
 
 

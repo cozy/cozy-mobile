@@ -1,0 +1,36 @@
+{
+  "_id": 4346,
+  "calendar_id": 58,
+  "organizer": "myCozy",
+  "title": "Dentist",
+  "eventLocation": "Dentist office",
+  "description": "",
+  "dtstart": 1415196000000,
+  "dtend": 1415199600000,
+  "eventTimezone": "UTC",
+  "allDay": 0,
+  "accessLevel": 0,
+  "availability": 0,
+  "guestsCanModify": 0,
+  "guestsCanInviteOthers": 1,
+  "guestsCanSeeGuests": 1,
+  "deleted": 0,
+  "_sync_id": "d8dde00c9ba594f7d8d242d7a200b46c",
+  "sync_data2": "1-e8e99869019a07830118f93cf252c817",
+  "sync_data5": "2015-10-30T09:05:34.247Z",
+  "attendees": [],
+  "reminders": [
+    {
+      "_id": 1550,
+      "event_id": 4346,
+      "minutes": 15,
+      "method": 1
+    },
+    {
+      "_id": 1551,
+      "event_id": 4346,
+      "minutes": 1440,
+      "method": 2
+    }
+  ]
+}
