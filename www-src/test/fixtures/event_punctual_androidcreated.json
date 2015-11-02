@@ -1,0 +1,37 @@
+{
+ "_id": 4352,
+    "calendar_id": 58,
+    "organizer": "myCozy",
+    "title": "Dentist",
+    "eventLocation": "Dentist office",
+    "description": "",
+    "dtstart": 1415196000000,
+    "dtend": 1415199600000,
+    "eventTimezone": "Europe/Amsterdam",
+    "allDay": 0,
+    "accessLevel": 0,
+    "availability": 0,
+    "guestsCanModify": 0,
+    "guestsCanInviteOthers": 1,
+    "guestsCanSeeGuests": 1,
+    "dirty": 0,
+    "deleted": 0,
+    "_sync_id": "220928F5-6C81-186A-A3A7-61679C6D6590",
+    "sync_data2": "1-0c539ebf0464548ca68428f365001db8",
+    "sync_data9": "0",
+    "attendees": [],
+    "reminders": [
+      {
+        "_id": 1554,
+        "event_id": 4352,
+        "minutes": 15,
+        "method": 1
+      },
+      {
+        "_id": 1553,
+        "event_id": 4352,
+        "minutes": 1440,
+        "method": 2
+      }
+    ]
+  }

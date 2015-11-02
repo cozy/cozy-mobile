@@ -4,7 +4,6 @@ exports.config =
 
     paths:
         public:  '../www'
-        test: 'test'
 
     plugins:
         coffeelint:
@@ -12,7 +11,7 @@ exports.config =
                 indentation: value: 4, level: 'error'
 
     conventions:
-        vendor:  /(vendor)|(tests)(\/|\\)/ # do not wrap tests in modules
+        vendor:  /(vendor)/ # do not wrap tests in modules
 
     files:
         javascripts:

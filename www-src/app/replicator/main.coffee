@@ -262,8 +262,8 @@ module.exports = class Replicator extends Backbone.Model
                 #     else cb()
 
                 (cb) => @set('initialReplicationStep', 3) and cb null
-
                 (cb) => @initContactsInPhone last_seq, cb
+                (cb) => @initEventsInPhone last_seq, cb
 
                 (cb) => @set('initialReplicationStep', 4) and cb null
                 # Save last sequences

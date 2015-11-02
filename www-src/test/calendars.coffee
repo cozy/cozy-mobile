@@ -60,7 +60,7 @@ describe 'Convert Cozy event to Android', ->
 
     describe 'PunctualEvent2Cozy', ->
         cozyEvent = jsonFixtures.event_punctual_cozy
-        androidEvent = jsonFixtures.event_punctual_android
+        androidEvent = jsonFixtures.event_punctual_androidcreated
 
         obtained = ACH.event2Cozy androidEvent, calendarNames
         it "docType", ->
@@ -242,7 +242,7 @@ describe 'Convert Cozy event to Android', ->
 
     describe 'RecurringAlldayEvent2Cozy', ->
         cozyEvent = jsonFixtures.event_recurringallday_cozy
-        androidEvent = jsonFixtures.event_recurringallday_android
+        androidEvent = jsonFixtures.event_recurringallday_androidcreated
 
         obtained = ACH.event2Cozy androidEvent, calendarNames
         it "docType", ->

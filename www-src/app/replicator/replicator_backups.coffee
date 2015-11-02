@@ -64,13 +64,6 @@ module.exports =
             errors = []
             async.series [
                 (cb) =>
-                    @syncCalendars (err) ->
-                        if err
-                            log.error "in syncCalendars", err
-                            errors.push err
-                        cb()
-
-                (cb) =>
                     @syncPictures force, (err) ->
                         if err
                             log.error "in syncPictures: ", err
@@ -99,6 +92,18 @@ module.exports =
                                 log.error "in syncContacts", err
                                 errors.push err
                             cb()
+                (cb) =>
+                    DeviceStatus.checkReadyForSync (err, ready, msg) =>
+                        unless ready or err
+                            err = new Error msg
+                        resultsrn cb err if err
+
+                        @syncCalendars (err) ->
+                            if err
+                                log.error "in syncCalendars", err
+                                errors.push err
+                            cb()
+
 
             ], (err) ->
                 return callback err if err

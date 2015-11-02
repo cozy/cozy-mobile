@@ -16,9 +16,7 @@ log = require('/lib/persistent_log')
 
 
 module.exports =
-    # TODO !
-
-    # 'main' function for contact synchronisation.
+    # 'main' function for calendar synchronisation.
     syncCalendars: (callback) ->
         return callback null unless @config.get 'syncCalendars'
 
@@ -27,11 +25,12 @@ module.exports =
         @set 'backup_step_done', null
 
         # Phone is right on conflict.
-        # Contact sync has 4 phases
-        # 1 - contacts initialisation (if necessary)
-        # 2 - sync Phone --> in app PouchDB
-        # 3 - sync in app PouchDB --> Cozy couchDB
-        # 4 - sync Cozy couchDB to phone (and app PouchDB)
+        # Calendar sync has 5 phases
+        # 1 - Events initialisation (if necessary)
+        # 2 - calendar update and fetching
+        # 3 - sync Phone --> in app PouchDB
+        # 4 - sync in app PouchDB --> Cozy couchDB
+        # 5 - sync Cozy couchDB to phone (and app PouchDB)
         async.series [
             (cb) =>
                 if @config.has('eventsPullCheckpointed')
@@ -43,55 +42,58 @@ module.exports =
                         # we store last_seq before copying files & folder
                         # to avoid losing changes occuring during replication
                         @initEventsInPhone body.last_seq, cb
-            (cb) => @fetchCalendarsFromPhone cb
-            (cb) => @syncPhone2Pouch cb
-            (cb) => @syncToCozy cb
-            (cb) => @syncFromCozy cb
+            (cb) => @updateCalendars cb
+            (cb) => @syncEventsPhone2Pouch cb
+            (cb) => @syncEventsToCozy cb
+            (cb) => @syncEventsFromCozy cb
         ], (err) ->
             log.info "Sync calendars done"
             callback err
 
 
-    # Create the myCozyCloud account in android.
-    # TODO : in navigator.contacts ? navigator.calendars ?
-    createAccount: (callback) =>
-        navigator.calendarsync.createAccount ACCOUNT_TYPE, ACCOUNT_NAME
-        , ->
-            callback null
-        , callback
-
-
-    fetchCalendarsFromPhone: (callback) ->
-        options =
-            accountType: ACCOUNT_TYPE
-            accountName: ACCOUNT_NAME
-
-        navigator.calendarsync.allCalendars options, (err, calendars) =>
-            return callback err if err
-
-            @calendarIds = {}
-            for calendar in calendars
-                log.debug calendar
-                @calendarIds[calendar.calendar_displayName] = calendar._id
-
-            @calendarNames = _.invert @calendarIds
-            callback null, calendars
-
-
-    addCalendar: (name, callback) ->
-        log.debug "enter addCalendar"
-        # Fecth the calendar object from Cozy.
-        request.get @config.makeUrl("/_design/tag/_view/byname?key=\"#{name}\"")
+    _getCalendarFromCozy: (name, callback) ->
+        request.get @config.makeUrl(
+            "/_design/tag/_view/byname?key=\"#{name}\"")
         , (err, res, body) =>
             return callback err if err # TODO : pass on 404
             # No tag found, put a default color.
             calendar = body.rows?[0].value or { name: name , color: '#2979FF' }
+            callback null, calendar
 
-            options =
-                accountName: ACCOUNT_NAME
-                accountType: ACCOUNT_TYPE
 
-            calendar = _.extend calendar, options
+    updateCalendars: (callback) ->
+        navigator.calendarsync.allCalendars ACCOUNT, (err, calendars) =>
+            return callback err if err
+
+            @calendarIds = {}
+            for calendar in calendars
+                @calendarIds[calendar.calendar_displayName] = calendar._id
+
+            @calendarNames = _.invert @calendarIds
+
+            # Check calendars updates in cozy (ie tags colors update)
+            async.eachSeries calendars, (calendar, cb) =>
+                @_getCalendarFromCozy calendar.calendar_displayName
+                , (err, tag) =>
+                    return cb err if err
+                    if ACH.color2Android(tag.color) isnt calendar.calendar_color
+
+                        # update calendar !
+                        newCalendar = _.extend tag, ACCOUNT
+                        newCalendar = ACH.calendar2Android newCalendar
+                        newCalendar._id = calendar._id
+                        navigator.calendarsync.updateCalendar newCalendar
+                        , ACCOUNT, cb
+
+                    else cb()
+            , callback
+
+
+    addCalendar: (name, callback) ->
+        log.debug "enter addCalendar"
+        # Fetch the calendar object from Cozy.
+        _getCalendarFromCozy name, (err, calendar) =>
+            calendar = _.extend calendar, ACCOUNT
 
             # Add calendar in phone
             navigator.calendarsync.addCalendar ACH.calendar2Android(calendar)
@@ -106,7 +108,7 @@ module.exports =
     # Update event in pouchDB with specified event from phone.
     # @param aEvent
     # @param retry retry lighter update after a failed one.
-    _updateInPouch: (aEvent, callback) ->
+    _updateEventInPouch: (aEvent, callback) ->
         @db.get aEvent._sync_id, (err, cozyEvent) =>
             return callback err if err
 
@@ -135,7 +137,7 @@ module.exports =
     # Create a new contact in app's pouchDB from newly created phone contact.
     # @param phoneContact cordova contact format.
     # @param retry retry lighter update after a failed one.
-    _createInPouch: (aEvent, callback) ->
+    _createEventInPouch: (aEvent, callback) ->
         cozyEvent = ACH.event2Cozy aEvent, @calendarNames
 
         @db.post cozyEvent, (err, idNrev) =>
@@ -156,7 +158,7 @@ module.exports =
 
     # Delete the specified contact in app's pouchdb.
     # @param phoneContact cordova contact format.
-    _deleteInPouch: (aEvent, callback) ->
+    _deleteEventInPouch: (aEvent, callback) ->
         toDelete =
             docType: 'event'
             _id: aEvent._sync_id
@@ -168,7 +170,7 @@ module.exports =
 
 
     # Sync dirty (modified) phone contact to app's pouchDB.
-    syncPhone2Pouch: (callback) ->
+    syncEventsPhone2Pouch: (callback) ->
         log.info "enter syncPhone2Pouch"
         # Go through modified events (dirtys)
         # delete, update or create....
@@ -184,17 +186,17 @@ module.exports =
                 @set 'backup_step_done', processed++
                 setImmediate => # helps refresh UI
                     if event.deleted
-                        @_deleteInPouch event, cb
+                        @_deleteEventInPouch event, cb
                     else if event._sync_id
-                        @_updateInPouch event, cb
+                        @_updateEventInPouch event, cb
                     else
-                        @_createInPouch event, cb
+                        @_createEventInPouch event, cb
             , callback
 
 
 
     # Sync app's pouchDB with cozy's couchDB with a replication.
-    syncToCozy: (callback) ->
+    syncEventsToCozy: (callback) ->
         log.info "enter sync2Cozy"
         @set 'backup_step_done', null
         @set 'backup_step', 'events_sync_to_cozy'
@@ -207,12 +209,10 @@ module.exports =
             live: false
             since: @config.get 'eventsPushCheckpointed'
 
-        #TODO : replication.on 'change', (e) => return
         replication.on 'error', callback
         replication.on 'complete', (result) =>
             @config.save eventsPushCheckpointed: result.last_seq, callback
 
-    # TODO : on delete from phone.
     _checkCalendarInPhone: (cozyEvent, callback) ->
         unless cozyEvent.tags[0] of @calendarIds
             @addCalendar cozyEvent.tags[0], callback
@@ -256,6 +256,7 @@ module.exports =
                 if res.rows.length > 0
                     return cb()
 
+                log.debug "delete calendar: #{calendar._id}"
                 navigator.calendarsync.deleteCalendar calendar, ACCOUNT
                 , (err, deletedCount) =>
                     if err or deletedCount isnt 1
@@ -267,28 +268,21 @@ module.exports =
         , callback
 
 
-    # TODO !
-
     # Update contacts in phone with specified docs.
     # @param docs list of contact in cozy's format.
-    _applyChangeToPhone: (docs, callback) ->
+    _applyEventsChangeToPhone: (docs, callback) ->
         calendarDeletions = {}
         async.eachSeries docs, (doc, cb) =>
-            console.log doc
             # precondition: backup_step_done initialized to 0.
             @set 'backup_step_done', @get('backup_step_done') + 1
             navigator.calendarsync.eventBySyncId doc._id, (err, aEvents) =>
-                console.log aEvents
                 aEvent = aEvents[0]
                 return cb err if err
-                # TODO.
-                options =
-                    accountType: ACCOUNT_TYPE
-                    accountName: ACCOUNT_NAME
+
                 if doc._deleted
                     if aEvent?
                         calendarDeletions[aEvent.calendar_id] = true
-                        navigator.calendarsync.deleteEvent aEvent, options, cb
+                        navigator.calendarsync.deleteEvent aEvent, ACCOUNT, cb
                     else # already done.
                         cb()
 
@@ -304,10 +298,10 @@ module.exports =
             @cleanCalendars calendars, callback
 
 
-    # TODO !
+
     # Sync cozy's contact to phone.
-    syncFromCozy: (callback) ->
-        log.info "enter syncCozy2Phone"
+    syncEventsFromCozy: (callback) ->
+        log.info "enter syncEventFromCozy"
         replicationDone = false
 
         total = 0
@@ -316,7 +310,7 @@ module.exports =
 
         # Use a queue because contact save to phone doesn't support well
         # concurrency.
-        applyToPhoneQueue = async.queue @_applyChangeToPhone.bind @
+        applyToPhoneQueue = async.queue @_applyEventsChangeToPhone.bind @
 
         applyToPhoneQueue.drain = -> callback() if replicationDone
 
@@ -352,9 +346,8 @@ module.exports =
             return callback()
 
         @createAccount (err) =>
-          @fetchCalendarsFromPhone (err) =>
+          @updateCalendars (err) =>
             return callback err if err
-            console.log @calendarIds
 
             # Fetch events from view all of contact app.
             # TODO : if view doesn't exist ?
@@ -367,42 +360,42 @@ module.exports =
                     doc = row.value
                     @db.put doc, 'new_edits':false, (err, res) -> cb err, doc
                 , (err, docs) =>
-                    console.log docs
                     return callback err if err
                     @set 'backup_step', null # hide header: first-sync view
                     @_applyChangeToPhone docs, (err) =>
                         # clean backup_step_done after applyChanges
                         @set 'backup_step_done', null
                         @config.save eventsPullCheckpointed: lastSeq
-                        , callback
-                        # , (err) =>
-                            # @deleteObsoletePhoneContacts callback
+                        , (err) =>
+                            @deleteObsoletePhoneEvents callback
 
 
-    # TODO !
     # Synchronise delete state between pouch and the phone.
-    deleteObsoletePhoneContacts: (callback) ->
-        log.info "enter deleteObsoletePhoneContacts"
+    deleteObsoletePhoneEvents: (callback) ->
+        log.info "enter deleteObsoletePhoneEvents"
         async.parallel
             phone: (cb) ->
-                navigator.contacts.find [navigator.contacts.fieldType.id]
-                , (contacts) ->
-                    cb null, contacts
-                , cb
-                , new ContactFindOptions "", true, [], ACCOUNT_TYPE, ACCOUNT_NAME
-            pouch: (cb) =>
-                @db.query "Contacts", {}, cb
+                navigator.calendarsync.allEvents ACCOUNT, cb
 
-        , (err, contacts) =>
+            pouch: (cb) =>
+                @db.query "Calendars", {}, cb
+
+            calendar: (cb) ->
+                navigator.calendarsync.allCalendars ACCOUNT, cb
+
+
+        , (err, events) =>
             return callback err if err
             idsInPouch = {}
-            for row in contacts.pouch.rows
+            for row in events.pouch.rows
                 idsInPouch[row.id] = true
 
-            async.eachSeries contacts.phone, (contact, cb) =>
-                unless contact.sourceId of idsInPouch
-                    log.info "Delete contact: #{contact.sourceId}"
-                    return contact.remove (-> cb()), cb, \
-                        callerIsSyncAdapter: true
-                return cb()
-            , callback
+            async.eachSeries events.phone, (aEvent, cb) =>
+                if aEvent._sync_id of idsInPouch
+                    cb()
+                else
+                    log.info "Delete event: #{aEvent._sync_id}"
+                    navigator.calendarsync.deleteEvent aEvent, ACCOUNT, cb
+            , (err) =>
+                return callback err if err
+                @cleanCalendars events.calendar, callback

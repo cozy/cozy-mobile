@@ -28,6 +28,14 @@ REMINDERS_METHOD_2_COZY = _.invert REMINDERS_METHOD_2_ANDROID
 
 module.exports = ACH =
 
+    color2Android: (color) ->
+        if color[0] is '#'
+            return parseInt color.replace(/[^0-9A-Fa-f]/g, ''), 16
+        else if color[0] is 'r'
+            rgb = color.match /(\d+)/g
+            return rgb[0] * 256 * 256 + rgb[1] * 256 + rgb[2] * 1
+
+
     calendar2Android: (calendar) ->
         android =
             account_name: calendar.accountName
@@ -35,8 +43,7 @@ module.exports = ACH =
             ownerAccount: calendar.accountName
             name: calendar.name.replace /\s/g, ''
             calendar_displayName: calendar.name
-            calendar_color: parseInt(calendar.color.replace(/[^0-9A-Fa-f]/g, '')
-                , 16)
+            calendar_color: ACH.color2Android(calendar.color)
             # No specific needs (?)
             #calendar_timezone: null
 
@@ -159,7 +166,7 @@ module.exports = ACH =
         end = undefined
         timezone = undefined
 
-        if android.rrule
+        if android.rrule? and android.rrule isnt ''
             startMoment = moment.tz android.dtstart, android.eventTimezone
             duration = ACH.android2Duration android.duration
             #duration = parseInt android.duration.replace /[^\d]/g, ''
@@ -181,8 +188,8 @@ module.exports = ACH =
             end = endMoment.format AMBIGUOUS_DT_FORMAT
 
         else
-            start = startMoment.format UTC_DT_FORMAT
-            end = endMoment.format UTC_DT_FORMAT
+            start = startMoment.toISOString()
+            end = endMoment.toISOString()
 
 
         attendees = android.attendees.map (attendee) ->

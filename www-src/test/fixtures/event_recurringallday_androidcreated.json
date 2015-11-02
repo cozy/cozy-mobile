@@ -1,0 +1,58 @@
+{
+    "_id": 4353,
+    "calendar_id": 58,
+    "organizer": "myCozy",
+    "title": "Friend's birthday",
+    "eventLocation": "Friend's appartment",
+    "description": "Bring a present",
+    "dtstart": 1446854400000,
+    "eventTimezone": "UTC",
+    "duration": "P1D",
+    "allDay": 1,
+    "rrule": "FREQ=YEARLY;WKST=MO",
+    "accessLevel": 0,
+    "availability": 1,
+    "guestsCanModify": 0,
+    "guestsCanInviteOthers": 1,
+    "guestsCanSeeGuests": 1,
+    "dirty": 1,
+    "deleted": 0,
+    "mutators": "com.android.providers.calendar",
+    "sync_data9": "4",
+    "attendees": [
+      {
+        "_id": 6913,
+        "event_id": 4353,
+        "attendeeEmail": "myCozy",
+        "attendeeRelationship": 2,
+        "attendeeType": 1,
+        "attendeeStatus": 1
+      },
+      {
+        "_id": 6914,
+        "event_id": 4353,
+        "attendeeName": "randomgirl@provider.tld",
+        "attendeeEmail": "randomgirl@provider.tld",
+        "attendeeRelationship": 0,
+        "attendeeType": 1,
+        "attendeeStatus": 3
+      },
+      {
+        "_id": 6915,
+        "event_id": 4353,
+        "attendeeName": "randomguy@provider.tld",
+        "attendeeEmail": "randomguy@provider.tld",
+        "attendeeRelationship": 0,
+        "attendeeType": 1,
+        "attendeeStatus": 3
+      }
+    ],
+    "reminders": [
+      {
+        "_id": 1553,
+        "event_id": 4353,
+        "minutes": 9540,
+        "method": 1
+      }
+    ]
+  }

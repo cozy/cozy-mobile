@@ -18,6 +18,7 @@ module.exports = class ConfigView extends BaseView
         'tap #sendlogbtn': 'sendlogBtn'
 
         'tap #contactSyncCheck': 'saveChanges'
+        'tap #calendarSyncCheck': 'saveChanges'
         'tap #imageSyncCheck': 'saveChanges'
         'tap #wifiSyncCheck': 'saveChanges'
         'tap #cozyNotificationsCheck' : 'saveChanges'
@@ -102,12 +103,13 @@ module.exports = class ConfigView extends BaseView
         log.info "Save changes"
         checkboxes = @$ '#contactSyncCheck, #imageSyncCheck,' +
                         '#wifiSyncCheck, #cozyNotificationsCheck' +
-                        '#configDone'
+                        '#configDone, #calendarSyncCheck'
         checkboxes.prop 'disabled', true
 
 
         app.replicator.config.save
             syncContacts: @$('#contactSyncCheck').is ':checked'
+            syncCalendars: @$('#calendarSyncCheck').is ':checked'
             syncImages: @$('#imageSyncCheck').is ':checked'
             syncOnWifi: @$('#wifiSyncCheck').is ':checked'
             cozyNotifications: @$('#cozyNotificationsCheck').is ':checked'
