@@ -93,38 +93,76 @@ module.exports = class Replicator extends Backbone.Model
 
             callback error
 
-
-    # Register the device in cozy.
+    # registerDevice: (config, callback) ->
     registerRemote: (config, callback) ->
+        log.debug 'In registerDevice'
         request.post
-            uri: "#{@config.getScheme()}://#{config.cozyURL}/device/",
+            uri: "#{@config.getScheme()}://owner:#{config.password}@#{config.cozyURL}/device"
             auth:
                 username: 'owner'
                 password: config.password
             json:
                 login: config.deviceName
-                type: 'mobile'
+                permissions:
+                    File: description: "Fetch files list"
+                    Folder: description: "Fetch folders list"
+                    Binary: description: "Fetch binaries"
+                    Contact: description: 'Synchronize contacts'
         , (err, response, body) =>
             if err
                 callback err
-            else if response.statusCode is 401 and response.reason
-                callback new Error('cozy need patch')
-            else if response.statusCode is 401
-                callback new Error('wrong password')
-            else if response.statusCode is 400
-                callback new Error('device name already exist')
+            else if response.statusCode isnt 201
+                log.error "while registering device:  #{response.statusCode}"
+                callback new Error response.statusCode, response.reason
+            # else if response.statusCode is 401 and response.reason
+            #     callback new Error('cozy need patch')
+            # else if response.statusCode is 401
+            #     callback new Error('wrong password')
+            # else if response.statusCode is 400
+            #     callback new Error('device name already exist')
             else
+                log.debug body
                 _.extend config,
-                    password: body.password
-                    deviceId: body.id
+                    devicePassword: body.password
+                    deviceName: body.login
                     auth:
-                        username: config.deviceName
+                        username: body.login
                         password: body.password
-                    fullRemoteURL:
-                        "#{@config.getScheme()}://#{config.deviceName}:#{body.password}" +
-                        "@#{config.cozyURL}/cozy"
 
                 @config.save config, callback
+
+
+    # Register the device in cozy.
+    # registerRemote: (config, callback) ->
+    #     request.post
+    #         uri: "#{@config.getScheme()}://#{config.cozyURL}/device/",
+    #         auth:
+    #             username: 'owner'
+    #             password: config.password
+    #         json:
+    #             login: config.deviceName
+    #             type: 'mobile'
+    #     , (err, response, body) =>
+    #         if err
+    #             callback err
+    #         else if response.statusCode is 401 and response.reason
+    #             callback new Error('cozy need patch')
+    #         else if response.statusCode is 401
+    #             callback new Error('wrong password')
+    #         else if response.statusCode is 400
+    #             callback new Error('device name already exist')
+    #         else
+    #             _.extend config,
+    #                 password: body.password
+    #                 deviceId: body.id
+    #                 auth:
+                #         username: config.deviceName
+                #         password: body.password
+                #     fullRemoteURL:
+                #         "#{@config.getScheme()}://#{config.deviceName}:#{body.password}" +
+                #         "@#{config.cozyURL}/cozy"
+
+                # @config.save config, callback
 
     # Fetch current state of replicated views. Avoid pouchDB bug with heavy
     # change list.
@@ -139,7 +177,7 @@ module.exports = class Replicator extends Backbone.Model
             # initialReplication may be called to re-sync data...
             @stopRealtime()
 
-            options = @config.makeUrl '/_changes?descending=true&limit=1'
+            options = @config.makeReplicationUrl '/_changes?descending=true&limit=1'
             request.get options, (err, res, body) =>
                 return callback err if err
                 # we store last_seq before copying files & folder
@@ -184,14 +222,13 @@ module.exports = class Replicator extends Backbone.Model
 
         # To get around case problems and various cozy's generations,
         # try view _view/files-all, if it doesn't exist, use _view/all.
-        if model in ['file', 'folder']
-            options = @config.makeUrl "/_design/#{model}/_view/files-all/"
-            options2 = @config.makeUrl "/_design/#{model}/_view/all/"
-        else if model in ['notification']
-            options = @config.makeUrl "/_design/#{model}/_view/all/"
-            options2 = @config.makeUrl "/_design/#{model}/_view/byDate/"
-        else
-            options = @config.makeUrl "/_design/#{model}/_view/all/"
+        # if model in ['file', 'folder']
+        #     options = @config.makeUrl "/_design/#{model}/_view/files-all/"
+        #     options2 = @config.makeUrl "/_design/#{model}/_view/all/"
+        # else if model in ['notification']
+        #     options = @config.makeUrl "/_design/#{model}/_view/all/"
+        #     options2 = @config.makeUrl "/_design/#{model}/_view/byDate/"
+        options = @config.makeDSUrl "/request/#{model}/all/"
 
         handleResponse = (err, res, body) =>
             if not err and res.status > 399
@@ -207,11 +244,10 @@ module.exports = class Replicator extends Backbone.Model
             , callback
 
         request.get options, (err, res, body) ->
-            if res.status is 404 and model in ['file', 'folder','notification']
-                request.get options2, handleResponse
-
-            else
-                handleResponse(err, res, body)
+            # if res.status is 404 and model in ['file', 'folder','notification']
+                # request.get options2, handleResponse
+            # else
+            handleResponse(err, res, body)
 
 
     # update index for further speeds up.

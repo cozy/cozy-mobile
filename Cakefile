@@ -4,7 +4,7 @@ async  = require './www-src/vendor/scripts/async'
 
 plugins = {
     "com.fgomiero.cordova.externafileutil": "https://github.com/aenario/cordova-external-file-open"
-    "com.brodysoft.sqlitePlugin": "https://github.com/brodysoft/Cordova-SQLitePlugin#r1.0.4"
+    #"com.brodysoft.sqlitePlugin": "https://github.com/brodysoft/Cordova-SQLitePlugin#r1.0.4"
     "org.apache.cordova.file": "https://git-wip-us.apache.org/repos/asf/cordova-plugin-file.git#r1.3.3"
     "org.apache.cordova.file-transfer": "https://git-wip-us.apache.org/repos/asf/cordova-plugin-file-transfer.git#r0.5.0"
     "io.cozy.cordova-images-browser": "https://github.com/aenario/cordova-images-browser"
