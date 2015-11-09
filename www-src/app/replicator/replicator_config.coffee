@@ -45,13 +45,14 @@ module.exports = class ReplicatorConfig extends Backbone.Model
             return 'https'
 
     makeDSUrl: (path) ->
-        "#{@getScheme()}://#{@get("deviceName")}:#{@get('devicePassword')}" +
-        "@" + @get('cozyURL') + '/ds-api' + path
+        json: true
+        url: "#{@getScheme()}://#{@get("deviceName")}:#{@get('devicePassword')}" + "@" + @get('cozyURL') + '/ds-api' + path
 
     makeReplicationUrl: (path) ->
         json: true
         auth: @get 'auth'
         url: "#{@getScheme()}://" + @get('cozyURL') + '/replication' + path
+        # url: "#{@getScheme()}://" + @get('cozyURL') + '/cozy' + path
 
 
     # makeUrl: (path) ->

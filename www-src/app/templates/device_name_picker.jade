@@ -2,7 +2,13 @@
 
 #deviceNamePicker.list
     .card.no-shadow.more-spacing.flat
-        .item.item-text-wrap= t('device name explanation')
+        .item.item-text-wrap
+            = t('device name explanation')
+            - each obj, key in permissions
+                h3= key
+                = t(obj.description)
+
+
     .card.no-shadow.more-spacing
         label
             input#input-device(type="text", value="#{t('device name placeholder')}")

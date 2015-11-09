@@ -16,6 +16,9 @@ module.exports = class DeviceNamePickerView extends BaseView
         'click #btn-back': 'doBack'
         'keypress #input-device': 'blurIfEnter'
 
+    getRenderData: ->
+        return permissions: app.replicator.permissions
+
     doBack: ->
         app.router.navigate 'login', trigger: true
 

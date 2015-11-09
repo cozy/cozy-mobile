@@ -141,7 +141,8 @@ module.exports.download = (options, progressback, callback) ->
         if e.lengthComputable then progressback e.loaded, e.total
         else progressback 3, 10 #@TODO, better aproximation
 
-    headers = Authorization: basic auth
+    #headers = Authorization: basic auth
+    headers = {}
 
     ft.download url, path, onSuccess, onError, true, {headers}
 
