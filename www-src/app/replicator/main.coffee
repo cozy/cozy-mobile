@@ -5,7 +5,7 @@ ReplicatorConfig = require './replicator_config'
 DeviceStatus = require '../lib/device_status'
 DBNAME = "cozy-files.db"
 DBPHOTOS = "cozy-photos.db"
-DBOPTIONS = if window.isBrowserDebugging then {} else adapter: 'websql'
+DBOPTIONS = adapter: 'idb'
 
 log = require('/lib/persistent_log')
     prefix: "replicator"
@@ -22,6 +22,8 @@ module.exports = class Replicator extends Backbone.Model
     # Contact sync functions are in replicator_contacts
     _.extend Replicator.prototype, require './replicator_contacts'
 
+    _.extend Replicator.prototype, require './replicator_migration'
+
     defaults: ->
         inSync: false
         inBackup: false
@@ -34,10 +36,16 @@ module.exports = class Replicator extends Backbone.Model
             @cache = cache
             @db = new PouchDB DBNAME, DBOPTIONS
             @photosDB = new PouchDB DBPHOTOS, DBOPTIONS
-            makeDesignDocs @db, @photosDB, (err) =>
-                return callback err if err
-                @config = new ReplicatorConfig(this)
-                @config.fetch callback
+
+            @migrateDBs (err) =>
+                if err
+                    log.error err
+                    return callback err
+
+                makeDesignDocs @db, @photosDB, (err) =>
+                    return callback err if err
+                    @config = new ReplicatorConfig(this)
+                    @config.fetch callback
 
 
     destroyDB: (callback) ->

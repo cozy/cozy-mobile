@@ -55,5 +55,7 @@ module.exports = class ReplicatorConfig extends Backbone.Model
     createRemotePouchInstance: ->
         new PouchDB
             name: @get 'fullRemoteURL'
+            ajax: timeout: 5 * 60 * 1000 # Big timeout for unknown error on
+                                         # longpoll
 
     appVersion: -> return APP_VERSION
