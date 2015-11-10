@@ -72,6 +72,7 @@
     "waiting...": "En espera...",
     "filesystem bug error": "Error en el sistema de archivos. Tratar de reinicializar su teléfono.",
     "end": "Fin",
+    "please wait database migration": "Database update, please wait a few minutes…",
     "all fields are required": "Todas las casillas son obligatorias",
     "cozy need patch": "Cozy necesita un correctivo",
     "wrong password": "Contraseña incorrecta",

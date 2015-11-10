@@ -72,6 +72,7 @@
     "waiting...": "En attente…",
     "filesystem bug error": "Erreur dans le système de fichiers. Essayez de redémarrer votre téléphone",
     "end": "Fin",
+    "please wait database migration": "Mise à jour du système de base de données, cela peut prendre quelques minutes…",
     "all fields are required": "Tous les champs sont obligatoires",
     "cozy need patch": "Cozy a besoin d'un correctif",
     "wrong password": "Mot de passe incorrect",

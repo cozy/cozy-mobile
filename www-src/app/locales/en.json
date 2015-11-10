@@ -72,6 +72,7 @@
   "waiting...": "Waiting...",
   "filesystem bug error": "File system bug error. Try to restart your phone.",
   "end": "End",
+  "please wait database migration": "Database update, please wait a few minutes…",
   "all fields are required": "All fields are required",
   "cozy need patch": "Cozy need patch",
   "wrong password": "Incorrect password",

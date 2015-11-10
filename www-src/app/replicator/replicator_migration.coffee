@@ -23,8 +23,9 @@ module.exports =
                 unless hasConfig
                     return callback null, 'nothing to migrate'
 
-                log.info 'Migrate sqlite db to idb'
                 # else Migrate.
+                log.info 'Migrate sqlite db to idb'
+                @displayMessage() # Add message to the user
                 @replicateDBs (err) =>
                     return callback err if err
                     @destroySQLiteDBs callback
@@ -59,3 +60,8 @@ module.exports =
         , (db, cb) =>
             db.destroy cb
         , callback
+
+    displayMessage: ->
+        splashMessage = $('<div class="splash-message"></div>')
+        splashMessage.text t 'please wait database migration'
+        $('body').append splashMessage

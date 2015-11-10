@@ -72,6 +72,7 @@
     "waiting...": "기다려 주세요...",
     "filesystem bug error": "파일 시스템 버그. 휴대폰을 다시 시작해 주세요.",
     "end": "완료",
+    "please wait database migration": "Database update, please wait a few minutes…",
     "all fields are required": "모든 항목이 필수 입니다.",
     "cozy need patch": "패치 필요",
     "wrong password": "잘못된 비밀번호",
