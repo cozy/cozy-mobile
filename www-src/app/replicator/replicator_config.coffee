@@ -11,7 +11,7 @@ module.exports = class ReplicatorConfig extends Backbone.Model
         syncContacts: true
         syncImages: true
         syncOnWifi: true
-        cozyNotifications: true
+        cozyNotifications: false
         cozyURL: ''
         deviceName: ''
 

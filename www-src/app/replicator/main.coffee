@@ -139,7 +139,11 @@ module.exports = class Replicator extends Backbone.Model
 
                     (cb) => @set('initialReplicationStep', 2) and cb null
                     # TODO: it copies all notifications (persistent ones too).
-                    (cb) => @copyView 'notification', cb
+                    (cb) =>
+                        if @config.get 'cozyNotifications'
+                            @copyView 'notification', cb
+
+                        else cb()
 
                     (cb) => @set('initialReplicationStep', 3) and cb null
 
@@ -169,6 +173,9 @@ module.exports = class Replicator extends Backbone.Model
         if model in ['file', 'folder']
             options = @config.makeUrl "/_design/#{model}/_view/files-all/"
             options2 = @config.makeUrl "/_design/#{model}/_view/all/"
+        else if model in ['notification']
+            options = @config.makeUrl "/_design/#{model}/_view/all/"
+            options2 = @config.makeUrl "/_design/#{model}/_view/byDate/"
         else
             options = @config.makeUrl "/_design/#{model}/_view/all/"
 
@@ -186,7 +193,7 @@ module.exports = class Replicator extends Backbone.Model
             , callback
 
         request.get options, (err, res, body) ->
-            if res.status is 404 and model in ['file', 'folder']
+            if res.status is 404 and model in ['file', 'folder','notification']
                 request.get options2, handleResponse
 
             else
@@ -596,7 +603,7 @@ module.exports = class Replicator extends Backbone.Model
 
     # Update cache files with outdated revisions. Called while backup
     syncCache:  (callback) =>
-        @set 'backup_step', 'cache_update'
+        @set 'backup_step', 'cache_sync'
         @set 'backup_step_done', null
 
         # TODO: Add optimizations on db.query : avoid include_docs on big list.
@@ -609,7 +616,7 @@ module.exports = class Replicator extends Backbone.Model
             toUpdate = @_filesNEntriesInCache results.rows.map (row) -> row.doc
 
             processed = 0
-            @set 'backup_step', 'cache_update'
+            @set 'backup_step', 'cache_sync'
             @set 'backup_step_total', toUpdate.length
             async.eachSeries toUpdate, (fileNEntry, cb) =>
                 @set 'backup_step_done', processed++
