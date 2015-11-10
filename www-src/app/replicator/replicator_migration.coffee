@@ -12,21 +12,22 @@ module.exports =
     migrateDBs: (callback) ->
         # Check db new db already good.
         @getConfig @db, (err, hasConfig) =>
-            return callback err if err and err.reason isnt 'missing'
-            return callback null, 'db already configured' if hasConfig
+            return callback err if err
+            if hasConfig
+                return callback null, 'db already configured'
 
             # else check old db present.
             @initSQLiteDBs()
             @getConfig @sqliteDB, (err, hasConfig) =>
-                return callback err if err and err.reason isnt 'missing'
-                return callback null, 'nothing to migrate' unless hasConfig
+                return callback err if err
+                unless hasConfig
+                    return callback null, 'nothing to migrate'
 
                 log.info 'Migrate sqlite db to idb'
                 # else Migrate.
                 @replicateDBs (err) =>
                     return callback err if err
-                    # TODO
-                    destroySQLiteDBs callback
+                    @destroySQLiteDBs callback
 
 
     # Init old sqlite db
@@ -36,15 +37,17 @@ module.exports =
 
     getConfig: (db, callback) ->
         db.get 'localconfig', (err, config) =>
-            return callback err if err
-            return callback null, config?
+            if (err and (err.reason isnt 'missing'))
+                return callback err
+            else
+                return callback null, config?
 
 
     replicateDBs: (callback) ->
-        replicateDB = (origin, destination, callback) ->
+        replicateDB = (origin, destination, cb) ->
             replication = origin.replicate.to destination
-            replication.on 'error', callback
-            replication.on 'complete', (repport) -> callback null, report
+            replication.on 'error', cb
+            replication.on 'complete', (report) -> cb null, report
 
         async.series [
             (cb) => replicateDB @sqliteDBPhotos, @photosDB, cb
@@ -53,5 +56,6 @@ module.exports =
 
     destroySQLiteDBs: (callback)->
         async.eachSeries [@sqliteDBPhotos, @sqliteDB]
-        , (db, cb) => db.remove cb
+        , (db, cb) =>
+            db.destroy cb
         , callback

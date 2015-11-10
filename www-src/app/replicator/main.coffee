@@ -36,12 +36,8 @@ module.exports = class Replicator extends Backbone.Model
             @cache = cache
             @db = new PouchDB DBNAME, DBOPTIONS
             @photosDB = new PouchDB DBPHOTOS, DBOPTIONS
-
             @migrateDBs (err) =>
-                if err
-                    log.error err
-                    return callback err
-
+                return callback err if err
                 makeDesignDocs @db, @photosDB, (err) =>
                     return callback err if err
                     @config = new ReplicatorConfig(this)
