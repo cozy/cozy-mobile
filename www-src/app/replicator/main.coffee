@@ -6,8 +6,6 @@ DeviceStatus = require '../lib/device_status'
 DBNAME = "cozy-files.db"
 DBPHOTOS = "cozy-photos.db"
 
-
-
 log = require('/lib/persistent_log')
     prefix: "replicator"
     date: true
@@ -95,10 +93,10 @@ module.exports = class Replicator extends Backbone.Model
             callback error
 
     permissions:
-        File: description: "Fetch files list"
-        Folder: description: "Fetch folders list"
-        Binary: description: "Fetch binaries"
-        Contact: description: 'Synchronize contacts'
+        File: description: "files permission description"
+        Folder: description: "folder permission description"
+        Binary: description: "binary permission description"
+        Contact: description: "contact permission description"
 
     # registerDevice: (config, callback) ->
     registerRemote: (config, callback) ->

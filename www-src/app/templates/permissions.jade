@@ -1,0 +1,19 @@
+//- config screen template
+
+#deviceNamePicker.list
+    .card.no-shadow.more-spacing.flat
+        .item.item-text-wrap
+            p
+                | Votre terminal requiert les permissions suivantes
+                ul
+                    - each obj, key in permissions
+                        li
+                            b= key
+                            | :
+                            = t(obj.description)
+
+
+    .card.no-shadow.more-spacing
+        .button-bar
+            button#btn-back.button.button-dark.button-clear= t('back')
+            button#btn-save.button.button-balanced= t('next')

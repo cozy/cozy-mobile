@@ -56,7 +56,7 @@ module.exports = class LoginView extends BaseView
                 @displayError error
             else
                 app.loginConfig = config
-                app.router.navigate 'device-name-picker', trigger: true
+                app.router.navigate 'permissions', trigger: true
 
     displayError: (text, field) ->
         $('#btn-save').text @saving

@@ -1,6 +1,7 @@
 app = require 'application'
 FolderView = require './views/folder'
 LoginView = require './views/login'
+PermissionsView = require './views/permissions'
 DeviceNamePickerView = require './views/device_name_picker'
 FirstSyncView = require './views/first_sync'
 ConfigView = require './views/config'
@@ -16,6 +17,7 @@ module.exports = class Router extends Backbone.Router
         'folder/*path'                    : 'folder'
         'search/*query'                   : 'search'
         'login'                           : 'login'
+        'permissions'                     : 'permissions'
         'device-name-picker'              : 'deviceNamePicker'
         'first-sync'                      : 'firstSync'
         'config'                          : 'config'
@@ -46,12 +48,18 @@ module.exports = class Router extends Backbone.Router
             $('#search-input').blur() # close keyboard
 
     login: ->
-        app.layout.setTitle t 'setup 1/3'
+        app.layout.setTitle(t('setup') + '1/4')
         $('#btn-menu, #btn-back').hide()
         @display new LoginView()
 
+    permissions: ->
+        app.layout.setTitle(t('setup') + '2/4')
+        $('#btn-menu, #btn-back').hide()
+        @display new PermissionsView()
+
+
     deviceNamePicker: ->
-        app.layout.setTitle t 'setup 2/3'
+        app.layout.setTitle(t('setup') + '3/4')
         $('#btn-menu, #btn-back').hide()
         @display new DeviceNamePickerView()
 
@@ -63,8 +71,8 @@ module.exports = class Router extends Backbone.Router
     config: ->
         console.log "router.config"
         $('#btn-back').hide()
-        titleKey = if app.isFirstRun then 'setup 3/3' else 'config'
-        app.layout.setTitle t titleKey
+        title = if app.isFirstRun then (t('setup') + '4/4') else t 'config'
+        app.layout.setTitle title
         @display new ConfigView()
 
     display: (view) ->
