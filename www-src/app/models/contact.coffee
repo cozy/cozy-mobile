@@ -71,18 +71,28 @@ module.exports = Contact =
         return [];
 
     _adr2ContactAddress: (datapoint) ->
-        structuredToFlat = (t) ->
-            t = t.filter (part) -> return part? and part isnt ''
-            return t.join ', '
-        street = structuredToFlat datapoint.value[0..2]
-        countryPart = structuredToFlat datapoint.value[3..6]
-        formatted = street
-        formatted += '\n' + countryPart if countryPart isnt ''
+        if datapoint.value instanceof Array
+            structuredToFlat = (t) ->
+                t = t.filter (part) -> return part? and part isnt ''
+                return t.join ', '
+            street = structuredToFlat datapoint.value[0..2]
+            countryPart = structuredToFlat datapoint.value[3..6]
+            formatted = street
+            formatted += '\n' + countryPart if countryPart isnt ''
 
-        return new ContactAddress undefined
-        , datapoint.type
-        , formatted, street, datapoint.value[3], datapoint.value[4]
-        , datapoint.value[5], datapoint.value[6]
+            return new ContactAddress undefined
+            , datapoint.type
+            , formatted, street, datapoint.value[3], datapoint.value[4]
+            , datapoint.value[5], datapoint.value[6]
+
+        else if typeof(datapoint.value) is 'string'
+            return new ContactAddress undefined
+            , datapoint.type, datapoint.value, datapoint.value
+
+        else
+            log.warning 'adr datapoint has bad type'
+            return new ContactAddress undefined, datapoint.type, ''
+
 
     # loop trought the cozy's datapoints list and fill up the cordovaContact
     # with
