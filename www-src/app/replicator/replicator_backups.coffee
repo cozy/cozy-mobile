@@ -211,30 +211,33 @@ module.exports =
     uploadPicture: (path, device, callback) ->
         fs.getFileFromPath path, (err, file) =>
             return callback err if err
-
-            fs.contentFromFile file, (err, content) =>
+            fs.getFileAsBlob file, (err, content) =>
                 return callback err if err
 
-                @createBinary content, file.type, (err, bin) =>
+                @createFile file, path, device, (err, res, body) =>
                     return callback err if err
 
-                    @createFile file, path, bin, device, (err, res) =>
+                    @createBinary content, fileId, (err, success) =>
                         return callback err if err
 
                         @createPhoto path, callback
 
 
-    createBinary: (blob, mime, callback) ->
-        @config.remote.post docType: 'Binary', (err, doc) =>
-            return callback err if err
-            return callback new Error('cant create binary') unless doc.ok
+    createBinary: (blob, fileId, callback) ->
+        options = @config.makeDSUrl("/data/#{fileId}/binaries/")
+        data = new FormData()
+        data.append 'file', blob, 'file'
+        $.ajax
+            type: 'POST'
+            url: options.url
+            data: data
+            contentType: false
+            processData: false
+            success: (success) -> callback null, success
+            error: callback
 
-            @config.remote.putAttachment doc.id, 'file', doc.rev, blob, mime, (err, doc) =>
-                return callback err if err
-                return callback new Error('cant attach') unless doc.ok
-                callback null, doc
 
-    createFile: (cordovaFile, localPath, binaryDoc, device, callback) ->
+    createFile: (cordovaFile, localPath, device, callback) ->
         dbFile =
             docType          : 'File'
             localPath        : localPath
@@ -246,17 +249,18 @@ module.exports =
             creationDate     : new Date(cordovaFile.lastModified).toISOString()
             size             : cordovaFile.size
             tags             : ['from-' + @config.get 'deviceName']
-            binary: file:
-                id: binaryDoc.id
-                rev: binaryDoc.rev
 
-        @config.remote.post dbFile, callback
+        options = @config.makeDSUrl("/data/")
+        options.body = dbFile
+        request.post options, callback
+
 
     createPhoto: (localPath, callback) ->
         dbPhoto =
             docType : 'Photo'
             localId: localPath
         @photosDB.post dbPhoto, callback
+
 
     fileClassFromMime: (type) ->
         return switch type.split('/')[0]

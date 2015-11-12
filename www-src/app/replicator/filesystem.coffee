@@ -105,6 +105,15 @@ module.exports.contentFromFile = (file, callback) ->
     reader.onload = -> callback null, reader.result
     reader.readAsArrayBuffer file
 
+module.exports.getFileAsBlob = (file, callback) ->
+    reader = new FileReader()
+    reader.onerror = callback
+    reader.onload = ->
+        blob = new Blob [reader.result], type: file.type
+        callback null, blob
+
+    reader.readAsArrayBuffer file
+
 module.exports.getFileFromPath = (path, callback) ->
     fs.entryFromPath path, (err, entry) ->
         return callback err if err
