@@ -9,19 +9,18 @@ module.exports =
     sqliteDB: null
     sqliteDBPhotos: null
 
+
     migrateDBs: (callback) ->
         # Check db new db already good.
-        @getConfig @db, (err, hasConfig) =>
-            return callback err if err
-            if hasConfig
-                return callback null, 'db already configured'
+        @db.get '_local/appconfig', (err, config) =>
+            return callback err if (err and (err.status isnt 404))
+            return callback null, 'db already configured' if config?
 
             # else check old db present.
             @initSQLiteDBs()
-            @getConfig @sqliteDB, (err, hasConfig) =>
-                return callback err if err
-                unless hasConfig
-                    return callback null, 'nothing to migrate'
+            @sqliteDB.get 'localconfig', (err, config) =>
+                return callback err if (err and (err.status isnt 404))
+                return callback null, 'nothing to migrate' unless config?
 
                 # else Migrate.
                 log.info 'Migrate sqlite db to idb'
@@ -36,13 +35,6 @@ module.exports =
         @sqliteDBPhotos = new PouchDB DBPHOTOS, adapter: 'websql'
         @sqliteDB = new PouchDB DBNAME, adapter: 'websql'
 
-    getConfig: (db, callback) ->
-        db.get 'localconfig', (err, config) =>
-            if (err and (err.reason isnt 'missing'))
-                return callback err
-            else
-                return callback null, config?
-
 
     replicateDBs: (callback) ->
         replicateDB = (origin, destination, cb) ->
@@ -53,13 +45,32 @@ module.exports =
         async.series [
             (cb) => replicateDB @sqliteDBPhotos, @photosDB, cb
             (cb) => replicateDB @sqliteDB, @db, cb
+            (cb) => @moveConfig cb
+
         ], callback
+
+
+    moveConfig: (callback) ->
+        @db.get 'localconfig', (err, config) =>
+            return callback err if err
+            # Keep id and rev for further deletion
+            id = config._id
+            rev = config._rev
+
+            # Update for new config.
+            config._id = '_local/appconfig'
+            delete config._rev
+            @db.put config, (err, newConfig) =>
+                return callback err if err
+                @db.remove id, rev, callback
+
 
     destroySQLiteDBs: (callback)->
         async.eachSeries [@sqliteDBPhotos, @sqliteDB]
         , (db, cb) =>
             db.destroy cb
         , callback
+
 
     displayMessage: ->
         splashMessage = $('<div class="splash-message"></div>')

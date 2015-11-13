@@ -1735,7 +1735,107 @@ module.exports = {
 });
 
 require.register("locales/fr", function(exports, require, module) {
-module.exports = ;
+module.exports = {
+    "app name": "Cozy mobile",
+    "cozy url": "Adresse Cozy",
+    "cozy password": "Mot de passe",
+    "name device": "Nom de l'appareil",
+    "device name": "Nom de l'appareil",
+    "search": "Recherche",
+    "files": "Fichiers",
+    "config": "Configuration",
+    "never": "Jamais",
+    "phone2cozy title": "Sauvegarde du téléphone",
+    "contacts sync label": "Synchronisation des contacts",
+    "images sync label": "Sauvegarde des images du téléphone",
+    "wifi sync label": "Sauvegarde uniquement en Wifi",
+    "cozy notifications sync label": "Synchroniser les notifications Cozy",
+    "home": "Accueil",
+    "about": "À propos",
+    "last backup": "Derniere sauvegarde :",
+    "reset title": "Remise à zéro",
+    "reset action": "Remise à Zéro",
+    "retry synchro": "Synchroniser",
+    "synchro warning": "Relancer une synchronisation depuis le début. Cela peut prendre du temps.",
+    "reset warning": "Relancer une synchronisation depuis le début. Cela peut prendre du temps.",
+    "support": "Support",
+    "send log": "Envoyer Journal",
+    "send log info": "Envoyer un email avec le journal de l'application afin de nous aider à améliorer sa qualité et sa fiabilité.",
+    "send log please describe problem": "Décrivez le problème que vous rencontrez s'il vous plait :",
+    "send log trace begin": "Journal de l'application : ne le modifiez pas s'il vous plait (ou alors dites-nous ce que vous modifiez)",
+    "send log trace end": "FIN du journal.",
+    "pull to sync": "Tirer pour synchroniser",
+    "syncing": "En cours de synchronisation",
+    "contacts_sync": "Synchronisation des contacts",
+    "contacts_sync_to_pouch": "Synchronisation des contacts",
+    "contacts_sync_to_cozy": "Synchronisation des contacts",
+    "contacts_sync_to_phone": "Synchronisation des contacts",
+    "pictures_sync": "Synchronisation des images",
+    "cache_sync": "Mise à jour du cache",
+    "destroying database": "Destruction de la base de données",
+    "synchronized with": "Synchronisé avec",
+    "this folder is empty": "Ce dossier est vide.",
+    "no results": "Pas de résultats",
+    "loading": "Chargement",
+    "remove local": "Supprimer du tél.",
+    "download": "Télécharger",
+    "sync": "Synchroniser",
+    "backup": "Sauvegarder",
+    "save": "Sauvegarder",
+    "done": "Fait",
+    "photos": "Appareils photo",
+    "confirm message": "Êtes-vous sûr(e) ?",
+    "confirm exit message": "Voulez-vous quitter l'application ?",
+    "replication complete": "Reproduction terminée.",
+    "next": "Suivant",
+    "back": "Retour",
+    "connection failure": "Échec de la connexion",
+    "setup 1/3": "Configuration 1/3",
+    "cozy welcome": "Bienvenue !",
+    "cozy welcome message": "L'application Cozy vous permet de: <ul><li>Consulter vos Fichiers</li><li>Synchroniser vos Contacts</li><li>Sauvegarder vos Photos</li></ul>",
+    "cozy welcome no account": "Si vous n'avez pas encore d'instance Cozy, rendez-vous sur <a target='_system' href='http://cozy.io/fr/'>cozy.io</a> pour en savoir plus.",
+    "url placeholder": "Votre Adresse Cozy",
+    "password placeholder": "Votre Mot de Passe",
+    "authenticating...": "Vérification des identifiants…",
+    "setup 2/3": "Configuration 2/3",
+    "device name explanation": "Choisissez un nom d'usage pour ce périphérique  afin de le gérer facilement.",
+    "device name placeholder": "mon-telephone",
+    "registering...": "Enregistrement…",
+    "setup 3/3": "Configuration 3/3",
+    "setup end": "Fin de la configuration",
+    "message step 0": "Etape 1/5 : Synchronisation des fichiers.",
+    "message step 1": "Etape 2/5 : Synchronisation des dossiers.",
+    "message step 2": "Etape 3/5 : Synchronisation des notifications.",
+    "message step 3": "Etape 4/5 : Synchronisation des contacts.",
+    "message step 4": "Etape 5/5 : Préparation des documents.",
+    "wait message device": "Enregistrement de l'appareil…",
+    "ready message": "L'application est prête à être utilisée !",
+    "waiting...": "En attente…",
+    "filesystem bug error": "Erreur dans le système de fichiers. Essayez de redémarrer votre téléphone",
+    "end": "Fin",
+    "please wait database migration": "Mise à jour du système de base de données, cela peut prendre quelques minutes…",
+    "all fields are required": "Tous les champs sont obligatoires",
+    "cozy need patch": "Cozy a besoin d'un correctif",
+    "wrong password": "Mot de passe incorrect",
+    "device name already exist": "Ce nom d'appareil existe déjà",
+    "An error happened (UNKNOWN)": "Une erreur est survenue",
+    "An error happened (NOT FOUND)": "Une erreur est survenue (non trouvé)",
+    "An error happened (INVALID URL)": "Une erreur est survenue (url invalide)",
+    "This file isnt available offline": "Ce fichier n'est pas disponible hors ligne",
+    "ABORTED": "La procédure a été interrompue.",
+    "photo folder not replicated yet": "L'initialisation n'est pas terminée.",
+    "Not Found": "Erreur à l'initialisation. Avez-vous installé l'application Files sur votre Cozy ?",
+    "connexion error": "La connection à votre cozy a échoué. Vérifiez que votre terminal est connecté à internet, que l'adresse de votre cozy est bien écrite et que votre cozy fonctionne. Pour les utilisateurs avancés avec un cozy auto-hébergé, consulter la <a href='http://cozy.io/fr/mobile/files.html#a-propos-des-certificats-auto-sign-s' target='_system'>documentation à propos des certificats autosignés</a>",
+    "no images in DCIM": "Sauvegarde des images : aucune image trouvée dans le répertoire DCIM.",
+    "Document update conflict": "Conflit lors d'une opération en base de données. Essayez de redémarrer l'application pour le résoudre.",
+    "Database not initialized. Confirm initialize": "L'initialisation ne s'est pas déroulée correctement. Réessayer ?\"",
+    "no activity found": "Aucune application n'a été trouvée sur ce téléphone pour ce type de fichier.",
+    "not enough space": "Il n'y a pas suffisament d'espace disque sur votre mobile.",
+    "no battery": "La sauvegarde n'aura pas lieu car vous n'avez pas assez de batterie.",
+    "no wifi": "La sauvegarde n'aura pas lieu car vous n'êtes pas en wifi.",
+    "no connection": "La sauvegarde n'aura pas lieu car vous n'avez pas de connexion.",
+    "bad credentials, did you enter an email address": "Adresse ou mot de passe incorrect. Aviez-vous entré un email à la place de l'url de vorte Cozy ?"
+};
 });
 
 require.register("locales/ko", function(exports, require, module) {
@@ -3711,7 +3811,7 @@ module.exports = ReplicatorConfig = (function(_super) {
 
   ReplicatorConfig.prototype.defaults = function() {
     return {
-      _id: 'localconfig',
+      _id: '_local/appconfig',
       syncContacts: true,
       syncImages: true,
       syncOnWifi: true,
@@ -3722,7 +3822,7 @@ module.exports = ReplicatorConfig = (function(_super) {
   };
 
   ReplicatorConfig.prototype.fetch = function(callback) {
-    return this.replicator.db.get('localconfig', (function(_this) {
+    return this.replicator.db.get('_local/appconfig', (function(_this) {
       return function(err, config) {
         if (config) {
           _this.set(config);
@@ -3735,7 +3835,7 @@ module.exports = ReplicatorConfig = (function(_super) {
 
   ReplicatorConfig.prototype.save = function(changes, callback) {
     this.set(changes);
-    return this.replicator.db.get('localconfig', (function(_this) {
+    return this.replicator.db.get('_local/appconfig', (function(_this) {
       return function(err, config) {
         if (!err) {
           _this.set({
@@ -4203,7 +4303,7 @@ module.exports = {
 });
 
 require.register("replicator/replicator_mapreduce", function(exports, require, module) {
-var ByBinaryIdDesignDoc, ContactsDesignDoc, DevicesByLocalIdDesignDoc, FilesAndFolderDesignDoc, LocalPathDesignDoc, NotificationsTemporaryDesignDoc, PathToBinaryDesignDoc, PhotosByLocalIdDesignDoc, PicturesDesignDoc, createOrUpdateDesign, log;
+var ByBinaryIdDesignDoc, ContactsDesignDoc, FilesAndFolderDesignDoc, LocalPathDesignDoc, NotificationsTemporaryDesignDoc, PathToBinaryDesignDoc, PhotosByLocalIdDesignDoc, PicturesDesignDoc, createOrUpdateDesign, log;
 
 log = require('/lib/persistent_log')({
   prefix: "replicator mapreduce",
@@ -4352,21 +4452,6 @@ PhotosByLocalIdDesignDoc = {
   }
 };
 
-DevicesByLocalIdDesignDoc = {
-  _id: '_design/DevicesByLocalId',
-  version: 2,
-  views: {
-    'DevicesByLocalId': {
-      map: Object.toString.apply(function(doc) {
-        var _ref;
-        if (((_ref = doc.docType) != null ? _ref.toLowerCase() : void 0) === 'device') {
-          return emit(doc.localId, doc);
-        }
-      })
-    }
-  }
-};
-
 module.exports = function(db, photosDB, callback) {
   return async.series([
     function(cb) {
@@ -4385,8 +4470,6 @@ module.exports = function(db, photosDB, callback) {
       return createOrUpdateDesign(db, ContactsDesignDoc, cb);
     }, function(cb) {
       return createOrUpdateDesign(photosDB, PhotosByLocalIdDesignDoc, cb);
-    }, function(cb) {
-      return createOrUpdateDesign(photosDB, DevicesByLocalIdDesignDoc, cb);
     }
   ], callback);
 };
@@ -4409,20 +4492,20 @@ module.exports = {
   sqliteDB: null,
   sqliteDBPhotos: null,
   migrateDBs: function(callback) {
-    return this.getConfig(this.db, (function(_this) {
-      return function(err, hasConfig) {
-        if (err) {
+    return this.db.get('_local/appconfig', (function(_this) {
+      return function(err, config) {
+        if (err && (err.status !== 404)) {
           return callback(err);
         }
-        if (hasConfig) {
+        if (config != null) {
           return callback(null, 'db already configured');
         }
         _this.initSQLiteDBs();
-        return _this.getConfig(_this.sqliteDB, function(err, hasConfig) {
-          if (err) {
+        return _this.sqliteDB.get('localconfig', function(err, config) {
+          if (err && (err.status !== 404)) {
             return callback(err);
           }
-          if (!hasConfig) {
+          if (config == null) {
             return callback(null, 'nothing to migrate');
           }
           log.info('Migrate sqlite db to idb');
@@ -4445,17 +4528,6 @@ module.exports = {
       adapter: 'websql'
     });
   },
-  getConfig: function(db, callback) {
-    return db.get('localconfig', (function(_this) {
-      return function(err, config) {
-        if (err && (err.reason !== 'missing')) {
-          return callback(err);
-        } else {
-          return callback(null, config != null);
-        }
-      };
-    })(this));
-  },
   replicateDBs: function(callback) {
     var replicateDB;
     replicateDB = function(origin, destination, cb) {
@@ -4475,8 +4547,32 @@ module.exports = {
         return function(cb) {
           return replicateDB(_this.sqliteDB, _this.db, cb);
         };
+      })(this), (function(_this) {
+        return function(cb) {
+          return _this.moveConfig(cb);
+        };
       })(this)
     ], callback);
+  },
+  moveConfig: function(callback) {
+    return this.db.get('localconfig', (function(_this) {
+      return function(err, config) {
+        var id, rev;
+        if (err) {
+          return callback(err);
+        }
+        id = config._id;
+        rev = config._rev;
+        config._id = '_local/appconfig';
+        delete config._rev;
+        return _this.db.put(config, function(err, newConfig) {
+          if (err) {
+            return callback(err);
+          }
+          return _this.db.remove(id, rev, callback);
+        });
+      };
+    })(this));
   },
   destroySQLiteDBs: function(callback) {
     return async.eachSeries([this.sqliteDBPhotos, this.sqliteDB], (function(_this) {
