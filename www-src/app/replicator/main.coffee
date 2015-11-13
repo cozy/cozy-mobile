@@ -127,11 +127,31 @@ module.exports = class Replicator extends Backbone.Model
                 _.extend config,
                     devicePassword: body.password
                     deviceName: body.login
+                    devicePermissions: @config.serializePermissions body.persmissions
                     auth:
                         username: body.login
                         password: body.password
 
                 @config.save config, callback
+
+
+    updatePermissions: (password, callback) ->
+        request.put
+            uri: "#{@config.getScheme()}://owner:#{password}@#{@config.get('cozyURL')}/device"
+            auth:
+                username: 'owner'
+                password: password
+            json:
+                login: @config.get 'deviceName'
+                permissions: @permissions
+        , (err, response, body) ->
+            return callback err if err
+
+            log.debug body
+
+            @config.save
+                permissions: @config.serializePermissions body.persmissions
+
 
 
     # Register the device in cozy.

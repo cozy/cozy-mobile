@@ -31,7 +31,7 @@ module.exports =
                 if @config.has('contactsPullCheckpointed')
                     cb()
                 else
-                    request.get @config.makeUrl('/_changes?descending=true&limit=1')
+                    request.get @config.makeReplicationUrl('/_changes?descending=true&limit=1')
                     , (err, res, body) =>
                         return cb err if err
                         # we store last_seq before copying files & folder
@@ -300,16 +300,17 @@ module.exports =
 
         @createAccount (err) =>
             # Fetch contacs from view all of contact app.
-            request.get @config.makeUrl("/_design/contact/_view/all/")
-            , (err, res, body) =>
+            options = @config.makeDSUrl("/request/contact/all/")
+            options.body = {}
+            request.post options, (err, res, rows) =>
                 return callback err if err
-                return callback null unless body.rows?.length
+                return callback null unless rows?.length
 
-                async.mapSeries body.rows, (row, cb) =>
+                async.mapSeries rows, (row, cb) =>
                     doc = row.value
                     # fetch attachments if exists.
                     if doc._attachments?.picture?
-                        request.get @config.makeUrl(
+                        request.get @config.makeReplicationUrl(
                             "/#{doc._id}?attachments=true")
                         , (err, res, body) ->
                             return cb err if err

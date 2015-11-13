@@ -309,12 +309,13 @@ module.exports =
                 return callback null, device
             else
                 # TODO : relies on byFullPath folder view of cozy-file !
-                query = '/_design/folder/_view/byfullpath/?' +
-                    "key=\"/#{t('photos')}\""
+                options = @config.makeDSUrl '/data/folder/byfullpath/'
+                options.body = key: t('photos')
 
-                request.get @config.makeUrl(query), (err, res, body) ->
+
+                request.post options, (err, res, docs) ->
                     return callback err if err
-                    if body?.rows?.length is 0
+                    if docs?.length is 0
                         createNew()
                     else
                         # should not reach here: already exist remote, but not

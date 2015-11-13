@@ -59,16 +59,21 @@ module.exports =
 
                 DeviceStatus.initialize()
 
-                if config.remote
+                unless config.remote
+                    # App's first start
+                    @router.navigate 'login', trigger: true
+
+                else unless config.hasPermissions()
+                    app.router.navigate 'permissions', trigger: true
+
+                else
+                    # TODO : try to move to regular start.
                     unless @replicator.config.has('checkpointed')
                         log.info 'Launch first replication again.'
                         app.router.navigate 'first-sync', trigger: true
                     else
                         app.regularStart()
 
-                else
-                    # App's first start
-                    @router.navigate 'login', trigger: true
 
     regularStart: ->
         app.foreground = true

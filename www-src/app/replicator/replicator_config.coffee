@@ -69,3 +69,9 @@ module.exports = class ReplicatorConfig extends Backbone.Model
                                          # longpoll
 
     appVersion: -> return APP_VERSION
+
+    serializePermissions: (permissions) ->
+        return Object.keys(permissions).sort()
+
+    hasPermissions: ->
+        _.isEqual @get('devicePermissions'), @serializePermissions(@replicator)
