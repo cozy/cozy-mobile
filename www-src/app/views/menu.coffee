@@ -31,9 +31,6 @@ module.exports = class Menu extends BaseView
                 alert t if err.message? then err.message else "no connection"
             app.layout.currentView?.collection?.fetch()
 
-    test: ->
-        app.replicator.testSyncContacts (err) ->
-            alert err if err
 
     backup: ->
         app.layout.closeMenu()

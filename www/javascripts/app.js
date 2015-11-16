@@ -1,59 +1,42 @@
-(function() {
+(function(/*! Brunch !*/) {
   'use strict';
 
-  var globals = typeof window === 'undefined' ? global : window;
+  var globals = typeof window !== 'undefined' ? window : global;
   if (typeof globals.require === 'function') return;
 
   var modules = {};
   var cache = {};
-  var has = ({}).hasOwnProperty;
 
-  var aliases = {};
-
-  var endsWith = function(str, suffix) {
-    return str.indexOf(suffix, str.length - suffix.length) !== -1;
+  var has = function(object, name) {
+    return ({}).hasOwnProperty.call(object, name);
   };
 
-  var unalias = function(alias, loaderPath) {
-    var start = 0;
-    if (loaderPath) {
-      if (loaderPath.indexOf('components/' === 0)) {
-        start = 'components/'.length;
-      }
-      if (loaderPath.indexOf('/', start) > 0) {
-        loaderPath = loaderPath.substring(start, loaderPath.indexOf('/', start));
+  var expand = function(root, name) {
+    var results = [], parts, part;
+    if (/^\.\.?(\/|$)/.test(name)) {
+      parts = [root, name].join('/').split('/');
+    } else {
+      parts = name.split('/');
+    }
+    for (var i = 0, length = parts.length; i < length; i++) {
+      part = parts[i];
+      if (part === '..') {
+        results.pop();
+      } else if (part !== '.' && part !== '') {
+        results.push(part);
       }
     }
-    var result = aliases[alias + '/index.js'] || aliases[loaderPath + '/deps/' + alias + '/index.js'];
-    if (result) {
-      return 'components/' + result.substring(0, result.length - '.js'.length);
-    }
-    return alias;
+    return results.join('/');
   };
 
-  var expand = (function() {
-    var reg = /^\.\.?(\/|$)/;
-    return function(root, name) {
-      var results = [], parts, part;
-      parts = (reg.test(name) ? root + '/' + name : name).split('/');
-      for (var i = 0, length = parts.length; i < length; i++) {
-        part = parts[i];
-        if (part === '..') {
-          results.pop();
-        } else if (part !== '.' && part !== '') {
-          results.push(part);
-        }
-      }
-      return results.join('/');
-    };
-  })();
   var dirname = function(path) {
     return path.split('/').slice(0, -1).join('/');
   };
 
   var localRequire = function(path) {
     return function(name) {
-      var absolute = expand(dirname(path), name);
+      var dir = dirname(path);
+      var absolute = expand(dir, name);
       return globals.require(absolute, path);
     };
   };
@@ -68,26 +51,21 @@
   var require = function(name, loaderPath) {
     var path = expand(name, '.');
     if (loaderPath == null) loaderPath = '/';
-    path = unalias(name, loaderPath);
 
-    if (has.call(cache, path)) return cache[path].exports;
-    if (has.call(modules, path)) return initModule(path, modules[path]);
+    if (has(cache, path)) return cache[path].exports;
+    if (has(modules, path)) return initModule(path, modules[path]);
 
     var dirIndex = expand(path, './index');
-    if (has.call(cache, dirIndex)) return cache[dirIndex].exports;
-    if (has.call(modules, dirIndex)) return initModule(dirIndex, modules[dirIndex]);
+    if (has(cache, dirIndex)) return cache[dirIndex].exports;
+    if (has(modules, dirIndex)) return initModule(dirIndex, modules[dirIndex]);
 
     throw new Error('Cannot find module "' + name + '" from '+ '"' + loaderPath + '"');
   };
 
-  require.alias = function(from, to) {
-    aliases[to] = from;
-  };
-
-  require.register = require.define = function(bundle, fn) {
+  var define = function(bundle, fn) {
     if (typeof bundle === 'object') {
       for (var key in bundle) {
-        if (has.call(bundle, key)) {
+        if (has(bundle, key)) {
           modules[key] = bundle[key];
         }
       }
@@ -96,18 +74,21 @@
     }
   };
 
-  require.list = function() {
+  var list = function() {
     var result = [];
     for (var item in modules) {
-      if (has.call(modules, item)) {
+      if (has(modules, item)) {
         result.push(item);
       }
     }
     return result;
   };
 
-  require.brunch = true;
   globals.require = require;
+  globals.require.define = define;
+  globals.require.register = define;
+  globals.require.list = list;
+  globals.require.brunch = true;
 })();
 require.register("application", function(exports, require, module) {
 var DeviceStatus, LayoutView, Notifications, Replicator, ServiceManager, log;
@@ -1440,6 +1421,110 @@ module.exports = ViewCollection = (function(_super) {
 
 });
 
+require.register("locales/de", function(exports, require, module) {
+module.exports = {
+    "app name": "Cozy mobil",
+    "cozy url": "Cozys Domain",
+    "cozy password": "Cozys Passwort",
+    "name device": "Name für das Gerat",
+    "device name": "Gerätename",
+    "search": "suche",
+    "files": "Dateien",
+    "config": "Einstellungen",
+    "never": "Nie",
+    "phone2cozy title": "Handy nach Cozy Backup",
+    "contacts sync label": "Sync Kontakte",
+    "images sync label": "Backup Bilder",
+    "wifi sync label": "Backup nur über Wlan",
+    "cozy notifications sync label": "Sync Cozy Benachrichtigungen ",
+    "home": "Start",
+    "about": "Über",
+    "last backup": "Zuletzt war :",
+    "reset title": "Reset",
+    "reset action": "Reset",
+    "retry synchro": "Sync",
+    "synchro warning": "Alles neu synchronisiert. Es kann längere zeit dauern.",
+    "reset warning": "Alle Cozy Daten auf deinem Handy löschen",
+    "support": "Support",
+    "send log": "Send",
+    "send log info": "Send an email with application log to help us improve its quality and stability.",
+    "send log please describe problem": "Please describe the problem:",
+    "send log trace begin": "Log Trace: please don't touch (or tell us what)",
+    "send log trace end": "END of Log Trace.",
+    "pull to sync": "Ziehen für sync",
+    "syncing": "Aktualisiert ",
+    "contacts_sync": "Aktualisiere Kontakte",
+    "contacts_sync_to_pouch": "Aktualisiere Kontakte",
+    "contacts_sync_to_cozy": "Aktualisiere Kontakte",
+    "contacts_sync_to_phone": "Aktualisiere Kontakte",
+    "pictures_sync": "Aktualisiere Bilder",
+    "cache_sync": "Updating cache",
+    "destroying database": "Destroying database",
+    "synchronized with": "Syncrnoisiert mit",
+    "this folder is empty": "Dieser Ordner ist leer",
+    "no results": "Keine Ergenisse",
+    "loading": "Lädt",
+    "remove local": "Lösche lokal",
+    "download": "Download",
+    "sync": "Aktualisieren",
+    "backup": "Backup",
+    "save": "Speichern",
+    "done": "Fertig",
+    "photos": "Bilder vom Handy",
+    "confirm message": "Bist du sicher?",
+    "confirm exit message": "Willst du wirklich Schließen?",
+    "replication complete": "Abgleich abgeschlossen",
+    "next": "Nächtes",
+    "back": "zurück",
+    "connection failure": "Verbindungsfehler",
+    "setup 1/3": "Setup 1/3",
+    "cozy welcome": "Welcome!",
+    "cozy welcome message": "Cozy App enables you to: <ul><li>View your Files</li><li>Synchronize your Contacts</li><li>Backup your Photos</li></ul>",
+    "cozy welcome no account": "If you don't already have a Cozy instance, visit <a target='_system' href='http://cozy.io/en/'>cozy.io</a> for more details.",
+    "url placeholder": "dein Cozy Adresse",
+    "password placeholder": "dein Passwort",
+    "authenticating...": "Authenfizieren...",
+    "setup 2/3": "Setup 2/3",
+    "device name explanation": "Wähle einen namen für dein Smartphone um es einfach zu verwalten.",
+    "device name placeholder": "mein-Handy",
+    "registering...": "Registrieren...",
+    "setup 3/3": "Setup 3/3",
+    "setup end": "Ende der Einstellungen",
+    "message step 0": "Step 1/5: Files synchronization.",
+    "message step 1": "Step 2/5: Folders synchronization.",
+    "message step 2": "Step 3/5: Notifications synchronization.",
+    "message step 3": "Step 4/5: Contacts synchronization.",
+    "message step 4": "Step 5/5: Documents preparation.",
+    "wait message device": "Smartphone einrichtung...",
+    "ready message": "Die App ist vollständig eingerichtet! Es kann los gehen.",
+    "waiting...": "Warten...",
+    "filesystem bug error": "Dateisystem Fehler. Versuche dein Handy neuzustarten",
+    "end": "Ende",
+    "please wait database migration": "Database update, please wait a few minutes…",
+    "all fields are required": "Fülle alle Felder aus!",
+    "cozy need patch": "Cozy braucht ein Update",
+    "wrong password": "Passwort falsch",
+    "device name already exist": "Gerätename existiert bereits",
+    "An error happened (UNKNOWN)": "Ein Fehler ist aufgetreten",
+    "An error happened (NOT FOUND)": "Ein Fehler ist aufgetreten.(Datei nicht gefunden)",
+    "An error happened (INVALID URL)": "Ein Fehler ist aufgetreten.(Falsche URL)",
+    "This file isnt available offline": "Diese Datei ist offline nicht verfügbar",
+    "ABORTED": "Dieser Vorgang wurde abgebrochen",
+    "photo folder not replicated yet": "Einrichtung ist noch nicht Abgeschlossen",
+    "Not Found": "Fehler während der Einrichtung. hast du die Files App richtig installiert in deinem Cozy",
+    "connexion error": "Die Verbindung zu deinem Cozy schlug fehl. Bitte überprüfe ob dein Smartphine mit dem Internet verbunden ist, die Cozy Adresse richtig ist und ob Cozy läuft. Für fortgeschrittene User mit eigener Cozy Installation überprüft  <a href='http://cozy.io/en/mobile/files.html#note-about-self-signed-certificates' target='_system'> für selbst signierte Zertifikate </a>",
+    "no images in DCIM": "Backup Bilder: keine Bilder in dem DCIm Ordner.",
+    "Document update conflict": "Update conflict in database, you could try to restart the app to fix it.",
+    "Database not initialized. Confirm initialize": "Initialization didn't finish correctly. Retry ?",
+    "no activity found": "Keine app für dieses dateiformat instaliet.",
+    "not enough space": "Nicht genügend Speicher. Lösche Dateien aus dem Cache",
+    "no battery": "Akku schwach. Backup abgebrochen",
+    "no wifi": "Kein Wlan. Backup abgebrochen",
+    "no connection": "Keine Verbindung. Backup abgebrochen",
+    "bad credentials, did you enter an email address": "Bad credentials, did you enter an email address, instead of the url of your Cozy?"
+};
+});
+
 require.register("locales/en", function(exports, require, module) {
 module.exports = {
   "app name": "Cozy mobile",
@@ -1448,6 +1533,7 @@ module.exports = {
   "name device": "Name this device",
   "device name": "Device name",
   "search": "search",
+  "files": "Files",
   "config": "Config",
   "never": "Never",
   "phone2cozy title": "Phone to Cozy backup",
@@ -1457,21 +1543,24 @@ module.exports = {
   "cozy notifications sync label": "Sync Cozy notifications",
   "home": "Home",
   "about": "About",
-  "last backup": "Last was :",
+  "last backup": "Last was:",
   "reset title": "Reset",
   "reset action": "Reset",
   "retry synchro": "Sync",
-  "synchro warning": "This start a replication from the beginning. It can take a long time.",
-  "reset warning": "This will erase all cozy-generated data on your phone.",
+  "synchro warning": "Launch a replication from the beginning. It may take a while.",
+  "reset warning": "Erase all Cozy-generated data on your phone.",
   "support": "Support",
-  "send log": "Send",
+  "send log": "Send Log",
   "send log info": "Send an email with application log to help us improve its quality and stability.",
+  "send log please describe problem": "Please describe the problem:",
+  "send log trace begin": "Log Trace: please don't touch (or tell us what)",
+  "send log trace end": "END of Log Trace.",
   "pull to sync": "Pull to sync",
   "syncing": "Syncing",
   "contacts_sync": "Syncing contacts",
-  "contacts_sync_to_pouch": "Syncing contacts -> Cozy",
-  "contacts_sync_to_cozy": "Syncing contacts -> Cozy ...",
-  "contacts_sync_to_phone": "Syncing contacts <- Cozy",
+  "contacts_sync_to_pouch": "Syncing contacts",
+  "contacts_sync_to_cozy": "Syncing contacts",
+  "contacts_sync_to_phone": "Syncing contacts",
   "pictures_sync": "Syncing pictures",
   "cache_sync": "Updating cache",
   "destroying database": "Destroying database",
@@ -1489,20 +1578,18 @@ module.exports = {
   "confirm message": "Are you sure?",
   "confirm exit message": "Do you want to Exit?",
   "replication complete": "Replication complete",
-  "no activity found": "No application on phone for this kind of file.",
-  "not enough space": "Not enough disk space, remove some files from cache.",
-  "no battery": "Not enough battery, Backup cancelled.",
-  "no wifi": "No Wifi, Backup cancelled.",
-  "no connection": "No connection, Backup cancelled.",
   "next": "Next",
   "back": "Back",
   "connection failure": "Connection failure",
   "setup 1/3": "Setup 1/3",
-  "cozy welcome": "Welcome ! <br> Cozy, a Personal Cloud you can host, customize and fully control. If you already have a Cozy instance, follow the steps to sync your mobile with your Cozy. Otherwise, visit <a target='_system' href='http://cozy.io/en/'>cozy.io</a> for more.",
-  "password placeholder": "your password",
+  "cozy welcome": "Welcome!",
+  "cozy welcome message": "Cozy App enables you to: <ul><li>View your Files</li><li>Synchronize your Contacts</li><li>Backup your Photos</li></ul>",
+  "cozy welcome no account": "If you don't already have a Cozy instance, visit <a target='_system' href='http://cozy.io/en/'>cozy.io</a> for more details.",
+  "url placeholder": "Your Cozy Address",
+  "password placeholder": "Your Password",
   "authenticating...": "Authenticating...",
   "setup 2/3": "Setup 2/3",
-  "device name explanation": "Choose a display name for this device so you can easily manage it from your Cozy.",
+  "device name explanation": "Choose a display name for this device so you can easily manage it.",
   "device name placeholder": "my-phone",
   "registering...": "Registering...",
   "setup 3/3": "Setup 3/3",
@@ -1517,6 +1604,7 @@ module.exports = {
   "waiting...": "Waiting...",
   "filesystem bug error": "File system bug error. Try to restart your phone.",
   "end": "End",
+  "please wait database migration": "Database update, please wait a few minutes…",
   "all fields are required": "All fields are required",
   "cozy need patch": "Cozy need patch",
   "wrong password": "Incorrect password",
@@ -1530,196 +1618,328 @@ module.exports = {
   "Not Found": "Error while initializing. Did you install the Files application in your Cozy ?",
   "connexion error": "We failed to connect to your cozy. Please check that your device is connected to the internet, the address of your cozy is spelled correctly and your cozy is running. If you are an advanced user with a self hosted cozy, refer to the <a href='http://cozy.io/en/mobile/files.html#note-about-self-signed-certificates' target='_system'>doc to handle self-signed certificates</a>.",
   "no images in DCIM": "Backup images : no image found in DCIM dir.",
-  "Document update conflict": "Update conflict in database, you could try to restart the app to fix it."
+  "Document update conflict": "Update conflict in database, you could try to restart the app to fix it.",
+  "Database not initialized. Confirm initialize": "Initialization didn't finish correctly. Retry ?",
+  "no activity found": "No application on phone for this kind of file.",
+  "not enough space": "Not enough disk space, remove some files from cache.",
+  "no battery": "Not enough battery, Backup cancelled.",
+  "no wifi": "No Wifi, Backup cancelled.",
+  "no connection": "No connection, Backup cancelled.",
+  "bad credentials, did you enter an email address": "Bad credentials, did you enter an email address, instead of the url of your Cozy?"
 }
 ;
 });
 
 require.register("locales/es", function(exports, require, module) {
 module.exports = {
-  "app name": "Cozy movil",
-  "cozy url": "Dirección de Cozy",
-  "cozy password": "Contraseña",
-  "name device": "Dar un nombre al periférico",
-  "device name": "Nombre del periférico",
-  "search": "buscar",
-  "config": "Configuración",
-  "never": "Nunca",
-  "phone2cozy title": "Hacer copia de seguridad del contenido del teléfono",
-  "contacts sync label": "Hacer copia de seguridad de los contactos",
-  "images sync label": "Hacer copia de seguridad de las imágenes del teléfono",
-  "wifi sync label": "Hacer copia de seguridad solamente si Wifi",
-  "cozy notifications sync label": "Sincronizar las notificaciones Cozy",
-  "home": "Inicio",
-  "about": "Acerca de",
-  "last backup": "Última copia de seguridad:",
-  "reset title": "Reinicializar",
-  "reset action": "Reinicializar",
-  "retry synchro": "Sincronizar",
-  "synchro warning": "Esto relanzará una sincronización desde el comienzo. Puede tomar mucho tiempo.",
-  "reset warning": "Esto suprimirá todos los datos cozy de su teléfono.",
-  "pull to sync": "Arrastrar para sincronizar",
-  "syncing": "En curso de sincronización",
-  "contacts_sync": "Sincronización de los contactos",
-  "contacts_sync_to_pouch": "Sincronización de los contactos -> Cozy",
-  "contacts_sync_to_cozy": "Sincronización de los contactos -> Cozy ...",
-  "contacts_sync_to_phone": "Sincronización de los contactos <- Cozy",
-  "pictures_sync": "Sincronización de las imágenes",
-  "cache_update": "Actualización de la caché",
-  "destroying database": "Destrucción de la base de datos",
-  "synchronized with": "Sincronizado con",
-  "this folder is empty": "Esta carpeta está vacía",
-  "no results": "No hay resultados",
-  "loading": "Cargando",
-  "remove local": "Suprimir del teléfono",
-  "download": "Cargar",
-  "sync": "Recargar",
-  "backup": "Copia de seguridad",
-  "save": "Guardar",
-  "done": "Hecho",
-  "photos": "Fotos desde los periféricos",
-  "confirm message": "¿Está usted seguro(a)?",
-  "confirm exit message": "¿Quiere usted salir de la aplicación?",
-  "replication complete": "Reproducción terminada",
-  "no activity found": "Ninguna aplicación se ha encontrado en el teléfono para este tipo de archivos.",
-  "not enough space": "No hay suficiente espacio disco en su teléfono.",
-  "no battery": "La copia de seguridad no se hará ya que su teléfono no tiene suficiente batería.",
-  "no wifi": "La copia de seguridad no se hará porque no hay conexión Wifi.",
-  "no connection": "La copia de seguridad no se hará porque usted no está conectado.",
-  "next": "Siguiente",
-  "back": "Atrás",
-  "connection failure": "Falla en la conexión",
-  "setup 1/3": "Configuración 1/3",
-  "password placeholder": "Su contraseña",
-  "authenticating...": "Verificación de los identificadores...",
-  "setup 2/3": "Configuración 2/3",
-  "device name explanation": "Escoger un nombre de uso de este periférico para poderlo administrar desde su Cozy.",
-  "device name placeholder": "mi-teléfono",
-  "registering...": "Registrando...",
-  "setup 3/3": "Configuración 3/3",
-  "setup end": "Fin de la configuración",
-  "message step 0": "Etapa 1/5: Sincronización de los archivos.",
-  "message step 1": "Etapa 2/5: Sincronización de las carpetas.",
-  "message step 2": "Etapa 3/5: Sincronización de las notificaciones.",
-  "message step 3": "Etapa 4/5: Sincronización de los contactos.",
-  "message step 4": "Etapa 5/5: Preparación de los documentos.",
-  "wait message device": "Configuración del periférico...",
-  "ready message": "¡La aplicación está lista para su uso!",
-  "waiting...": "En espera...",
-  "filesystem bug error": "Error en el sistema de archivos. Tratar de reinicializar su teléfono.",
-  "end": "Fin",
-  "all fields are required": "Todas las casillas son obligatorias",
-  "cozy need patch": "Cozy necesita un correctivo",
-  "wrong password": "Contraseña incorrecta",
-  "device name already exist": "Ese nombre de periférico ya existe",
-  "An error happened (UNKNOWN)": "Un error ha ocurrido",
-  "An error happened (NOT FOUND)": "Un error ha ocurrido (no identificado)",
-  "An error happened (INVALID URL)": "Un error ha ocurrido (url inválida)",
-  "This file isnt available offline": "Este archivo no está disponible fuera de línea.",
-  "ABORTED": "El procedimiento se ha interrumpido.",
-  "photo folder not replicated yet": "La inicialización aún no ha terminado.",
-  "Not Found": "Error en la inicialización. ¿Ha usted instalado la aplicación Archivos en su Cozy?",
-  "connexion error": "La conexión a su cozy ha fallado. Revisar que su periférico esté conectado a internet, que la dirección de su cozy esté bien escrita y si su cozy funciona. Para los usuarios avezados con cozy en sus propios servidores, consultar la <a href='http://cozy.io/en/mobile/files.html#note-about-self-signed-certificates' target='_system'>documentación sobre los certificados auto-firmados </a>",
-  "no images in DCIM": "Copia de seguridad de imágenes: no se ha encontrado ninguna imagen en el directorio DCIM.",
-  "Document update conflict": "Conflicto durante una operación de base de datos. Reinicie la aplicación para arreglarlo."
-}
-;
+    "app name": "Cozy móvil",
+    "cozy url": "Dirección de Cozy",
+    "cozy password": "Contraseña",
+    "name device": "Dar un nombre al periférico",
+    "device name": "Nombre del periférico",
+    "search": "buscar",
+    "files": "Files",
+    "config": "Configuración",
+    "never": "Nunca",
+    "phone2cozy title": "Hacer copia de seguridad del contenido del teléfono",
+    "contacts sync label": "Sincronizando contactos",
+    "images sync label": "Hacer copia de seguridad de las imágenes del teléfono",
+    "wifi sync label": "Hacer copia de seguridad solamente si Wifi",
+    "cozy notifications sync label": "Sincronizar las notificaciones Cozy",
+    "home": "Escritorio",
+    "about": "Acerca de",
+    "last backup": "Last was:",
+    "reset title": "Reinicializar",
+    "reset action": "Reinicializar",
+    "retry synchro": "Sincronizar",
+    "synchro warning": "Launch a replication from the beginning. It may take a while.",
+    "reset warning": "Erase all Cozy-generated data on your phone.",
+    "support": "Soporte",
+    "send log": "Send Log",
+    "send log info": "Enviar un email con el log de la aplicación para ayudarnos a mejorar su calidad y estabilidad.",
+    "send log please describe problem": "Please describe the problem:",
+    "send log trace begin": "Log Trace: please don't touch (or tell us what)",
+    "send log trace end": "END of Log Trace.",
+    "pull to sync": "Arrastrar para sincronizar",
+    "syncing": "En curso de sincronización",
+    "contacts_sync": "Sincronización de los contactos",
+    "contacts_sync_to_pouch": "Sincronización de los contactos",
+    "contacts_sync_to_cozy": "Sincronización de los contactos",
+    "contacts_sync_to_phone": "Sincronización de los contactos",
+    "pictures_sync": "Sincronización de las imágenes",
+    "cache_sync": "Actualización de la cache",
+    "destroying database": "Destruyendo la base de datos",
+    "synchronized with": "Sincronizado con",
+    "this folder is empty": "Esta carpeta está vacía",
+    "no results": "No hay resultados",
+    "loading": "Cargando",
+    "remove local": "Suprimir del teléfono",
+    "download": "Cargar",
+    "sync": "Recargar",
+    "backup": "Copia de seguridad",
+    "save": "Guardar",
+    "done": "Hecho",
+    "photos": "Fotos desde los periféricos",
+    "confirm message": "¿Está usted seguro(a)?",
+    "confirm exit message": "¿Quiere usted salir de la aplicación?",
+    "replication complete": "Reproducción terminada",
+    "next": "Siguiente",
+    "back": "Atrás",
+    "connection failure": "Falla en la conexión",
+    "setup 1/3": "Configuración 1/3",
+    "cozy welcome": "Welcome!",
+    "cozy welcome message": "Cozy App enables you to: <ul><li>View your Files</li><li>Synchronize your Contacts</li><li>Backup your Photos</li></ul>",
+    "cozy welcome no account": "If you don't already have a Cozy instance, visit <a target='_system' href='http://cozy.io/en/'>cozy.io</a> for more details.",
+    "url placeholder": "Your Cozy Address",
+    "password placeholder": "Your Password",
+    "authenticating...": "Verificación de los identificadores...",
+    "setup 2/3": "Configuración 2/3",
+    "device name explanation": "Choose a display name for this device so you can easily manage it.",
+    "device name placeholder": "mi-teléfono",
+    "registering...": "Registrando...",
+    "setup 3/3": "Configuración 3/3",
+    "setup end": "Fin de la configuración",
+    "message step 0": "Paso 1/5: Sincronización de archivos",
+    "message step 1": "Paso 2/5: Sincronización de carpetas.",
+    "message step 2": "Paso 3/5: Notificaciones de sincronización.",
+    "message step 3": "Paso 4/5: Sincronización de Contactos.",
+    "message step 4": "Paso 5/5: Preparación de documentos.",
+    "wait message device": "Configuración del periférico...",
+    "ready message": "¡La aplicación está lista para su uso!",
+    "waiting...": "En espera...",
+    "filesystem bug error": "Error en el sistema de archivos. Tratar de reinicializar su teléfono.",
+    "end": "Fin",
+    "please wait database migration": "Database update, please wait a few minutes…",
+    "all fields are required": "Todas las casillas son obligatorias",
+    "cozy need patch": "Cozy necesita un correctivo",
+    "wrong password": "Contraseña incorrecta",
+    "device name already exist": "Ese nombre de periférico ya existe",
+    "An error happened (UNKNOWN)": "Un error ha ocurrido",
+    "An error happened (NOT FOUND)": "Un error ha ocurrido (no identificado)",
+    "An error happened (INVALID URL)": "Un error ha ocurrido (url inválida)",
+    "This file isnt available offline": "Este archivo no está disponible fuera de línea.",
+    "ABORTED": "El procedimiento se ha interrumpido.",
+    "photo folder not replicated yet": "La inicialización aún no ha terminado.",
+    "Not Found": "Error en la inicialización. ¿Ha usted instalado la aplicación Archivos en su Cozy?",
+    "connexion error": "La conexión a su cozy ha fallado. Revisar que su periférico esté conectado a internet, que la dirección de su cozy esté bien escrita y si su cozy funciona. Para los usuarios avezados con cozy en sus propios servidores, consultar la <a href='http://cozy.io/en/mobile/files.html#note-about-self-signed-certificates' target='_system'>documentación sobre los certificados auto-firmados </a>",
+    "no images in DCIM": "Copia de seguridad de imágenes: no se ha encontrado ninguna imagen en el directorio DCIM.",
+    "Document update conflict": "Conflictos en la actualización de la base de datos. Usted podría reinicializar la aplicación para resoverlos.",
+    "Database not initialized. Confirm initialize": "Initialization didn't finish correctly. Retry ?",
+    "no activity found": "Ninguna aplicación se ha encontrado en el teléfono para este tipo de archivos.",
+    "not enough space": "No hay suficiente espacio disco en su teléfono.",
+    "no battery": "La copia de seguridad no se hará ya que su teléfono no tiene suficiente batería.",
+    "no wifi": "La copia de seguridad no se hará porque no hay conexión Wifi.",
+    "no connection": "La copia de seguridad no se hará porque usted no está conectado.",
+    "bad credentials, did you enter an email address": "Bad credentials, did you enter an email address, instead of the url of your Cozy?"
+};
 });
 
 require.register("locales/fr", function(exports, require, module) {
 module.exports = {
+    "app name": "Cozy mobile",
+    "cozy url": "Adresse Cozy",
+    "cozy password": "Mot de passe",
+    "name device": "Nom de l'appareil",
+    "device name": "Nom de l'appareil",
+    "search": "Recherche",
+    "files": "Fichiers",
+    "config": "Configuration",
+    "never": "Jamais",
+    "phone2cozy title": "Sauvegarde du téléphone",
+    "contacts sync label": "Synchronisation des contacts",
+    "images sync label": "Sauvegarde des images du téléphone",
+    "wifi sync label": "Sauvegarde uniquement en Wifi",
+    "cozy notifications sync label": "Synchroniser les notifications Cozy",
+    "home": "Accueil",
+    "about": "À propos",
+    "last backup": "Derniere sauvegarde :",
+    "reset title": "Remise à zéro",
+    "reset action": "Remise à Zéro",
+    "retry synchro": "Synchroniser",
+    "synchro warning": "Relancer une synchronisation depuis le début. Cela peut prendre du temps.",
+    "reset warning": "Relancer une synchronisation depuis le début. Cela peut prendre du temps.",
+    "support": "Support",
+    "send log": "Envoyer Journal",
+    "send log info": "Envoyer un email avec le journal de l'application afin de nous aider à améliorer sa qualité et sa fiabilité.",
+    "send log please describe problem": "Décrivez le problème que vous rencontrez s'il vous plait :",
+    "send log trace begin": "Journal de l'application : ne le modifiez pas s'il vous plait (ou alors dites-nous ce que vous modifiez)",
+    "send log trace end": "FIN du journal.",
+    "pull to sync": "Tirer pour synchroniser",
+    "syncing": "En cours de synchronisation",
+    "contacts_sync": "Synchronisation des contacts",
+    "contacts_sync_to_pouch": "Synchronisation des contacts",
+    "contacts_sync_to_cozy": "Synchronisation des contacts",
+    "contacts_sync_to_phone": "Synchronisation des contacts",
+    "pictures_sync": "Synchronisation des images",
+    "cache_sync": "Mise à jour du cache",
+    "destroying database": "Destruction de la base de données",
+    "synchronized with": "Synchronisé avec",
+    "this folder is empty": "Ce dossier est vide.",
+    "no results": "Pas de résultats",
+    "loading": "Chargement",
+    "remove local": "Supprimer du tél.",
+    "download": "Télécharger",
+    "sync": "Synchroniser",
+    "backup": "Sauvegarder",
+    "save": "Sauvegarder",
+    "done": "Fait",
+    "photos": "Appareils photo",
+    "confirm message": "Êtes-vous sûr(e) ?",
+    "confirm exit message": "Voulez-vous quitter l'application ?",
+    "replication complete": "Reproduction terminée.",
+    "next": "Suivant",
+    "back": "Retour",
+    "connection failure": "Échec de la connexion",
+    "setup 1/3": "Configuration 1/3",
+    "cozy welcome": "Bienvenue !",
+    "cozy welcome message": "L'application Cozy vous permet de: <ul><li>Consulter vos Fichiers</li><li>Synchroniser vos Contacts</li><li>Sauvegarder vos Photos</li></ul>",
+    "cozy welcome no account": "Si vous n'avez pas encore d'instance Cozy, rendez-vous sur <a target='_system' href='http://cozy.io/fr/'>cozy.io</a> pour en savoir plus.",
+    "url placeholder": "Votre Adresse Cozy",
+    "password placeholder": "Votre Mot de Passe",
+    "authenticating...": "Vérification des identifiants…",
+    "setup 2/3": "Configuration 2/3",
+    "device name explanation": "Choisissez un nom d'usage pour ce périphérique  afin de le gérer facilement.",
+    "device name placeholder": "mon-telephone",
+    "registering...": "Enregistrement…",
+    "setup 3/3": "Configuration 3/3",
+    "setup end": "Fin de la configuration",
+    "message step 0": "Etape 1/5 : Synchronisation des fichiers.",
+    "message step 1": "Etape 2/5 : Synchronisation des dossiers.",
+    "message step 2": "Etape 3/5 : Synchronisation des notifications.",
+    "message step 3": "Etape 4/5 : Synchronisation des contacts.",
+    "message step 4": "Etape 5/5 : Préparation des documents.",
+    "wait message device": "Enregistrement de l'appareil…",
+    "ready message": "L'application est prête à être utilisée !",
+    "waiting...": "En attente…",
+    "filesystem bug error": "Erreur dans le système de fichiers. Essayez de redémarrer votre téléphone",
+    "end": "Fin",
+    "please wait database migration": "Mise à jour du système de base de données, cela peut prendre quelques minutes…",
+    "all fields are required": "Tous les champs sont obligatoires",
+    "cozy need patch": "Cozy a besoin d'un correctif",
+    "wrong password": "Mot de passe incorrect",
+    "device name already exist": "Ce nom d'appareil existe déjà",
+    "An error happened (UNKNOWN)": "Une erreur est survenue",
+    "An error happened (NOT FOUND)": "Une erreur est survenue (non trouvé)",
+    "An error happened (INVALID URL)": "Une erreur est survenue (url invalide)",
+    "This file isnt available offline": "Ce fichier n'est pas disponible hors ligne",
+    "ABORTED": "La procédure a été interrompue.",
+    "photo folder not replicated yet": "L'initialisation n'est pas terminée.",
+    "Not Found": "Erreur à l'initialisation. Avez-vous installé l'application Files sur votre Cozy ?",
+    "connexion error": "La connection à votre cozy a échoué. Vérifiez que votre terminal est connecté à internet, que l'adresse de votre cozy est bien écrite et que votre cozy fonctionne. Pour les utilisateurs avancés avec un cozy auto-hébergé, consulter la <a href='http://cozy.io/fr/mobile/files.html#a-propos-des-certificats-auto-sign-s' target='_system'>documentation à propos des certificats autosignés</a>",
+    "no images in DCIM": "Sauvegarde des images : aucune image trouvée dans le répertoire DCIM.",
+    "Document update conflict": "Conflit lors d'une opération en base de données. Essayez de redémarrer l'application pour le résoudre.",
+    "Database not initialized. Confirm initialize": "L'initialisation ne s'est pas déroulée correctement. Réessayer ?\"",
+    "no activity found": "Aucune application n'a été trouvée sur ce téléphone pour ce type de fichier.",
+    "not enough space": "Il n'y a pas suffisament d'espace disque sur votre mobile.",
+    "no battery": "La sauvegarde n'aura pas lieu car vous n'avez pas assez de batterie.",
+    "no wifi": "La sauvegarde n'aura pas lieu car vous n'êtes pas en wifi.",
+    "no connection": "La sauvegarde n'aura pas lieu car vous n'avez pas de connexion.",
+    "bad credentials, did you enter an email address": "Adresse ou mot de passe incorrect. Aviez-vous entré un email à la place de l'url de vorte Cozy ?"
+};
+});
 
-  "app name": "Cozy mobile",
-  "cozy url": "Adresse Cozy",
-  "cozy password": "Mot de passe",
-  "device name": "Nom de l'appareil",
-  "name device": "Nom de l'appareil",
-  "search": "Recherche",
-  "config": "Configuration",
-  "never": "Jamais",
-  "phone2cozy title": "Sauvegarde du téléphone",
-  "contacts sync label": "Synchronisation des contacts",
-  "images sync label": "Sauvegarde des images du téléphone",
-  "wifi sync label": "Sauvegarde uniquement en Wifi",
-  "cozy notifications sync label": "Synchroniser les notifications Cozy",
-  "home": "Accueil",
-  "about": "À propos",
-  "last backup": "Derniere sauvegarde :",
-  "reset title": "Remise à zéro",
-  "reset action": "R.à.Z",
-  "retry synchro": "Sync",
-  "synchro warning": "Cela relancera une synchronisation depuis le début. Cela peut prendre du temps.",
-  "reset warning": "Cela supprimera toutes les données cozy sur votre mobile (dont votre appareil).",
-  "support": "Support",
-  "send log": "Envoyer",
-  "send log info": "Envoyer un email avec le journal de l'application afin de nous aider à améliorer sa qualité et sa fiabilité.",
-  "pull to sync": "Tirer pour synchroniser",
-  "syncing": "En cours de synchronisation",
-  "contacts_sync": "Synchronisation des contacts",
-  "contacts_sync_to_pouch": "Synchronisation des contacts -> Cozy",
-  "contacts_sync_to_cozy": "Synchronisation des contacts -> Cozy ...",
-  "contacts_sync_to_phone": "Synchronisation des contacts <- Cozy",
-  "pictures_sync": "Synchronisation des images",
-  "cache_update": "Mise à jour du cache",
-  "destroying database": "Destruction de la base de données",
-  "synchronized with": "Synchronisé avec ",
-  "this folder is empty": "Ce dossier est vide.",
-  "no results": "Pas de résultats",
-  "loading": "Chargement",
-  "remove local": "Supprimer du tél.",
-  "download": "Télécharger",
-  "sync": "Synchroniser",
-  "backup": "Sauvegarder",
-  "save": "Sauvegarder",
-  "done": "Fait",
-  "photos": "Appareils photo",
-  "confirm message": "Êtes-vous sûr(e) ?",
-  "confirm exit message": "Voulez-vous quitter l'application ?",
-  "replication complete": "Reproduction terminée.",
-  "no activity found": "Aucune application n'a été trouvée sur ce téléphone pour ce type de fichier.",
-  "not enough space": "Il n'y a pas suffisament d'espace disque sur votre mobile.",
-  "no battery": "La sauvegarde n'aura pas lieu car vous n'avez pas assez de batterie.",
-  "no wifi": "La sauvegarde n'aura pas lieu car vous n'êtes pas en wifi.",
-  "no connection": "La sauvegarde n'aura pas lieu car vous n'avez pas de connexion.",
-  "next": "Suivant",
-  "back": "Retour",
-  "connection failure": "Échec de la connexion",
-  "setup 1/3": "Configuration 1/3",
-  "cozy welcome": "Bienvenue ! <br> Cozy, un Cloud personnel que vous pouvez héberger, personnaliser et entièrement contrôler. Si vous avez déjà une instance Cozy, suivez les étapes pour synchroniser votre mobile avec votre Cozy. Sinon, rendez-vous sur <a target='_system' href='http://cozy.io/fr/'>cozy.io</a> pour en savoir plus.",
-  "password placeholder": "votre mot de passe",
-  "authenticating...": "Vérification des identifiants…",
-  "setup 2/3": "Configuration 2/3",
-  "device name explanation": "Choisissez un nom d'usage pour ce périphérique pour pouvoir le gérer facilement depuis votre Cozy.",
-  "device name placeholder": "mon-telephone",
-  "registering...": "Enregistrement…",
-  "setup 3/3": "Configuration 3/3",
-  "setup end": "Fin de la configuration",
-  "wait message device": "Enregistrement de l'appareil…",
-  "message step 0": "Etape 1/5 : Synchronisation des fichiers.",
-  "message step 1": "Etape 2/5 : Synchronisation des dossiers.",
-  "message step 2": "Etape 3/5 : Synchronisation des notifications.",
-  "message step 3": "Etape 4/5 : Synchronisation des contacts.",
-  "message step 4": "Etape 5/5 : Préparation des documents.",
-  "ready message": "L'application est prête à être utilisée !",
-  "waiting...": "En attente…",
-  "filesystem bug error": "Erreur dans le système de fichiers. Essayez de redémarrer votre téléphone",
-  "end": "Fin",
-  "all fields are required": "Tous les champs sont obligatoires",
-  "cozy need patch": "Cozy a besoin d'un correctif",
-  "wrong password": "Mot de passe incorrect",
-  "device name already exist": "Ce nom d'appareil existe déjà",
-  "An error happened (UNKNOWN)": "Une erreur est survenue",
-  "An error happened (NOT FOUND)": "Une erreur est survenue (non trouvé)",
-  "An error happened (INVALID URL)": "Une erreur est survenue (url invalide)",
-  "This file isnt available offline": "Ce fichier n'est pas disponible hors ligne",
-  "ABORTED": "La procédure a été interrompue.",
-  "photo folder not replicated yet": "L'initialisation n'est pas terminée.",
-  "Not Found": "Erreur à l'initialisation. Avez-vous installé l'application Files sur votre Cozy ?",
-  "connexion error": "La connection à votre cozy a échoué. Vérifiez que votre terminal est connecté à internet, que l'adresse de votre cozy est bien écrite et que votre cozy fonctionne. Pour les utilisateurs avancés avec un cozy auto-hébergé, consulter la <a href='http://cozy.io/fr/mobile/files.html#a-propos-des-certificats-auto-sign-s' target='_system'>documentation à propos des certificats autosignés</a>",
-  "no images in DCIM": "Sauvegarde des images : aucune image trouvée dans le répertoire DCIM.",
-  "Document update conflict": "Conflit lors d'une opération en base de données. Essayez de redémarrer l'application pour le résoudre."
-}
-;
+require.register("locales/ko", function(exports, require, module) {
+module.exports = {
+    "app name": "Cozy 모바일",
+    "cozy url": "Cozy 도메인",
+    "cozy password": "Cozy 비밀번호",
+    "name device": "장치명",
+    "device name": "장치명",
+    "search": "검색",
+    "files": "파일",
+    "config": "설정",
+    "never": "사용안함",
+    "phone2cozy title": "모바일에서 Cozy로 백업",
+    "contacts sync label": "연락처 동기화",
+    "images sync label": "이미지 백업",
+    "wifi sync label": "Wifi일 때 백업",
+    "cozy notifications sync label": "Cozy 알림 동기화",
+    "home": "홈",
+    "about": "도움말",
+    "last backup": "최근:",
+    "reset title": "초기화",
+    "reset action": "초기화",
+    "retry synchro": "동기화",
+    "synchro warning": "Launch a replication from the beginning. It may take a while.",
+    "reset warning": "Erase all Cozy-generated data on your phone.",
+    "support": "지원",
+    "send log": "Send Log",
+    "send log info": "앱 로그를 관리자에게 보내세요. 클라우드 성능 향상에 도움이 될 것입니다.",
+    "send log please describe problem": "Please describe the problem:",
+    "send log trace begin": "Log Trace: please don't touch (or tell us what)",
+    "send log trace end": "END of Log Trace.",
+    "pull to sync": "동기화 가져오기",
+    "syncing": "동기화 중",
+    "contacts_sync": "연락처 동기화 중",
+    "contacts_sync_to_pouch": "연락처 동기화 중",
+    "contacts_sync_to_cozy": "연락처 동기화 중",
+    "contacts_sync_to_phone": "연락처 동기화 중",
+    "pictures_sync": "사진 동기화",
+    "cache_sync": "캐쉬 업데이트",
+    "destroying database": "데이터베이스 삭제",
+    "synchronized with": "와 동기화 됨",
+    "this folder is empty": "이 폴더는 비어 있습니다.",
+    "no results": "결과 없음",
+    "loading": "불러오기",
+    "remove local": "로컬 삭제",
+    "download": "다운로드",
+    "sync": "새로고침",
+    "backup": "백업",
+    "save": "저장",
+    "done": "완료",
+    "photos": "장치로 부터의 사진",
+    "confirm message": "정말 실행 하시겠습니까?",
+    "confirm exit message": "페이지를 나가시겠습니까?",
+    "replication complete": "복제 완료",
+    "next": "다음",
+    "back": "뒤로",
+    "connection failure": "연결 실패",
+    "setup 1/3": "설정 1/3",
+    "cozy welcome": "Welcome!",
+    "cozy welcome message": "Cozy App enables you to: <ul><li>View your Files</li><li>Synchronize your Contacts</li><li>Backup your Photos</li></ul>",
+    "cozy welcome no account": "If you don't already have a Cozy instance, visit <a target='_system' href='http://cozy.io/en/'>cozy.io</a> for more details.",
+    "url placeholder": "Your Cozy Address",
+    "password placeholder": "Your Password",
+    "authenticating...": "인증 처리 중...",
+    "setup 2/3": "설정 2/3",
+    "device name explanation": "Choose a display name for this device so you can easily manage it.",
+    "device name placeholder": "내 휴대폰",
+    "registering...": "등록 중...",
+    "setup 3/3": "설정 3/3",
+    "setup end": "설정 완료",
+    "message step 0": "단계 1/5 : 파일 동기화",
+    "message step 1": "단계 2/5 : 폴더 동기화",
+    "message step 2": "단계 3/5 : 알림 동기화",
+    "message step 3": "단계 4/5 : 연락처 동기화",
+    "message step 4": "단계 5/5 : 문서 준비",
+    "wait message device": "장치 설정...",
+    "ready message": "앱이 준비 되었습니다!",
+    "waiting...": "기다려 주세요...",
+    "filesystem bug error": "파일 시스템 버그. 휴대폰을 다시 시작해 주세요.",
+    "end": "완료",
+    "please wait database migration": "Database update, please wait a few minutes…",
+    "all fields are required": "모든 항목이 필수 입니다.",
+    "cozy need patch": "패치 필요",
+    "wrong password": "잘못된 비밀번호",
+    "device name already exist": "장치명이 이미 존재 합니다.",
+    "An error happened (UNKNOWN)": "오류 발생.",
+    "An error happened (NOT FOUND)": "오류 발생 (알 수 없음).",
+    "An error happened (INVALID URL)": "오류 발생 (URL 오류).",
+    "This file isnt available offline": "이 파일은 오프라인에서 사용 할 수 없습니다.",
+    "ABORTED": "설치가 취소 되었습니다.",
+    "photo folder not replicated yet": "초기화가 아직 완료 되지 않았습니다.",
+    "Not Found": "초기화 중 오류. 클라우드에 파일 관련 앱을 설치 하였습니까?",
+    "connexion error": "클라우드에 연결 하지 못했습니다. 인터넷 연결 상태, 접속 URL, 클라우드 실행 상태를 확인 하세요.  <a href='http://cozy.io/en/mobile/files.html#note-about-self-signed-certificates' target='_system'>참고 문서</a>",
+    "no images in DCIM": "백업 이미지 : DCIM 디렉터리에 이미지가 없습니다.",
+    "Document update conflict": "데이터 베이스 업데이트 충돌, 처리 후 앱을 다시 시작 하세요.",
+    "Database not initialized. Confirm initialize": "Initialization didn't finish correctly. Retry ?",
+    "no activity found": "이런 종류의 파일을 위한 앱이 없습니다.",
+    "not enough space": "디스크 용량이 부족해서, 임시 파일을 삭제 합니다.",
+    "no battery": "배터리가 부족으로, 백업이 취소 되었습니다.",
+    "no wifi": "무선 네트워크 연결 안되어서, 백업이 취소 되었습니다.",
+    "no connection": "네트워크 연결이 안되서, 백업이 취소 되었습니다.",
+    "bad credentials, did you enter an email address": "Bad credentials, did you enter an email address, instead of the url of your Cozy?"
+};
 });
 
 require.register("models/contact", function(exports, require, module) {
@@ -1779,19 +1999,26 @@ module.exports = Contact = {
   },
   _adr2ContactAddress: function(datapoint) {
     var countryPart, formatted, street, structuredToFlat;
-    structuredToFlat = function(t) {
-      t = t.filter(function(part) {
-        return (part != null) && part !== '';
-      });
-      return t.join(', ');
-    };
-    street = structuredToFlat(datapoint.value.slice(0, 3));
-    countryPart = structuredToFlat(datapoint.value.slice(3, 7));
-    formatted = street;
-    if (countryPart !== '') {
-      formatted += '\n' + countryPart;
+    if (datapoint.value instanceof Array) {
+      structuredToFlat = function(t) {
+        t = t.filter(function(part) {
+          return (part != null) && part !== '';
+        });
+        return t.join(', ');
+      };
+      street = structuredToFlat(datapoint.value.slice(0, 3));
+      countryPart = structuredToFlat(datapoint.value.slice(3, 7));
+      formatted = street;
+      if (countryPart !== '') {
+        formatted += '\n' + countryPart;
+      }
+      return new ContactAddress(void 0, datapoint.type, formatted, street, datapoint.value[3], datapoint.value[4], datapoint.value[5], datapoint.value[6]);
+    } else if (typeof datapoint.value === 'string') {
+      return new ContactAddress(void 0, datapoint.type, datapoint.value, datapoint.value);
+    } else {
+      log.warning('adr datapoint has bad type');
+      return new ContactAddress(void 0, datapoint.type, '');
     }
-    return new ContactAddress(void 0, datapoint.type, formatted, street, datapoint.value[3], datapoint.value[4], datapoint.value[5], datapoint.value[6]);
   },
   _dataPoints2Cordova: function(cozyContact, cordovaContact) {
     var addContactField, datapoint, i, name, _ref, _results;
@@ -2383,8 +2610,8 @@ DBNAME = "cozy-files.db";
 
 DBPHOTOS = "cozy-photos.db";
 
-DBOPTIONS = window.isBrowserDebugging ? {} : {
-  adapter: 'websql'
+DBOPTIONS = {
+  adapter: 'idb'
 };
 
 log = require('/lib/persistent_log')({
@@ -2416,6 +2643,8 @@ module.exports = Replicator = (function(_super) {
 
   _.extend(Replicator.prototype, require('./replicator_contacts'));
 
+  _.extend(Replicator.prototype, require('./replicator_migration'));
+
   Replicator.prototype.defaults = function() {
     return {
       inSync: false,
@@ -2433,12 +2662,17 @@ module.exports = Replicator = (function(_super) {
         _this.cache = cache;
         _this.db = new PouchDB(DBNAME, DBOPTIONS);
         _this.photosDB = new PouchDB(DBPHOTOS, DBOPTIONS);
-        return makeDesignDocs(_this.db, _this.photosDB, function(err) {
+        return _this.migrateDBs(function(err) {
           if (err) {
             return callback(err);
           }
-          _this.config = new ReplicatorConfig(_this);
-          return _this.config.fetch(callback);
+          return makeDesignDocs(_this.db, _this.photosDB, function(err) {
+            if (err) {
+              return callback(err);
+            }
+            _this.config = new ReplicatorConfig(_this);
+            return _this.config.fetch(callback);
+          });
         });
       };
     })(this));
@@ -2554,7 +2788,11 @@ module.exports = Replicator = (function(_super) {
             }, function(cb) {
               return _this.set('initialReplicationStep', 2) && cb(null);
             }, function(cb) {
-              return _this.copyView('notification', cb);
+              if (_this.config.get('cozyNotifications')) {
+                return _this.copyView('notification', cb);
+              } else {
+                return cb();
+              }
             }, function(cb) {
               return _this.set('initialReplicationStep', 3) && cb(null);
             }, function(cb) {
@@ -2589,6 +2827,9 @@ module.exports = Replicator = (function(_super) {
     if (model === 'file' || model === 'folder') {
       options = this.config.makeUrl("/_design/" + model + "/_view/files-all/");
       options2 = this.config.makeUrl("/_design/" + model + "/_view/all/");
+    } else if (model === 'notification') {
+      options = this.config.makeUrl("/_design/" + model + "/_view/all/");
+      options2 = this.config.makeUrl("/_design/" + model + "/_view/byDate/");
     } else {
       options = this.config.makeUrl("/_design/" + model + "/_view/all/");
     }
@@ -2616,7 +2857,7 @@ module.exports = Replicator = (function(_super) {
       };
     })(this);
     return request.get(options, function(err, res, body) {
-      if (res.status === 404 && (model === 'file' || model === 'folder')) {
+      if (res.status === 404 && (model === 'file' || model === 'folder' || model === 'notification')) {
         return request.get(options2, handleResponse);
       } else {
         return handleResponse(err, res, body);
@@ -3092,7 +3333,7 @@ module.exports = Replicator = (function(_super) {
 
   Replicator.prototype.syncCache = function(callback) {
     var options;
-    this.set('backup_step', 'cache_update');
+    this.set('backup_step', 'cache_sync');
     this.set('backup_step_done', null);
     options = {
       keys: this.cache.map(function(entry) {
@@ -3110,7 +3351,7 @@ module.exports = Replicator = (function(_super) {
           return row.doc;
         }));
         processed = 0;
-        _this.set('backup_step', 'cache_update');
+        _this.set('backup_step', 'cache_sync');
         _this.set('backup_step_total', toUpdate.length);
         return async.eachSeries(toUpdate, function(fileNEntry, cb) {
           _this.set('backup_step_done', processed++);
@@ -3570,18 +3811,18 @@ module.exports = ReplicatorConfig = (function(_super) {
 
   ReplicatorConfig.prototype.defaults = function() {
     return {
-      _id: 'localconfig',
+      _id: '_local/appconfig',
       syncContacts: true,
       syncImages: true,
       syncOnWifi: true,
-      cozyNotifications: true,
+      cozyNotifications: false,
       cozyURL: '',
       deviceName: ''
     };
   };
 
   ReplicatorConfig.prototype.fetch = function(callback) {
-    return this.replicator.db.get('localconfig', (function(_this) {
+    return this.replicator.db.get('_local/appconfig', (function(_this) {
       return function(err, config) {
         if (config) {
           _this.set(config);
@@ -3594,7 +3835,7 @@ module.exports = ReplicatorConfig = (function(_super) {
 
   ReplicatorConfig.prototype.save = function(changes, callback) {
     this.set(changes);
-    return this.replicator.db.get('localconfig', (function(_this) {
+    return this.replicator.db.get('_local/appconfig', (function(_this) {
       return function(err, config) {
         if (!err) {
           _this.set({
@@ -3640,7 +3881,10 @@ module.exports = ReplicatorConfig = (function(_super) {
 
   ReplicatorConfig.prototype.createRemotePouchInstance = function() {
     return new PouchDB({
-      name: this.get('fullRemoteURL')
+      name: this.get('fullRemoteURL'),
+      ajax: {
+        timeout: 5 * 60 * 1000
+      }
     });
   };
 
@@ -4059,7 +4303,7 @@ module.exports = {
 });
 
 require.register("replicator/replicator_mapreduce", function(exports, require, module) {
-var ByBinaryIdDesignDoc, ContactsDesignDoc, DevicesByLocalIdDesignDoc, FilesAndFolderDesignDoc, LocalPathDesignDoc, NotificationsTemporaryDesignDoc, PathToBinaryDesignDoc, PhotosByLocalIdDesignDoc, PicturesDesignDoc, createOrUpdateDesign, log;
+var ByBinaryIdDesignDoc, ContactsDesignDoc, FilesAndFolderDesignDoc, LocalPathDesignDoc, NotificationsTemporaryDesignDoc, PathToBinaryDesignDoc, PhotosByLocalIdDesignDoc, PicturesDesignDoc, createOrUpdateDesign, log;
 
 log = require('/lib/persistent_log')({
   prefix: "replicator mapreduce",
@@ -4208,21 +4452,6 @@ PhotosByLocalIdDesignDoc = {
   }
 };
 
-DevicesByLocalIdDesignDoc = {
-  _id: '_design/DevicesByLocalId',
-  version: 2,
-  views: {
-    'DevicesByLocalId': {
-      map: Object.toString.apply(function(doc) {
-        var _ref;
-        if (((_ref = doc.docType) != null ? _ref.toLowerCase() : void 0) === 'device') {
-          return emit(doc.localId, doc);
-        }
-      })
-    }
-  }
-};
-
 module.exports = function(db, photosDB, callback) {
   return async.series([
     function(cb) {
@@ -4241,10 +4470,123 @@ module.exports = function(db, photosDB, callback) {
       return createOrUpdateDesign(db, ContactsDesignDoc, cb);
     }, function(cb) {
       return createOrUpdateDesign(photosDB, PhotosByLocalIdDesignDoc, cb);
-    }, function(cb) {
-      return createOrUpdateDesign(photosDB, DevicesByLocalIdDesignDoc, cb);
     }
   ], callback);
+};
+
+});
+
+require.register("replicator/replicator_migration", function(exports, require, module) {
+var DBNAME, DBPHOTOS, log;
+
+log = require('/lib/persistent_log')({
+  prefix: "replicator_migration_sqlite",
+  date: true
+});
+
+DBNAME = "cozy-files.db";
+
+DBPHOTOS = "cozy-photos.db";
+
+module.exports = {
+  sqliteDB: null,
+  sqliteDBPhotos: null,
+  migrateDBs: function(callback) {
+    return this.db.get('_local/appconfig', (function(_this) {
+      return function(err, config) {
+        if (err && (err.status !== 404)) {
+          return callback(err);
+        }
+        if (config != null) {
+          return callback(null, 'db already configured');
+        }
+        _this.initSQLiteDBs();
+        return _this.sqliteDB.get('localconfig', function(err, config) {
+          if (err && (err.status !== 404)) {
+            return callback(err);
+          }
+          if (config == null) {
+            return callback(null, 'nothing to migrate');
+          }
+          log.info('Migrate sqlite db to idb');
+          _this.displayMessage();
+          return _this.replicateDBs(function(err) {
+            if (err) {
+              return callback(err);
+            }
+            return _this.destroySQLiteDBs(callback);
+          });
+        });
+      };
+    })(this));
+  },
+  initSQLiteDBs: function() {
+    this.sqliteDBPhotos = new PouchDB(DBPHOTOS, {
+      adapter: 'websql'
+    });
+    return this.sqliteDB = new PouchDB(DBNAME, {
+      adapter: 'websql'
+    });
+  },
+  replicateDBs: function(callback) {
+    var replicateDB;
+    replicateDB = function(origin, destination, cb) {
+      var replication;
+      replication = origin.replicate.to(destination);
+      replication.on('error', cb);
+      return replication.on('complete', function(report) {
+        return cb(null, report);
+      });
+    };
+    return async.series([
+      (function(_this) {
+        return function(cb) {
+          return replicateDB(_this.sqliteDBPhotos, _this.photosDB, cb);
+        };
+      })(this), (function(_this) {
+        return function(cb) {
+          return replicateDB(_this.sqliteDB, _this.db, cb);
+        };
+      })(this), (function(_this) {
+        return function(cb) {
+          return _this.moveConfig(cb);
+        };
+      })(this)
+    ], callback);
+  },
+  moveConfig: function(callback) {
+    return this.db.get('localconfig', (function(_this) {
+      return function(err, config) {
+        var id, rev;
+        if (err) {
+          return callback(err);
+        }
+        id = config._id;
+        rev = config._rev;
+        config._id = '_local/appconfig';
+        delete config._rev;
+        return _this.db.put(config, function(err, newConfig) {
+          if (err) {
+            return callback(err);
+          }
+          return _this.db.remove(id, rev, callback);
+        });
+      };
+    })(this));
+  },
+  destroySQLiteDBs: function(callback) {
+    return async.eachSeries([this.sqliteDBPhotos, this.sqliteDB], (function(_this) {
+      return function(db, cb) {
+        return db.destroy(cb);
+      };
+    })(this), callback);
+  },
+  displayMessage: function() {
+    var splashMessage;
+    splashMessage = $('<div class="splash-message"></div>');
+    splashMessage.text(t('please wait database migration'));
+    return $('body').append(splashMessage);
+  }
 };
 
 });
@@ -4991,12 +5333,11 @@ module.exports = ConfigView = (function(_super) {
   };
 
   ConfigView.prototype.sendlogBtn = function() {
-    var query;
-    query = {
-      subject: "Log from cozy-mobile v" + app.replicator.config.appVersion(),
-      body: "Describe the problem here:\n\n\n########################\n# Log Trace: please don't touch (or tell us what)\n##\n\n" + (log.getTraces().join('\n'))
-    };
-    return window.open("mailto:guillaume@cozycloud.cc?" + $.param(query), "_system");
+    var body, query, subject;
+    subject = "Log from cozy-mobile v" + app.replicator.config.appVersion();
+    body = "" + (t('send log please describe problem')) + "\n\n\n########################\n# " + (t('send log trace begin')) + "\n##\n\n" + (log.getTraces().join('\n')) + "\n\n##\n# " + (t('send log trace end')) + "\n########################\n\n\n" + (t('send log please describe problem')) + "\n";
+    query = "subject=" + (encodeURI(subject)) + "&body=" + (encodeURI(body));
+    return window.open("mailto:guillaume@cozycloud.cc?" + query, "_system");
   };
 
   ConfigView.prototype.saveChanges = function() {
@@ -6036,14 +6377,6 @@ module.exports = Menu = (function(_super) {
         alert(t(err.message != null ? err.message : "no connection"));
       }
       return (_ref = app.layout.currentView) != null ? (_ref1 = _ref.collection) != null ? _ref1.fetch() : void 0 : void 0;
-    });
-  };
-
-  Menu.prototype.test = function() {
-    return app.replicator.testSyncContacts(function(err) {
-      if (err) {
-        return alert(err);
-      }
     });
   };
 

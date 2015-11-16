@@ -88,14 +88,6 @@ PhotosByLocalIdDesignDoc =
                 if doc.docType?.toLowerCase() is 'photo'
                     emit doc.localId
 
-DevicesByLocalIdDesignDoc =
-    _id: '_design/DevicesByLocalId'
-    version: 2
-    views:
-        'DevicesByLocalId':
-            map: Object.toString.apply (doc) ->
-                if doc.docType?.toLowerCase() is 'device'
-                    emit doc.localId, doc
 
 module.exports = (db, photosDB, callback) ->
 
@@ -108,5 +100,4 @@ module.exports = (db, photosDB, callback) ->
         (cb) -> createOrUpdateDesign db, PathToBinaryDesignDoc, cb
         (cb) -> createOrUpdateDesign db, ContactsDesignDoc, cb
         (cb) -> createOrUpdateDesign photosDB, PhotosByLocalIdDesignDoc, cb
-        (cb) -> createOrUpdateDesign photosDB, DevicesByLocalIdDesignDoc, cb
     ], callback

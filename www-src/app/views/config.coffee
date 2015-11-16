@@ -71,19 +71,29 @@ module.exports = class ConfigView extends BaseView
 
 
     sendlogBtn: ->
-        query =
-            subject: "Log from cozy-mobile v" + app.replicator.config.appVersion()
-            body: """
-            Describe the problem here:
+        subject = "Log from cozy-mobile v" + app.replicator.config.appVersion()
+        body = """
+            #{t('send log please describe problem')}
 
 
             ########################
-            # Log Trace: please don't touch (or tell us what)
+            # #{t('send log trace begin')}
             ##
 
-            #{log.getTraces().join('\n')}"""
+            #{log.getTraces().join('\n')}
 
-        window.open "mailto:guillaume@cozycloud.cc?" + $.param(query), "_system"
+            ##
+            # #{t('send log trace end')}
+            ########################
+
+
+            #{t('send log please describe problem')}
+
+            """
+
+        query = "subject=#{encodeURI(subject)}&body=#{encodeURI(body)}"
+
+        window.open "mailto:guillaume@cozycloud.cc?" + query, "_system"
 
 
     # save config changes in local pouchdb
