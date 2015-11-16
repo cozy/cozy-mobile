@@ -46,7 +46,7 @@ module.exports = Service =
                     log.error err
                     return window.service.workDone()
 
-                if config.remote
+                if config.remote and config.hasPermissions()
                     unless @replicator.config.has('checkpointed')
                         log.error new Error "Database not initialized"
                         return window.service.workDone()

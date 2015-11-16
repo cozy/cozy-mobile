@@ -59,20 +59,28 @@ module.exports =
 
                 DeviceStatus.initialize()
 
-                unless config.remote
+                if config.remote
+                    app.replicator.checkPlatformVersions (err) =>
+                        if err
+                            log.error err
+                            return alert err.message or err
+
+                        unless config.hasPermissions()
+                            app.router.navigate 'permissions', trigger: true
+
+                        else
+                            # TODO : try to move to regular start.
+                            unless @replicator.config.has('checkpointed')
+                                log.info 'Launch first replication again.'
+                                app.router.navigate 'first-sync', trigger: true
+                            else
+                                app.regularStart()
+
+
+                else # no config.remote
                     # App's first start
+                    app.isFirstRun = true
                     @router.navigate 'login', trigger: true
-
-                else unless config.hasPermissions()
-                    app.router.navigate 'permissions', trigger: true
-
-                else
-                    # TODO : try to move to regular start.
-                    unless @replicator.config.has('checkpointed')
-                        log.info 'Launch first replication again.'
-                        app.router.navigate 'first-sync', trigger: true
-                    else
-                        app.regularStart()
 
 
     regularStart: ->

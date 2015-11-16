@@ -104,5 +104,6 @@
   "no wifi": "No Wifi, Backup cancelled.",
   "no connection": "No connection, Backup cancelled.",
   "bad credentials, did you enter an email address": "Bad credentials, did you enter an email address, instead of the url of your Cozy?",
-  "error try restart": "Please try restarting the application."
+  "error try restart": "Please try restarting the application.",
+  "error need min %version for %app": "You have to upgrade the %app on your Cozy. Mobile app requires %version or higher"
 }

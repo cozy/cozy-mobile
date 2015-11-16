@@ -43,8 +43,6 @@ module.exports = class DeviceNamePickerView extends BaseView
                 @displayError t err.message
             else
                 delete app.loginConfig
-                app.isFirstRun = true
-
                 app.router.navigate 'config', trigger: true
 
     onCompleteDefaultValue: ->
