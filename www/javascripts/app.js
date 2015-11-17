@@ -143,9 +143,13 @@ module.exports = {
         _this.replicator = new Replicator();
         _this.layout = new LayoutView();
         return _this.replicator.init(function(err, config) {
+          var msg;
           if (err) {
             log.error(err);
-            return alert(err.message || err);
+            msg = err.message || err;
+            msg += "\n " + (t('error try restart'));
+            alert(msg);
+            return navigator.app.exitApp();
           }
           if (!window.isBrowserDebugging) {
             _this.notificationManager = new Notifications();
@@ -1521,7 +1525,8 @@ module.exports = {
     "no battery": "Akku schwach. Backup abgebrochen",
     "no wifi": "Kein Wlan. Backup abgebrochen",
     "no connection": "Keine Verbindung. Backup abgebrochen",
-    "bad credentials, did you enter an email address": "Bad credentials, did you enter an email address, instead of the url of your Cozy?"
+    "bad credentials, did you enter an email address": "Bad credentials, did you enter an email address, instead of the url of your Cozy?",
+    "error try restart": "Please try restarting the application."
 };
 });
 
@@ -1625,7 +1630,8 @@ module.exports = {
   "no battery": "Not enough battery, Backup cancelled.",
   "no wifi": "No Wifi, Backup cancelled.",
   "no connection": "No connection, Backup cancelled.",
-  "bad credentials, did you enter an email address": "Bad credentials, did you enter an email address, instead of the url of your Cozy?"
+  "bad credentials, did you enter an email address": "Bad credentials, did you enter an email address, instead of the url of your Cozy?",
+  "error try restart": "Please try restarting the application."
 }
 ;
 });
@@ -1638,28 +1644,28 @@ module.exports = {
     "name device": "Dar un nombre al periférico",
     "device name": "Nombre del periférico",
     "search": "buscar",
-    "files": "Files",
+    "files": "Archivos",
     "config": "Configuración",
     "never": "Nunca",
     "phone2cozy title": "Hacer copia de seguridad del contenido del teléfono",
-    "contacts sync label": "Sincronizando contactos",
+    "contacts sync label": "Sincronizar contactos",
     "images sync label": "Hacer copia de seguridad de las imágenes del teléfono",
     "wifi sync label": "Hacer copia de seguridad solamente si Wifi",
     "cozy notifications sync label": "Sincronizar las notificaciones Cozy",
     "home": "Escritorio",
     "about": "Acerca de",
-    "last backup": "Last was:",
+    "last backup": "Último:",
     "reset title": "Reinicializar",
     "reset action": "Reinicializar",
     "retry synchro": "Sincronizar",
-    "synchro warning": "Launch a replication from the beginning. It may take a while.",
-    "reset warning": "Erase all Cozy-generated data on your phone.",
+    "synchro warning": "Lanzar una réplica desde el comienzo. Puede tomar tiempo.",
+    "reset warning": "Borrar de su teléfono todos los datos generados por Cozy.",
     "support": "Soporte",
-    "send log": "Send Log",
+    "send log": "Enviar Log",
     "send log info": "Enviar un email con el log de la aplicación para ayudarnos a mejorar su calidad y estabilidad.",
-    "send log please describe problem": "Please describe the problem:",
-    "send log trace begin": "Log Trace: please don't touch (or tell us what)",
-    "send log trace end": "END of Log Trace.",
+    "send log please describe problem": "Por favor, describa el problema:",
+    "send log trace begin": "Traza del Log: por favor no toque (o díganos lo que hizo)",
+    "send log trace end": "FIN de la Traza del Log.",
     "pull to sync": "Arrastrar para sincronizar",
     "syncing": "En curso de sincronización",
     "contacts_sync": "Sincronización de los contactos",
@@ -1687,14 +1693,14 @@ module.exports = {
     "back": "Atrás",
     "connection failure": "Falla en la conexión",
     "setup 1/3": "Configuración 1/3",
-    "cozy welcome": "Welcome!",
-    "cozy welcome message": "Cozy App enables you to: <ul><li>View your Files</li><li>Synchronize your Contacts</li><li>Backup your Photos</li></ul>",
-    "cozy welcome no account": "If you don't already have a Cozy instance, visit <a target='_system' href='http://cozy.io/en/'>cozy.io</a> for more details.",
-    "url placeholder": "Your Cozy Address",
-    "password placeholder": "Your Password",
+    "cozy welcome": "¡Bienvenido(a)!",
+    "cozy welcome message": "Cozy App le permite: <ul><li>Visualizar su Archivos</li><li>Sincronizar su Contactos</li><li>Hacer una copia de seguridad de su Fotos</li></ul>",
+    "cozy welcome no account": "Si tusted no desea todavía una instancia Cozy, visite <a target='_system' href='http://cozy.io/en/'>cozy.io</a> para mayores detalles.",
+    "url placeholder": "Su dirección Cozy",
+    "password placeholder": "Su contraseña",
     "authenticating...": "Verificación de los identificadores...",
     "setup 2/3": "Configuración 2/3",
-    "device name explanation": "Choose a display name for this device so you can easily manage it.",
+    "device name explanation": "Escoger un nombre para este periférico así se podrá administrar más facilmente.",
     "device name placeholder": "mi-teléfono",
     "registering...": "Registrando...",
     "setup 3/3": "Configuración 3/3",
@@ -1709,7 +1715,7 @@ module.exports = {
     "waiting...": "En espera...",
     "filesystem bug error": "Error en el sistema de archivos. Tratar de reinicializar su teléfono.",
     "end": "Fin",
-    "please wait database migration": "Database update, please wait a few minutes…",
+    "please wait database migration": "Actualización de la base de datos, por favor, espere algunos minutos...",
     "all fields are required": "Todas las casillas son obligatorias",
     "cozy need patch": "Cozy necesita un correctivo",
     "wrong password": "Contraseña incorrecta",
@@ -1724,13 +1730,14 @@ module.exports = {
     "connexion error": "La conexión a su cozy ha fallado. Revisar que su periférico esté conectado a internet, que la dirección de su cozy esté bien escrita y si su cozy funciona. Para los usuarios avezados con cozy en sus propios servidores, consultar la <a href='http://cozy.io/en/mobile/files.html#note-about-self-signed-certificates' target='_system'>documentación sobre los certificados auto-firmados </a>",
     "no images in DCIM": "Copia de seguridad de imágenes: no se ha encontrado ninguna imagen en el directorio DCIM.",
     "Document update conflict": "Conflictos en la actualización de la base de datos. Usted podría reinicializar la aplicación para resoverlos.",
-    "Database not initialized. Confirm initialize": "Initialization didn't finish correctly. Retry ?",
+    "Database not initialized. Confirm initialize": "La inicialización no terminó correctamente. ¿Tratar de nuevo?",
     "no activity found": "Ninguna aplicación se ha encontrado en el teléfono para este tipo de archivos.",
     "not enough space": "No hay suficiente espacio disco en su teléfono.",
     "no battery": "La copia de seguridad no se hará ya que su teléfono no tiene suficiente batería.",
     "no wifi": "La copia de seguridad no se hará porque no hay conexión Wifi.",
     "no connection": "La copia de seguridad no se hará porque usted no está conectado.",
-    "bad credentials, did you enter an email address": "Bad credentials, did you enter an email address, instead of the url of your Cozy?"
+    "bad credentials, did you enter an email address": "Malas credenciales, ¿escribió usted su dirección email en lugar de la url de su Cozy?",
+    "error try restart": "Please try restarting the application."
 };
 });
 
@@ -1834,7 +1841,9 @@ module.exports = {
     "no battery": "La sauvegarde n'aura pas lieu car vous n'avez pas assez de batterie.",
     "no wifi": "La sauvegarde n'aura pas lieu car vous n'êtes pas en wifi.",
     "no connection": "La sauvegarde n'aura pas lieu car vous n'avez pas de connexion.",
-    "bad credentials, did you enter an email address": "Adresse ou mot de passe incorrect. Aviez-vous entré un email à la place de l'url de vorte Cozy ?"
+    "bad credentials, did you enter an email address": "Adresse ou mot de passe incorrect. Aviez-vous entré un email à la place de l'url de vorte Cozy ?",
+  "error try restart": "Essayez de redémarrer l'application."
+
 };
 });
 
@@ -1938,7 +1947,8 @@ module.exports = {
     "no battery": "배터리가 부족으로, 백업이 취소 되었습니다.",
     "no wifi": "무선 네트워크 연결 안되어서, 백업이 취소 되었습니다.",
     "no connection": "네트워크 연결이 안되서, 백업이 취소 되었습니다.",
-    "bad credentials, did you enter an email address": "Bad credentials, did you enter an email address, instead of the url of your Cozy?"
+    "bad credentials, did you enter an email address": "Bad credentials, did you enter an email address, instead of the url of your Cozy?",
+    "error try restart": "Please try restarting the application."
 };
 });
 

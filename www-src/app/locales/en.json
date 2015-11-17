@@ -97,5 +97,6 @@
   "no battery": "Not enough battery, Backup cancelled.",
   "no wifi": "No Wifi, Backup cancelled.",
   "no connection": "No connection, Backup cancelled.",
-  "bad credentials, did you enter an email address": "Bad credentials, did you enter an email address, instead of the url of your Cozy?"
+  "bad credentials, did you enter an email address": "Bad credentials, did you enter an email address, instead of the url of your Cozy?",
+  "error try restart": "Please try restarting the application."
 }

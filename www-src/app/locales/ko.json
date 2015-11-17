@@ -97,5 +97,6 @@
     "no battery": "배터리가 부족으로, 백업이 취소 되었습니다.",
     "no wifi": "무선 네트워크 연결 안되어서, 백업이 취소 되었습니다.",
     "no connection": "네트워크 연결이 안되서, 백업이 취소 되었습니다.",
-    "bad credentials, did you enter an email address": "Bad credentials, did you enter an email address, instead of the url of your Cozy?"
+    "bad credentials, did you enter an email address": "Bad credentials, did you enter an email address, instead of the url of your Cozy?",
+    "error try restart": "Please try restarting the application."
 }

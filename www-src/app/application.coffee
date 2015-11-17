@@ -43,7 +43,11 @@ module.exports =
             @replicator.init (err, config) =>
                 if err
                     log.error err
-                    return alert err.message or err
+                    msg = err.message or err
+                    msg += "\n #{t('error try restart')}"
+                    alert msg
+                    return navigator.app.exitApp()
+
                 # Monkey patch for browser debugging
                 unless window.isBrowserDebugging
                     @notificationManager = new Notifications()
