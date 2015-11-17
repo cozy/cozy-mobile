@@ -97,5 +97,7 @@
     "no battery": "La sauvegarde n'aura pas lieu car vous n'avez pas assez de batterie.",
     "no wifi": "La sauvegarde n'aura pas lieu car vous n'êtes pas en wifi.",
     "no connection": "La sauvegarde n'aura pas lieu car vous n'avez pas de connexion.",
-    "bad credentials, did you enter an email address": "Adresse ou mot de passe incorrect. Aviez-vous entré un email à la place de l'url de vorte Cozy ?"
+    "bad credentials, did you enter an email address": "Adresse ou mot de passe incorrect. Aviez-vous entré un email à la place de l'url de vorte Cozy ?",
+  "error try restart": "Essayez de redémarrer l'application."
+
 }
