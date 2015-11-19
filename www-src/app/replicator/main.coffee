@@ -61,13 +61,17 @@ module.exports = class Replicator extends Backbone.Model
                     @config.fetch callback
 
 
-    checkPlatformVersions: (callback) ->
+    checkPlatformVersions: (cozyURL, callback) ->
+        if arguments.length is 1
+            callback = cozyURL
+            cozyURL = @config.get 'cozyURL'
+
         cutVersion = (s) ->
             [s, major, minor, patch] = s.match /(\d+)\.(\d+)\.(\d+)/
             return { major, minor, patch }
 
         request.get
-            url: "#{@config.getScheme()}://#{@config.get('cozyURL')}/versions"
+            url: "#{@config.getScheme()}://#{cozyURL}/versions"
             json: true
         , (err, response, body) ->
             return callback err if err # TODO i18n ?
@@ -652,7 +656,6 @@ module.exports = class Replicator extends Backbone.Model
     realtimeBackupCoef = 1
 
     startRealtime: =>
-        # Stub
         if @liveReplication or not app.foreground
             return
 
@@ -707,6 +710,7 @@ module.exports = class Replicator extends Backbone.Model
         @liveReplication.once 'error', (e) =>
             console.log e
             @liveReplication = null
+
             # realtimeBackupCoef++ if realtimeBackupCoef < 6
             # timeout = 1000 * (1 << realtimeBackupCoef)
             # log.error "REALTIME BROKE, TRY AGAIN IN #{timeout} #{e.toString()}"
@@ -718,6 +722,7 @@ module.exports = class Replicator extends Backbone.Model
 
         # Kill backoff if exists.
         clearTimeout @realtimeBackOff
+
 
     # Update cache files with outdated revisions. Called while backup
     syncCache:  (callback) =>

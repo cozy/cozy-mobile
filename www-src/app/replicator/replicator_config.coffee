@@ -74,4 +74,4 @@ module.exports = class ReplicatorConfig extends Backbone.Model
         return Object.keys(permissions).sort()
 
     hasPermissions: ->
-        _.isEqual @get('devicePermissions'), @serializePermissions(@replicator)
+        _.isEqual @get('devicePermissions'), @serializePermissions(@replicator.permissions)

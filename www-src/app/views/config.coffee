@@ -61,7 +61,7 @@ module.exports = class ConfigView extends BaseView
 
                 # DeviceStatus has to be stopped to restart properly.
                 require('lib/device_status').shutdown()
-                window.location.reload(true);
+                window.location.reload true
 
 
     # confirm, launch initial replication, navigate to first sync UI.

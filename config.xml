@@ -31,6 +31,9 @@
         <icon height="152" src="res/icons/icon-152-ios.png" width="152"/>
         <icon height="167" src="res/icons/icon-167-ios.png" width="167"/>
     </platform>
-    <access origin="mailto:*" launch-external="yes"/>
+    <!-- <access origin="mailto:*" launch-external="yes"/> -->
+    <!-- allow-navigation to file:// only (default) -->
     <access origin="*"/>
+
+    <allow-intent href="mailto:*" />
 </widget>

@@ -2,6 +2,7 @@ DeviceStatus = require '../lib/device_status'
 fs = require './filesystem'
 request = require '../lib/request'
 
+
 log = require('/lib/persistent_log')
     prefix: "replicator backup"
     date: true
@@ -18,6 +19,7 @@ module.exports =
 
     # wrapper around _backup to maintain the state of inBackup
     backup: (options, callback = ->) ->
+
         return callback null if @get 'inBackup'
 
         options = options or { force: false }
@@ -217,7 +219,7 @@ module.exports =
                 @createFile file, path, device, (err, res, body) =>
                     return callback err if err
 
-                    @createBinary content, fileId, (err, success) =>
+                    @createBinary content, body._id, (err, success) =>
                         return callback err if err
 
                         @createPhoto path, callback

@@ -9,7 +9,11 @@ timeout = false
 
 DATA_CONSUMPTION_THRESHOLD = 100 # MB
 
-checkConsumption = ->
+checkConsumption = (callback)->
+    # Stub
+    unless navigator.trafficstats?
+        return callback null, true
+
     navigator.trafficstats.getTxBytes (err, txBytes) ->
         return callback err if err
         navigator.trafficstats.getRxBytes (err, rxBytes) ->
@@ -54,6 +58,7 @@ module.exports.shutdown = ->
 # - data consumption since last reboot under 100MB
 # Callback should have (err, (boolean)ready, message) signature.
 module.exports.checkReadyForSync = checkReadyForSync = (callback)->
+
     if window.isBrowserDebugging
         return callback null, true
 

@@ -22,8 +22,8 @@ log = require('/lib/persistent_log')
     prefix: "ServiceManager"
     date: true
 
-
-repeatingPeriod = 15 * 60 * 1000
+# TODO : stub !
+repeatingPeriod = 1 * 60 * 1000
 
 module.exports = class ServiceManager extends Backbone.Model
 
@@ -40,6 +40,7 @@ module.exports = class ServiceManager extends Backbone.Model
         @listenTo app.replicator.config, "change:syncImages", @listenNewPictures
 
         @checkActivated()
+
 
     isActivated: ->
         return @get 'daemonActivated'
