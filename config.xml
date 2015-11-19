@@ -1,8 +1,8 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget android-versionCode="111"
-    android-versionName="0.1.11"
+<widget android-versionCode="112"
+    android-versionName="0.1.12"
     id="io.cozy.files-client"
-    version="0.1.11"
+    version="0.1.12"
     xmlns="http://www.w3.org/ns/widgets"
     xmlns:cdv="http://cordova.apache.org/ns/1.0">
 

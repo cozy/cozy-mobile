@@ -125,7 +125,7 @@ module.exports = {
     }
     return navigator.globalization.getPreferredLanguage((function(_this) {
       return function(properties) {
-        var Router, e, locales;
+        var Router, e, initTimeoutId, locales;
         _this.locale = properties.value.split('-')[0];
         _this.polyglot = new Polyglot();
         locales = (function() {
@@ -142,6 +142,9 @@ module.exports = {
         _this.router = new Router();
         _this.replicator = new Replicator();
         _this.layout = new LayoutView();
+        initTimeoutId = setTimeout(function() {
+          return window.location.reload(true);
+        }, 20 * 60 * 1000);
         return _this.replicator.init(function(err, config) {
           var msg;
           if (err) {
@@ -150,6 +153,8 @@ module.exports = {
             msg += "\n " + (t('error try restart'));
             alert(msg);
             return navigator.app.exitApp();
+          } else {
+            clearTimeout(initTimeoutId);
           }
           if (!window.isBrowserDebugging) {
             _this.notificationManager = new Notifications();
@@ -3808,7 +3813,7 @@ var APP_VERSION, ReplicatorConfig, basic,
 
 basic = require('../lib/basic');
 
-APP_VERSION = "0.1.11";
+APP_VERSION = "0.1.12";
 
 module.exports = ReplicatorConfig = (function(_super) {
   __extends(ReplicatorConfig, _super);
