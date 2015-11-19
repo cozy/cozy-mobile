@@ -40,6 +40,10 @@ module.exports =
             @replicator = new Replicator()
             @layout = new LayoutView()
 
+            # Watchdog, if the service do the migration simultaneously.
+            initTimeoutId = setTimeout ->
+                window.location.reload true
+            , 20 * 60 * 1000
             @replicator.init (err, config) =>
                 if err
                     log.error err
@@ -47,7 +51,9 @@ module.exports =
                     msg += "\n #{t('error try restart')}"
                     alert msg
                     return navigator.app.exitApp()
-
+                else
+                    # Init and migration done and goes well, free the dog.
+                    clearTimeout initTimeoutId
                 # Monkey patch for browser debugging
                 unless window.isBrowserDebugging
                     @notificationManager = new Notifications()
