@@ -301,13 +301,13 @@ module.exports =
         @createAccount (err) =>
             # Fetch contacs from view all of contact app.
             options = @config.makeDSUrl("/request/contact/all/")
-            options.body = {}
+            options.body = include_docs: true
             request.post options, (err, res, rows) =>
                 return callback err if err
                 return callback null unless rows?.length
 
                 async.mapSeries rows, (row, cb) =>
-                    doc = row.value
+                    doc = row.doc
                     # fetch attachments if exists.
                     if doc._attachments?.picture?
                         request.get @config.makeReplicationUrl(

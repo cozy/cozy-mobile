@@ -10,10 +10,14 @@ module.exports = fs = {}
 
 
 getFileSystem = (callback) ->
-    onSuccess = (fs) -> callback null, fs
+    onSuccess = (dir) -> callback null, dir.filesystem
     onError = (err) -> callback err
     __chromeSafe() if window.isBrowserDebugging # flag for developpement in browser
-    window.requestFileSystem LocalFileSystem.PERSISTENT, 0, onSuccess, onError
+    # TODO: use a cache directory (cordova.file.externalCacheDirectory),
+    # instead of putting some noise at system root ?
+    window.resolveLocalFileSystemURL cordova.file.externalRootDirectory
+    , onSuccess, onError
+
 
 readable = (err) ->
     for name, code of FileError when code is err.code
@@ -132,12 +136,11 @@ module.exports.download = (options, progressback, callback) ->
         'An error happened (UNKNOWN)',
         'An error happened (NOT FOUND)',
         'An error happened (INVALID URL)',
-        'This file isnt available offline',
+        #'This file isnt available offline',# TODO !
+        'An error happened (CONNEXION ERROR)',
         'ABORTED'
+        'An error happened (NOT MODIFIED'
     ]
-
-
-    options =
 
     {url, path, auth} = options
     url = encodeURI url
@@ -150,10 +153,7 @@ module.exports.download = (options, progressback, callback) ->
         if e.lengthComputable then progressback e.loaded, e.total
         else progressback 3, 10 #@TODO, better aproximation
 
-    #headers = Authorization: basic auth
-    headers = {}
-
-    ft.download url, path, onSuccess, onError, true, {headers}
+    ft.download url, path, onSuccess, onError, true
 
 
 # various patches to debug in chrome
