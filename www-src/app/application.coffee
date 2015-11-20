@@ -55,8 +55,6 @@ module.exports =
                     # @notificationManager = new Notifications()
                     @serviceManager = new ServiceManager()
 
-
-
                 $('body').empty().append @layout.render().$el
                 $('body').css 'background-color', 'white'
                 Backbone.history.start()
@@ -104,7 +102,13 @@ module.exports =
                 app.backFromOpen = false
                 app.replicator.startRealtime()
             else
-                app.replicator.backup {}, (err) -> log.error err if err
+                @serviceManager.isRunning (err, running) =>
+                    return log.error err if err
+                    if running
+                        app.replicator.startRealtime()
+                        log.info "No backup on resume, as service still running."
+                    else
+                        app.replicator.backup {}, (err) -> log.error err if err
         , false
         document.addEventListener "pause", =>
             log.info "PAUSE EVENT"
@@ -114,6 +118,7 @@ module.exports =
         , false
         document.addEventListener 'online', ->
             backup = () ->
+
                 app.replicator.backup {}, (err) -> log.error err if err
                 window.removeEventListener 'realtime:onChange', backup, false
             window.addEventListener 'realtime:onChange', backup, false

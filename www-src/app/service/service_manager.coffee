@@ -73,3 +73,6 @@ module.exports = class ServiceManager extends Backbone.Model
     listenNewPictures: (config, listen) ->
         window.JSBackgroundService.listenNewPictures listen, (err) ->
             if err then return console.log err
+
+    isRunning: (callback) ->
+        window.JSBackgroundService.isRunning callback
