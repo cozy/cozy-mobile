@@ -255,11 +255,11 @@ module.exports = class Replicator extends Backbone.Model
 
                 (cb) => @set('initialReplicationStep', 2) and cb null
                 # TODO: it copies all notifications (persistent ones too).
-                # (cb) =>
-                #     if @config.get 'cozyNotifications'
-                #         @copyView 'notification', cb
+                (cb) =>
+                    if @config.get 'cozyNotifications'
+                        @copyView 'notification', cb
 
-                #     else cb()
+                    else cb()
 
                 (cb) => @set('initialReplicationStep', 3) and cb null
                 (cb) => @initContactsInPhone last_seq, cb

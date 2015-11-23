@@ -75,7 +75,12 @@ module.exports = Service =
                             app.replicator.sync {background: true}, delayedQuit
 
                 else
-                    window.service.workDone()
+                    # Start activity to initialize app
+                    # or update permissions
+                    JSBackgroundService.startMainActivity (err)->
+                        log.error err if err
+                        # Then shutdown service
+                        window.service.workDone()
 
 
 document.addEventListener 'deviceready', ->

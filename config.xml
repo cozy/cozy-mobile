@@ -13,6 +13,7 @@
     <author email="contact@cozycloud.cc" href="https://cozy.io">Cozy Cloud</author>
     <preference name="Orientation" value="default" />
     <preference name="android-minSdkVersion" value="14" />
+    <preference name="AndroidLaunchMode" value="singleTask" />
 
     <content src="index.html"/>
     <platform name="android">

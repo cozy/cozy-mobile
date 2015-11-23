@@ -81,7 +81,8 @@ module.exports = ACH =
 
         if cozy.rrule? and cozy.rrule isnt ''
             rrule = cozy.rrule
-            eventTimezone = cozy.timezone or 'Europe/Paris' # Stub for buggy docs.
+            # Europe/Paris is a stub for buggy docs.
+            eventTimezone = cozy.timezone or 'Europe/Paris'
             duration = moment(cozy.end).diff cozy.start
             duration = moment.duration duration
             duration = JSON.stringify duration
