@@ -35,8 +35,9 @@ module.exports =
             (cb) =>
                 if @config.has('eventsPullCheckpointed')
                     cb()
+
                 else
-                    request.get @config.makeUrl('/_changes?descending=true&limit=1')
+                    request.get @config.makeReplicationUrl('/_changes?descending=true&limit=1')
                     , (err, res, body) =>
                         return cb err if err
                         # we store last_seq before copying files & folder
@@ -52,12 +53,15 @@ module.exports =
 
 
     _getCalendarFromCozy: (name, callback) ->
-        request.get @config.makeUrl(
-            "/_design/tag/_view/byname?key=\"#{name}\"")
-        , (err, res, body) =>
+        options = @config.makeDSUrl '/request/tag/byname/'
+        options.body =
+            include_docs: true
+            key: name
+
+        request.post options, (err, res, body) =>
             return callback err if err # TODO : pass on 404
             # No tag found, put a default color.
-            calendar = body.rows?[0].value or { name: name , color: '#2979FF' }
+            calendar = body.rows?[0].doc or { name: name , color: '#2979FF' }
             callback null, calendar
 
 
@@ -92,7 +96,7 @@ module.exports =
     addCalendar: (name, callback) ->
         log.debug "enter addCalendar"
         # Fetch the calendar object from Cozy.
-        _getCalendarFromCozy name, (err, calendar) =>
+        @_getCalendarFromCozy name, (err, calendar) =>
             calendar = _.extend calendar, ACCOUNT
 
             # Add calendar in phone
@@ -348,21 +352,19 @@ module.exports =
         @createAccount (err) =>
           @updateCalendars (err) =>
             return callback err if err
-
-            # Fetch events from view all of contact app.
-            # TODO : if view doesn't exist ?
-            request.get @config.makeUrl("/_design/event/_view/all/")
-            , (err, res, body) =>
+            options = @config.makeDSUrl "/request/event/all/"
+            options.body = include_docs: true
+            request.post options, (err, res, rows) =>
                 return callback err if err
-                return callback null unless body.rows?.length
+                return callback null unless rows?.length
 
-                async.mapSeries body.rows, (row, cb) =>
-                    doc = row.value
+                async.mapSeries rows, (row, cb) =>
+                    doc = row.doc
                     @db.put doc, 'new_edits':false, (err, res) -> cb err, doc
                 , (err, docs) =>
                     return callback err if err
                     @set 'backup_step', null # hide header: first-sync view
-                    @_applyChangeToPhone docs, (err) =>
+                    @_applyEventsChangeToPhone docs, (err) =>
                         # clean backup_step_done after applyChanges
                         @set 'backup_step_done', null
                         @config.save eventsPullCheckpointed: lastSeq

@@ -12,3 +12,6 @@ module.exports =
 
     event:
         all: all
+
+    tag:
+        byname: (doc) -> emit doc.name, doc._id

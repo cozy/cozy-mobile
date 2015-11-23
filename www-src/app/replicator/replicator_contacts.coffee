@@ -224,7 +224,7 @@ module.exports =
 
     # Update contacts in phone with specified docs.
     # @param docs list of contact in cozy's format.
-    _applyChangeToPhone: (docs, callback) ->
+    _applyContactsChangeToPhone: (docs, callback) ->
         getFromPhoneBySourceId = (sourceId, cb) ->
             navigator.contacts.find [navigator.contacts.fieldType.sourceId]
                 , (contacts) ->
@@ -261,7 +261,7 @@ module.exports =
 
         # Ues a queue because contact save to phone doesn't support well
         # concurrency.
-        applyToPhoneQueue = async.queue @_applyChangeToPhone.bind @
+        applyToPhoneQueue = async.queue @_applyContactsChangeToPhone.bind @
 
         applyToPhoneQueue.drain = -> callback() if replicationDone
 
@@ -300,7 +300,7 @@ module.exports =
 
         @createAccount (err) =>
             # Fetch contacs from view all of contact app.
-            options = @config.makeDSUrl("/request/contact/all/")
+            options = @config.makeDSUrl "/request/contact/all/"
             options.body = include_docs: true
             request.post options, (err, res, rows) =>
                 return callback err if err
@@ -324,7 +324,7 @@ module.exports =
                     , (err, contacts) =>
                         return callback err if err
                         @set 'backup_step', null # hide header: first-sync view
-                        @_applyChangeToPhone docs, (err) =>
+                        @_applyContactsChangeToPhone docs, (err) =>
                             # clean backup_step_done after applyChanges
                             @set 'backup_step_done', null
                             @config.save contactsPullCheckpointed: lastSeq
