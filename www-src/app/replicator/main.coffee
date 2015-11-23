@@ -28,15 +28,26 @@ module.exports = class Replicator extends Backbone.Model
         inSync: false
         inBackup: false
 
+    initDB: (callback) ->
+        # Migrate to idb
+        if device.version.slice 0, 3 >= '4.4'
+            dbOptions = adapter: 'idb'
+            @db = new PouchDB DBNAME, dbOptions
+            @photosDB = new PouchDB DBPHOTOS, dbOptions
+            @migrateDBs callback
+
+        else #keep sqlite db, no migration.
+            dbOptions = adapter: 'websql'
+            @db = new PouchDB DBNAME, dbOptions
+            @photosDB = new PouchDB DBPHOTOS, dbOptions
+            callback()
 
     init: (callback) ->
         fs.initialize (err, downloads, cache) =>
             return callback err if err
             @downloads = downloads
             @cache = cache
-            @db = new PouchDB DBNAME, DBOPTIONS
-            @photosDB = new PouchDB DBPHOTOS, DBOPTIONS
-            @migrateDBs (err) =>
+            @initDB (err) =>
                 return callback err if err
                 makeDesignDocs @db, @photosDB, (err) =>
                     return callback err if err

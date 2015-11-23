@@ -2662,6 +2662,25 @@ module.exports = Replicator = (function(_super) {
     };
   };
 
+  Replicator.prototype.initDB = function(callback) {
+    var dbOptions;
+    if (device.version.slice(0, 3 >= '4.4')) {
+      dbOptions = {
+        adapter: 'idb'
+      };
+      this.db = new PouchDB(DBNAME, dbOptions);
+      this.photosDB = new PouchDB(DBPHOTOS, dbOptions);
+      return this.migrateDBs(callback);
+    } else {
+      dbOptions = {
+        adapter: 'websql'
+      };
+      this.db = new PouchDB(DBNAME, dbOptions);
+      this.photosDB = new PouchDB(DBPHOTOS, dbOptions);
+      return callback();
+    }
+  };
+
   Replicator.prototype.init = function(callback) {
     return fs.initialize((function(_this) {
       return function(err, downloads, cache) {
@@ -2670,9 +2689,7 @@ module.exports = Replicator = (function(_super) {
         }
         _this.downloads = downloads;
         _this.cache = cache;
-        _this.db = new PouchDB(DBNAME, DBOPTIONS);
-        _this.photosDB = new PouchDB(DBPHOTOS, DBOPTIONS);
-        return _this.migrateDBs(function(err) {
+        return _this.initDB(function(err) {
           if (err) {
             return callback(err);
           }
@@ -3808,7 +3825,7 @@ var APP_VERSION, ReplicatorConfig, basic,
 
 basic = require('../lib/basic');
 
-APP_VERSION = "0.1.11";
+APP_VERSION = "0.1.13";
 
 module.exports = ReplicatorConfig = (function(_super) {
   __extends(ReplicatorConfig, _super);
