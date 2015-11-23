@@ -2664,7 +2664,7 @@ module.exports = Replicator = (function(_super) {
 
   Replicator.prototype.initDB = function(callback) {
     var dbOptions;
-    if (device.version.slice(0, 3 >= '4.4')) {
+    if (device.version.slice(0, 3) >= '4.4') {
       dbOptions = {
         adapter: 'idb'
       };

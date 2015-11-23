@@ -30,7 +30,7 @@ module.exports = class Replicator extends Backbone.Model
 
     initDB: (callback) ->
         # Migrate to idb
-        if device.version.slice 0, 3 >= '4.4'
+        if device.version.slice(0, 3) >= '4.4'
             dbOptions = adapter: 'idb'
             @db = new PouchDB DBNAME, dbOptions
             @photosDB = new PouchDB DBPHOTOS, dbOptions
