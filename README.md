@@ -1,5 +1,7 @@
 # [Cozy](http://cozy.io) Mobile client
 
+[![Dependency Status](https://www.versioneye.com/user/projects/565486a3ff016c003300183a/badge.svg?style=flat)](https://www.versioneye.com/user/projects/565486a3ff016c003300183a)
+
 This is the native mobile client for Cozy.
 
 ## Install
