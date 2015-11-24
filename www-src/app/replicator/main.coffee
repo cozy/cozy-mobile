@@ -5,7 +5,7 @@ ReplicatorConfig = require './replicator_config'
 DeviceStatus = require '../lib/device_status'
 DBNAME = "cozy-files.db"
 DBPHOTOS = "cozy-photos.db"
-DBOPTIONS = adapter: 'idb'
+
 
 log = require('/lib/persistent_log')
     prefix: "replicator"
@@ -40,7 +40,7 @@ module.exports = class Replicator extends Backbone.Model
             dbOptions = adapter: 'websql'
             @db = new PouchDB DBNAME, dbOptions
             @photosDB = new PouchDB DBPHOTOS, dbOptions
-            callback()
+            @migrateConfig callback
 
     init: (callback) ->
         fs.initialize (err, downloads, cache) =>

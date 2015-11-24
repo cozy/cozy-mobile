@@ -2600,7 +2600,7 @@ __chromeSafe = function() {
 });
 
 require.register("replicator/main", function(exports, require, module) {
-var DBNAME, DBOPTIONS, DBPHOTOS, DeviceStatus, Replicator, ReplicatorConfig, fs, log, makeDesignDocs, request,
+var DBNAME, DBPHOTOS, DeviceStatus, Replicator, ReplicatorConfig, fs, log, makeDesignDocs, request,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
@@ -2619,10 +2619,6 @@ DeviceStatus = require('../lib/device_status');
 DBNAME = "cozy-files.db";
 
 DBPHOTOS = "cozy-photos.db";
-
-DBOPTIONS = {
-  adapter: 'idb'
-};
 
 log = require('/lib/persistent_log')({
   prefix: "replicator",
@@ -2677,7 +2673,7 @@ module.exports = Replicator = (function(_super) {
       };
       this.db = new PouchDB(DBNAME, dbOptions);
       this.photosDB = new PouchDB(DBPHOTOS, dbOptions);
-      return callback();
+      return this.migrateConfig(callback);
     }
   };
 
@@ -4544,6 +4540,19 @@ module.exports = {
             return _this.destroySQLiteDBs(callback);
           });
         });
+      };
+    })(this));
+  },
+  migrateConfig: function(callback) {
+    return this.db.get('_local/appconfig', (function(_this) {
+      return function(err, config) {
+        if (err && (err.status !== 404)) {
+          return callback(err);
+        }
+        if (config != null) {
+          return callback(null, 'config already migrated');
+        }
+        return _this.moveConfig(callback);
       };
     })(this));
   },
