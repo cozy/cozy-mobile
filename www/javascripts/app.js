@@ -2659,15 +2659,17 @@ module.exports = Replicator = (function(_super) {
   };
 
   Replicator.prototype.initDB = function(callback) {
-    var dbOptions;
-    if (device.version.slice(0, 3) >= '4.4') {
+    var dbOptions, e;
+    try {
       dbOptions = {
         adapter: 'idb'
       };
       this.db = new PouchDB(DBNAME, dbOptions);
       this.photosDB = new PouchDB(DBPHOTOS, dbOptions);
       return this.migrateDBs(callback);
-    } else {
+    } catch (_error) {
+      e = _error;
+      log.warn("Database initialisation error: ", e.msg);
       dbOptions = {
         adapter: 'websql'
       };
