@@ -4,3 +4,4 @@ CozyFiles.apk
 keys/cozy-play-store.keystore
 keys/cozy-play-store.password
 *.transifex.coffee
+www
