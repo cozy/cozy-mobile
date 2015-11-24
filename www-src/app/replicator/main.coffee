@@ -29,17 +29,14 @@ module.exports = class Replicator extends Backbone.Model
         inBackup: false
 
     initDB: (callback) ->
-        # Migrate to idb
-        try
+        if device.version.slice(0, 3) >= '4.4'
+            # Migrate to idb
             dbOptions = adapter: 'idb'
             @db = new PouchDB DBNAME, dbOptions
             @photosDB = new PouchDB DBPHOTOS, dbOptions
             @migrateDBs callback
 
-        catch e
-            log.warn "Database initialisation error: ", e.msg
-            # if e.msg is 'Adapter is missing' or e.status is 404
-            #keep sqlite db, no migration.
+        else #keep sqlite db, no migration.
             dbOptions = adapter: 'websql'
             @db = new PouchDB DBNAME, dbOptions
             @photosDB = new PouchDB DBPHOTOS, dbOptions
