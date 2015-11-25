@@ -15,7 +15,12 @@ getFileSystem = (callback) ->
     __chromeSafe() if window.isBrowserDebugging # flag for developpement in browser
     # TODO: use a cache directory (cordova.file.externalCacheDirectory),
     # instead of putting some noise at system root ?
-    window.resolveLocalFileSystemURL cordova.file.externalRootDirectory
+
+    # TODO !
+    uri = cordova.file.externalRootDirectory
+    unless uri?
+        uri = cordova.file.cacheDirectory
+    window.resolveLocalFileSystemURL uri
     , onSuccess, onError
 
 
