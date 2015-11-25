@@ -2660,21 +2660,24 @@ module.exports = Replicator = (function(_super) {
 
   Replicator.prototype.initDB = function(callback) {
     var dbOptions;
-    if (device.version.slice(0, 3) >= '4.4') {
-      dbOptions = {
-        adapter: 'idb'
+    dbOptions = {
+      adapter: 'idb'
+    };
+    return new PouchDB(DBNAME, dbOptions, (function(_this) {
+      return function(err, db) {
+        if (err) {
+          dbOptions = {
+            adapter: 'websql'
+          };
+          _this.db = new PouchDB(DBNAME, dbOptions);
+          _this.photosDB = new PouchDB(DBPHOTOS, dbOptions);
+          return _this.migrateConfig(callback);
+        }
+        _this.db = db;
+        _this.photosDB = new PouchDB(DBPHOTOS, dbOptions);
+        return _this.migrateDBs(callback);
       };
-      this.db = new PouchDB(DBNAME, dbOptions);
-      this.photosDB = new PouchDB(DBPHOTOS, dbOptions);
-      return this.migrateDBs(callback);
-    } else {
-      dbOptions = {
-        adapter: 'websql'
-      };
-      this.db = new PouchDB(DBNAME, dbOptions);
-      this.photosDB = new PouchDB(DBPHOTOS, dbOptions);
-      return this.migrateConfig(callback);
-    }
+    })(this));
   };
 
   Replicator.prototype.init = function(callback) {
@@ -4594,6 +4597,14 @@ module.exports = {
     return this.db.get('localconfig', (function(_this) {
       return function(err, config) {
         var id, rev;
+        if (err) {
+          if (err.status === 404) {
+            log.info('no config to move.');
+            return callback();
+          } else {
+            return callback(err);
+          }
+        }
         if (err) {
           return callback(err);
         }

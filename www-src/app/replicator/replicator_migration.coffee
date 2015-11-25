@@ -59,6 +59,13 @@ module.exports =
 
     moveConfig: (callback) ->
         @db.get 'localconfig', (err, config) =>
+            if err
+                if err.status is 404
+                    log.info 'no config to move.'
+                    return callback()
+                else
+                    return callback err
+
             return callback err if err
             # Keep id and rev for further deletion
             id = config._id
