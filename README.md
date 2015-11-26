@@ -2,6 +2,10 @@
 
 [![Dependency Status](https://www.versioneye.com/user/projects/565486a3ff016c003300183a/badge.svg?style=flat)](https://www.versioneye.com/user/projects/565486a3ff016c003300183a)
 [![Build Status](https://travis-ci.org/cozy/cozy-mobile.svg)](https://travis-ci.org/cozy/cozy-mobile)
+[![Codacy Badge](https://api.codacy.com/project/badge/grade/fc92c6a352fb411d95dbb17829904451)](https://www.codacy.com/app/simonc/cozy-mobile)
+[![Code Climate](https://codeclimate.com/github/cozy/cozy-mobile/badges/gpa.svg)](https://codeclimate.com/github/cozy/cozy-mobile)
+[![Test Coverage](https://codeclimate.com/github/cozy/cozy-mobile/badges/coverage.svg)](https://codeclimate.com/github/cozy/cozy-mobile/coverage)
+[![Issue Count](https://codeclimate.com/github/cozy/cozy-mobile/badges/issue_count.svg)](https://codeclimate.com/github/cozy/cozy-mobile)
 
 This is the native mobile client for Cozy.
 
