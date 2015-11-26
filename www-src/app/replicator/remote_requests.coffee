@@ -15,3 +15,6 @@ module.exports =
 
     tag:
         byname: (doc) -> emit doc.name, doc._id
+
+    notification:
+        all: all

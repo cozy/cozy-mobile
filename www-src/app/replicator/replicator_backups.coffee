@@ -85,7 +85,7 @@ module.exports =
                     DeviceStatus.checkReadyForSync (err, ready, msg) =>
                         unless ready or err
                             err = new Error msg
-                        resultsrn cb err if err
+                        return cb err if err
 
                         @syncContacts (err) ->
                             if err
@@ -96,7 +96,7 @@ module.exports =
                     DeviceStatus.checkReadyForSync (err, ready, msg) =>
                         unless ready or err
                             err = new Error msg
-                        resultsrn cb err if err
+                        return cb err if err
 
                         @syncCalendars (err) ->
                             if err

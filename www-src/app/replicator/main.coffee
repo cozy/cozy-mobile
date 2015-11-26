@@ -201,7 +201,7 @@ module.exports = class Replicator extends Backbone.Model
                 reqList.push
                     type: docType
                     name: reqName
-                    # Copy/Past from cozydb, to avoid
+                    # Copy/Past from cozydb, to avoid view multiplication
                     # TODO: reduce is not supported yet
                     body: map: """
                 function (doc) {
