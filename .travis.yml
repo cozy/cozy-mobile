@@ -1,0 +1,23 @@
+---
+
+language: android
+
+sudo: false
+
+android:
+  components:
+    - build-tools-22.0.1
+
+install:
+  - npm install -g cordova@4.3.1
+  - cd www-src && npm install && cd ..
+  - export PATH=$PATH:$PWD/www-src/node_modules/.bin
+  - cake platforms && cake plugins
+
+script:
+  - cd www-src && npm test && cd ..
+  - cordova build android
+
+addons:
+  code_climate:
+    repo_token: 13155d5f51a14d839f38b525e864d9e581f5b85795911726c85b0760daab626b
