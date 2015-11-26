@@ -5,7 +5,7 @@ ReplicatorConfig = require './replicator_config'
 DeviceStatus = require '../lib/device_status'
 DBNAME = "cozy-files.db"
 DBPHOTOS = "cozy-photos.db"
-DBOPTIONS = adapter: 'idb'
+
 
 log = require('/lib/persistent_log')
     prefix: "replicator"
@@ -29,14 +29,28 @@ module.exports = class Replicator extends Backbone.Model
         inBackup: false
 
 
+    initDB: (callback) ->
+        # Migrate to idb
+        dbOptions = adapter: 'idb'
+        new PouchDB DBNAME, dbOptions, (err, db) =>
+            if err
+                #keep sqlite db, no migration.
+                dbOptions = adapter: 'websql'
+                @db = new PouchDB DBNAME, dbOptions
+                @photosDB = new PouchDB DBPHOTOS, dbOptions
+                return @migrateConfig callback
+
+            @db = db
+            @photosDB = new PouchDB DBPHOTOS, dbOptions
+            @migrateDBs callback
+
+
     init: (callback) ->
         fs.initialize (err, downloads, cache) =>
             return callback err if err
             @downloads = downloads
             @cache = cache
-            @db = new PouchDB DBNAME, DBOPTIONS
-            @photosDB = new PouchDB DBPHOTOS, DBOPTIONS
-            @migrateDBs (err) =>
+            @initDB (err) =>
                 return callback err if err
                 makeDesignDocs @db, @photosDB, (err) =>
                     return callback err if err

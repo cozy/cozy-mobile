@@ -2600,7 +2600,7 @@ __chromeSafe = function() {
 });
 
 require.register("replicator/main", function(exports, require, module) {
-var DBNAME, DBOPTIONS, DBPHOTOS, DeviceStatus, Replicator, ReplicatorConfig, fs, log, makeDesignDocs, request,
+var DBNAME, DBPHOTOS, DeviceStatus, Replicator, ReplicatorConfig, fs, log, makeDesignDocs, request,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
@@ -2619,10 +2619,6 @@ DeviceStatus = require('../lib/device_status');
 DBNAME = "cozy-files.db";
 
 DBPHOTOS = "cozy-photos.db";
-
-DBOPTIONS = {
-  adapter: 'idb'
-};
 
 log = require('/lib/persistent_log')({
   prefix: "replicator",
@@ -2662,6 +2658,28 @@ module.exports = Replicator = (function(_super) {
     };
   };
 
+  Replicator.prototype.initDB = function(callback) {
+    var dbOptions;
+    dbOptions = {
+      adapter: 'idb'
+    };
+    return new PouchDB(DBNAME, dbOptions, (function(_this) {
+      return function(err, db) {
+        if (err) {
+          dbOptions = {
+            adapter: 'websql'
+          };
+          _this.db = new PouchDB(DBNAME, dbOptions);
+          _this.photosDB = new PouchDB(DBPHOTOS, dbOptions);
+          return _this.migrateConfig(callback);
+        }
+        _this.db = db;
+        _this.photosDB = new PouchDB(DBPHOTOS, dbOptions);
+        return _this.migrateDBs(callback);
+      };
+    })(this));
+  };
+
   Replicator.prototype.init = function(callback) {
     return fs.initialize((function(_this) {
       return function(err, downloads, cache) {
@@ -2670,9 +2688,7 @@ module.exports = Replicator = (function(_super) {
         }
         _this.downloads = downloads;
         _this.cache = cache;
-        _this.db = new PouchDB(DBNAME, DBOPTIONS);
-        _this.photosDB = new PouchDB(DBPHOTOS, DBOPTIONS);
-        return _this.migrateDBs(function(err) {
+        return _this.initDB(function(err) {
           if (err) {
             return callback(err);
           }
@@ -3808,7 +3824,7 @@ var APP_VERSION, ReplicatorConfig, basic,
 
 basic = require('../lib/basic');
 
-APP_VERSION = "0.1.11";
+APP_VERSION = "0.1.13";
 
 module.exports = ReplicatorConfig = (function(_super) {
   __extends(ReplicatorConfig, _super);
@@ -4530,6 +4546,19 @@ module.exports = {
       };
     })(this));
   },
+  migrateConfig: function(callback) {
+    return this.db.get('_local/appconfig', (function(_this) {
+      return function(err, config) {
+        if (err && (err.status !== 404)) {
+          return callback(err);
+        }
+        if (config != null) {
+          return callback(null, 'config already migrated');
+        }
+        return _this.moveConfig(callback);
+      };
+    })(this));
+  },
   initSQLiteDBs: function() {
     this.sqliteDBPhotos = new PouchDB(DBPHOTOS, {
       adapter: 'websql'
@@ -4568,6 +4597,14 @@ module.exports = {
     return this.db.get('localconfig', (function(_this) {
       return function(err, config) {
         var id, rev;
+        if (err) {
+          if (err.status === 404) {
+            log.info('no config to move.');
+            return callback();
+          } else {
+            return callback(err);
+          }
+        }
         if (err) {
           return callback(err);
         }

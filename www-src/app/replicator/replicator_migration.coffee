@@ -29,6 +29,13 @@ module.exports =
                     return callback err if err
                     @destroySQLiteDBs callback
 
+    migrateConfig: (callback) ->
+        @db.get '_local/appconfig', (err, config) =>
+            return callback err if (err and (err.status isnt 404))
+            return callback null, 'config already migrated' if config?
+
+            # else
+            @moveConfig callback
 
     # Init old sqlite db
     initSQLiteDBs: ->
@@ -52,6 +59,13 @@ module.exports =
 
     moveConfig: (callback) ->
         @db.get 'localconfig', (err, config) =>
+            if err
+                if err.status is 404
+                    log.info 'no config to move.'
+                    return callback()
+                else
+                    return callback err
+
             return callback err if err
             # Keep id and rev for further deletion
             id = config._id
