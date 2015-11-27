@@ -83,7 +83,7 @@ document.addEventListener 'deviceready', ->
         Service.initialize()
 
     catch error
-        log.error 'EXCEPTION SERVICE INITIALIZATION : ', err
+        log.error 'EXCEPTION SERVICE INITIALIZATION : ', error
 
     finally
         # "Watchdog" : in all cases, kill service after 10'

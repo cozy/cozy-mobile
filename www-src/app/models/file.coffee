@@ -15,5 +15,5 @@ module.exports = class File extends Backbone.Model
 
     wholePath: ->
         name = @get('name')
-        return if path = @get('path') then "#{path.slice(1)}/#{name}"
+        if path = @get('path') then "#{path.slice(1)}/#{name}"
         else name

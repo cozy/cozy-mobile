@@ -101,4 +101,3 @@ class Logger
             i = (i + 1) % LOG_SIZE
 
         return traces
-

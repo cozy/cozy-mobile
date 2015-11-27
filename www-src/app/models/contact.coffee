@@ -183,7 +183,7 @@ module.exports = Contact =
 
     _categories2Tags: (categories) ->
         if categories?
-            return categories.map (categorie) -> return category.value
+            return categories.map (category) -> return category.value
 
     # Pick the first organisation in cordova's organizations field, and put it
     # in cozyContact fields.
