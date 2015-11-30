@@ -11,16 +11,23 @@
     "start": "./node_modules/.bin/brunch watch --server"
   },
   "dependencies": {
+    "async": "1.2.1",
     "auto-reload-brunch": "> 1.0 < 1.5",
+    "backbone": "1.0.0",
     "brunch": "1.8.5",
     "clean-css-brunch": "> 1.0 < 1.5",
     "coffee-script-brunch": "> 1.0 < 1.5",
     "css-brunch": "> 1.0 < 1.5",
     "jade-brunch": "> 1.0 < 1.5",
     "javascript-brunch": "> 1.0 < 1.5",
+    "jquery": "1.9.1",
     "json-brunch": "^1.5.4",
+    "node-polyglot": "0.2.0",
+    "pouchdb": "3.3.1",
+    "pouchdb-quick-search": "0.3.2",
     "stylus-brunch": "^1.8.1",
-    "uglify-js-brunch": "> 1.0 < 1.5"
+    "uglify-js-brunch": "> 1.0 < 1.5",
+    "underscore": "1.4.4"
   },
   "devDependencies": {
     "coffee-script": "1.10.0",
