@@ -244,6 +244,12 @@ module.exports =
         $.ajax
             type: 'POST'
             url: options.url
+            headers:
+                'Authorization': 'Basic ' +
+                            btoa(@config.get('deviceName') + ':' +
+                                @config.get('devicePassword'))
+            username: @config.get 'deviceName'
+            password: @config.get 'devicePassword'
             data: data
             contentType: false
             processData: false

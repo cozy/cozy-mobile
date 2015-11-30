@@ -22,8 +22,7 @@ log = require('/lib/persistent_log')
     prefix: "ServiceManager"
     date: true
 
-# TODO : stub !
-repeatingPeriod = 1 * 60 * 1000
+repeatingPeriod = 15 * 60 * 1000
 
 module.exports = class ServiceManager extends Backbone.Model
 

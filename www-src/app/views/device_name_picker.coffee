@@ -42,8 +42,11 @@ module.exports = class DeviceNamePickerView extends BaseView
                 log.error err
                 @displayError t err.message
             else
-                delete app.loginConfig
-                app.router.navigate 'config', trigger: true
+                app.replicator.checkPlatformVersions (err) =>
+                    return @displayError err if err?
+
+                    delete app.loginConfig
+                    app.router.navigate 'config', trigger: true
 
     onCompleteDefaultValue: ->
         device = @$('#input-device').val()

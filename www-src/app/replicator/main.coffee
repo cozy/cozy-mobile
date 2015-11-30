@@ -7,8 +7,8 @@ DBNAME = "cozy-files.db"
 DBPHOTOS = "cozy-photos.db"
 
 PLATFORM_MIN_VERSIONS =
-    'proxy': '2.1.7'
-    'data-system': '2.0.8'
+    'proxy': '2.1.5'
+    'data-system': '2.1.0'
 
 log = require('/lib/persistent_log')
     prefix: "replicator"
@@ -62,18 +62,14 @@ module.exports = class Replicator extends Backbone.Model
                     @config.fetch callback
 
 
-    checkPlatformVersions: (cozyURL, callback) ->
-        # Pass cozyUrl as argument if replicator.config doesn't exit yet
-        if arguments.length is 1
-            callback = cozyURL
-            cozyURL = @config.get 'cozyURL'
-
+    checkPlatformVersions: (callback) ->
         cutVersion = (s) ->
             [s, major, minor, patch] = s.match /(\d+)\.(\d+)\.(\d+)/
             return { major, minor, patch }
 
         request.get
-            url: "#{@config.getScheme()}://#{cozyURL}/versions"
+            url: "#{@config.getScheme()}://#{@config.get('cozyURL')}/versions"
+            auth: @config.get 'auth'
             json: true
         , (err, response, body) ->
             return callback err if err # TODO i18n ?
@@ -136,9 +132,11 @@ module.exports = class Replicator extends Backbone.Model
         Folder: description: "folder permission description"
         Binary: description: "binary permission description"
         Contact: description: "contact permission description"
-        Event: description: "just testing"
+        Event: description: "event permission description"
+        Notification: description: "notification permission description"
+        Tag: description: "tag notification permission description"
 
-    # registerDevice: (config, callback) ->
+
     registerRemote: (config, callback) ->
         request.post
             uri: "#{@config.getScheme()}://owner:#{config.password}@#{config.cozyURL}/device"
@@ -162,7 +160,6 @@ module.exports = class Replicator extends Backbone.Model
                 log.error "while registering device:  #{response.statusCode}"
                 callback new Error response.statusCode, response.reason
             else
-                log.debug body
                 _.extend config,
                     devicePassword: body.password
                     deviceName: body.login
@@ -188,7 +185,12 @@ module.exports = class Replicator extends Backbone.Model
             log.debug body
 
             @config.save
-                permissions: @config.serializePermissions body.permissions
+                devicePassword: body.password
+                deviceName: body.login
+                devicePermissions: @config.serializePermissions body.permissions
+                auth:
+                    username: body.login
+                    password: body.password
             , callback
 
 
@@ -284,7 +286,7 @@ module.exports = class Replicator extends Backbone.Model
         log.info "enter copyView for #{model}."
 
         options = @config.makeDSUrl "/request/#{model}/all/"
-        options.body = include_docs: true
+        options.body = include_docs: true, show_revs: true
 
         request.post options, (err, res, models) =>
             return callback err if err
@@ -395,7 +397,6 @@ module.exports = class Replicator extends Backbone.Model
                             callback err
                     else
                         @cache.push binfolder
-                        console.log entry
                         callback null, entry.toURL()
                         @removeAllLocal model, ->
 
@@ -684,7 +685,6 @@ module.exports = class Replicator extends Backbone.Model
             @liveReplication = null
 
         @liveReplication.once 'error', (e) =>
-            console.log e
             @liveReplication = null
 
             # realtimeBackupCoef++ if realtimeBackupCoef < 6

@@ -353,7 +353,9 @@ module.exports =
           @updateCalendars (err) =>
             return callback err if err
             options = @config.makeDSUrl "/request/event/all/"
-            options.body = include_docs: true
+            options.body =
+                include_docs: true
+                show_revs: true
             request.post options, (err, res, rows) =>
                 return callback err if err
                 return callback null unless rows?.length

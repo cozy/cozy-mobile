@@ -50,7 +50,6 @@ module.exports =
 
                 # Monkey patch for browser debugging
                 unless window.isBrowserDebugging
-                    # TODO : stub !
                     @notificationManager = new Notifications()
                     @serviceManager = new ServiceManager()
 

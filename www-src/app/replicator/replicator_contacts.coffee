@@ -301,7 +301,9 @@ module.exports =
         @createAccount (err) =>
             # Fetch contacs from view all of contact app.
             options = @config.makeDSUrl "/request/contact/all/"
-            options.body = include_docs: true
+            options.body =
+                include_docs: true
+                show_revs: true
             request.post options, (err, res, rows) =>
                 return callback err if err
                 return callback null unless rows?.length
