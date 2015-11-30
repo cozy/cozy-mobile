@@ -18,6 +18,7 @@
     "css-brunch": "> 1.0 < 1.5",
     "jade-brunch": "> 1.0 < 1.5",
     "javascript-brunch": "> 1.0 < 1.5",
+    "jquery": "^1.9.1",
     "json-brunch": "^1.5.4",
     "stylus-brunch": "^1.8.1",
     "uglify-js-brunch": "> 1.0 < 1.5"
