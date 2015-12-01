@@ -1,5 +1,5 @@
 request = require '../lib/request'
-ACH = require 'lib/android_calendar_helper'
+ACH = require '../lib/android_calendar_helper'
 
 
 # Account type and name of the created android contact account.
@@ -10,7 +10,7 @@ ACCOUNT =
     accountType: ACCOUNT_TYPE
     accountName: ACCOUNT_NAME
 
-log = require('/lib/persistent_log')
+log = require('../lib/persistent_log')
     prefix: "calendars replicator"
     date: true
 

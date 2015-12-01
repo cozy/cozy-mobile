@@ -1,6 +1,6 @@
 BaseView = require '../lib/base_view'
 
-log = require('/lib/persistent_log')
+log = require('../lib/persistent_log')
     prefix: "DeviceNamePickerView"
     date: true
 

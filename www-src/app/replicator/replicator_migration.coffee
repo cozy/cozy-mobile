@@ -1,4 +1,4 @@
-log = require('/lib/persistent_log')
+log = require('../lib/persistent_log')
     prefix: "replicator_migration_sqlite"
     date: true
 

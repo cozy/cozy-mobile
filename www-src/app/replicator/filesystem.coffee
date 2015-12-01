@@ -2,7 +2,7 @@ basic = require '../lib/basic'
 
 DOWNLOADS_FOLDER = 'cozy-downloads'
 
-log = require('/lib/persistent_log')
+log = require('../lib/persistent_log')
     prefix: "replicator mapreduce"
     date: true
 

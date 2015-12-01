@@ -1,1 +1,1 @@
-../../node_modules/moment-timezone/node_modules/moment/moment.js
+../../node_modules/moment/moment.js

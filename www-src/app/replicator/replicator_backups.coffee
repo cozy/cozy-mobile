@@ -3,7 +3,7 @@ fs = require './filesystem'
 request = require '../lib/request'
 
 
-log = require('/lib/persistent_log')
+log = require('../lib/persistent_log')
     prefix: "replicator backup"
     date: true
 

@@ -10,7 +10,7 @@ PLATFORM_MIN_VERSIONS =
     'proxy': '2.1.5'
     'data-system': '2.1.0'
 
-log = require('/lib/persistent_log')
+log = require('../lib/persistent_log')
     prefix: "replicator"
     date: true
 
@@ -272,7 +272,6 @@ module.exports = class Replicator extends Backbone.Model
                 (cb) => @config.save checkpointed: last_seq, cb
                 # build the initial state of FilesAndFolder view index
                 (cb) => @db.query 'FilesAndFolder', {}, cb
-                # (cb) => @db.query 'NotificationsTemporary', {}, cb
 
             ], (err) =>
                 log.info "end of inital replication"
@@ -383,13 +382,12 @@ module.exports = class Replicator extends Backbone.Model
                     if err?.message? and
                     err.message is "This file isnt available offline" and
                     @fileInFileSystem model
-                        found = false
-                        @cache.some (entry) ->
+                        for entry in cache
                             if entry.name.indexOf(binary_id) isnt -1
-                                found = true
-                                callback null, entry.toURL() + model.name
-                        if not found
-                            callback err
+                                path = entry.toURL() + model.name
+                                return callback null
+
+                        return callback err
                     else if err
                         # failed to download
                         fs.delete binfolder, (delerr) ->
@@ -566,11 +564,8 @@ module.exports = class Replicator extends Backbone.Model
     sync: (options, callback) ->
         return callback null if @get 'inSync'
 
-
-        # unless @config.has('checkpointed')
-        #     return callback new Error "database not initialized"
-
-
+        unless @config.has('checkpointed')
+            return callback new Error "database not initialized"
 
         log.info "start a sync"
         @set 'inSync', true
@@ -687,10 +682,10 @@ module.exports = class Replicator extends Backbone.Model
         @liveReplication.once 'error', (e) =>
             @liveReplication = null
 
-            # realtimeBackupCoef++ if realtimeBackupCoef < 6
-            # timeout = 1000 * (1 << realtimeBackupCoef)
-            # log.error "REALTIME BROKE, TRY AGAIN IN #{timeout} #{e.toString()}"
-            # @realtimeBackOff = setTimeout @startRealtime, timeout
+            realtimeBackupCoef++ if realtimeBackupCoef < 6
+            timeout = 1000 * (1 << realtimeBackupCoef)
+            log.error "REALTIME BROKE, TRY AGAIN IN #{timeout} #{e.toString()}"
+            @realtimeBackOff = setTimeout @startRealtime, timeout
 
     stopRealtime: =>
         # Stop replication.

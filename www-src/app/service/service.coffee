@@ -1,12 +1,12 @@
 # intialize module which initialize global vars.
-require '/lib/utils'
+require '../lib/utils'
 
 Replicator = require '../replicator/main'
 Notifications = require '../views/notifications'
 DeviceStatus = require '../lib/device_status'
 
 
-log = require('/lib/persistent_log')
+log = require('../lib/persistent_log')
     prefix: "application"
     date: true
     processusTag: "Service"

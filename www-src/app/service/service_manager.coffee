@@ -18,7 +18,7 @@
 #       Display notifications
 #
 
-log = require('/lib/persistent_log')
+log = require('../lib/persistent_log')
     prefix: "ServiceManager"
     date: true
 

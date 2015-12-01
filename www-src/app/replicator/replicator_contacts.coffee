@@ -5,7 +5,7 @@ Contact = require '../models/contact'
 ACCOUNT_TYPE = 'io.cozy'
 ACCOUNT_NAME = 'myCozy'
 
-log = require('/lib/persistent_log')
+log = require('../lib/persistent_log')
     prefix: "contacts replicator"
     date: true
 

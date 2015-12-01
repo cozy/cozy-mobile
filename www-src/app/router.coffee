@@ -1,4 +1,4 @@
-app = require 'application'
+app = require './application'
 FolderView = require './views/folder'
 LoginView = require './views/login'
 PermissionsView = require './views/permissions'
@@ -7,7 +7,7 @@ FirstSyncView = require './views/first_sync'
 ConfigView = require './views/config'
 FolderCollection = require './collections/files'
 
-log = require('/lib/persistent_log')
+log = require('./lib/persistent_log')
     prefix: "replicator"
     date: true
 

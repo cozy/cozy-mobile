@@ -6,6 +6,7 @@ module.exports = class ReplicatorConfig extends Backbone.Model
     constructor: (@replicator) ->
         super null
         @remote = null
+
     defaults: ->
         _id: '_local/appconfig'
         syncContacts: true
@@ -48,22 +49,20 @@ module.exports = class ReplicatorConfig extends Backbone.Model
     makeDSUrl: (path) ->
         json: true
         auth: @get 'auth'
-        url: "#{@getScheme()}://#{@get("deviceName")}:#{@get('devicePassword')}" + "@" + @get('cozyURL') + '/ds-api' + path
+        url: "#{@getScheme()}://#{@get("deviceName")}:#{@get('devicePassword')}" + "@#{@get('cozyURL')}/ds-api#{path}"
 
     makeReplicationUrl: (path) ->
         json: true
         auth: @get 'auth'
-        url: "#{@getScheme()}://#{@get("deviceName")}:#{@get('devicePassword')}" + "@" + @get('cozyURL') + '/replication' + path
-
-        # url: "#{@getScheme()}://" + @get('cozyURL') + '/replication' + path
+        url: "#{@getScheme()}://#{@get("deviceName")}:#{@get('devicePassword')}" + "@#{@get('cozyURL')}/replication#{path}"
 
 
-    makeFilterName: -> @get('deviceId') + '/filter'
+    makeFilterName: -> "#{@get('deviceId')}/filter"
 
     createRemotePouchInstance: ->
         new PouchDB
-            # name: "#{@getScheme()}://" + @get('cozyURL') + '/replication'
-            name: "#{@getScheme()}://#{@get("deviceName")}:#{@get('devicePassword')}" + "@" + @get('cozyURL') + '/replication'
+            name: "#{@getScheme()}://#{@get("deviceName")}:" +
+                "#{@get('devicePassword')}@#{@get('cozyURL')}/replication"
             ajax: timeout: 5 * 60 * 1000 # Big timeout for unknown error on
                                          # longpoll
 

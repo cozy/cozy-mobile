@@ -4,8 +4,8 @@
     "organizer": "myCozy",
     "title": "Friend's birthday",
     "eventLocation": "Friend's appartment",
-    "description": "Bring a present",
-    "dtstart": 1446854400000,
+    "description": "Bring a present!",
+    "dtstart": 1415318400000,
     "eventTimezone": "UTC",
     "duration": "P1D",
     "allDay": 1,
@@ -55,4 +55,4 @@
         "method": 1
       }
     ]
-  }
+}

@@ -1,7 +1,7 @@
 BaseView = require '../lib/base_view'
 
 
-log = require('/lib/persistent_log')
+log = require('../lib/persistent_log')
     prefix: "config view"
     date: true
 
@@ -61,7 +61,7 @@ module.exports = class ConfigView extends BaseView
                 $('#redbtn').text t 'done'
 
                 # DeviceStatus has to be stopped to restart properly.
-                require('lib/device_status').shutdown()
+                require('../lib/device_status').shutdown()
                 window.location.reload true
 
 

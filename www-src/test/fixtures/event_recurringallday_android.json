@@ -1,47 +1,47 @@
 {
-        "_id": 4348,
-        "calendar_id": 58,
-        "organizer": "myCozy",
-        "title": "Friend's birthday",
-        "eventLocation": "Friend's appartment",
-        "description": "Bring a present!",
-        "dtstart": 1415318400000,
-        "duration": "PT24H",
-        "allDay": 1,
-        "rrule": "FREQ=YEARLY;INTERVAL=1",
-        "accessLevel": 0,
-        "availability": 0,
-        "guestsCanModify": 0,
-        "guestsCanInviteOthers": 1,
-        "guestsCanSeeGuests": 1,
-        "deleted": 0,
-        "_sync_id": "d8dde00c9ba594f7d8d242d7a200bfb2",
-        "sync_data2": "1-396cb5fe83923904a38e0a8a4265e307",
-        "sync_data5": "2015-10-30T09:05:34.323Z",
-        "attendees": [
-          {
-            "_id": 6909,
-            "event_id": 4348,
-            "attendeeEmail": "randomgirl@provider.tld",
-            "attendeeRelationship": 0,
-            "attendeeType": 0,
-            "attendeeStatus": 4
-          },
-          {
-            "_id": 6910,
-            "event_id": 4348,
-            "attendeeEmail": "randomguy@provider.tld",
-            "attendeeRelationship": 0,
-            "attendeeType": 0,
-            "attendeeStatus": 4
-          }
-        ],
-        "reminders": [
-          {
-            "_id": 1552,
-            "event_id": 4348,
-            "minutes": 10080,
-            "method": 1
-          }
-        ]
+    "_id": 4348,
+    "calendar_id": 58,
+    "organizer": "myCozy",
+    "title": "Friend's birthday",
+    "eventLocation": "Friend's appartment",
+    "description": "Bring a present!",
+    "dtstart": 1415318400000,
+    "duration": "PT24H",
+    "allDay": 1,
+    "rrule": "FREQ=YEARLY;INTERVAL=1",
+    "accessLevel": 0,
+    "availability": 0,
+    "guestsCanModify": 0,
+    "guestsCanInviteOthers": 1,
+    "guestsCanSeeGuests": 1,
+    "deleted": 0,
+    "_sync_id": "d8dde00c9ba594f7d8d242d7a200bfb2",
+    "sync_data2": "1-396cb5fe83923904a38e0a8a4265e307",
+    "sync_data5": "2015-10-30T09:05:34.323Z",
+    "attendees": [
+      {
+        "_id": 6909,
+        "event_id": 4348,
+        "attendeeEmail": "randomgirl@provider.tld",
+        "attendeeRelationship": 0,
+        "attendeeType": 0,
+        "attendeeStatus": 4
+      },
+      {
+        "_id": 6910,
+        "event_id": 4348,
+        "attendeeEmail": "randomguy@provider.tld",
+        "attendeeRelationship": 0,
+        "attendeeType": 0,
+        "attendeeStatus": 4
       }
+    ],
+    "reminders": [
+      {
+        "_id": 1552,
+        "event_id": 4348,
+        "minutes": 10080,
+        "method": 1
+      }
+    ]
+}

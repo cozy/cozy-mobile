@@ -26,7 +26,7 @@ exports.config =
                     'vendor/scripts/underscore.js'
                     'vendor/scripts/backbone.js'
                     'vendor/scripts/moment.js'
-                    'vendor/scripts/moment-timezone.js'
+                    'vendor/scripts/moment-timezone-with-data.js'
                 ]
 
         stylesheets:
