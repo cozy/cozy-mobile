@@ -1,6 +1,6 @@
 fs     = require 'fs'
 {exec} = require 'child_process'
-async  = require './www-src/vendor/scripts/async.1.2.1'
+async  = require './www-src/vendor/scripts/async'
 
 plugins = {
     "com.fgomiero.cordova.externafileutil": "https://github.com/aenario/cordova-external-file-open"
