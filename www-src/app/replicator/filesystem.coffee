@@ -12,14 +12,14 @@ module.exports = fs = {}
 getFileSystem = (callback) ->
     onSuccess = (dir) -> callback null, dir.filesystem
     onError = (err) -> callback err
-    __chromeSafe() if window.isBrowserDebugging # flag for developpement in browser
+    # flag for developpement in browser
+    __chromeSafe() if window.isBrowserDebugging
+
     # TODO: use a cache directory (cordova.file.externalCacheDirectory),
     # instead of putting some noise at system root ?
-
-    # TODO !
-    uri = cordova.file.externalRootDirectory
-    unless uri?
-        uri = cordova.file.cacheDirectory
+    # TODO: stub when externalRootDirectory is null (has in emulators).
+    # CacheDirectory is private to the app, so files won't open.
+    uri = cordova.file.externalRootDirectory or cordova.file.cacheDirectory
     window.resolveLocalFileSystemURL uri
     , onSuccess, onError
 
@@ -141,10 +141,10 @@ module.exports.download = (options, progressback, callback) ->
         'An error happened (UNKNOWN)',
         'An error happened (NOT FOUND)',
         'An error happened (INVALID URL)',
-        #'This file isnt available offline',# TODO !
+        #'This file isnt available offline', # TODO, fix in translation.
         'An error happened (CONNEXION ERROR)',
         'ABORTED'
-        'An error happened (NOT MODIFIED'
+        'An error happened (NOT MODIFIED)'
     ]
 
     {url, path, auth} = options

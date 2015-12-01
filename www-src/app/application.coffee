@@ -66,17 +66,16 @@ module.exports =
                             alert err.message or err
                             return navigator.app.exitApp()
 
-                        unless config.hasPermissions()
-                            app.router.navigate 'permissions', trigger: true
-
-                        else
-                            # TODO : try to move to regular start.
-                            unless @replicator.config.has('checkpointed')
-                                log.info 'Launch first replication again.'
-                                app.router.navigate 'first-sync', trigger: true
-                            else
+                        if config.hasPermissions()
+                            if @replicator.config.has('checkpointed')
                                 app.regularStart()
 
+                            # TODO : try to move to regular start.
+                            else
+                                log.info 'Launch first replication again.'
+                                app.router.navigate 'first-sync', trigger: true
+                        else
+                            app.router.navigate 'permissions', trigger: true
 
                 else # no config.remote
                     # App's first start
