@@ -323,18 +323,23 @@ module.exports = class Replicator extends Backbone.Model
 
     # Check if any version of the file is present in cache.
     # @param file a cozy file document.
+    # @return true if any version of the file is present
     fileInFileSystem: (file) =>
         if file.docType.toLowerCase() is 'file'
             return @cache.some (entry) ->
                 entry.name.indexOf(file.binary.file.id) isnt -1
 
-
+    # Check if the file, with the specified version, is present in file system
+    # @param file a cozy file document.
+    # @return true if the file with the expected version is present
     fileVersion: (file) =>
         if file.docType.toLowerCase() is 'file'
             @cache.some (entry) =>
                 entry.name is @fileToEntryName file
 
-
+    # Check if the all the subtree of the specified path is in cache.
+    # @param path the path to the subtree to check
+    # @param callback get true as result if the whole subtree is present.
     folderInFileSystem: (path, callback) =>
         options =
             startkey: path
@@ -358,6 +363,7 @@ module.exports = class Replicator extends Backbone.Model
             break
 
 
+
     # Download the binary of the specified file in cache.
     # @param model cozy File document
     # @param progressback progress callback.
@@ -368,13 +374,13 @@ module.exports = class Replicator extends Backbone.Model
                 return callback err
             unless model.name
                 return callback new Error('no model name :' + JSON.stringify(model))
-
-            fs.getFile binfolder, model.name, (err, entry) =>
+            fileName = encodeURIComponent model.name
+            fs.getFile binfolder, fileName, (err, entry) =>
                 return callback null, entry.toURL() if entry
 
                 # getFile failed, let's download
                 options = @config.makeDSUrl "/data/#{model._id}/binaries/file"
-                options.path = binfolder.toURL() + model.name
+                options.path = binfolder.toURL() + fileName
                 log.info "download binary of #{model.name}"
                 fs.download options, progressback, (err, entry) =>
                     # TODO : Is it reachable code ? https://github.com/cozy/cozy-mobile/commit/7f46ac90c671f0704887bce7d83483c5f323056a
@@ -384,7 +390,7 @@ module.exports = class Replicator extends Backbone.Model
                     @fileInFileSystem model
                         for entry in cache
                             if entry.name.indexOf(binary_id) isnt -1
-                                path = entry.toURL() + model.name
+                                path = entry.toURL() + fileName
                                 return callback null
 
                         return callback err
@@ -402,7 +408,6 @@ module.exports = class Replicator extends Backbone.Model
     # Remove all versions in saved locally of the specified file-id, except the
     # specified rev.
     removeAllLocal: (file, callback) ->
-        id =
         async.eachSeries @cache, (entry, cb) =>
             if entry.name.indexOf(file.binary.file.id) isnt -1 and
                entry.name isnt @fileToEntryName(file)
@@ -472,6 +477,7 @@ module.exports = class Replicator extends Backbone.Model
         file = options.file
         entry = options.entry
 
+        fileName = encodeURIComponent file.name
         noop = ->
 
         if file._deleted
@@ -498,10 +504,10 @@ module.exports = class Replicator extends Backbone.Model
                     log.warn "Missing file #{file.name} on device, fetching it."
                     @getBinary file, noop, callback
 
-                else if children[0].name is file.name
+                else if children[0].name is fileName
                     callback()
                 else # rename the file.
-                    fs.moveTo children[0], entry, file.name, callback
+                    fs.moveTo children[0], entry, fileName, callback
 
 
 
