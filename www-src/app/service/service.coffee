@@ -1,12 +1,12 @@
 # intialize module which initialize global vars.
-require '/lib/utils'
+require '../lib/utils'
 
 Replicator = require '../replicator/main'
 Notifications = require '../views/notifications'
 DeviceStatus = require '../lib/device_status'
 
 
-log = require('/lib/persistent_log')
+log = require('../lib/persistent_log')
     prefix: "application"
     date: true
     processusTag: "Service"
@@ -46,7 +46,7 @@ module.exports = Service =
                     log.error err
                     return window.service.workDone()
 
-                if config.remote
+                if config.remote and config.hasPermissions()
                     unless @replicator.config.has('checkpointed')
                         log.error new Error "Database not initialized"
                         return window.service.workDone()
@@ -75,7 +75,12 @@ module.exports = Service =
                             app.replicator.sync {background: true}, delayedQuit
 
                 else
-                    window.service.workDone()
+                    # Start activity to initialize app
+                    # or update permissions
+                    JSBackgroundService.startMainActivity (err)->
+                        log.error err if err
+                        # Then shutdown service
+                        window.service.workDone()
 
 
 document.addEventListener 'deviceready', ->

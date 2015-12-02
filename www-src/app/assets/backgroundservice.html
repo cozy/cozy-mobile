@@ -2,6 +2,8 @@
 <html>
   <head>
     <meta charset="utf-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: ; connect-src * ; " >
+
     <title>Cozy Files Service</title>
 
     <!-- cordova script (this will be a 404 during development) -->
@@ -11,8 +13,6 @@
   </head>
 
   <body>
-    <img id="splash-screen" src="img/icon.png" />
-
     <script>require('service/service');</script>
   </body>
 </html>

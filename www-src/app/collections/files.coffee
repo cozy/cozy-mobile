@@ -2,7 +2,7 @@ File = require '../models/file'
 
 PAGE_LENGTH = 20
 
-log = require('/lib/persistent_log')
+log = require('../lib/persistent_log')
     prefix: "files collections"
     date: true
 

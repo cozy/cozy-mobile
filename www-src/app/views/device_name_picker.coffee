@@ -1,6 +1,6 @@
 BaseView = require '../lib/base_view'
 
-log = require('/lib/persistent_log')
+log = require('../lib/persistent_log')
     prefix: "DeviceNamePickerView"
     date: true
 
@@ -42,10 +42,11 @@ module.exports = class DeviceNamePickerView extends BaseView
                 log.error err
                 @displayError t err.message
             else
-                delete app.loginConfig
-                app.isFirstRun = true
+                app.replicator.checkPlatformVersions (err) =>
+                    return @displayError err if err?
 
-                app.router.navigate 'config', trigger: true
+                    delete app.loginConfig
+                    app.router.navigate 'config', trigger: true
 
     onCompleteDefaultValue: ->
         device = @$('#input-device').val()

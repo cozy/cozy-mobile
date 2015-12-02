@@ -2,9 +2,10 @@
 
     .item.item-divider= t('phone2cozy title')
 
-    //- if locale == 'digidisk'
     .item.item-checkbox= t('contacts sync label')
         label.checkbox: input#contactSyncCheck(type="checkbox", checked=syncContacts)
+    .item.item-checkbox= t('calendars sync label')
+        label.checkbox: input#calendarSyncCheck(type="checkbox", checked=syncCalendars)
 
     .item.item-checkbox= t('images sync label')
         label.checkbox: input#imageSyncCheck(type="checkbox", checked=syncImages)

@@ -3,23 +3,28 @@ fs     = require 'fs'
 async  = require './www-src/vendor/scripts/async'
 
 plugins = {
+    "cordova-plugin-whitelist": "cordova-plugin-whitelist@1.0.0"
+
+    "cordova-plugin-device": "cordova-plugin-device@1.0.1"
+    "cordova-plugin-globalization": "cordova-plugin-globalization@1.0.1"
+    "cordova-plugin-inappbrowser": "cordova-plugin-inappbrowser@1.0.1"
+    "cordova-plugin-file": "cordova-plugin-file@3.0.0"
+    "cordova-plugin-file-transfer": "cordova-plugin-file-transfer@1.3.0"
+    "cordova-plugin-battery-status": "cordova-plugin-battery-status@1.1.0"
+    "cordova-plugin-network-information": "cordova-plugin-network-information@1.0.1"
+
     "com.fgomiero.cordova.externafileutil": "https://github.com/aenario/cordova-external-file-open"
     "com.brodysoft.sqlitePlugin": "https://github.com/brodysoft/Cordova-SQLitePlugin#r1.0.4"
-    "org.apache.cordova.file": "https://git-wip-us.apache.org/repos/asf/cordova-plugin-file.git#r1.3.3"
-    "org.apache.cordova.file-transfer": "https://git-wip-us.apache.org/repos/asf/cordova-plugin-file-transfer.git#r0.5.0"
+    "de.appplant.cordova.plugin.local-notification": "de.appplant.cordova.plugin.local-notification@0.8.2"
+
     "io.cozy.cordova-images-browser": "https://github.com/aenario/cordova-images-browser"
-    "io.cozy.jsbackgroundservice": "https://github.com/jacquarg/cordova-jsbackgroundservice#v1.0.1"
+    "io.cozy.jsbackgroundservice": "https://github.com/jacquarg/cordova-jsbackgroundservice"
     "io.cozy.jsbgservice-newpicture": "https://github.com/jacquarg/cordova-jsbgservice-newpicture#v1.0.1"
     "io.cozy.contacts": "https://github.com/jacquarg/cordova-plugin-contacts#c1.0.3"
-    "org.apache.cordova.battery-status": "org.apache.cordova.battery-status@0.2.12"
-    "org.apache.cordova.network-information": "https://git-wip-us.apache.org/repos/asf/cordova-plugin-network-information.git#r0.2.15"
-    "org.apache.cordova.globalization": "org.apache.cordova.globalization@0.3.4 "
-    "de.appplant.cordova.plugin.local-notification": "de.appplant.cordova.plugin.local-notification@0.8.1"
-    "org.apache.cordova.inappbrowser": "org.apache.cordova.inappbrowser@0.6.0",
-
+    "io.cozy.calendarsync": "https://github.com/jacquarg/cordova-plugin-calendarsync"
 }
 
-platforms = ['ios', 'android']
+platforms = ['android']
 
 installPlugins = (done) ->
     async.eachSeries Object.keys(plugins), (plugin, cb) ->
@@ -84,8 +89,6 @@ release = (done) ->
             console.log stdout
             console.log stderr
             return done err
-
-
 
 
 task 'platforms', 'install cordova platforms', -> installPlatforms -> console.log "DONE"

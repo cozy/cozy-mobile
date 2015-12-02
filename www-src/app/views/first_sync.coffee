@@ -2,7 +2,7 @@ BaseView = require '../lib/base_view'
 
 LAST_STEP = 5
 
-log = require('/lib/persistent_log')
+log = require('../lib/persistent_log')
     prefix: "FirstSyncView"
     date: true
 

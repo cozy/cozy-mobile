@@ -51,12 +51,9 @@ module.exports = class LoginView extends BaseView
 
         $('#btn-save').text t 'authenticating...'
         app.replicator.checkCredentials config, (error) =>
-
-            if error?
-                @displayError error
-            else
-                app.loginConfig = config
-                app.router.navigate 'device-name-picker', trigger: true
+            return @displayError error if error?
+            app.loginConfig = config
+            app.router.navigate 'permissions', trigger: true
 
     displayError: (text, field) ->
         $('#btn-save').text @saving

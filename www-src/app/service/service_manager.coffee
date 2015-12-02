@@ -18,10 +18,9 @@
 #       Display notifications
 #
 
-log = require('/lib/persistent_log')
+log = require('../lib/persistent_log')
     prefix: "ServiceManager"
     date: true
-
 
 repeatingPeriod = 15 * 60 * 1000
 
@@ -40,6 +39,7 @@ module.exports = class ServiceManager extends Backbone.Model
         @listenTo app.replicator.config, "change:syncImages", @listenNewPictures
 
         @checkActivated()
+
 
     isActivated: ->
         return @get 'daemonActivated'
@@ -72,3 +72,6 @@ module.exports = class ServiceManager extends Backbone.Model
     listenNewPictures: (config, listen) ->
         window.JSBackgroundService.listenNewPictures listen, (err) ->
             if err then return console.log err
+
+    isRunning: (callback) ->
+        window.JSBackgroundService.isRunning callback

@@ -2,7 +2,7 @@ basic = require '../lib/basic'
 
 DOWNLOADS_FOLDER = 'cozy-downloads'
 
-log = require('/lib/persistent_log')
+log = require('../lib/persistent_log')
     prefix: "replicator mapreduce"
     date: true
 
@@ -10,10 +10,19 @@ module.exports = fs = {}
 
 
 getFileSystem = (callback) ->
-    onSuccess = (fs) -> callback null, fs
+    onSuccess = (dir) -> callback null, dir.filesystem
     onError = (err) -> callback err
-    __chromeSafe() if window.isBrowserDebugging # flag for developpement in browser
-    window.requestFileSystem LocalFileSystem.PERSISTENT, 0, onSuccess, onError
+    # flag for developpement in browser
+    __chromeSafe() if window.isBrowserDebugging
+
+    # TODO: use a cache directory (cordova.file.externalCacheDirectory),
+    # instead of putting some noise at system root ?
+    # TODO: stub when externalRootDirectory is null (has in emulators).
+    # CacheDirectory is private to the app, so files won't open.
+    uri = cordova.file.externalRootDirectory or cordova.file.cacheDirectory
+    window.resolveLocalFileSystemURL uri
+    , onSuccess, onError
+
 
 readable = (err) ->
     for name, code of FileError when code is err.code
@@ -105,6 +114,15 @@ module.exports.contentFromFile = (file, callback) ->
     reader.onload = -> callback null, reader.result
     reader.readAsArrayBuffer file
 
+module.exports.getFileAsBlob = (file, callback) ->
+    reader = new FileReader()
+    reader.onerror = callback
+    reader.onload = ->
+        blob = new Blob [reader.result], type: file.type
+        callback null, blob
+
+    reader.readAsArrayBuffer file
+
 module.exports.getFileFromPath = (path, callback) ->
     fs.entryFromPath path, (err, entry) ->
         return callback err if err
@@ -123,12 +141,11 @@ module.exports.download = (options, progressback, callback) ->
         'An error happened (UNKNOWN)',
         'An error happened (NOT FOUND)',
         'An error happened (INVALID URL)',
-        'This file isnt available offline',
+        #'This file isnt available offline', # TODO, fix in translation.
+        'An error happened (CONNEXION ERROR)',
         'ABORTED'
+        'An error happened (NOT MODIFIED)'
     ]
-
-
-    options =
 
     {url, path, auth} = options
     url = encodeURI url
@@ -141,9 +158,7 @@ module.exports.download = (options, progressback, callback) ->
         if e.lengthComputable then progressback e.loaded, e.total
         else progressback 3, 10 #@TODO, better aproximation
 
-    headers = Authorization: basic auth
-
-    ft.download url, path, onSuccess, onError, true, {headers}
+    ft.download url, path, onSuccess, onError, true
 
 
 # various patches to debug in chrome

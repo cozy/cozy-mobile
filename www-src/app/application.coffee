@@ -1,13 +1,14 @@
 # intialize module which initialize global vars.
-require '/lib/utils'
+require './lib/utils'
 
 Replicator = require './replicator/main'
 LayoutView = require './views/layout'
 ServiceManager = require './service/service_manager'
-Notifications = require '../views/notifications'
+Notifications = require './views/notifications'
 DeviceStatus = require './lib/device_status'
 
-log = require('/lib/persistent_log')
+
+log = require('./lib/persistent_log')
     prefix: "application"
     date: true
     processusTag: "Application"
@@ -22,7 +23,6 @@ module.exports =
             window.navigator = window.navigator or {}
             window.navigator.globalization = window.navigator.globalization or {}
             window.navigator.globalization.getPreferredLanguage = (callback) -> callback value: 'fr-FR'
-
 
         navigator.globalization.getPreferredLanguage (properties) =>
             [@locale] = properties.value.split '-'
@@ -60,15 +60,28 @@ module.exports =
                 DeviceStatus.initialize()
 
                 if config.remote
-                    unless @replicator.config.has('checkpointed')
-                        log.info 'Launch first replication again.'
-                        app.router.navigate 'first-sync', trigger: true
-                    else
-                        app.regularStart()
+                    app.replicator.checkPlatformVersions (err) =>
+                        if err
+                            log.error err
+                            alert err.message or err
+                            return navigator.app.exitApp()
 
-                else
+                        if config.hasPermissions()
+                            if @replicator.config.has('checkpointed')
+                                app.regularStart()
+
+                            # TODO : try to move to regular start.
+                            else
+                                log.info 'Launch first replication again.'
+                                app.router.navigate 'first-sync', trigger: true
+                        else
+                            app.router.navigate 'permissions', trigger: true
+
+                else # no config.remote
                     # App's first start
+                    app.isFirstRun = true
                     @router.navigate 'login', trigger: true
+
 
     regularStart: ->
         app.foreground = true
@@ -86,7 +99,13 @@ module.exports =
                 app.backFromOpen = false
                 app.replicator.startRealtime()
             else
-                app.replicator.backup {}, (err) -> log.error err if err
+                @serviceManager.isRunning (err, running) =>
+                    return log.error err if err
+                    if running
+                        app.replicator.startRealtime()
+                        log.info "No backup on resume, as service still running."
+                    else
+                        app.replicator.backup {}, (err) -> log.error err if err
         , false
         document.addEventListener "pause", =>
             log.info "PAUSE EVENT"
@@ -96,6 +115,7 @@ module.exports =
         , false
         document.addEventListener 'online', ->
             backup = () ->
+
                 app.replicator.backup {}, (err) -> log.error err if err
                 window.removeEventListener 'realtime:onChange', backup, false
             window.addEventListener 'realtime:onChange', backup, false
