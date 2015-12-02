@@ -48,7 +48,7 @@ describe 'Convert Cozy event to Android', ->
             obtained.attendees.should.be.empty
         it "reminders", ->
             obtained.reminders.length.should.eql androidEvent.reminders.length
-            # To hard condition: keep order isn't necessary.
+            # Too hard condition: keep order isn't necessary.
 
         it "reminder1", ->
             obtained.reminders[0].minutes.should.eql androidEvent.reminders[0].minutes
@@ -271,15 +271,14 @@ describe 'Convert Cozy event to Android', ->
             obtained.attendees.should.be.empty
 
         it "attendees", ->
-            # Android create automatically an organsiser attendee.
+            # Android create automatically an organizer attendee.
             obtained.attendees.length.should.eql cozyEvent.attendees.length + 1
 
         it "attendee1", ->
             attendee = obtained.attendees[1]
             cozyA = cozyEvent.attendees[0]
             attendee.email.should.eql cozyA.email
-            # Default status on android
-            # is NEEDS-ACTION),
+            # Default status on android is NEEDS-ACTION,
             # but cozy's is INVITATION-NOT-SENT
             attendee.status.should.eql 'NEEDS-ACTION'
 
@@ -287,7 +286,7 @@ describe 'Convert Cozy event to Android', ->
             attendee = obtained.attendees[2]
             cozyA = cozyEvent.attendees[1]
             attendee.email.should.eql cozyA.email
-            # is NEEDS-ACTION),
+            # Default status on android is NEEDS-ACTION,
             # but cozy's is INVITATION-NOT-SENT
             attendee.status.should.eql 'NEEDS-ACTION'
 

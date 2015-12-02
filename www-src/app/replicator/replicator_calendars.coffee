@@ -61,7 +61,7 @@ module.exports =
         request.post options, (err, res, body) =>
             return callback err if err # TODO : pass on 404
             # No tag found, put a default color.
-            calendar = body.rows?[0].doc or { name: name , color: '#2979FF' }
+            calendar = body[0]?.doc or { name: name , color: '#2979FF' }
             callback null, calendar
 
 
