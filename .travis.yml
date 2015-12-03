@@ -6,10 +6,11 @@ sudo: false
 
 android:
   components:
+    - android-22
     - build-tools-22.0.1
 
 install:
-  - npm install -g cordova@5.4.1
+  - npm install -g cordova
   - cd www-src && npm install && cd ..
   - export PATH=$PATH:$PWD/www-src/node_modules/.bin
   - cake platforms && cake plugins
