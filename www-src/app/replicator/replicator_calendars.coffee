@@ -20,6 +20,8 @@ module.exports =
     syncCalendars: (callback) ->
         return callback null unless @config.get 'syncCalendars'
 
+        @changesFromCozy = []
+
         # Feedback to the user.
         @set 'backup_step', 'calendar_sync'
         @set 'backup_step_done', null
@@ -29,8 +31,10 @@ module.exports =
         # 1 - Events initialisation (if necessary)
         # 2 - calendar update and fetching
         # 3 - sync Phone --> in app PouchDB
-        # 4 - sync in app PouchDB --> Cozy couchDB
-        # 5 - sync Cozy couchDB to phone (and app PouchDB)
+        # 4 - sync Cozy CouchDB --> in app PouchDB
+        # 5 - fix conflicts keeping Cozy's versions
+        # 6 - sync in app PouchDB --> Cozy couchDB
+        # 7 - sync Cozy couchDB to phone (and app PouchDB)
         async.series [
             (cb) =>
                 if @config.has('eventsPullCheckpointed')
@@ -45,10 +49,13 @@ module.exports =
                         @initEventsInPhone body.last_seq, cb
             (cb) => @updateCalendars cb
             (cb) => @syncEventsPhone2Pouch cb
-            (cb) => @syncEventsToCozy cb
             (cb) => @syncEventsFromCozy cb
+            (cb) => async.eachSeries @changesFromCozy, @handleConflict.bind(@), cb
+            (cb) => @syncEventsToCozy cb
+            (cb) => @_applyEventsChangeToPhone @changesFromCozy, cb
         ], (err) ->
             log.info "Sync calendars done"
+            @changesFromCozy = []
             callback err
 
 
@@ -198,6 +205,33 @@ module.exports =
             , callback
 
 
+    # Check for conflicts, resolve them, keeping the given cozy's doc.
+    # @param doc the doc to work on
+    # @param callback the keeped doc
+    handleConflict: (doc, callback) ->
+        log.info "handleConflict for #{doc._id}"
+        # Get the doc with conflicts from Pouch
+        @db.get doc._id, { conflicts: true, revs: true }, (err, local) =>
+            return callback err if err
+            return callback null, doc unless local._conflicts?
+
+            # Handle conflicts !
+            # Remove all conflicts keeping version from cozy
+            revsToDelete = local._conflicts.filter (rev) -> rev isnt doc._rev
+
+            # If cozy's rev was in conflict, remove the other one
+            if revsToDelete.length isnt local._conflicts.length
+                revNum = parseInt doc._rev.split('-')[0]
+                idx = local._revisions.start - revNum
+                revsToDelete.push "#{revNum}-#{local._revisions.ids[idx]}"
+
+            # Apply clean up.
+            async.each revsToDelete, (rev, cb) =>
+                @db.remove doc._id, rev, cb
+            , (err) =>
+                return callback err if err
+                callback null, doc
+
 
     # Sync app's pouchDB with cozy's couchDB with a replication.
     syncEventsToCozy: (callback) ->
@@ -216,6 +250,7 @@ module.exports =
         replication.on 'error', callback
         replication.on 'complete', (result) =>
             @config.save eventsPushCheckpointed: result.last_seq, callback
+
 
     _checkCalendarInPhone: (cozyEvent, callback) ->
         unless cozyEvent.tags[0] of @calendarIds
@@ -272,6 +307,7 @@ module.exports =
         , callback
 
 
+
     # Update contacts in phone with specified docs.
     # @param docs list of contact in cozy's format.
     _applyEventsChangeToPhone: (docs, callback) ->
@@ -302,21 +338,14 @@ module.exports =
             @cleanCalendars calendars, callback
 
 
-
     # Sync cozy's contact to phone.
     syncEventsFromCozy: (callback) ->
         log.info "enter syncEventFromCozy"
-        replicationDone = false
+        # replicationDone = false
 
         total = 0
         @set 'backup_step', 'events_sync_to_phone'
         @set 'backup_step_done', 0
-
-        # Use a queue because contact save to phone doesn't support well
-        # concurrency.
-        applyToPhoneQueue = async.queue @_applyEventsChangeToPhone.bind @
-
-        applyToPhoneQueue.drain = -> callback() if replicationDone
 
         # Get contacts from the cozy (couch -> pouch replication)
         replication = @db.replicate.from @config.remote,
@@ -328,19 +357,11 @@ module.exports =
             since: @config.get 'eventsPullCheckpointed'
 
         replication.on 'change', (changes) =>
-            # hack: whitout it, doc becomes _id value !
-            applyToPhoneQueue.push $.extend true, {}, changes.docs
-            total += changes.docs?.length
-            @set 'backup_step_total', total
-            log.info "sync2Phone #{total} events."
+            @changesFromCozy = @changesFromCozy.concat changes.docs
 
         replication.on 'error', callback
         replication.on 'complete', (result) =>
-            @config.save eventsPullCheckpointed: result.last_seq, ->
-                replicationDone = true
-                if applyToPhoneQueue.idle()
-                    applyToPhoneQueue.drain = null
-                    callback()
+            @config.save eventsPullCheckpointed: result.last_seq, callback
 
 
     # Initial replication task.
