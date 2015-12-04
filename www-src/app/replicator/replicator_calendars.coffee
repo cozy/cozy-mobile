@@ -49,10 +49,22 @@ module.exports =
                         @initEventsInPhone body.last_seq, cb
             (cb) => @updateCalendars cb
             (cb) => @syncEventsPhone2Pouch cb
-            (cb) => @syncEventsFromCozy cb
-            (cb) => async.eachSeries @changesFromCozy, @handleConflict.bind(@), cb
-            (cb) => @syncEventsToCozy cb
-            (cb) => @_applyEventsChangeToPhone @changesFromCozy, cb
+            (cb) =>
+                @set 'backup_step_done', null
+                @set 'backup_step', 'events_sync_from_cozy'
+                @syncEventsFromCozy cb
+            (cb) =>
+                async.eachSeries @changesFromCozy, (doc, cb2) =>
+                    @handleConflict doc, cb2
+                , cb
+            (cb) =>
+                @set 'backup_step', 'events_sync_to_cozy'
+                @syncEventsToCozy cb
+            (cb) =>
+                @set 'backup_step', 'events_sync_to_phone'
+                @set 'backup_step_done', 0
+                @set 'backup_step_total', @changesFromCozy.length
+                @_applyEventsChangeToPhone @changesFromCozy, cb
         ], (err) ->
             log.info "Sync calendars done"
             @changesFromCozy = []
@@ -229,15 +241,13 @@ module.exports =
             async.each revsToDelete, (rev, cb) =>
                 @db.remove doc._id, rev, cb
             , (err) =>
-                return callback err if err
-                callback null, doc
+                callback err, doc
 
 
     # Sync app's pouchDB with cozy's couchDB with a replication.
     syncEventsToCozy: (callback) ->
         log.info "enter sync2Cozy"
-        @set 'backup_step_done', null
-        @set 'backup_step', 'events_sync_to_cozy'
+
 
         replication = @db.replicate.to @config.remote,
             batch_size: 20
@@ -341,11 +351,6 @@ module.exports =
     # Sync cozy's contact to phone.
     syncEventsFromCozy: (callback) ->
         log.info "enter syncEventFromCozy"
-        # replicationDone = false
-
-        total = 0
-        @set 'backup_step', 'events_sync_to_phone'
-        @set 'backup_step_done', 0
 
         # Get contacts from the cozy (couch -> pouch replication)
         replication = @db.replicate.from @config.remote,
