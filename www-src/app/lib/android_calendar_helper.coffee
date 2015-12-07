@@ -88,7 +88,7 @@ module.exports = ACH =
             duration = duration.replace /"/g, ''
             dtstart = parseInt moment.tz(cozy.start, cozy.timezone).format 'x'
 
-        else # Puctual, datetime are in UTC timezone.
+        else # Punctual, datetime are in UTC timezone.
             dtstart = parseInt moment.tz(cozy.start, 'UTC').format 'x'
             dtend = parseInt moment.tz(cozy.end, 'UTC').format 'x'
 
@@ -128,7 +128,7 @@ module.exports = ACH =
         reminders = cozy.alarms.map (alarm) ->
             android =
                 minutes: iCalDuration2Minutes alarm.trigg
-                method: REMINDERS_METHOD_2_ANDROID[alarm.action] or 0
+                method: REMINDERS_METHOD_2_ANDROID[alarm.action] or 0 # DEFAULT
 
 
         android =
