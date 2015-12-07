@@ -76,8 +76,7 @@ module.exports = ACH =
         dtend = undefined # Unix millisecond timestamp
         eventTimezone = 'UTC'
 
-        if cozy.start.length is 10 # Allday
-            allDay = 1
+        allDay = if cozy.start.length is 10 then 1 else 0
 
         if cozy.rrule? and cozy.rrule isnt ''
             rrule = cozy.rrule
@@ -89,9 +88,9 @@ module.exports = ACH =
             duration = duration.replace /"/g, ''
             dtstart = parseInt moment.tz(cozy.start, cozy.timezone).format 'x'
 
-        else
-            dtstart = parseInt moment(cozy.start).format 'x'
-            dtend = parseInt moment(cozy.end).format 'x'
+        else # Puctual, datetime are in UTC timezone.
+            dtstart = parseInt moment.tz(cozy.start, 'UTC').format 'x'
+            dtend = parseInt moment.tz(cozy.end, 'UTC').format 'x'
 
         # attendees
 

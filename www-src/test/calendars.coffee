@@ -33,7 +33,7 @@ describe 'Convert Cozy event to Android', ->
         it "eventTimezone", ->
             expect(obtained.eventTimezone).to.be.undefined
         it "allDay", ->
-            expect(obtained.allDay).to.be.undefined
+            obtained.allDay.should.eql 0
         it "rrule", ->
             expect(obtained.rrule).to.be.undefined
         it "_sync_id", ->
@@ -129,7 +129,7 @@ describe 'Convert Cozy event to Android', ->
         it "eventTimezone", ->
             obtained.eventTimezone.should.eql androidEvent.eventTimezone
         it "allDay", ->
-            expect(obtained.allDay).to.be.undefined
+            obtained.allDay.should.eql 0
         it "rrule", ->
             obtained.rrule.should.eql androidEvent.rrule
         it "_sync_id", ->
