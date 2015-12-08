@@ -134,7 +134,7 @@ module.exports = class Replicator extends Backbone.Model
         Contact: description: "contact permission description"
         Event: description: "event permission description"
         Notification: description: "notification permission description"
-        Tag: description: "tag notification permission description"
+        Tag: description: "tag permission description"
 
 
     registerRemote: (config, callback) ->
@@ -265,9 +265,10 @@ module.exports = class Replicator extends Backbone.Model
 
                 (cb) => @set('initialReplicationStep', 3) and cb null
                 (cb) => @initContactsInPhone last_seq, cb
+                (cb) => @set('initialReplicationStep', 4) and cb null
                 (cb) => @initEventsInPhone last_seq, cb
 
-                (cb) => @set('initialReplicationStep', 4) and cb null
+                (cb) => @set('initialReplicationStep', 5) and cb null
                 # Save last sequences
                 (cb) => @config.save checkpointed: last_seq, cb
                 # build the initial state of FilesAndFolder view index
