@@ -78,8 +78,8 @@ release = (done) ->
     signing =  'jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 '
     signing += '-keystore keys/cozy-play-store.keystore -storepass '
     signing += password
-    signing += ' platforms/android/ant-build/CozyFiles-release-unsigned.apk cozy-play-store'
-    aligning = 'zipalign -v 4 platforms/android/ant-build/CozyFiles-release-unsigned.apk CozyFiles.apk'
+    signing += ' platforms/android/build/outputs/apk/android-release-unsigned.apk cozy-play-store'
+    aligning = 'zipalign -v 4 platforms/android/build/outputs/apk/android-release-unsigned.apk CozyFiles.apk'
 
     exec signing, (err, stdout, stderr) ->
         console.log stdout
