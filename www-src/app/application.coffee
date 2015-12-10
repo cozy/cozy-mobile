@@ -1,11 +1,12 @@
 # intialize module which initialize global vars.
 require './lib/utils'
 
-Replicator = require './replicator/main'
-LayoutView = require './views/layout'
+Replicator     = require './replicator/main'
+LayoutView     = require './views/layout'
 ServiceManager = require './service/service_manager'
-Notifications = require './views/notifications'
-DeviceStatus = require './lib/device_status'
+Notifications  = require './views/notifications'
+DeviceStatus   = require './lib/device_status'
+Translation    = require './lib/translation'
 
 
 log = require('./lib/persistent_log')
@@ -18,27 +19,22 @@ module.exports =
     initialize: ->
         window.app = this
 
+        Router = require './router'
+        @router = new Router()
+        @replicator = new Replicator()
+        @layout = new LayoutView()
+        @translation = new Translation()
+
         # Monkey patch for browser debugging
         if window.isBrowserDebugging
             window.navigator = window.navigator or {}
             window.navigator.globalization = window.navigator.globalization or {}
-            window.navigator.globalization.getPreferredLanguage = (callback) -> callback value: 'fr-FR'
+            window.navigator.globalization.getPreferredLanguage = (callback) =>
+                callback value: @translation.DEFAULT_LANGUAGE
 
         navigator.globalization.getPreferredLanguage (properties) =>
-            [@locale] = properties.value.split '-'
-
-            @polyglot = new Polyglot()
-            locales = try require 'locales/'+ @locale
-            catch e then require 'locales/en'
-
-            @polyglot.extend locales
-            window.t = @polyglot.t.bind @polyglot
-
-            Router = require 'router'
-            @router = new Router()
-
-            @replicator = new Replicator()
-            @layout = new LayoutView()
+            @translation.setLocale(properties)
+            window.t = @translation.getTranslate()
 
             @replicator.init (err, config) =>
                 if err
