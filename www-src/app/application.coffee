@@ -8,7 +8,6 @@ Notifications  = require './views/notifications'
 DeviceStatus   = require './lib/device_status'
 Translation    = require './lib/translation'
 
-
 log = require('./lib/persistent_log')
     prefix: "application"
     date: true
@@ -17,7 +16,6 @@ log = require('./lib/persistent_log')
 module.exports =
 
     initialize: ->
-        window.app = this
 
         Router = require './router'
         @router = new Router()
@@ -120,3 +118,7 @@ module.exports =
         @router.navigate 'folder/', trigger: true
         @router.once 'collectionfetched', =>
             app.replicator.backup {}, (err) -> log.error err if err
+
+    addDeviceListener: ->
+        document.addEventListener 'deviceready', ->
+            window.app.initialize()
