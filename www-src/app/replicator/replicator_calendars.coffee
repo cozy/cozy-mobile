@@ -55,7 +55,10 @@ module.exports =
                 @syncEventsFromCozy cb
             (cb) =>
                 async.eachSeries @changesFromCozy, (doc, cb2) =>
-                    @handleConflict doc, cb2
+                    if doc._deleted
+                        cb2()
+                    else
+                        @handleConflict doc, cb2
                 , cb
             (cb) =>
                 @set 'backup_step', 'events_sync_to_cozy'
@@ -221,12 +224,12 @@ module.exports =
     # @param doc the doc to work on
     # @param callback the keeped doc
     handleConflict: (doc, callback) ->
-        log.info "handleConflict for #{doc._id}"
         # Get the doc with conflicts from Pouch
         @db.get doc._id, { conflicts: true, revs: true }, (err, local) =>
             return callback err if err
             return callback null, doc unless local._conflicts?
 
+            log.info "handleConflict fixes for #{doc._id}"
             # Handle conflicts !
             # Remove all conflicts keeping version from cozy
             revsToDelete = local._conflicts.filter (rev) -> rev isnt doc._rev
