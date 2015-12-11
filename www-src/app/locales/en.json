@@ -61,7 +61,7 @@
   "cozy welcome": "Welcome!",
   "cozy welcome message": "Cozy App enables you to: <ul><li>View your Files</li><li>Synchronize your Contacts</li><li>Backup your Photos</li></ul>",
   "cozy welcome no account": "If you don't already have a Cozy instance, visit <a target='_system' href='http://cozy.io/en/'>cozy.io</a> for more details.",
-  "url placeholder": "Your Cozy Address",
+  "url placeholder": "Your Cozy URL: example.cozycloud.cc",
   "password placeholder": "Your Password",
   "authenticating...": "Authenticating...",
   "setup 2/4": "Setup 2/4",
