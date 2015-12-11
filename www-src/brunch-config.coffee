@@ -1,22 +1,25 @@
 exports.config =
 
-    # See docs at http://brunch.readthedocs.org/en/latest/config.html.
+    # See docs at https://github.com/brunch/brunch/blob/stable/docs/config.md.
 
     paths:
         public:  '../www'
+        watched: ['app', 'modules', 'vendor']
 
     plugins:
         coffeelint:
             options:
                 indentation: value: 4, level: 'error'
 
-    conventions:
-        vendor:  /(vendor)/ # do not wrap tests in modules
+    modules:
+        nameCleaner: (path) ->
+            path.replace /^(modules|app)\//, ''
 
     files:
         javascripts:
             joinTo:
                 'javascripts/app.js': /^app/
+                'javascripts/modules.js': /^modules/
                 'javascripts/vendor.js': /^vendor/
             order:
                 # Files in `vendor` directories are compiled before other files
@@ -31,9 +34,6 @@ exports.config =
 
         stylesheets:
             joinTo: 'stylesheets/app.css'
-            order:
-                before: []
-                after: []
 
         templates:
             defaultExtension: 'jade'

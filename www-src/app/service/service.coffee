@@ -1,9 +1,10 @@
 # intialize module which initialize global vars.
 require '../lib/utils'
 
-Replicator = require '../replicator/main'
+Replicator    = require '../replicator/main'
 Notifications = require '../views/notifications'
-DeviceStatus = require '../lib/device_status'
+DeviceStatus  = require '../lib/device_status'
+Translation   = require '../lib/translation'
 
 
 log = require('../lib/persistent_log')
@@ -23,24 +24,20 @@ module.exports = Service =
     initialize: ->
         window.app = this
 
+        @translation = new Translation()
+        @replicator = new Replicator()
+
         # Monkey patch for browser debugging
         if window.isBrowserDebugging
             window.navigator = window.navigator or {}
             window.navigator.globalization = window.navigator.globalization or {}
-            window.navigator.globalization.getPreferredLanguage = (callback) -> callback value: 'fr-FR'
+            window.navigator.globalization.getPreferredLanguage = (callback) =>
+                callback value: @translation.DEFAULT_LANGUAGE
 
         navigator.globalization.getPreferredLanguage (properties) =>
-            [@locale] = properties.value.split '-'
+            @translation.setLocale(properties)
+            window.t = @translation.getTranslate()
 
-            @polyglot = new Polyglot()
-            locales = try require 'locales/'+ @locale
-            catch e then require 'locales/en'
-
-            @polyglot.extend locales
-            window.t = @polyglot.t.bind @polyglot
-
-
-            @replicator = new Replicator()
             @replicator.init (err, config) =>
                 if err
                     log.error err
