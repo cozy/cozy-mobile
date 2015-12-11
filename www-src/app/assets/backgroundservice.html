@@ -14,6 +14,9 @@
   </head>
 
   <body>
-    <script>require('service/service');</script>
+    <script>
+      window.app = require('background_service');
+      window.app.addDeviceListener();
+    </script>
   </body>
 </html>

@@ -18,6 +18,9 @@
 
     <img id="splash-screen" class="splash-screen" src="img/splashscreen.svg" />
 
-    <script>require('initialize');</script>
+    <script>
+      window.app = require('application');
+      window.app.addDeviceListener();
+    </script>
   </body>
 </html>

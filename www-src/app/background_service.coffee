@@ -1,16 +1,15 @@
 # intialize module which initialize global vars.
-require '../lib/utils'
+require './lib/utils'
 
 Replicator    = require '../replicator/main'
 Notifications = require '../views/notifications'
 DeviceStatus  = require '../lib/device_status'
 Translation   = require '../lib/translation'
 
-
-log = require('../lib/persistent_log')
+log = require('./lib/persistent_log')
     prefix: "application"
     date: true
-    processusTag: "Service"
+    processusTag: "BackgroundService"
 
 
 # This service will be started in it's own browser instance by the
@@ -19,10 +18,9 @@ log = require('../lib/persistent_log')
 # changes.
 # Be carreful with shared resources, between application and services, as they
 # may run simultaneously (but in independant browsers).
-module.exports = Service =
+module.exports = BackgroundService =
 
     initialize: ->
-        window.app = this
 
         @translation = new Translation()
         @replicator = new Replicator()
@@ -79,18 +77,18 @@ module.exports = Service =
                         # Then shutdown service
                         window.service.workDone()
 
+    addDeviceListener: ->
+        document.addEventListener 'deviceready', ->
+            try
+                window.app.initialize()
 
-document.addEventListener 'deviceready', ->
-    try
-        Service.initialize()
+            catch error
+                log.error 'EXCEPTION SERVICE INITIALIZATION : ', error
 
-    catch error
-        log.error 'EXCEPTION SERVICE INITIALIZATION : ', error
-
-    finally
-        # "Watchdog" : in all cases, kill service after 10'
-        setTimeout ->
-            # call this javabinding directly on object to avoid
-            # Error 'NPMethod called on non-NPObject'
-            window.service.workDone()
-        , 10 * 60 * 1000
+            finally
+                # "Watchdog" : in all cases, kill service after 10'
+                setTimeout ->
+                    # call this javabinding directly on object to avoid
+                    # Error 'NPMethod called on non-NPObject'
+                    window.service.workDone()
+                , 10 * 60 * 1000
