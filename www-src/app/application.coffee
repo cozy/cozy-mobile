@@ -3,7 +3,7 @@ require './lib/utils'
 
 Replicator     = require './replicator/main'
 LayoutView     = require './views/layout'
-ServiceManager = require './service/service_manager'
+ServiceManager = require './models/service_manager'
 Notifications  = require './views/notifications'
 DeviceStatus   = require './lib/device_status'
 Translation    = require './lib/translation'
