@@ -6,9 +6,11 @@ module.exports = class ReplicatorConfig extends Backbone.Model
     constructor: (@replicator) ->
         super null
         @remote = null
+
     defaults: ->
         _id: '_local/appconfig'
         syncContacts: true
+        syncCalendars: true
         syncImages: true
         syncOnWifi: true
         cozyNotifications: false
@@ -44,18 +46,39 @@ module.exports = class ReplicatorConfig extends Backbone.Model
         else
             return 'https'
 
-
-    makeUrl: (path) ->
+    makeDSUrl: (path) ->
         json: true
         auth: @get 'auth'
-        url: "#{@getScheme()}://" + @get('cozyURL') + '/cozy' + path
+        url: "#{@getScheme()}://#{@get("deviceName")}:#{@get('devicePassword')}" + "@#{@get('cozyURL')}/ds-api#{path}"
 
-    makeFilterName: -> @get('deviceId') + '/filter'
+    makeReplicationUrl: (path) ->
+        json: true
+        auth: @get 'auth'
+        url: "#{@getScheme()}://#{@get("deviceName")}:#{@get('devicePassword')}" + "@#{@get('cozyURL')}/replication#{path}"
+
+
+    makeFilterName: -> "#{@get('deviceId')}/filter"
 
     createRemotePouchInstance: ->
         new PouchDB
-            name: @get 'fullRemoteURL'
+            name: "#{@getScheme()}://#{@get("deviceName")}:" +
+                "#{@get('devicePassword')}@#{@get('cozyURL')}/replication"
             ajax: timeout: 5 * 60 * 1000 # Big timeout for unknown error on
                                          # longpoll
 
     appVersion: -> return APP_VERSION
+
+    isNewVersion: ->
+        return APP_VERSION isnt @get('appVersion')
+
+    updateVersion: (callback) ->
+        if @isNewVersion()
+            @save appVersion: APP_VERSION, callback
+        else
+            callback()
+
+    serializePermissions: (permissions) ->
+        return Object.keys(permissions).sort()
+
+    hasPermissions: ->
+        _.isEqual @get('devicePermissions'), @serializePermissions(@replicator.permissions)

@@ -1,0 +1,84 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Mocha Tests</title>
+  <link href="https://cdn.rawgit.com/mochajs/mocha/2.2.5/mocha.css" rel="stylesheet" />
+  <script src="../../../www/javascripts/vendor.js"></script>
+  <script src="../../../www/javascripts/app.js"></script>
+  <script src="http://coffeescript.org/extras/coffee-script.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chai/3.4.0/chai.min.js"></script>
+  <script src="https://cdn.rawgit.com/Automattic/expect.js/0.3.1/index.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/should.js/7.1.1/should.min.js"></script>
+  <script src="https://cdn.rawgit.com/mochajs/mocha/2.2.5/mocha.js"></script>
+</head>
+<body>
+  <div id="mocha"></div>
+
+  
+  <script>
+    var module = {};
+    var scripts = ['ContactAddress', 'ContactField', 'ContactFieldType', 
+                  'ContactOrganization', 'ContactName'];
+
+    function loadCordovaDependencies() {
+      async.eachSeries(scripts, function(scriptName, callback) {
+        $.get('../../../plugins/io.cozy.contacts/www/' + scriptName + '.js', function(data) {
+            eval(data);
+            window[scriptName] = module.exports;
+            callback()
+          });
+      }, loadFixtures);
+    }
+
+
+    var jsonFixtures = {
+      'cozy_contact': null,
+      'cordova_contact': null,
+      'event_punctual_cozy': null,
+      'event_punctual_android': null,
+      'event_punctual_androidcreated': null,
+      'event_recurring_cozy': null,
+      'event_recurring_android': null,
+      'event_recurringallday_cozy': null,
+      'event_recurringallday_android': null,      
+      'event_recurringallday_androidcreated': null,      
+    };
+
+    function loadFixtures(err) {
+      if (err) { console.log(err); }
+
+      // Fetch fixtures
+      async.each(Object.keys(jsonFixtures), function(name, callback) {
+        $.getJSON('../fixtures/' + name + '.json', function(data) {
+          jsonFixtures[name] = data;
+          callback();
+        });
+      }, loadTests);
+    };
+
+
+    var tests = [ 'contacts.coffee', 'calendars.coffee' ];
+
+    function loadTests(err) {
+      if (err) { console.log(err); }
+      mocha.setup('bdd');
+      async.each(tests, function(testName, callback) {
+        $.get('../' + testName, function(data) {
+          eval(CoffeeScript.compile(data));
+          callback();
+        });
+      }, runTests);
+    }
+
+
+    function runTests(err) {
+      if (err) { console.log(err); }
+      mocha.checkLeaks();
+      mocha.run();
+    }
+
+    $(document).ready(loadCordovaDependencies);
+
+  </script>
+</body>
+</html>

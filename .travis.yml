@@ -6,6 +6,7 @@ sudo: false
 
 android:
   components:
+    - android-22
     - build-tools-22.0.1
 
 install:
@@ -17,6 +18,9 @@ install:
 script:
   - cd www-src && npm test && cd ..
   - cordova build android
+
+after_script:
+  - codeclimate-test-reporter < lcov.info
 
 addons:
   code_climate:

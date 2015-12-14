@@ -8,11 +8,10 @@
 
     <name>Cozy</name>
     <description>Sync files from your cozycloud</description>
-    <!-- <name>Cozy-files</name>
-    <description>Sync files from cozy files</description> -->
     <author email="contact@cozycloud.cc" href="https://cozy.io">Cozy Cloud</author>
     <preference name="Orientation" value="default" />
     <preference name="android-minSdkVersion" value="14" />
+    <preference name="AndroidLaunchMode" value="singleTask" />
 
     <content src="index.html"/>
     <platform name="android">
@@ -31,6 +30,7 @@
         <icon height="152" src="res/icons/icon-152-ios.png" width="152"/>
         <icon height="167" src="res/icons/icon-167-ios.png" width="167"/>
     </platform>
-    <access origin="mailto:*" launch-external="yes"/>
+
     <access origin="*"/>
+    <allow-intent href="mailto:*" />
 </widget>

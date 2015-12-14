@@ -2,46 +2,25 @@
 <html>
   <head>
     <meta charset="utf-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: ; connect-src * ; " >
     <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
     <title>Cozy Files</title>
 
     <!-- cordova script (this will be a 404 during development) -->
     <link rel="stylesheet" href="stylesheets/app.css">
     <script src="cordova.js"></script>
+    <script src="javascripts/modules.js"></script>
     <script src="javascripts/vendor.js"></script>
     <script src="javascripts/app.js"></script>
-    <style>
-      body {
-        background-color: #3CA8FC;
-      }
-      .splash-screen {
-        width: 33%;
-        /*height: 33%;*/
-        position: absolute;
-        top: 45%;
-        left: 50%;
-        margin-left: -16.5%;
-        margin-top: -16.5%;
-      }
-
-      .splash-message {
-        width: 66%;
-        position: absolute;
-        bottom: 20%;
-        left: 50%;
-        margin-left: -33%;
-        color: white;
-        font-family: sans-serif;
-        font-size: 18px;
-        text-align: center;
-      }
-    </style>
   </head>
 
   <body>
 
     <img id="splash-screen" class="splash-screen" src="img/splashscreen.svg" />
 
-    <script>require('initialize');</script>
+    <script>
+      window.app = require('application');
+      window.app.addDeviceListener();
+    </script>
   </body>
 </html>

@@ -1,7 +1,7 @@
 BaseView = require '../lib/base_view'
 
 
-log = require('/lib/persistent_log')
+log = require('../lib/persistent_log')
     prefix: "config view"
     date: true
 
@@ -18,6 +18,7 @@ module.exports = class ConfigView extends BaseView
         'tap #sendlogbtn': 'sendlogBtn'
 
         'tap #contactSyncCheck': 'saveChanges'
+        'tap #calendarSyncCheck': 'saveChanges'
         'tap #imageSyncCheck': 'saveChanges'
         'tap #wifiSyncCheck': 'saveChanges'
         'tap #cozyNotificationsCheck' : 'saveChanges'
@@ -60,8 +61,8 @@ module.exports = class ConfigView extends BaseView
                 $('#redbtn').text t 'done'
 
                 # DeviceStatus has to be stopped to restart properly.
-                require('lib/device_status').shutdown()
-                window.location.reload(true);
+                require('../lib/device_status').shutdown()
+                window.location.reload true
 
 
     # confirm, launch initial replication, navigate to first sync UI.
@@ -102,12 +103,13 @@ module.exports = class ConfigView extends BaseView
         log.info "Save changes"
         checkboxes = @$ '#contactSyncCheck, #imageSyncCheck,' +
                         '#wifiSyncCheck, #cozyNotificationsCheck' +
-                        '#configDone'
+                        '#configDone, #calendarSyncCheck'
         checkboxes.prop 'disabled', true
 
 
         app.replicator.config.save
             syncContacts: @$('#contactSyncCheck').is ':checked'
+            syncCalendars: @$('#calendarSyncCheck').is ':checked'
             syncImages: @$('#imageSyncCheck').is ':checked'
             syncOnWifi: @$('#wifiSyncCheck').is ':checked'
             cozyNotifications: @$('#cozyNotificationsCheck').is ':checked'

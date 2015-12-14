@@ -2,7 +2,7 @@ File = require '../models/file'
 
 PAGE_LENGTH = 20
 
-log = require('/lib/persistent_log')
+log = require('../lib/persistent_log')
     prefix: "files collections"
     date: true
 
@@ -95,7 +95,7 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
         return results.rows.map (row) ->
             doc = row.doc
             if doc.docType.toLowerCase() is 'file'
-                if binary_id = doc.binary?.file?.id
+                if doc.binary?.file?.id
                     doc.incache = app.replicator.fileInFileSystem doc
                     doc.version = app.replicator.fileVersion doc
 
