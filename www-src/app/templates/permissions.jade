@@ -3,14 +3,13 @@
 #deviceNamePicker.list
     .card.no-shadow.more-spacing.flat
         .item.item-text-wrap
-            p
-                | t('permissions explanations')
-                ul
-                    - each obj, key in permissions
-                        li
-                            b= key
-                            | :
-                            = t(obj.description)
+            p= t('permissions explanations')
+            ul
+                - each obj, key in permissions
+                    li
+                        b= key
+                        | :&nbsp;
+                        = t(obj.description)
 
 
     .card.no-shadow.more-spacing
