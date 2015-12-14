@@ -41,41 +41,68 @@ module.exports = BackgroundService =
                     log.error err
                     return window.service.workDone()
 
-                if config.remote and config.hasPermissions()
-                    unless @replicator.config.has('checkpointed')
-                        log.error new Error "Database not initialized"
-                        return window.service.workDone()
+                if config.remote
+                    if config.isNewVersion()
+                        @updatesChecks()
 
-                    DeviceStatus.initialize()
-
-                    if config.get 'cozyNotifications'
-                        # Activate notifications handling
-                        @notificationManager = new Notifications()
-
-
-                    delayedQuit = (err) ->
-                        log.error err if err
-                        # give some time to finish and close things.
-                        setTimeout ->
-                            # call this javabinding directly on object to avoid
-                            # Error 'NPMethod called on non-NPObject'
-                            window.service.workDone()
-                        , 5 * 1000
-
-                    app.replicator.backup { background: true }, (err) ->
-                        if err
-                            log.error "Error launching backup: ", err
-                            delayedQuit()
-                        else
-                            app.replicator.sync {background: true}, delayedQuit
+                    else
+                        @startService()
 
                 else
-                    # Start activity to initialize app
-                    # or update permissions
-                    JSBackgroundService.startMainActivity (err)->
-                        log.error err if err
-                        # Then shutdown service
-                        window.service.workDone()
+                    log.error "App not initialized."
+                    # Then shutdown service
+                    window.service.workDone()
+
+    updatesChecks: ->
+        app.replicator.checkPlatformVersions (err) =>
+            if err
+                return @startMainActivity err
+
+            if config.hasPermissions()
+                @startService()
+            else
+                @startMainActivity "Need permissions"
+
+
+    startService: ->
+        unless @replicator.config.has('checkpointed')
+            log.error new Error "Database not initialized"
+            return window.service.workDone()
+
+        # If we reach here, we could safely update version
+        @replicator.config.updateVersion =>
+            DeviceStatus.initialize()
+
+            if @replicator.config.get 'cozyNotifications'
+                # Activate notifications handling
+                @notificationManager = new Notifications()
+
+
+            delayedQuit = (err) ->
+                log.error err if err
+                # give some time to finish and close things.
+                setTimeout ->
+                    # call this javabinding directly on object to avoid
+                    # Error 'NPMethod called on non-NPObject'
+                    window.service.workDone()
+                , 5 * 1000
+
+            app.replicator.backup { background: true }, (err) ->
+                if err
+                    log.error "Error launching backup: ", err
+                    delayedQuit()
+                else
+                    app.replicator.sync {background: true}, delayedQuit
+
+    startMainActivity: (err)->
+        log.error err
+        # Start activity to initialize app
+        # or update permissions
+        JSBackgroundService.startMainActivity (err)->
+            log.error err if err
+            # Then shutdown service
+            window.service.workDone()
+
 
     addDeviceListener: ->
         document.addEventListener 'deviceready', ->
