@@ -9,7 +9,7 @@ plugins = {
     "org.apache.cordova.file": "https://git-wip-us.apache.org/repos/asf/cordova-plugin-file.git#r1.3.3"
     "org.apache.cordova.file-transfer": "https://git-wip-us.apache.org/repos/asf/cordova-plugin-file-transfer.git#r0.5.0"
     "io.cozy.cordova-images-browser": "https://github.com/aenario/cordova-images-browser"
-    "io.cozy.jsbackgroundservice": "https://github.com/jacquarg/cordova-jsbackgroundservice#v1.0.1"
+    "io.cozy.jsbackgroundservice": "https://github.com/jacquarg/cordova-jsbackgroundservice#v1.0.2"
     "io.cozy.jsbgservice-newpicture": "https://github.com/jacquarg/cordova-jsbgservice-newpicture#v1.0.0"
     "io.cozy.contacts": "https://github.com/jacquarg/cordova-plugin-contacts#c1.0.3"
     "io.cozy.calendarsync": "https://github.com/jacquarg/cordova-plugin-calendarsync"
