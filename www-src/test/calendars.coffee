@@ -51,12 +51,16 @@ describe 'Convert Cozy event to Android', ->
             # Too hard condition: keep order isn't necessary.
 
         it "reminder1", ->
-            obtained.reminders[0].minutes.should.eql androidEvent.reminders[0].minutes
-            obtained.reminders[0].method.should.eql androidEvent.reminders[0].method
+            obtained.reminders[0].minutes.should.eql \
+                androidEvent.reminders[0].minutes
+            obtained.reminders[0].method.should.eql \
+                androidEvent.reminders[0].method
 
         it "reminder2", ->
-            obtained.reminders[1].minutes.should.eql androidEvent.reminders[1].minutes
-            obtained.reminders[1].method.should.eql androidEvent.reminders[1].method
+            obtained.reminders[1].minutes.should.eql \
+                androidEvent.reminders[1].minutes
+            obtained.reminders[1].method.should.eql \
+                androidEvent.reminders[1].method
 
     describe 'PunctualEvent2Cozy', ->
         cozyEvent = jsonFixtures.event_punctual_cozy
@@ -125,7 +129,8 @@ describe 'Convert Cozy event to Android', ->
             expect(obtained.dtend).to.be.undefined
         it "duration", ->
             moment.duration(obtained.duration).asSeconds()
-                .should.eql ACH.android2Duration(androidEvent.duration).asSeconds()
+                .should.eql \
+                ACH.android2Duration(androidEvent.duration).asSeconds()
         it "eventTimezone", ->
             obtained.eventTimezone.should.eql androidEvent.eventTimezone
         it "allDay", ->
@@ -222,14 +227,16 @@ describe 'Convert Cozy event to Android', ->
             attendee = obtained.attendees[0]
             androidA = androidEvent.attendees[0]
             attendee.attendeeEmail.should.eql androidA.attendeeEmail
-            attendee.attendeeRelationship.should.eql androidA.attendeeRelationship
+            attendee.attendeeRelationship.should.eql \
+                androidA.attendeeRelationship
             attendee.attendeeType.should.eql androidA.attendeeType
             attendee.attendeeStatus.should.eql androidA.attendeeStatus
         it "attendee2", ->
             attendee = obtained.attendees[1]
             androidA = androidEvent.attendees[1]
             attendee.attendeeEmail.should.eql androidA.attendeeEmail
-            attendee.attendeeRelationship.should.eql androidA.attendeeRelationship
+            attendee.attendeeRelationship.should.eql \
+                androidA.attendeeRelationship
             attendee.attendeeType.should.eql androidA.attendeeType
             attendee.attendeeStatus.should.eql androidA.attendeeStatus
 
@@ -237,8 +244,10 @@ describe 'Convert Cozy event to Android', ->
             obtained.reminders.length.should.eql androidEvent.reminders.length
 
         it "reminder1", ->
-            obtained.reminders[0].minutes.should.eql androidEvent.reminders[0].minutes
-            obtained.reminders[0].method.should.eql androidEvent.reminders[0].method
+            obtained.reminders[0].minutes.should.eql \
+                androidEvent.reminders[0].minutes
+            obtained.reminders[0].method.should.eql \
+                androidEvent.reminders[0].method
 
     describe 'RecurringAlldayEvent2Cozy', ->
         cozyEvent = jsonFixtures.event_recurringallday_cozy

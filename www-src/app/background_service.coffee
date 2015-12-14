@@ -28,7 +28,8 @@ module.exports = BackgroundService =
         # Monkey patch for browser debugging
         if window.isBrowserDebugging
             window.navigator = window.navigator or {}
-            window.navigator.globalization = window.navigator.globalization or {}
+            window.navigator.globalization =
+                window.navigator.globalization or {}
             window.navigator.globalization.getPreferredLanguage = (callback) =>
                 callback value: @translation.DEFAULT_LANGUAGE
 
@@ -105,9 +106,9 @@ module.exports = BackgroundService =
 
 
     addDeviceListener: ->
-        document.addEventListener 'deviceready', ->
+        document.addEventListener 'deviceready', =>
             try
-                window.app.initialize()
+                @initialize()
 
             catch error
                 log.error 'EXCEPTION SERVICE INITIALIZATION : ', error

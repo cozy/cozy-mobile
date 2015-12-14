@@ -44,26 +44,30 @@ module.exports = class ReplicatorConfig extends Backbone.Model
         else
             return 'https'
 
+    getCozyUrl: () ->
+        "#{@getScheme()}://#{@get("deviceName")}:#{@get('devicePassword')}" +
+            "@#{@get('cozyURL')}"
+
     makeDSUrl: (path) ->
         json: true
         auth: @get 'auth'
-        url: "#{@getScheme()}://#{@get("deviceName")}:#{@get('devicePassword')}" + "@#{@get('cozyURL')}/ds-api#{path}"
+        url: "#{@getCozyUrl()}/ds-api#{path}"
 
     makeReplicationUrl: (path) ->
         json: true
         auth: @get 'auth'
-        url: "#{@getScheme()}://#{@get("deviceName")}:#{@get('devicePassword')}" + "@#{@get('cozyURL')}/replication#{path}"
+        url: "#{@getCozyUrl()}/replication#{path}"
 
-
-    makeFilterName: -> "#{@get('deviceId')}/filter"
+    makeFilterName: ->
+        "#{@get('deviceId')}/filter"
 
     createRemotePouchInstance: ->
         new PouchDB
-            name: "#{@getScheme()}://#{@get("deviceName")}:" +
-                "#{@get('devicePassword')}@#{@get('cozyURL')}/replication"
+            name: "#{@getCozyUrl()}/replication"
             ajax: timeout: 55 * 1000 # Before the cozy's one.
 
-    appVersion: -> return APP_VERSION
+    appVersion: ->
+        APP_VERSION
 
     isNewVersion: ->
         return APP_VERSION isnt @get('appVersion')
@@ -75,7 +79,8 @@ module.exports = class ReplicatorConfig extends Backbone.Model
             callback()
 
     serializePermissions: (permissions) ->
-        return Object.keys(permissions).sort()
+        Object.keys(permissions).sort()
 
     hasPermissions: ->
-        _.isEqual @get('devicePermissions'), @serializePermissions(@replicator.permissions)
+        _.isEqual @get('devicePermissions'), \
+            @serializePermissions(@replicator.permissions)

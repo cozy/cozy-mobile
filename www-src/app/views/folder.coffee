@@ -56,12 +56,13 @@ module.exports = class FolderView extends CollectionView
 
                 # unless menu is open or slide to right
                 unless app.layout.isMenuOpen() or e.gesture.deltaX > 0
-                    ionic.views.ListView::_handleDrag.apply @ionicView, arguments
+                    ionic.views.ListView::_handleDrag.apply @ionicView, \
+                            arguments
                     # prevent menu from opening
                     e.preventDefault()
                     e.stopPropagation()
 
-    onChange: =>
+    onChange: ->
         app.layout.ionicScroll.resize()
 
         @$('#empty-message').remove()
@@ -79,15 +80,15 @@ module.exports = class FolderView extends CollectionView
                 .text(t('loading'))
                 .appendTo @$el
 
-    appendView: (view) =>
+    appendView: (view) ->
         super
         view.parent = this
 
-    remove: =>
+    remove: ->
         super
         @collection.cancelFetchAdditional()
 
-    displaySlider: (event) =>
+    displaySlider: (event) ->
         # simulate a drag effect on the line to display the hidden button
         op = new ionic.SlideDrag(el: @ionicView.el, canSwipe: -> true)
         op.start target: event.target
@@ -107,15 +108,15 @@ module.exports = class FolderView extends CollectionView
         event.stopPropagation()
 
 
-    checkScroll: =>
+    checkScroll: ->
         triggerPoint = $('#viewsPlaceholder').height() * 2
-        if app.layout.ionicScroll.getValues().top + triggerPoint > app.layout.ionicScroll.getScrollMax().top
-            @loadMore()
+        scrollPosition = app.layout.ionicScroll.getValues().top
+        scrollMax = app.layout.ionicScroll.getScrollMax().top
+        @loadMore() if scrollPosition + triggerPoint > scrollMax
 
     loadMore: (callback) ->
-        if not @collection.notLoaded and
-           not @isLoading and
-           not @collection.allPagesLoaded
+        unless @collection.notLoaded and @isLoading and \
+                @collection.allPagesLoaded
             @isLoading = true
             @collection.loadNextPage (err) =>
 

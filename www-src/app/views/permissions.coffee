@@ -25,7 +25,7 @@ module.exports = class PermissionsPickerView extends BaseView
 
     doNext: ->
         if app.isFirstRun
-           return app.router.navigate 'device-name-picker', trigger: true
+            return app.router.navigate 'device-name-picker', trigger: true
 
         # else
         pass = @$('#input-pass').val()

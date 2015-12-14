@@ -24,16 +24,18 @@ getFileSystem = (callback) ->
 
 readable = (err) ->
     for name, code of FileError when code is err.code
-        err.message = 'File error: ' + name.replace('_ERR', '').replace('_', ' ')
+        msg = 'File error: ' + name.replace('_ERR', '').replace('_', ' ')
+        err.message = msg
         return err
 
     return new Error JSON.stringify err
 
 module.exports.initialize = (callback) ->
-    getFileSystem (err, filesystem) =>
+    getFileSystem (err, filesystem) ->
         return callback readable err if err
         window.FileTransfer.fs = filesystem
-        fs.getOrCreateSubFolder filesystem.root, DOWNLOADS_FOLDER, (err, downloads) =>
+        fs.getOrCreateSubFolder filesystem.root, DOWNLOADS_FOLDER, \
+                (err, downloads) ->
             return callback readable err if err
 
             # prevent android from adding the download folders to the gallery
@@ -41,7 +43,7 @@ module.exports.initialize = (callback) ->
                 -> log.info "NOMEDIA FILE CREATED"
                 -> log.info "NOMEDIA FILE NOT CREATED"
 
-            fs.getChildren downloads, (err, children) =>
+            fs.getChildren downloads, (err, children) ->
                 return callback readable err if err
                 callback null, downloads, children
 
@@ -172,10 +174,10 @@ __chromeSafe = ->
 
     window.FileTransfer = class FileTransfer
         download: (url, local, onSuccess, onError, _, options) ->
-            xhr = new XMLHttpRequest();
+            xhr = new XMLHttpRequest()
             xhr.open 'GET', url, true
             xhr.overrideMimeType 'text/plain; charset=x-user-defined'
-            xhr.responseType = "arraybuffer";
+            xhr.responseType = "arraybuffer"
             xhr.setRequestHeader key, value for key, value of options.headers
             xhr.onreadystatechange = ->
                 return unless xhr.readyState == 4
@@ -183,9 +185,9 @@ __chromeSafe = ->
                     entry.createWriter (writer) ->
                         writer.onwrite = -> onSuccess entry
                         writer.onerror = (err) -> onError err
-                        bb = new BlobBuilder();
-                        bb.append(xhr.response);
-                        writer.write(bb.getBlob(mimetype));
+                        bb = new BlobBuilder()
+                        bb.append(xhr.response)
+                        writer.write(bb.getBlob(mimetype))
 
                     , (err) -> onError err
                 , (err) -> onError err

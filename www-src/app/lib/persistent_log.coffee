@@ -86,7 +86,7 @@ class Logger
 
     persist: (text) ->
         logIndex = +localStorage.getItem "log_index"
-        logIndex = (logIndex + 1) % LOG_SIZE;
+        logIndex = (logIndex + 1) % LOG_SIZE
         localStorage.setItem "log_#{logIndex}", text
         localStorage.setItem "log_index", '' + logIndex
 

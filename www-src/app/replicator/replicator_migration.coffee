@@ -82,7 +82,7 @@ module.exports =
 
     destroySQLiteDBs: (callback)->
         async.eachSeries [@sqliteDBPhotos, @sqliteDB]
-        , (db, cb) =>
+        , (db, cb) ->
             db.destroy cb
         , callback
 

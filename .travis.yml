@@ -17,6 +17,7 @@ install:
 
 script:
   - cd www-src && npm test && cd ..
+  - cd www-src && npm run lint && cd ..
   - cordova build android
 
 after_script:

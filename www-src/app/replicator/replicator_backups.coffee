@@ -48,7 +48,7 @@ module.exports =
                 @set 'inBackup', false
                 @startRealtime() unless options.background
                 return callback err if err
-                @config.save lastBackup: new Date().toString(), (err) =>
+                @config.save lastBackup: new Date().toString(), (err) ->
                     log.info "Backup done."
                     callback null
         catch e
@@ -201,7 +201,7 @@ module.exports =
                 async.eachSeries toUpload, (path, cb) =>
                     @set 'backup_step_done', processed++
                     log.info "UPLOADING #{path}"
-                    @uploadPicture path, device, (err) =>
+                    @uploadPicture path, device, (err) ->
                         if err
                             log.error "ERROR #{path} #{err}"
                             err.message = err.message + ' - ' + path
@@ -285,7 +285,7 @@ module.exports =
 
 
     fileClassFromMime: (type) ->
-        return switch type.split('/')[0]
+        switch type.split('/')[0]
             when 'image' then "image"
             when 'audio' then "music"
             when 'video' then "video"
@@ -316,7 +316,7 @@ module.exports =
 
             options = @config.makeDSUrl("/data/")
             options.body = folder
-            request.post options, (err, result, body) =>
+            request.post options, (err, result, body) ->
                 return callback err if err
 
                 app.replicator.startRealtime()
@@ -326,7 +326,8 @@ module.exports =
                     app.replicator.stopRealtime()
                     callback null, folder
 
-        @db.query DesignDocuments.FILES_AND_FOLDER, key: ['', "1_#{t('photos').toLowerCase()}"], (err, results) =>
+        options = key: ['', "1_#{t('photos').toLowerCase()}"]
+        @db.query DesignDocuments.FILES_AND_FOLDER, options, (err, results) =>
             return callback err if err
             if results.rows.length > 0
                 device = results.rows[0]

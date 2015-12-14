@@ -30,8 +30,8 @@ module.exports = class FolderLineView extends BaseView
 
     setCacheIcon: (klass) =>
         icon = @$('.cache-indicator')
-        icon.removeClass('ion-warning ion-looping ion-ios7-cloud-download-outline')
-        icon.removeClass('ion-ios7-download-outline')
+        icon.removeClass('ion-warning ion-ios7-cloud-download-outline')
+        icon.removeClass('ion-ios7-download-outline ion-looping')
         icon.append klass
         @parent?.ionicView?.clearDragEffects()
 
@@ -88,10 +88,10 @@ module.exports = class FolderLineView extends BaseView
         # else, the model is a file, we get its binary and open it
         @displayProgress()
         app.replicator.getBinary @model.attributes, @updateProgress, \
-          @getOnDownloadedCallback (err, url) =>
-            # let android open the file
-            app.backFromOpen = true
-            ExternalFileUtil.openWith url, '', undefined,
+          @getOnDownloadedCallback (err, url) ->
+              # let android open the file
+              app.backFromOpen = true
+              ExternalFileUtil.openWith url, '', undefined,
                 (success) -> , # do nothing
                 (err) ->
                     if 0 is err?.indexOf 'No Activity found'

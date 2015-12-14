@@ -43,7 +43,8 @@ module.exports =
                     cb()
 
                 else
-                    request.get @config.makeReplicationUrl('/_changes?descending=true&limit=1')
+                    url = '/_changes?descending=true&limit=1'
+                    request.get @config.makeReplicationUrl(url)
                     , (err, res, body) =>
                         return cb err if err
                         # we store last_seq before copying files & folder
@@ -82,7 +83,7 @@ module.exports =
             include_docs: true
             key: name
 
-        request.post options, (err, res, body) =>
+        request.post options, (err, res, body) ->
             return callback err if err # TODO : pass on 404
             # No tag found, put a default color.
             calendar = body[0]?.doc or { name: name , color: '#2979FF' }
@@ -102,7 +103,7 @@ module.exports =
             # Check calendars updates in cozy (ie tags colors update)
             async.eachSeries calendars, (calendar, cb) =>
                 @_getCalendarFromCozy calendar.calendar_displayName
-                , (err, tag) =>
+                , (err, tag) ->
                     return cb err if err
                     if ACH.color2Android(tag.color) isnt calendar.calendar_color
 
@@ -142,7 +143,7 @@ module.exports =
 
             cozyEvent = ACH.event2Cozy aEvent, @calendarNames, cozyEvent
 
-            @db.put cozyEvent, cozyEvent._id, cozyEvent._rev, (err, idNrev) =>
+            @db.put cozyEvent, cozyEvent._id, cozyEvent._rev, (err, idNrev) ->
                 if err
                     if err.status is 409 # conflict, bad _rev
                         log.error "UpdateInPouch, immediate conflict with \
@@ -168,7 +169,7 @@ module.exports =
     _createEventInPouch: (aEvent, callback) ->
         cozyEvent = ACH.event2Cozy aEvent, @calendarNames
 
-        @db.post cozyEvent, (err, idNrev) =>
+        @db.post cozyEvent, (err, idNrev) ->
             if err
                 if err.message is "Some query argument is invalid"
                     log.error "While retrying create event in pouch"
@@ -245,7 +246,7 @@ module.exports =
             # Apply clean up.
             async.each revsToDelete, (rev, cb) =>
                 @db.remove doc._id, rev, cb
-            , (err) =>
+            , (err) ->
                 callback err, doc
 
 
@@ -381,28 +382,28 @@ module.exports =
             return callback()
 
         @createAccount (err) =>
-          @updateCalendars (err) =>
-            return callback err if err
-            options = @config.makeDSUrl "/request/event/all/"
-            options.body =
-                include_docs: true
-                show_revs: true
-            request.post options, (err, res, rows) =>
+            @updateCalendars (err) =>
                 return callback err if err
-                return callback null unless rows?.length
-
-                async.mapSeries rows, (row, cb) =>
-                    doc = row.doc
-                    @db.put doc, 'new_edits':false, (err, res) -> cb err, doc
-                , (err, docs) =>
+                options = @config.makeDSUrl "/request/event/all/"
+                options.body =
+                    include_docs: true
+                    show_revs: true
+                request.post options, (err, res, rows) =>
                     return callback err if err
-                    @set 'backup_step', null # hide header: first-sync view
-                    @_applyEventsChangeToPhone docs, (err) =>
-                        # clean backup_step_done after applyChanges
-                        @set 'backup_step_done', null
-                        @config.save eventsPullCheckpointed: lastSeq
-                        , (err) =>
-                            @deleteObsoletePhoneEvents callback
+                    return callback null unless rows?.length
+
+                    async.mapSeries rows, (row, cb) =>
+                        doc = row.doc
+                        @db.put doc, new_edits: false, (err, res) -> cb err, doc
+                    , (err, docs) =>
+                        return callback err if err
+                        @set 'backup_step', null # hide header: first-sync view
+                        @_applyEventsChangeToPhone docs, (err) =>
+                            # clean backup_step_done after applyChanges
+                            @set 'backup_step_done', null
+                            @config.save eventsPullCheckpointed: lastSeq
+                            , (err) =>
+                                @deleteObsoletePhoneEvents callback
 
 
     # Synchronise delete state between pouch and the phone.
@@ -425,7 +426,7 @@ module.exports =
             for row in events.pouch.rows
                 idsInPouch[row.id] = true
 
-            async.eachSeries events.phone, (aEvent, cb) =>
+            async.eachSeries events.phone, (aEvent, cb) ->
                 if aEvent._sync_id of idsInPouch
                     cb()
                 else

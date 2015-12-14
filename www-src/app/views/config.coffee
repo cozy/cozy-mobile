@@ -55,7 +55,7 @@ module.exports = class ConfigView extends BaseView
             #@TODO delete device on remote ?
             app.replicator.set 'inSync', true # run the spinner
             app.replicator.set 'backup_step', 'destroying database'
-            app.replicator.destroyDB (err) =>
+            app.replicator.destroyDB (err) ->
                 if err
                     log.error err
                     return alert err.message

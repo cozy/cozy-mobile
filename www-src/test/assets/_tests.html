@@ -4,6 +4,7 @@
   <title>Mocha Tests</title>
   <link href="https://cdn.rawgit.com/mochajs/mocha/2.2.5/mocha.css" rel="stylesheet" />
   <script src="../../../www/javascripts/vendor.js"></script>
+  <script src="../../../www/javascripts/modules.js"></script>
   <script src="../../../www/javascripts/app.js"></script>
   <script src="http://coffeescript.org/extras/coffee-script.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chai/3.4.0/chai.min.js"></script>
@@ -14,11 +15,12 @@
 <body>
   <div id="mocha"></div>
 
-  
+
   <script>
     var module = {};
-    var scripts = ['ContactAddress', 'ContactField', 'ContactFieldType', 
+    var scripts = ['ContactAddress', 'ContactField', 'ContactFieldType',
                   'ContactOrganization', 'ContactName'];
+    var async = require('async');
 
     function loadCordovaDependencies() {
       async.eachSeries(scripts, function(scriptName, callback) {
@@ -40,8 +42,8 @@
       'event_recurring_cozy': null,
       'event_recurring_android': null,
       'event_recurringallday_cozy': null,
-      'event_recurringallday_android': null,      
-      'event_recurringallday_androidcreated': null,      
+      'event_recurringallday_android': null,
+      'event_recurringallday_androidcreated': null,
     };
 
     function loadFixtures(err) {
