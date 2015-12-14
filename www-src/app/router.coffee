@@ -48,18 +48,18 @@ module.exports = class Router extends Backbone.Router
             $('#search-input').blur() # close keyboard
 
     login: ->
-        app.layout.setTitle(t('setup') + '1/4')
+        app.layout.setTitle(t('setup') + ' 1/4')
         $('#btn-menu, #btn-back').hide()
         @display new LoginView()
 
     permissions: ->
-        app.layout.setTitle(t('setup') + '2/4')
+        app.layout.setTitle(t('setup') + ' 2/4')
         $('#btn-menu, #btn-back').hide()
         @display new PermissionsView()
 
 
     deviceNamePicker: ->
-        app.layout.setTitle(t('setup') + '3/4')
+        app.layout.setTitle(t('setup') + ' 3/4')
         $('#btn-menu, #btn-back').hide()
         @display new DeviceNamePickerView()
 
@@ -71,7 +71,7 @@ module.exports = class Router extends Backbone.Router
     config: ->
         console.log "router.config"
         $('#btn-back').hide()
-        title = if app.isFirstRun then (t('setup') + '4/4') else t 'config'
+        title = if app.isFirstRun then (t('setup') + ' 4/4') else t 'config'
         app.layout.setTitle title
         @display new ConfigView()
 
