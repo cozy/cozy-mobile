@@ -51,8 +51,8 @@ module.exports = ACH =
             # CalendarContract.CalendarColumns.html#CALENDAR_ACCESS_LEVEL
             calendar_access_level: 700
             sync_events: 1
-            # METHOD_ALERT, METHOD_EMAIL,METHOD_ALARM
-            allowedReminders: "1,2,4"
+            # METHOD_ALERT, METHOD_EMAIL
+            allowedReminders: "1,2"
             allowedAvailability: "0" # Deactivated.
             allowedAttendeeTypes: "0" # Deactivated.
 
