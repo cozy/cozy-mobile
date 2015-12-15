@@ -662,8 +662,7 @@ module.exports = class Replicator extends Backbone.Model
 
         @liveReplication.on 'change', (change) =>
             realtimeBackupCoef = 1
-            event = new Event 'realtime:onChange'
-            window.dispatchEvent event
+            app.router.forceRefresh()
 
             @set 'inSync', true
             fileNEntriesInCache = @_filesNEntriesInCache change.docs

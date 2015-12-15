@@ -130,14 +130,6 @@ module.exports =
             app.replicator.stopRealtime()
 
         , false
-        document.addEventListener 'online', ->
-            backup = () ->
-
-                app.replicator.backup {}, (err) -> log.error err if err
-                window.removeEventListener 'realtime:onChange', backup, false
-            window.addEventListener 'realtime:onChange', backup, false
-        , false
-
 
     addDeviceListener: ->
         document.addEventListener 'deviceready', ->
