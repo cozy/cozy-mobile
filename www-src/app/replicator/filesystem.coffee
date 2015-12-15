@@ -1,5 +1,3 @@
-basic = require '../lib/basic'
-
 DOWNLOADS_FOLDER = 'cozy-downloads'
 
 log = require('../lib/persistent_log')
