@@ -66,6 +66,15 @@ module.exports = class ReplicatorConfig extends Backbone.Model
 
     appVersion: -> return APP_VERSION
 
+    isNewVersion: ->
+        return APP_VERSION isnt @get('appVersion')
+
+    updateVersion: (callback) ->
+        if @isNewVersion()
+            @save appVersion: APP_VERSION, callback
+        else
+            callback()
+
     serializePermissions: (permissions) ->
         return Object.keys(permissions).sort()
 

@@ -10,7 +10,7 @@ android:
     - build-tools-22.0.1
 
 install:
-  - npm install -g cordova
+  - npm install -g cordova@4.3.1
   - cd www-src && npm install && cd ..
   - export PATH=$PATH:$PWD/www-src/node_modules/.bin
   - cake platforms && cake plugins

@@ -54,38 +54,61 @@ module.exports =
                 DeviceStatus.initialize()
 
                 if config.remote
-                    app.replicator.checkPlatformVersions (err) =>
-                        if err
-                            log.error err
-                            alert err.message or err
-                            return navigator.app.exitApp()
+                    if config.isNewVersion()
+                        @replicator.checkPlatformVersions (err) =>
+                            if err
+                                log.error err
+                                alert err.message or err
+                                return navigator.app.exitApp()
 
-                        if config.hasPermissions()
-                            if @replicator.config.has('checkpointed')
+                            if config.hasPermissions()
                                 app.regularStart()
-
-                            # TODO : try to move to regular start.
                             else
-                                log.info 'Launch first replication again.'
-                                app.router.navigate 'first-sync', trigger: true
-                        else
-                            app.router.navigate 'permissions', trigger: true
+                                app.router.navigate 'permissions', trigger: true
+                    else
+                        app.regularStart()
 
                 else # no config.remote
                     # App's first start
                     app.isFirstRun = true
                     @router.navigate 'login', trigger: true
 
+    checkForUpdates: ->
+        @replicator.checkPlatformVersions (err) =>
+            if err
+                log.error err
+                alert err.message or err
+                return navigator.app.exitApp()
+
+            if @replicator.config.hasPermissions()
+                app.regularStart()
+            else
+                app.router.navigate 'permissions', trigger: true
+
 
     regularStart: ->
-        app.foreground = true
-        conf = app.replicator.config.attributes
-        # Display config to help remote debuging.
-        log.info "Start v#{app.replicator.config.appVersion()}--\
-        sync_contacts:#{conf.syncContacts},sync_images:#{conf.syncImages},\
-        sync_on_wifi:#{conf.syncOnWifi},\
-        cozy_notifications:#{conf.cozyNotifications}"
+        # Update version tag if we reach here
+        @replicator.config.updateVersion =>
+            unless @replicator.config.has('checkpointed')
+                log.info 'Launch first replication again.'
+                app.router.navigate 'first-sync', trigger: true
+                return
 
+            @foreground = true
+            conf = @replicator.config.attributes
+            # Display config to help remote debuging.
+            log.info "Start v#{conf.appVersion}--\
+            sync_contacts:#{conf.syncContacts},sync_images:#{conf.syncImages},\
+            sync_on_wifi:#{conf.syncOnWifi},\
+            cozy_notifications:#{conf.cozyNotifications}"
+
+            @setListeners()
+            @router.navigate 'folder/', trigger: true
+            @router.once 'collectionfetched', =>
+                app.replicator.backup {}, (err) -> log.error err if err
+
+
+    setListeners: ->
         document.addEventListener "resume", =>
             log.info "RESUME EVENT"
             app.foreground = true
@@ -115,9 +138,6 @@ module.exports =
             window.addEventListener 'realtime:onChange', backup, false
         , false
 
-        @router.navigate 'folder/', trigger: true
-        @router.once 'collectionfetched', =>
-            app.replicator.backup {}, (err) -> log.error err if err
 
     addDeviceListener: ->
         document.addEventListener 'deviceready', ->
