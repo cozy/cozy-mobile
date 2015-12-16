@@ -214,7 +214,6 @@ module.exports = class Replicator extends Backbone.Model
                 }
             """
 
-
         async.eachSeries reqList, (req, cb) =>
             options = @config.makeDSUrl "/request/#{req.type}/#{req.name}/"
             options.body = req.body
@@ -281,14 +280,21 @@ module.exports = class Replicator extends Backbone.Model
                 # updateIndex In background
                 @updateIndex -> log.info "Index built"
 
-
     copyView: (model, callback) ->
+        options =
+            times: 5
+            interval: 20 * 1000
+
+        async.retry options, ((cb) => @_copyView model, cb), callback
+
+    _copyView: (model, callback) ->
         log.info "enter copyView for #{model}."
 
         options = @config.makeDSUrl "/request/#{model}/all/"
         options.body = include_docs: true, show_revs: true
 
         request.post options, (err, res, models) =>
+            log.error err
             return callback err if err
             return callback null unless models?.length isnt 0
             async.eachSeries models, (doc, cb) =>
