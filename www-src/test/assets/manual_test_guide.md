@@ -36,6 +36,7 @@ Standard use case to test, and by version specific tests.
 [ ] Change the file in the folder
 [ ] Delete the folder
 
+[ ] Delete Photos directory, and let the app recreate it.
 ## Service
 
 [ ] close the app, and take a picture

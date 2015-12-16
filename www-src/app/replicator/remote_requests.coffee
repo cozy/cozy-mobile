@@ -6,6 +6,7 @@ module.exports =
 
     folder:
         all: all
+        byFullPath: (doc) -> emit (doc.path + '/' + doc.name), doc._id
 
     contact:
         all: all
