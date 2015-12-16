@@ -59,7 +59,7 @@
     "connection failure": "Falla en la conexión",
     "setup 1/4": "Configuración 1/4",
     "cozy welcome": "¡Bienvenido(a)!",
-    "cozy welcome message": "Cozy App le permite: <ul><li>Visualizar su Archivos</li><li>Sincronizar su Contactos</li><li>Hacer una copia de seguridad de su Fotos</li></ul>",
+    "cozy welcome message": "Cozy App le permite: <ul><li>Visualizar su Archivos</li><li>Sincronizar su Contactos</li><li>Sincronizar su agendas</li><li>Hacer una copia de seguridad de su Fotos</li></ul>",
     "cozy welcome no account": "Si tusted no desea todavía una instancia Cozy, visite <a target='_system' href='http://cozy.io/en/'>cozy.io</a> para mayores detalles.",
     "url placeholder": "Su dirección Cozy: example.cozycloud.cc",
     "password placeholder": "Su contraseña",

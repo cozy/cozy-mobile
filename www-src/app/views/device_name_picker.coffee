@@ -43,7 +43,9 @@ module.exports = class DeviceNamePickerView extends BaseView
                 @displayError t err.message
             else
                 app.replicator.checkPlatformVersions (err) =>
-                    return @displayError err if err?
+                    if err?
+                        log.error err
+                        return @displayError err.message
 
                     delete app.loginConfig
                     app.router.navigate 'config', trigger: true
@@ -62,7 +64,8 @@ module.exports = class DeviceNamePickerView extends BaseView
         $('#btn-save').text @saving
         @saving = false
         @error.remove() if @error
-        text = t 'connection failure' if ~text.indexOf('CORS request rejected')
+        if text.indexOf('CORS request rejected') isnt -1
+            text = t 'connection failure'
         @error = $('<div>').addClass('error-msg')
         @error.text text
         @$(field or 'label').after @error
