@@ -294,8 +294,10 @@ module.exports = class Replicator extends Backbone.Model
         options.body = include_docs: true, show_revs: true
 
         request.post options, (err, res, models) =>
-            log.error err
-            return callback err if err
+            if err
+                log.error err
+                return callback err
+
             return callback null unless models?.length isnt 0
             async.eachSeries models, (doc, cb) =>
                 model = doc.doc
