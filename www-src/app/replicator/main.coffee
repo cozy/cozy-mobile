@@ -65,7 +65,7 @@ module.exports = class Replicator extends Backbone.Model
     checkPlatformVersions: (callback) ->
         cutVersion = (s) ->
             parts = s.match /(\d+)\.(\d+)\.(\d+)/
-            # Keep only usefull data (first elem is full string)
+            # Keep only useful data (first elem is full string)
             parts = parts.slice 1, 4
             parts = parts.map (s) -> parseInt s
             return major: parts[0], minor: parts[1], patch: parts[2]
