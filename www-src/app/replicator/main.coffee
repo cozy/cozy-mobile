@@ -7,8 +7,8 @@ DBNAME = "cozy-files.db"
 DBPHOTOS = "cozy-photos.db"
 
 PLATFORM_MIN_VERSIONS =
-    'proxy': '2.1.5'
-    'data-system': '2.1.0'
+    'proxy': '2.1.11'
+    'data-system': '2.1.5' # indeed, the next one.
 
 log = require('../lib/persistent_log')
     prefix: "replicator"
@@ -64,8 +64,11 @@ module.exports = class Replicator extends Backbone.Model
 
     checkPlatformVersions: (callback) ->
         cutVersion = (s) ->
-            [s, major, minor, patch] = s.match /(\d+)\.(\d+)\.(\d+)/
-            return { major, minor, patch }
+            parts = s.match /(\d+)\.(\d+)\.(\d+)/
+            # Keep only useful data (first elem is full string)
+            parts = parts.slice 1, 4
+            parts = parts.map (s) -> parseInt s
+            return major: parts[0], minor: parts[1], patch: parts[2]
 
         request.get
             url: "#{@config.getScheme()}://#{@config.get('cozyURL')}/versions"
@@ -79,10 +82,9 @@ module.exports = class Replicator extends Backbone.Model
                 if app of PLATFORM_MIN_VERSIONS
                     minVersion = cutVersion PLATFORM_MIN_VERSIONS[app]
                     version = cutVersion version
-
                     if version.major < minVersion.major or
                     version.minor < minVersion.minor or
-                    version.path < minVersion.patch
+                    version.patch < minVersion.patch
                         msg = t 'error need min %version for %app'
                         msg = msg.replace('%app', app)
                                  .replace('%version', PLATFORM_MIN_VERSIONS[app])
@@ -214,7 +216,6 @@ module.exports = class Replicator extends Backbone.Model
                 }
             """
 
-
         async.eachSeries reqList, (req, cb) =>
             options = @config.makeDSUrl "/request/#{req.type}/#{req.name}/"
             options.body = req.body
@@ -281,15 +282,24 @@ module.exports = class Replicator extends Backbone.Model
                 # updateIndex In background
                 @updateIndex -> log.info "Index built"
 
-
     copyView: (model, callback) ->
+        options =
+            times: 5
+            interval: 20 * 1000
+
+        async.retry options, ((cb) => @_copyView model, cb), callback
+
+    _copyView: (model, callback) ->
         log.info "enter copyView for #{model}."
 
         options = @config.makeDSUrl "/request/#{model}/all/"
         options.body = include_docs: true, show_revs: true
 
         request.post options, (err, res, models) =>
-            return callback err if err
+            if err
+                log.error err
+                return callback err
+
             return callback null unless models?.length isnt 0
             async.eachSeries models, (doc, cb) =>
                 model = doc.doc
@@ -662,8 +672,7 @@ module.exports = class Replicator extends Backbone.Model
 
         @liveReplication.on 'change', (change) =>
             realtimeBackupCoef = 1
-            event = new Event 'realtime:onChange'
-            window.dispatchEvent event
+            app.router.forceRefresh()
 
             @set 'inSync', true
             fileNEntriesInCache = @_filesNEntriesInCache change.docs

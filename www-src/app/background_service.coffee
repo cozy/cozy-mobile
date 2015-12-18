@@ -58,7 +58,7 @@ module.exports = BackgroundService =
             if err
                 return @startMainActivity err
 
-            if config.hasPermissions()
+            if @replicator.config.hasPermissions()
                 @startService()
             else
                 @startMainActivity "Need permissions"

@@ -61,8 +61,7 @@ module.exports = class ReplicatorConfig extends Backbone.Model
         new PouchDB
             name: "#{@getScheme()}://#{@get("deviceName")}:" +
                 "#{@get('devicePassword')}@#{@get('cozyURL')}/replication"
-            ajax: timeout: 5 * 60 * 1000 # Big timeout for unknown error on
-                                         # longpoll
+            ajax: timeout: 55 * 1000 # Before the cozy's one.
 
     appVersion: -> return APP_VERSION
 

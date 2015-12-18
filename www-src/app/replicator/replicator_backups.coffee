@@ -292,19 +292,18 @@ module.exports =
 
 
     ensureDeviceFolder: (callback) ->
-        findDevice = (id, callback) =>
+        findFolder = (id, cb) =>
             @db.get id, (err, res) ->
                 if not err?
-                    callback()
+                    cb()
                 else
                     # Busy waiting for device folder creation
-                    setTimeout (-> findDevice id, callback ), 200
-
+                    setTimeout (-> findFolder id, cb ), 200
 
         # Creates 'photos' folder in cozy, and wait for its creation.
         createNew = () =>
             log.info "creating 'photos' folder"
-            # no device folder, lets make it
+            # no Photos folder, lets make it
             folder =
                 docType          : 'Folder'
                 name             : t 'photos'
@@ -312,13 +311,17 @@ module.exports =
                 lastModification : new Date().toISOString()
                 creationDate     : new Date().toISOString()
                 tags             : []
-            options =
-                key: ['', "1_#{folder.name.toLowerCase()}"]
-            @config.remote.post folder, (err, res) =>
+
+            options = @config.makeDSUrl("/data/")
+            options.body = folder
+            request.post options, (err, result, body) =>
+                return callback err if err
+
                 app.replicator.startRealtime()
                 # Wait to receive folder in local database
-                findDevice res.id, () ->
+                findFolder body._id, () ->
                     return callback err if err
+                    app.replicator.stopRealtime()
                     callback null, folder
 
         @db.query 'FilesAndFolder', key: ['', "1_#{t('photos').toLowerCase()}"], (err, results) =>
@@ -328,11 +331,8 @@ module.exports =
                 log.info "DEVICE FOLDER EXISTS"
                 return callback null, device
             else
-                # TODO : relies on byFullPath folder view of cozy-file !
-                options = @config.makeDSUrl '/data/folder/byfullpath/'
+                options = @config.makeDSUrl '/request/folder/byfullpath/'
                 options.body = key: t('photos')
-
-
                 request.post options, (err, res, docs) ->
                     return callback err if err
                     if docs?.length is 0
