@@ -9,8 +9,8 @@ This is the native mobile client for Cozy.
 
 ## Install
 
-Get it from the play store.
-Or head over to the [Releases page](https://github.com/cozy/cozy-mobile/releases)
+Get it from the [Google Play Store](https://play.google.com/store/apps/details?id=io.cozy.files_client),
+or head over to the [Releases page](https://github.com/cozy/cozy-mobile/releases)
 
 ## Built with
 
