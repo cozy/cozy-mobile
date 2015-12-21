@@ -1,4 +1,4 @@
-APP_VERSION = "0.1.14"
+APP_VERSION = "0.1.15"
 
 module.exports = class ReplicatorConfig extends Backbone.Model
     constructor: (@replicator) ->
