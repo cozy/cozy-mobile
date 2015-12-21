@@ -8,7 +8,7 @@ DBPHOTOS = "cozy-photos.db"
 
 PLATFORM_MIN_VERSIONS =
     'proxy': '2.1.11'
-    'data-system': '2.1.5' # indeed, the next one.
+    'data-system': '2.1.6'
 
 log = require('../lib/persistent_log')
     prefix: "replicator"
