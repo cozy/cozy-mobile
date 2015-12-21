@@ -1,6 +1,6 @@
 assert      = require 'assert'
 should      = require('chai').should()
-Translation = require '../../app/lib/translation'
+Translation = require '../../../app/lib/translation'
 
 module.exports = describe 'Translation Service Test', ->
 
@@ -41,4 +41,5 @@ module.exports = describe 'Translation Service Test', ->
             t.should.be.a 'function'
 
         it 'should be easy to translate', ->
-            assert.equal t('error try restart'), 'Essayez de redémarrer l\'application.'
+            assert.equal \
+                t('error try restart'), 'Essayez de redémarrer l\'application.'

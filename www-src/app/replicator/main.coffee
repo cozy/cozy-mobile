@@ -1,6 +1,7 @@
+async = require 'async'
 request = require '../lib/request'
 fs = require './filesystem'
-makeDesignDocs = require './replicator_mapreduce'
+DesignDocuments = require './design_documents'
 ReplicatorConfig = require './replicator_config'
 DeviceStatus = require '../lib/device_status'
 DBNAME = "cozy-files.db"
@@ -56,7 +57,8 @@ module.exports = class Replicator extends Backbone.Model
             @cache = cache
             @initDB (err) =>
                 return callback err if err
-                makeDesignDocs @db, @photosDB, (err) =>
+                designDocs = new DesignDocuments @db, @photosDB
+                designDocs.createOrUpdateAllDesign (err) =>
                     return callback err if err
                     @config = new ReplicatorConfig(this)
                     @config.fetch callback
@@ -273,7 +275,7 @@ module.exports = class Replicator extends Backbone.Model
                 # Save last sequences
                 (cb) => @config.save checkpointed: last_seq, cb
                 # build the initial state of FilesAndFolder view index
-                (cb) => @db.query 'FilesAndFolder', {}, cb
+                (cb) => @db.query DesignDocuments.FILES_AND_FOLDER, {}, cb
 
             ], (err) =>
                 log.info "end of inital replication"
@@ -317,9 +319,9 @@ module.exports = class Replicator extends Backbone.Model
             log.info "INDEX BUILT"
             log.warn err if err
             # build pouch's map indexes
-            @db.query 'FilesAndFolder', {}, =>
+            @db.query DesignDocuments.FILES_AND_FOLDER, {}, =>
                 # build pouch's map indexes
-                @db.query 'LocalPath', {}, ->
+                @db.query DesignDocuments.LOCAL_PATH, {}, ->
                     callback null
 
 # END initialisations methods
@@ -358,7 +360,7 @@ module.exports = class Replicator extends Backbone.Model
 
         fsCacheFolder = @cache.map (entry) -> entry.name
 
-        @db.query 'PathToBinary', options, (err, results) ->
+        @db.query DesignDocuments.PATH_TO_BINARY, options, (err, results) ->
             return callback err if err
             return callback null, null if results.rows.length is 0
             callback null, _.every results.rows, (row) ->
@@ -474,7 +476,7 @@ module.exports = class Replicator extends Backbone.Model
             endkey: [path + '/\uffff', {}]
             include_docs: true
 
-        @db.query 'FilesAndFolder', options, (err, results) ->
+        @db.query DesignDocuments.FILES_AND_FOLDER, options, (err, results) ->
             return callback err if err
             docs = results.rows.map (row) -> row.doc
             files = docs.filter (doc) -> doc.docType?.toLowerCase() is 'file'
@@ -721,7 +723,7 @@ module.exports = class Replicator extends Backbone.Model
             keys: @cache.map (entry) -> return entry.name.split('-')[0]
             include_docs: true
 
-        @db.query 'ByBinaryId', options, (err, results) =>
+        @db.query DesignDocuments.BY_BINARY_ID, options, (err, results) =>
             return callback err if err
             toUpdate = @_filesNEntriesInCache results.rows.map (row) -> row.doc
 
