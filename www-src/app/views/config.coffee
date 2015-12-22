@@ -7,6 +7,7 @@ log = require('../lib/persistent_log')
 
 module.exports = class ConfigView extends BaseView
 
+    @SUPPORT_MAIL: 'log-mobile@cozycloud.cc'
     template: require '../templates/config'
 
     menuEnabled: true
@@ -94,7 +95,7 @@ module.exports = class ConfigView extends BaseView
 
         query = "subject=#{encodeURI(subject)}&body=#{encodeURI(body)}"
 
-        window.open "mailto:guillaume@cozycloud.cc?" + query, "_system"
+        window.open "mailto:#{ConfigView.SUPPORT_MAIL}?" + query, "_system"
 
 
     # save config changes in local pouchdb
