@@ -1,5 +1,7 @@
+async = require 'async'
 request = require '../lib/request'
 ACH = require '../lib/android_calendar_helper'
+DesignDocuments = require './design_documents'
 
 
 # Account type and name of the created android contact account.
@@ -411,7 +413,7 @@ module.exports =
                 navigator.calendarsync.allEvents ACCOUNT, cb
 
             pouch: (cb) =>
-                @db.query "Calendars", {}, cb
+                @db.query DesignDocuments.CALENDARS, {}, cb
 
             calendar: (cb) ->
                 navigator.calendarsync.allCalendars ACCOUNT, cb

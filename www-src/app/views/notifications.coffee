@@ -1,3 +1,5 @@
+DesignDocuments = require '../replicator/design_documents'
+
 log = require('../lib/persistent_log')
     prefix: "notifications"
     date: true
@@ -31,7 +33,7 @@ module.exports = class Notifications
             @fetch()
 
     fetch: =>
-        app.replicator.db.query 'NotificationsTemporary', { include_docs: true }, (err, notifications) =>
+        app.replicator.db.query DesignDocuments.NOTIFICATIONS_TEMPORARY, { include_docs: true }, (err, notifications) =>
                 notifications.rows.forEach (notification) =>
                     @showNotification notification.doc
 

@@ -1,3 +1,5 @@
+async = require 'async'
+DesignDocuments = require './design_documents'
 request = require '../lib/request'
 Contact = require '../models/contact'
 
@@ -345,7 +347,7 @@ module.exports =
                 , cb
                 , new ContactFindOptions "", true, [], ACCOUNT_TYPE, ACCOUNT_NAME
             pouch: (cb) =>
-                @db.query "Contacts", {}, cb
+                @db.query DesignDocuments.CONTACTS, {}, cb
 
         , (err, contacts) =>
             return callback err if err
