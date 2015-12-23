@@ -6,9 +6,9 @@
     "node": "~0.10"
   },
   "scripts": {
-    "postinstall": "./node_modules/.bin/brunch build",
-    "test": "/bin/true",
-    "start": "./node_modules/.bin/brunch watch --server"
+    "postinstall": "brunch build",
+    "test": "mocha test/unit/* --reporter spec --compilers coffee:coffee-script/register --colors",
+    "start": "brunch watch --server"
   },
   "dependencies": {
     "async": "1.2.1",
@@ -22,21 +22,22 @@
     "javascript-brunch": "> 1.0 < 1.5",
     "jquery": "1.9.1",
     "json-brunch": "^1.5.4",
+    "moment": "2.10.6",
+    "moment-timezone": "0.4.1",
     "node-polyglot": "1.0.0 ",
     "pouchdb": "5.1.0",
     "pouchdb-quick-search": "0.3.2",
     "stylus-brunch": "^1.8.1",
     "uglify-js-brunch": "> 1.0 < 1.5",
-    "underscore": "1.4.4",
-    "moment": "2.10.6",
-    "moment-timezone": "0.4.1"
+    "underscore": "1.4.4"
   },
   "devDependencies": {
+    "chai": "1.7.2",
     "coffee-script": "1.10.0",
+    "expect.js": "0.1.2",
+    "memdown": "^1.1.0",
     "mocha": "2.3.4",
     "should": "7.1.1",
-    "chai": "1.7.2",
-    "expect.js": "0.1.2",
     "ws": "0.4.21"
   }
 }

@@ -1,4 +1,6 @@
+async = require 'async'
 DeviceStatus = require '../lib/device_status'
+DesignDocuments = require './design_documents'
 fs = require './filesystem'
 request = require '../lib/request'
 
@@ -124,15 +126,15 @@ module.exports =
         async.series [
             @ensureDeviceFolder.bind this
             ImagesBrowser.getImagesList
-            (callback) => @photosDB.query 'PhotosByLocalId', {}, callback
-            (cb) => @db.query 'FilesAndFolder',
+            (cb) => @photosDB.query DesignDocuments.PHOTOS_BY_LOCAL_ID, {}, cb
+            (cb) => @db.query DesignDocuments.FILES_AND_FOLDER,
                 {
                     startkey: ['/' + t 'photos']
                     endkey: ['/' + t('photos'), {}]
                 } , cb
         ], (err, results) =>
             return callback err if err
-            [device, images, rows: dbImages, dbPictures] = results
+            [device, images, {rows: dbImages}, dbPictures] = results
 
             dbImages = dbImages.map (row) -> row.key
             # We pick up the filename from the key to improve speed :
@@ -324,7 +326,7 @@ module.exports =
                     app.replicator.stopRealtime()
                     callback null, folder
 
-        @db.query 'FilesAndFolder', key: ['', "1_#{t('photos').toLowerCase()}"], (err, results) =>
+        @db.query DesignDocuments.FILES_AND_FOLDER, key: ['', "1_#{t('photos').toLowerCase()}"], (err, results) =>
             return callback err if err
             if results.rows.length > 0
                 device = results.rows[0]

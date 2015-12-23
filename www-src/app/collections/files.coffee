@@ -1,4 +1,6 @@
+async = require 'async'
 File = require '../models/file'
+DesignDocuments = require '../replicator/design_documents'
 
 PAGE_LENGTH = 20
 
@@ -72,12 +74,12 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
                 endkey: if path then ['/' + path] else ['']
                 startkey: if path then ['/' + path, {}] else ['', {}]
                 descending: true
-            view = 'Pictures'
+            view = DesignDocuments.PICTURES
         else
             params =
                 startkey: if path then ['/' + path] else ['']
                 endkey: if path then ['/' + path, {}] else ['', {}]
-            view = 'FilesAndFolder'
+            view = DesignDocuments.FILES_AND_FOLDER
 
         app.replicator.db.query view, params, callback
 
