@@ -69,7 +69,6 @@ module.exports = class Router extends Backbone.Router
         @display new FirstSyncView()
 
     config: ->
-        console.log "router.config"
         $('#btn-back').hide()
         title = if app.isFirstRun then (t('setup') + ' 4/4') else t 'config'
         app.layout.setTitle title
