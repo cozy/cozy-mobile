@@ -12,10 +12,10 @@ module.exports = describe 'DesignDocuments Test', ->
     it 'should be possible to create all design', (done) ->
         designDocs.createOrUpdateAllDesign (error, responses) ->
             async.series [
-                (next) => cozyDB.allDocs {}, (error, response) ->
+                (next) -> cozyDB.allDocs {}, (error, response) ->
                     assert.equal 8, response.total_rows
                     next()
-                (next) => internalDB.allDocs {}, (error, response) ->
+                (next) -> internalDB.allDocs {}, (error, response) ->
                     assert.equal 1, response.total_rows
                     next()
             ], done

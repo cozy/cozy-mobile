@@ -26,7 +26,8 @@ module.exports =
         # Monkey patch for browser debugging
         if window.isBrowserDebugging
             window.navigator = window.navigator or {}
-            window.navigator.globalization = window.navigator.globalization or {}
+            window.navigator.globalization =
+                window.navigator.globalization or {}
             window.navigator.globalization.getPreferredLanguage = (callback) =>
                 callback value: @translation.DEFAULT_LANGUAGE
 
@@ -62,15 +63,15 @@ module.exports =
                                 return navigator.app.exitApp()
 
                             if config.hasPermissions()
-                                app.regularStart()
+                                @regularStart()
                             else
-                                app.router.navigate 'permissions', trigger: true
+                                @router.navigate 'permissions', trigger: true
                     else
-                        app.regularStart()
+                        @regularStart()
 
                 else # no config.remote
                     # App's first start
-                    app.isFirstRun = true
+                    @isFirstRun = true
                     @router.navigate 'login', trigger: true
 
     checkForUpdates: ->
@@ -81,9 +82,9 @@ module.exports =
                 return navigator.app.exitApp()
 
             if @replicator.config.hasPermissions()
-                app.regularStart()
+                @regularStart()
             else
-                app.router.navigate 'permissions', trigger: true
+                @router.navigate 'permissions', trigger: true
 
 
     regularStart: ->
@@ -91,7 +92,7 @@ module.exports =
         @replicator.config.updateVersion =>
             unless @replicator.config.has('checkpointed')
                 log.info 'Launch first replication again.'
-                app.router.navigate 'first-sync', trigger: true
+                @router.navigate 'first-sync', trigger: true
                 return
 
             @foreground = true
@@ -105,32 +106,32 @@ module.exports =
             @setListeners()
             @router.navigate 'folder/', trigger: true
             @router.once 'collectionfetched', =>
-                app.replicator.backup {}, (err) -> log.error err if err
+                @replicator.backup {}, (err) -> log.error err if err
 
 
     setListeners: ->
         document.addEventListener "resume", =>
             log.info "RESUME EVENT"
-            app.foreground = true
-            if app.backFromOpen
-                app.backFromOpen = false
-                app.replicator.startRealtime()
+            @foreground = true
+            if @backFromOpen
+                @backFromOpen = false
+                @replicator.startRealtime()
             else
                 @serviceManager.isRunning (err, running) =>
                     return log.error err if err
                     if running
-                        app.replicator.startRealtime()
-                        log.info "No backup on resume, as service still running."
+                        @replicator.startRealtime()
+                        log.info "No backup on resume, as service still running"
                     else
-                        app.replicator.backup {}, (err) -> log.error err if err
+                        @replicator.backup {}, (err) -> log.error err if err
         , false
+
         document.addEventListener "pause", =>
             log.info "PAUSE EVENT"
-            app.foreground = false
-            app.replicator.stopRealtime()
-
+            @foreground = false
+            @replicator.stopRealtime()
         , false
 
     addDeviceListener: ->
-        document.addEventListener 'deviceready', ->
-            window.app.initialize()
+        document.addEventListener 'deviceready', =>
+            @initialize()

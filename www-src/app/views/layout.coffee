@@ -125,8 +125,10 @@ module.exports = class Layout extends BaseView
 
         else
 
-            nextClass = if type is 'left' then 'sliding-next' else 'sliding-prev'
-            currClass = if type is 'left' then 'sliding-prev' else 'sliding-next'
+            nextClass =
+                if type is 'left' then 'sliding-next' else 'sliding-prev'
+            currClass =
+                if type is 'left' then 'sliding-prev' else 'sliding-next'
 
             $next.addClass nextClass
             @viewsBlock.append $next
@@ -135,7 +137,8 @@ module.exports = class Layout extends BaseView
             @currentView.$el.addClass currClass
             $next.removeClass nextClass
 
-            transitionend = 'webkitTransitionEnd otransitionend oTransitionEnd msTransitionEnd transitionend'
+            transitionend = 'webkitTransitionEnd otransitionend ' +
+                'oTransitionEnd msTransitionEnd transitionend'
             # double one & once because there is multiple events type
             $next.one transitionend, _.once =>
                 @currentView.remove()

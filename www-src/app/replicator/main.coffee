@@ -88,8 +88,8 @@ module.exports = class Replicator extends Backbone.Model
                     version.minor < minVersion.minor or
                     version.patch < minVersion.patch
                         msg = t 'error need min %version for %app'
-                        msg = msg.replace('%app', app)
-                                 .replace('%version', PLATFORM_MIN_VERSIONS[app])
+                        msg = msg.replace '%app', app
+                        msg = msg.replace '%version', PLATFORM_MIN_VERSIONS[app]
                         return callback new Error msg
 
             # Everything fine
@@ -141,14 +141,15 @@ module.exports = class Replicator extends Backbone.Model
         Tag: description: "tag permission description"
 
 
-    registerRemote: (config, callback) ->
+    registerRemote: (newConfig, callback) ->
         request.post
-            uri: "#{@config.getScheme()}://owner:#{config.password}@#{config.cozyURL}/device"
+            uri: "#{@config.getScheme()}://owner:#{newConfig.password}@" + \
+                "#{newConfig.cozyURL}/device"
             auth:
                 username: 'owner'
-                password: config.password
+                password: newConfig.password
             json:
-                login: config.deviceName
+                login: newConfig.deviceName
                 permissions: @permissions
 
         , (err, response, body) =>
@@ -164,20 +165,21 @@ module.exports = class Replicator extends Backbone.Model
                 log.error "while registering device:  #{response.statusCode}"
                 callback new Error response.statusCode, response.reason
             else
-                _.extend config,
+                _.extend newConfig,
                     devicePassword: body.password
                     deviceName: body.login
-                    devicePermissions: @config.serializePermissions body.permissions
+                    devicePermissions:
+                        @config.serializePermissions body.permissions
                     auth:
                         username: body.login
                         password: body.password
 
-                @config.save config, callback
+                @config.save newConfig, callback
 
 
     updatePermissions: (password, callback) ->
         request.put
-            uri: "#{@config.getScheme()}://owner:#{password}@#{@config.get('cozyURL')}/device/#{@config.get('deviceName')}"
+            uri: "#{@config.getCozyUrl()}/device/#{@config.get('deviceName')}"
             auth:
                 username: 'owner'
                 password: password
@@ -247,8 +249,9 @@ module.exports = class Replicator extends Backbone.Model
                 # we store last_seq before copying files & folder
                 # to avoid losing changes occuring during replication
                 (cb) =>
-                    options = @config.makeReplicationUrl '/_changes?descending=true&limit=1'
-                    request.get options, (err, res, body) =>
+                    url = '/_changes?descending=true&limit=1'
+                    options = @config.makeReplicationUrl url
+                    request.get options, (err, res, body) ->
                         return cb err if err
                         last_seq = body.last_seq
                         cb()
@@ -370,8 +373,7 @@ module.exports = class Replicator extends Backbone.Model
     # Remove specified entry from @cache.
     # @param entry an entry of the @cache to remove.
     removeFromCacheList: (entryName) ->
-        for currentEntry, index in @cache \
-           when currentEntry.name is entryName
+        for currentEntry, index in @cache when currentEntry.name is entryName
             @cache.splice index, 1
             break
 
@@ -386,7 +388,8 @@ module.exports = class Replicator extends Backbone.Model
             if err and err.code isnt FileError.PATH_EXISTS_ERR
                 return callback err
             unless model.name
-                return callback new Error('no model name :' + JSON.stringify(model))
+                return callback new Error 'no model name :' +
+                        JSON.stringify(model)
             fileName = encodeURIComponent model.name
             fs.getFile binfolder, fileName, (err, entry) =>
                 return callback null, entry.toURL() if entry
@@ -396,7 +399,7 @@ module.exports = class Replicator extends Backbone.Model
                 options.path = binfolder.toURL() + fileName
                 log.info "download binary of #{model.name}"
                 fs.download options, progressback, (err, entry) =>
-                    # TODO : Is it reachable code ? https://github.com/cozy/cozy-mobile/commit/7f46ac90c671f0704887bce7d83483c5f323056a
+                    # TODO : Is it reachable code ? http://git.io/v08Ap
                     # TODO changing the message ! ?
                     if err?.message? and
                     err.message is "This file isnt available offline" and
@@ -422,8 +425,8 @@ module.exports = class Replicator extends Backbone.Model
     # specified rev.
     removeAllLocal: (file, callback) ->
         async.eachSeries @cache, (entry, cb) =>
-            if entry.name.indexOf(file.binary.file.id) isnt -1 and
-               entry.name isnt @fileToEntryName(file)
+            if entry.name.indexOf(file.binary.file.id) isnt -1 and \
+                    entry.name isnt @fileToEntryName(file)
                 fs.getDirectory @downloads, entry.name, (err, binfolder) =>
                     return cb err if err
                     fs.rmrf binfolder, (err) =>
@@ -537,7 +540,7 @@ module.exports = class Replicator extends Backbone.Model
 
 
     removeLocalFolder: (folder, callback) ->
-         @getDbFilesOfFolder folder, (err, files) =>
+        @getDbFilesOfFolder folder, (err, files) =>
             return callback err if err
 
             async.eachSeries files, (file, cb) =>
@@ -599,7 +602,6 @@ module.exports = class Replicator extends Backbone.Model
     #    * replication at each start
     #    * replication force by user
     _sync: (options, callback) ->
-        total_count = 0
         @stopRealtime()
         changedDocs = []
         checkpoint = @config.get 'checkpointed'
@@ -611,7 +613,7 @@ module.exports = class Replicator extends Backbone.Model
             live: false
             since: checkpoint
 
-        replication.on 'change', (change) =>
+        replication.on 'change', (change) ->
             log.info "changes received while sync"
             changedDocs = changedDocs.concat change.docs
 
@@ -626,7 +628,7 @@ module.exports = class Replicator extends Backbone.Model
         replication.once 'complete', (result) =>
             log.info "replication in sync completed."
             async.eachSeries @_filesNEntriesInCache(changedDocs), \
-              @updateLocal, (err) =>
+                    @updateLocal, (err) =>
                 # Continue on cache update error, 'syncCache' call on next
                 # backup may fix it.
                 log.warn err if err
@@ -655,7 +657,7 @@ module.exports = class Replicator extends Backbone.Model
 
             if confirm t 'Database not initialized. Do it now ?'
                 app.router.navigate 'first-sync', trigger: true
-                @resetSynchro (err) =>
+                @resetSynchro (err) ->
                     if err
                         log.error err
                         return alert err.message
@@ -678,7 +680,7 @@ module.exports = class Replicator extends Backbone.Model
 
             @set 'inSync', true
             fileNEntriesInCache = @_filesNEntriesInCache change.docs
-            async.eachSeries fileNEntriesInCache, @updateLocal, (err) =>
+            async.eachSeries fileNEntriesInCache, @updateLocal, (err) ->
                 if err
                     log.error err
                 else

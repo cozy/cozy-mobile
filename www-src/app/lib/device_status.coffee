@@ -31,7 +31,7 @@ callbackWaiting = (err, ready, msg) ->
     callbacks = []
 
 
-onBatteryStatus = (newStatus) =>
+onBatteryStatus = (newStatus) ->
     # timeout watchdog isn't usefull anymore, so we turn the flag
     timeout = false
     battery = newStatus
@@ -67,7 +67,7 @@ module.exports.checkReadyForSync = checkReadyForSync = (callback)->
     # if we don't have informations about battery status, wait for it
     # with a 4" timeout.
     unless battery? #
-        setTimeout () =>
+        setTimeout () ->
             if timeout
                 # We reached timeout, and a batterystatus event hasn't fired yet
                 callbackWaiting new Error "No battery informations"
@@ -84,8 +84,8 @@ module.exports.checkReadyForSync = checkReadyForSync = (callback)->
         unless (battery.level > 20 or battery.isPlugged)
             log.info "NOT ready on battery low."
             return callbackWaiting null, false, 'no battery'
-        if app.replicator.config.get('syncOnWifi') and
-           (not (navigator.connection.type is Connection.WIFI))
+        if app.replicator.config.get('syncOnWifi') and \
+                (not (navigator.connection.type is Connection.WIFI))
             log.info "NOT ready on no wifi."
             return callbackWaiting null, false, 'no wifi'
 

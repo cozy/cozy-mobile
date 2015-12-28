@@ -33,7 +33,8 @@ module.exports = class Notifications
             @fetch()
 
     fetch: =>
-        app.replicator.db.query DesignDocuments.NOTIFICATIONS_TEMPORARY, { include_docs: true }, (err, notifications) =>
+        app.replicator.db.query DesignDocuments.NOTIFICATIONS_TEMPORARY,
+            { include_docs: true }, (err, notifications) =>
                 notifications.rows.forEach (notification) =>
                     @showNotification notification.doc
 
@@ -42,7 +43,7 @@ module.exports = class Notifications
     # @TODO: may generate conflict between pouchDB and cozy's couchDB, with
     # persistant notifications (ie updated in couchDB). But currently only
     # 'temporary' notifications are showed.
-    markAsShown: (notification) =>
+    markAsShown: (notification) ->
         app.replicator.db.remove notification, (err) ->
             if err
                 log.error "Error while removing notification.", err
@@ -57,11 +58,15 @@ module.exports = class Notifications
         cordova.plugins.notification.local.schedule
             id: id
             message: notification.text # The message that is displayed
-            title: "Cozy - #{notification.app or 'Notification' }" # The title of the message
+            # The title of the message
+            title: "Cozy - #{notification.app or 'Notification' }"
             #badge: Number # Displays number badge to notification
             #sound: String # A sound to be played
             #json: # Data to be passed through the notification
-            autoCancel: true # Setting this flag and the notification is automatically canceled when the user clicks it
+
+            # Setting this flag and the notification is automatically canceled
+            # when the user clicks it
+            autoCancel: true
 
         # @TODO : notification should be marked as shown on dismiss/click,
         # instead of as popup.

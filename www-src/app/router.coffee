@@ -40,7 +40,7 @@ module.exports = class Router extends Backbone.Router
 
         collection = new FolderCollection [], query: query
         @display new FolderView {collection}
-        collection.search (err) =>
+        collection.search (err) ->
             if err
                 log.error err.stack
                 return alert(err)

@@ -13,6 +13,8 @@ module.exports = describe 'Application Controler', ->
             application.triggerMethod 'before:start'
 
         it 'should contains a router', ->
-            application.should.have.property('router').to.be.an.instanceof Router
+            application.should.have.property('router').to.be.an.instanceof \
+                Router
         it 'should contains a layerView', ->
-            application.should.have.property('layout').to.be.an.instanceof LayoutView
+            application.should.have.property('layout').to.be.an.instanceof \
+                LayoutView

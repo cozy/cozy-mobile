@@ -102,7 +102,7 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
                     doc.version = app.replicator.fileVersion doc
 
             else if doc.docType.toLowerCase() is 'folder'
-                # TODO ASYNC !  doc.incache = app.replicator.folderInFileSystem doc
+                #TODO ASYNC! doc.incache = app.replicator.folderInFileSystem doc
                 doc.incache = false
 
             return doc

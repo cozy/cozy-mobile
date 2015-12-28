@@ -33,7 +33,8 @@ module.exports =
                 if @config.has('contactsPullCheckpointed')
                     cb()
                 else
-                    request.get @config.makeReplicationUrl('/_changes?descending=true&limit=1')
+                    url = '/_changes?descending=true&limit=1'
+                    request.get @config.makeReplicationUrl(url)
                     , (err, res, body) =>
                         return cb err if err
                         # we store last_seq before copying files & folder
@@ -49,7 +50,7 @@ module.exports =
 
 
     # Create the myCozyCloud account in android.
-    createAccount: (callback) =>
+    createAccount: (callback) ->
         navigator.contacts.createAccount ACCOUNT_TYPE, ACCOUNT_NAME
         , ->
             callback null
@@ -152,8 +153,9 @@ module.exports =
             _rev: phoneContact.sync2
             _deleted: true
 
-        @db.put toDelete, toDelete._id, toDelete._rev, (err, res) =>
-            phoneContact.remove (-> callback()), callback, callerIsSyncAdapter: true
+        @db.put toDelete, toDelete._id, toDelete._rev, (err, res) ->
+            phoneContact.remove (-> callback()), callback, \
+                    callerIsSyncAdapter: true
 
 
     # Sync dirty (modified) phone contact to app's pouchDB.
@@ -232,7 +234,8 @@ module.exports =
                 , (contacts) ->
                     cb null, contacts[0]
                 , cb
-                , new ContactFindOptions sourceId, false, [], ACCOUNT_TYPE, ACCOUNT_NAME
+                , new ContactFindOptions sourceId, false, [], ACCOUNT_TYPE, \
+                    ACCOUNT_NAME
 
         async.eachSeries docs, (doc, cb) =>
             # precondition: backup_step_done initialized to 0.
@@ -345,17 +348,18 @@ module.exports =
                 , (contacts) ->
                     cb null, contacts
                 , cb
-                , new ContactFindOptions "", true, [], ACCOUNT_TYPE, ACCOUNT_NAME
+                , new ContactFindOptions "", true, [], ACCOUNT_TYPE, \
+                        ACCOUNT_NAME
             pouch: (cb) =>
                 @db.query DesignDocuments.CONTACTS, {}, cb
 
-        , (err, contacts) =>
+        , (err, contacts) ->
             return callback err if err
             idsInPouch = {}
             for row in contacts.pouch.rows
                 idsInPouch[row.id] = true
 
-            async.eachSeries contacts.phone, (contact, cb) =>
+            async.eachSeries contacts.phone, (contact, cb) ->
                 unless contact.sourceId of idsInPouch
                     log.info "Delete contact: #{contact.sourceId}"
                     return contact.remove (-> cb()), cb, \

@@ -46,7 +46,7 @@ module.exports = class DesignDocuments
         ], callback
 
     _createOrUpdate: (db, design, callback) ->
-        db.get design._id, (err, existing) =>
+        db.get design._id, (err, existing) ->
             if existing?.version is design.version
                 callback null, {}
             else

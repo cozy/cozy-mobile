@@ -68,7 +68,7 @@ module.exports = Contact =
 
             return [photo]
 
-        return [];
+        return []
 
     _adr2ContactAddress: (datapoint) ->
         if datapoint.value instanceof Array
@@ -113,7 +113,8 @@ module.exports = Contact =
                 when 'EMAIL'
                     addContactField 'emails', datapoint
                 when 'ADR'
-                    cordovaContact.addresses = [] unless cordovaContact.addresses
+                    unless cordovaContact.addresses
+                        cordovaContact.addresses = []
                     cordovaContact.addresses.push @_adr2ContactAddress datapoint
 
                 when 'CHAT'
@@ -164,7 +165,7 @@ module.exports = Contact =
 
 
     cozy2Cordova: (cozyContact) ->
-        return navigator.contacts.create Contact._cozy2CordovaOptions cozyContact
+        navigator.contacts.create Contact._cozy2CordovaOptions cozyContact
 
 ################################################################################
 # Convert a cordova contact to cozy contact (asynchronous).
@@ -174,7 +175,8 @@ module.exports = Contact =
     _contactName2N: (contactName) ->
         return undefined unless contactName?
         parts = []
-        for field in ['familyName', 'givenName', 'middleName', 'honorificPrefix', 'honorificSuffix']
+        for field in ['familyName', 'givenName', 'middleName', \
+                'honorificPrefix', 'honorificSuffix']
             parts.push contactName[field] or ''
 
         n = parts.join ';'
@@ -224,9 +226,9 @@ module.exports = Contact =
 
         if cordovaContact.urls?.length > 0
             fieldsDatapoints = cordovaContact.urls.map (contactField) ->
-                    name: 'url'
-                    type: contactField.type
-                    value: contactField.value
+                name: 'url'
+                type: contactField.type
+                value: contactField.value
 
             datapoints = datapoints.concat fieldsDatapoints
 
