@@ -14,9 +14,7 @@ or head over to the [Releases page](https://github.com/cozy/cozy-mobile/releases
 
 ## Built with
 
-- cordova  @4.3.1
-
-New cordova since 5.1.1 doesn't comply with the custom plugins of cozy-mobile. Please install the appropriate version with : npm install -g cordova@4.3.1
+- cordova
 
 ## Hack
 
@@ -36,7 +34,6 @@ Make your changes in www-src, use brunch to compile in wwww
 To run on device / emulator
 
     cordova run android
-    cordova run ios
 
 To run in browser,
 - start chrome with --disable-web-security --allow-file-access-from-files
@@ -47,7 +44,7 @@ window.isBrowserDebugging = true
 document.dispatchEvent(new Event('deviceready'));
 ```
 
-Expect all things binary-related to fail in browser.
+Expect all things related to binary, contact or calendar to fail in browser.
 
 If you want to test on your Android device directly, please install the Android SDK http://developer.android.com/sdk/index.html. Then enable USB debugging and `cordova run android` will run the application within your phone instead of from the emulator.
 
