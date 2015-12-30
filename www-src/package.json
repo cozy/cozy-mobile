@@ -27,7 +27,6 @@
     "moment-timezone": "0.4.1",
     "node-polyglot": "1.0.0 ",
     "pouchdb": "5.1.0",
-    "pouchdb-quick-search": "0.3.2",
     "stylus-brunch": "^1.8.1",
     "uglify-js-brunch": "> 1.0 < 1.5",
     "underscore": "1.4.4"
