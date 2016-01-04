@@ -18,7 +18,7 @@ plugins = {
     "de.appplant.cordova.plugin.local-notification": "de.appplant.cordova.plugin.local-notification@0.8.2"
 
     "io.cozy.cordova-images-browser": "https://github.com/aenario/cordova-images-browser"
-    "io.cozy.jsbackgroundservice": "https://github.com/jacquarg/cordova-jsbackgroundservice#v1.1.0"
+    "io.cozy.jsbackgroundservice": "https://github.com/jacquarg/cordova-jsbackgroundservice#v1.1.1"
     "io.cozy.jsbgservice-newpicture": "https://github.com/jacquarg/cordova-jsbgservice-newpicture#v1.0.0"
     "io.cozy.contacts": "https://github.com/jacquarg/cordova-plugin-contacts#c1.0.3"
     "io.cozy.calendarsync": "https://github.com/jacquarg/cordova-plugin-calendarsync"
