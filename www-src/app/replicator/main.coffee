@@ -143,8 +143,7 @@ module.exports = class Replicator extends Backbone.Model
 
     registerRemote: (newConfig, callback) ->
         request.post
-            uri: "#{@config.getScheme()}://owner:#{newConfig.password}@" + \
-                "#{newConfig.cozyURL}/device"
+            uri: "#{@config.getScheme()}://#{newConfig.cozyURL}/device"
             auth:
                 username: 'owner'
                 password: newConfig.password
