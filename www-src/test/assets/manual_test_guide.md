@@ -13,7 +13,7 @@ Standard use case to test, and by version specific tests.
 - [ ] download and open a file
 - [ ] check contacts account
 - [ ] check agenda account
-
+- [ ] use a password with special caracters (accent AND punctuation)
 
 # Install scenario
 

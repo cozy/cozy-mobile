@@ -156,8 +156,11 @@ function request(options, callback) {
   //  options.headers['content-length'] = options.body.length;
 
   // HTTP basic authentication
-  if(!options.headers.authorization && options.auth)
-    options.headers.authorization = 'Basic ' + btoa(options.auth.username + ':' + options.auth.password);
+  if(!options.headers.authorization && options.auth) {
+    auth = options.auth.username + ':' + options.auth.password
+    auth = btoa(unescape(encodeURIComponent(auth)));
+    options.headers.authorization = 'Basic ' + auth;
+  }
 
   return run_xhr(options)
 }
