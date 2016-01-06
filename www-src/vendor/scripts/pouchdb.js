@@ -1,1 +1,0 @@
-../../node_modules/pouchdb/dist/pouchdb.js

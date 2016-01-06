@@ -1,4 +1,5 @@
 async = require 'async'
+PouchDB = require 'pouchdb'
 request = require '../lib/request'
 fs = require './filesystem'
 DesignDocuments = require './design_documents'
