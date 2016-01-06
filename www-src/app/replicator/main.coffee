@@ -96,6 +96,23 @@ module.exports = class Replicator extends Backbone.Model
             # Everything fine
             callback()
 
+    # Get locale from cozy, update in (saved) config, and in app if changed
+    updateLocaleFromCozy: (callback) ->
+        options = @config.makeDSUrl "/request/cozyinstance/all/"
+        options.body = include_docs: true
+
+        request.post options, (err, res, models) =>
+            return callback err if err
+            return callback new Error 'No CozyInstance' if models.length <= 0
+
+            instance = models[0].doc
+            if instance.locale and instance.locale isnt @config.get('locale')
+                # Update
+                app.translation.setLocale value: instance.locale
+                @config.save locale: instance.locale, callback
+            else
+                callback()
+
 
     destroyDB: (callback) ->
         @db.destroy (err) =>
@@ -103,6 +120,7 @@ module.exports = class Replicator extends Backbone.Model
             @photosDB.destroy (err) =>
                 return callback err if err
                 fs.rmrf @downloads, callback
+
 
 
     # pings the cozy to check the credentials without creating a device
@@ -140,6 +158,7 @@ module.exports = class Replicator extends Backbone.Model
         Event: description: "event permission description"
         Notification: description: "notification permission description"
         Tag: description: "tag permission description"
+        CozyInstance: description: "cozyinstance permission description"
 
 
     registerRemote: (newConfig, callback) ->

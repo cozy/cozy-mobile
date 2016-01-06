@@ -31,6 +31,7 @@ module.exports =
             window.navigator.globalization.getPreferredLanguage = (callback) =>
                 callback value: @translation.DEFAULT_LANGUAGE
 
+        # Use the device's locale until we get the config document.
         navigator.globalization.getPreferredLanguage (properties) =>
             @translation.setLocale(properties)
             window.t = @translation.getTranslate()
@@ -55,6 +56,9 @@ module.exports =
                 DeviceStatus.initialize()
 
                 if config.remote
+                    if config.has 'locale'
+                        @translation.setLocale value: config.get 'locale'
+
                     if config.isNewVersion()
                         @replicator.checkPlatformVersions (err) =>
                             if err
@@ -95,18 +99,24 @@ module.exports =
                 @router.navigate 'first-sync', trigger: true
                 return
 
-            @foreground = true
-            conf = @replicator.config.attributes
-            # Display config to help remote debuging.
-            log.info "Start v#{conf.appVersion}--\
-            sync_contacts:#{conf.syncContacts},sync_images:#{conf.syncImages},\
-            sync_on_wifi:#{conf.syncOnWifi},\
-            cozy_notifications:#{conf.cozyNotifications}"
+            @replicator.updateLocaleFromCozy (err) =>
+                log.error err if err
+                # Continue with default locale on error
 
-            @setListeners()
-            @router.navigate 'folder/', trigger: true
-            @router.once 'collectionfetched', =>
-                @replicator.backup {}, (err) -> log.error err if err
+                @foreground = true
+                conf = @replicator.config.attributes
+                # Display config to help remote debuging.
+                log.info "Start v#{conf.appVersion}--\
+                sync_contacts:#{conf.syncContacts},\
+                sync_calendars:#{conf.syncCalendars},\
+                sync_images:#{conf.syncImages},\
+                sync_on_wifi:#{conf.syncOnWifi},\
+                cozy_notifications:#{conf.cozyNotifications}"
+
+                @setListeners()
+                @router.navigate 'folder/', trigger: true
+                @router.once 'collectionfetched', =>
+                    @replicator.backup {}, (err) -> log.error err if err
 
 
     setListeners: ->
