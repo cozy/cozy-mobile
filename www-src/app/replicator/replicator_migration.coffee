@@ -1,4 +1,5 @@
 async = require 'async'
+PouchDB = require 'pouchdb'
 log = require('../lib/persistent_log')
     prefix: "replicator_migration_sqlite"
     date: true
