@@ -19,3 +19,6 @@ module.exports =
 
     notification:
         all: all
+
+    cozyinstance:
+        all: all
