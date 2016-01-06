@@ -300,8 +300,9 @@ module.exports = class Replicator extends Backbone.Model
         options.body = include_docs: true, show_revs: true
 
         request.post options, (err, res, models) =>
-            if err
-                log.error err
+            if err or res.statusCode isnt 200
+                unless err?
+                    err = new Error res.statusCode, res.reason
                 return callback err
 
             return callback null unless models?.length isnt 0

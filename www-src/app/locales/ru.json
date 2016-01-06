@@ -91,6 +91,7 @@
     "end": "Конец",
     "please wait database migration": "Обновление базы данных, подождите немного...",
     "all fields are required": "Все поля обязательны к заполнению",
+    "device name use only digits, letters, _, -": "Device name should use only letters, digits, '-' or '_' .",
     "cozy need patch": "Cozy need patch",
     "wrong password": "Неправильный пароль",
     "device name already exist": "Устройство с таким именем уже существует",
