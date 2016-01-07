@@ -1,4 +1,4 @@
-exports.config =
+module.exports.config =
 
     # See docs at https://github.com/brunch/brunch/blob/stable/docs/config.md.
 
