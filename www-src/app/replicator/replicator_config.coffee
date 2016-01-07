@@ -1,5 +1,6 @@
 APP_VERSION = "0.1.18"
 PouchDB = require 'pouchdb'
+request = require '../lib/request'
 
 module.exports = class ReplicatorConfig extends Backbone.Model
     constructor: (@replicator) ->
@@ -15,6 +16,17 @@ module.exports = class ReplicatorConfig extends Backbone.Model
         cozyNotifications: false
         cozyURL: ''
         deviceName: ''
+
+    getConfigFilter: ->
+        compare = "doc.docType === 'file' or doc.docType === 'folder'"
+        compare += " or doc.docType === 'contact'" if @get "syncContacts"
+        compare += " or doc.docType === 'event'" if @get "syncCalendars"
+        if @get "cozyNotifications"
+            compare += " or (doc.docType === 'notification'"
+            compare += " and doc.type === 'temporary')"
+
+        filters:
+            config: "function (doc) { return #{compare} }"
 
     fetch: (callback) ->
         @replicator.db.get '_local/appconfig', (err, config) =>
@@ -36,16 +48,23 @@ module.exports = class ReplicatorConfig extends Backbone.Model
                 return callback new Error('cant save config') unless res.ok
                 @set _rev: res.rev
                 @remote = @createRemotePouchInstance()
-                callback? null, this
+                callback null, this
 
-    getScheme: () ->
+        options = @makeDSUrl('/filters/config')
+        options.body = @getConfigFilter()
+        request.put options, (err, res, body) =>
+            return callback err if err
+            return callback body unless body.success or body._id
+            callback null, this
+
+    getScheme: ->
         # Monkey patch for browser debugging
         if window.isBrowserDebugging
             return 'http'
         else
             return 'https'
 
-    getCozyUrl: () ->
+    getCozyUrl: ->
         "#{@getScheme()}://#{@get("deviceName")}:#{@get('devicePassword')}" +
             "@#{@get('cozyURL')}"
 
@@ -83,5 +102,4 @@ module.exports = class ReplicatorConfig extends Backbone.Model
         Object.keys(permissions).sort()
 
     hasPermissions: ->
-        _.isEqual @get('devicePermissions'), \
-            @serializePermissions(@replicator.permissions)
+        _.isEqual @get('devicePermissions'), @serializePermissions(@permissions)
