@@ -227,19 +227,40 @@ module.exports =
     uploadPicture: (path, device, callback) ->
         fs.getFileFromPath path, (err, file) =>
             return callback err if err
+            @createFile file, path, device, (err, res, body) =>
+                return callback err if err
+                @createBinary file, body._id, (err) =>
+                    return callback err if err
+                    @createPhoto path, callback
+
+
+    createBinary: (file, fileId, callback) ->
+        # Standard Blob isn't available on android prior to 4.3 ,
+        # and FormData doesn't work on 4.0 , so we use FileTransfert plugin.
+        if device.version? and device.version < '4.3'
+            @createBinaryWFiltTransfert file, fileId, callback
+
+        else
             fs.getFileAsBlob file, (err, content) =>
                 return callback err if err
-
-                @createFile file, path, device, (err, res, body) =>
-                    return callback err if err
-
-                    @createBinary content, body._id, (err, success) =>
-                        return callback err if err
-
-                        @createPhoto path, callback
+                @createBinaryWFormData content, fileId, callback
 
 
-    createBinary: (blob, fileId, callback) ->
+    createBinaryWFiltTransfert: (file, fileId, callback) ->
+        options = @config.makeDSUrl("/data/#{fileId}/binaries/")
+        options.fileName = 'file'
+        options.mimeType = file.type
+        options.headers =
+            'Authorization': 'Basic ' +
+                             btoa(@config.get('deviceName') + ':' +
+                             @config.get('devicePassword'))
+
+        ft = new FileTransfer()
+        ft.upload file.localURL, options.url, callback, (-> callback())
+        , options
+
+
+    createBinaryWFormData: (blob, fileId, callback) ->
         options = @config.makeDSUrl("/data/#{fileId}/binaries/")
         data = new FormData()
         data.append 'file', blob, 'file'

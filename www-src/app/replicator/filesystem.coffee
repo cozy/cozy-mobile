@@ -1,7 +1,7 @@
 DOWNLOADS_FOLDER = 'cozy-downloads'
 
 log = require('../lib/persistent_log')
-    prefix: "replicator mapreduce"
+    prefix: "replicator filesystem"
     date: true
 
 module.exports = fs = {}
@@ -11,15 +11,16 @@ getFileSystem = (callback) ->
     onSuccess = (dir) -> callback null, dir.filesystem
     onError = (err) -> callback err
     # flag for developpement in browser
-    __chromeSafe() if window.isBrowserDebugging
+    if window.isBrowserDebugging
+        __chromeSafe()
+        return initDebugFS onSuccess, onError
 
     # TODO: use a cache directory (cordova.file.externalCacheDirectory),
     # instead of putting some noise at system root ?
     # TODO: stub when externalRootDirectory is null (has in emulators).
     # CacheDirectory is private to the app, so files won't open.
     uri = cordova.file.externalRootDirectory or cordova.file.cacheDirectory
-    window.resolveLocalFileSystemURL uri
-    , onSuccess, onError
+    window.resolveLocalFileSystemURL uri, onSuccess, onError
 
 
 readable = (err) ->
@@ -163,11 +164,11 @@ module.exports.download = (options, progressback, callback) ->
 
 # various patches to debug in chrome
 __chromeSafe = ->
-    window.LocalFileSystem = PERSISTENT: window.PERSISTENT
-    window.requestFileSystem = (type, size, onSuccess, onError) ->
+    window.initDebugFS = (onSuccess, onError) ->
         size = 5*1024*1024
         navigator.webkitPersistentStorage.requestQuota size, (granted) ->
-            window.webkitRequestFileSystem type, granted, onSuccess, onError
+            window.webkitRequestFileSystem window.PERSISTENT, granted
+            , ((fs) -> onSuccess filesystem: fs ), onError
         , onError
 
     window.ImagesBrowser = getImageList: -> []

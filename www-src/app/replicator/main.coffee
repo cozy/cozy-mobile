@@ -671,7 +671,7 @@ module.exports = class Replicator extends Backbone.Model
             batches_limit: 5
             filter: @_replicationFilter()
             since: @config.get 'checkpointed'
-            continuous: true
+            live: true
 
         @liveReplication.on 'change', (change) =>
             realtimeBackupCoef = 1
