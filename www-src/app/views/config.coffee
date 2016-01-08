@@ -18,11 +18,11 @@ module.exports = class ConfigView extends BaseView
         'tap #synchrobtn': 'synchroBtn'
         'tap #sendlogbtn': 'sendlogBtn'
 
-        'tap #contactSyncCheck': 'saveChanges'
-        'tap #calendarSyncCheck': 'saveChanges'
-        'tap #imageSyncCheck': 'saveChanges'
-        'tap #wifiSyncCheck': 'saveChanges'
-        'tap #cozyNotificationsCheck' : 'saveChanges'
+        'change #contactSyncCheck': 'saveChanges'
+        'change #calendarSyncCheck': 'saveChanges'
+        'change #imageSyncCheck': 'saveChanges'
+        'change #wifiSyncCheck': 'saveChanges'
+        'change #cozyNotificationsCheck' : 'saveChanges'
 
     getRenderData: ->
         config = app.replicator.config.toJSON()
