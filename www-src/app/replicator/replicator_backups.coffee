@@ -252,8 +252,9 @@ module.exports =
         options.mimeType = file.type
         options.headers =
             'Authorization': 'Basic ' +
-                             btoa(@config.get('deviceName') + ':' +
-                             @config.get('devicePassword'))
+                btoa unescape encodeURIComponent(
+                    @config.get('deviceName') + ':' +
+                    @config.get('devicePassword'))
 
         ft = new FileTransfer()
         ft.upload file.localURL, options.url, callback, (-> callback())
