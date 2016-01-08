@@ -91,6 +91,7 @@
     "end": "완료",
     "please wait database migration": "데이터베이스 업데이트 중입니다. 잠시 기다려 주세요...",
     "all fields are required": "모든 항목이 필수 입니다.",
+    "device name use only digits, letters, _, -": "Device name should use only letters, digits, '-' or '_' .",
     "cozy need patch": "패치 필요",
     "wrong password": "잘못된 비밀번호",
     "device name already exist": "장치명이 이미 존재 합니다.",

@@ -31,7 +31,11 @@ module.exports = class DeviceNamePickerView extends BaseView
         device = @$('#input-device').val()
 
         unless device
-            return @displayError 'all fields are required'
+            return @displayError t 'all fields are required'
+
+        if device.match /[^\w\-]/ # ie not a-z, A-Z, 0-9 _ -
+            return @displayError t "device name use only digits, letters, _, -"
+
 
         config = app.loginConfig
         config.deviceName = device

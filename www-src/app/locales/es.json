@@ -91,6 +91,7 @@
     "end": "Fin",
     "please wait database migration": "Actualización de la base de datos, por favor, espere algunos minutos...",
     "all fields are required": "Todas las casillas son obligatorias",
+    "device name use only digits, letters, _, -": "Device name should use only letters, digits, '-' or '_' .",
     "cozy need patch": "Cozy necesita un correctivo",
     "wrong password": "Contraseña incorrecta",
     "device name already exist": "Ese nombre de periférico ya existe",

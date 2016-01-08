@@ -91,6 +91,7 @@
     "end": "End",
     "please wait database migration": "Database update, please wait a few minutes…",
     "all fields are required": "All fields are required",
+    "device name use only digits, letters, _, -": "Device name should use only letters, digits, '-' or '_' .",
     "cozy need patch": "Cozy need patch",
     "wrong password": "Incorrect password",
     "device name already exist": "Device name already exist",
