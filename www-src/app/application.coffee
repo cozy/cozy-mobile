@@ -60,16 +60,11 @@ module.exports =
                         @translation.setLocale value: config.get 'locale'
 
                     if config.isNewVersion()
-                        @replicator.checkPlatformVersions (err) =>
-                            if err
-                                log.error err
-                                alert err.message or err
-                                return navigator.app.exitApp()
+                        Init = require './replicator/init'
+                        @init = new Init()
+                        @init.startStateMachine()
+                        @init.trigger 'newVersion'
 
-                            if config.hasPermissions(@replicator.permissions)
-                                @regularStart()
-                            else
-                                @router.navigate 'permissions', trigger: true
                     else
                         @regularStart()
 
@@ -78,45 +73,31 @@ module.exports =
                     @isFirstRun = true
                     @router.navigate 'login', trigger: true
 
-    checkForUpdates: ->
-        @replicator.checkPlatformVersions (err) =>
-            if err
-                log.error err
-                alert err.message or err
-                return navigator.app.exitApp()
-
-            if @replicator.config.hasPermissions(@replicator.permissions)
-                @regularStart()
-            else
-                @router.navigate 'permissions', trigger: true
-
-
     regularStart: ->
         # Update version tag if we reach here
-        @replicator.config.updateVersion =>
-            unless @replicator.config.has('checkpointed')
-                log.info 'Launch first replication again.'
-                @router.navigate 'first-sync', trigger: true
-                return
+        unless @replicator.config.has('checkpointed')
+            log.info 'Launch first replication again.'
+            @router.navigate 'first-sync', trigger: true
+            return
 
-            @replicator.updateLocaleFromCozy (err) =>
-                log.error err if err
-                # Continue with default locale on error
+        @replicator.updateLocaleFromCozy (err) =>
+            log.error err if err
+            # Continue with default locale on error
 
-                @foreground = true
-                conf = @replicator.config.attributes
-                # Display config to help remote debuging.
-                log.info "Start v#{conf.appVersion}--\
-                sync_contacts:#{conf.syncContacts},\
-                sync_calendars:#{conf.syncCalendars},\
-                sync_images:#{conf.syncImages},\
-                sync_on_wifi:#{conf.syncOnWifi},\
-                cozy_notifications:#{conf.cozyNotifications}"
+            @foreground = true
+            conf = @replicator.config.attributes
+            # Display config to help remote debuging.
+            log.info "Start v#{conf.appVersion}--\
+            sync_contacts:#{conf.syncContacts},\
+            sync_calendars:#{conf.syncCalendars},\
+            sync_images:#{conf.syncImages},\
+            sync_on_wifi:#{conf.syncOnWifi},\
+            cozy_notifications:#{conf.cozyNotifications}"
 
-                @setListeners()
-                @router.navigate 'folder/', trigger: true
-                @router.once 'collectionfetched', =>
-                    @replicator.backup {}, (err) -> log.error err if err
+            @setListeners()
+            @router.navigate 'folder/', trigger: true
+            @router.once 'collectionfetched', =>
+                @replicator.backup {}, (err) -> log.error err if err
 
 
     setListeners: ->

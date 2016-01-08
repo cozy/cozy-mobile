@@ -36,7 +36,7 @@ module.exports = class PermissionsPickerView extends BaseView
             if err
                 @displayError err
             else
-                app.regularStart()
+                app.init.trigger 'getPermissions'
 
 
     displayError: (text, field) ->
