@@ -209,17 +209,19 @@ module.exports =
             processed = 0
             @set 'backup_step', 'calendars_sync_to_pouch'
             @set 'backup_step_total', events.length
-            log.info "syncPhone2Pouch #{events.length} contacts."
+            log.info "syncPhone2Pouch #{events.length} events."
 
             async.eachSeries events, (event, cb) =>
                 @set 'backup_step_done', processed++
                 setImmediate => # helps refresh UI
                     if event.deleted
                         @_deleteEventInPouch event, cb
-                    else if event._sync_id
-                        @_updateEventInPouch event, cb
                     else
-                        @_createEventInPouch event, cb
+                        event = ACH.filterOrganizerAttendee event, ACCOUNT_NAME
+                        if event._sync_id
+                            @_updateEventInPouch event, cb
+                        else
+                            @_createEventInPouch event, cb
             , callback
 
 

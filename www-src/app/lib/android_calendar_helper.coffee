@@ -158,6 +158,13 @@ module.exports = ACH =
 
         return android
 
+    filterOrganizerAttendee: (android, organiserEmail) ->
+        if android.attendees
+            android.attendees = android.attendees.filter (attendee) ->
+                return attendee.attendeeEmail isnt organiserEmail
+
+        return android
+
 
     event2Cozy: (android, calendarNames, cozy) ->
 
