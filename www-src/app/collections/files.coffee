@@ -18,21 +18,20 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
         @query = options.query
         @notloaded = true
 
+
     isSearch: -> @path is undefined
 
-    # search use temporary view
-    search: (callback) ->
-        params =
-            query: @query
-            fields: ['name']
-            include_docs: true
 
-        app.replicator.db.search params, (err, items) =>
-            @slowReset items, (err) =>
-                @notloaded = false
-                @allPagesLoaded = true
-                @trigger 'sync'
-                callback err
+    search: (callback) ->
+        app.replicator.db.query 'FilesAndFolder', (err, all) =>
+            results = all.rows.filter (row) =>
+                row.key[1].indexOf(@query) isnt -1
+
+            @offset = 0
+            @inPathIds = results.map (row) -> row.id
+            @loadNextPage callback
+            @trigger 'fullsync'
+
 
     # fetch use
     fetch: (callback = ->) ->

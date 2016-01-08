@@ -1,1 +1,0 @@
-../../node_modules/pouchdb-quick-search/dist/pouchdb.quick-search.js

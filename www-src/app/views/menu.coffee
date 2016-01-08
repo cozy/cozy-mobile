@@ -49,7 +49,7 @@ module.exports = class Menu extends BaseView
 
     doSearchIfEnter: (event) => @doSearch() if event.which is 13
     doSearch: ->
-        val = $('#search-input').val()
+        val = $('#search-input').val().toLowerCase()
         return true if val.length is 0
         app.layout.closeMenu()
         app.router.navigate '#search/' + val, trigger: true
