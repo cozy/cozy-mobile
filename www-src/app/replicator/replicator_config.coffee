@@ -1,6 +1,7 @@
 APP_VERSION = "0.1.17"
 PouchDB = require 'pouchdb'
 request = require '../lib/request'
+FilterManager = require './filter_manager'
 
 module.exports = class ReplicatorConfig extends Backbone.Model
     constructor: (@replicator) ->
@@ -50,12 +51,9 @@ module.exports = class ReplicatorConfig extends Backbone.Model
                 @remote = @createRemotePouchInstance()
                 callback null, this
 
-        options = @makeDSUrl('/filters/config')
-        options.body = @getConfigFilter()
-        request.put options, (err, res, body) =>
-            return callback err if err
-            return callback body unless body.success or body._id
-            callback null, this
+        filterManager = new FilterManager @getCozyUrl(), @get 'auth'
+        filterManager.setFilter @get "syncContacts", @get "syncCalendars", \
+                @get "cozyNotifications", callback
 
     getScheme: ->
         # Monkey patch for browser debugging
