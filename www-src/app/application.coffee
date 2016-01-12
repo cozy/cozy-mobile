@@ -7,6 +7,7 @@ ServiceManager = require './models/service_manager'
 Notifications  = require './views/notifications'
 DeviceStatus   = require './lib/device_status'
 Translation    = require './lib/translation'
+Init            = require './replicator/init'
 
 log = require('./lib/persistent_log')
     prefix: "application"
@@ -23,55 +24,60 @@ module.exports =
         @layout = new LayoutView()
         @translation = new Translation()
 
-        # Monkey patch for browser debugging
-        if window.isBrowserDebugging
-            window.navigator = window.navigator or {}
-            window.navigator.globalization =
-                window.navigator.globalization or {}
-            window.navigator.globalization.getPreferredLanguage = (callback) =>
-                callback value: @translation.DEFAULT_LANGUAGE
+        @init = new Init()
+        @init.startStateMachine()
+        @init.trigger 'startApplication'
+        # Backbone.history.start()
 
-        # Use the device's locale until we get the config document.
-        navigator.globalization.getPreferredLanguage (properties) =>
-            @translation.setLocale(properties)
-            window.t = @translation.getTranslate()
+        # # Monkey patch for browser debugging
+        # if window.isBrowserDebugging
+        #     window.navigator = window.navigator or {}
+        #     window.navigator.globalization =
+        #         window.navigator.globalization or {}
+        #     window.navigator.globalization.getPreferredLanguage = (callback) =>
+        #         callback value: @translation.DEFAULT_LANGUAGE
 
-            @replicator.init (err, config) =>
-                if err
-                    log.error err
-                    msg = err.message or err
-                    msg += "\n #{t('error try restart')}"
-                    alert msg
-                    return navigator.app.exitApp()
+        # # Use the device's locale until we get the config document.
+        # navigator.globalization.getPreferredLanguage (properties) =>
+        #     @translation.setLocale(properties)
+        #     window.t = @translation.getTranslate()
 
-                # Monkey patch for browser debugging
-                unless window.isBrowserDebugging
-                    @notificationManager = new Notifications()
-                    @serviceManager = new ServiceManager()
+            # @replicator.init (err, config) =>
+            #     if err
+            #         log.error err
+            #         msg = err.message or err
+            #         msg += "\n #{t('error try restart')}"
+            #         alert msg
+            #         return navigator.app.exitApp()
 
-                $('body').empty().append @layout.render().$el
-                $('body').css 'background-color', 'white'
-                Backbone.history.start()
+                # # Monkey patch for browser debugging
+                # unless window.isBrowserDebugging
+                #     @notificationManager = new Notifications()
+                #     @serviceManager = new ServiceManager()
 
-                DeviceStatus.initialize()
+                # $('body').empty().append @layout.render().$el
+                # $('body').css 'background-color', 'white'
 
-                if config.remote
-                    if config.has 'locale'
-                        @translation.setLocale value: config.get 'locale'
+                # DeviceStatus.initialize()
 
-                    if config.isNewVersion()
-                        Init = require './replicator/init'
-                        @init = new Init()
-                        @init.startStateMachine()
-                        @init.trigger 'newVersion'
+                # if config.remote
+                    # if config.has 'locale'
+                        # @translation.setLocale value: config.get 'locale'
 
-                    else
-                        @regularStart()
+                    # if config.isNewVersion()
+                    #     Init = require './replicator/init'
+                    #     @init = new Init()
+                    #     @init.startStateMachine()
+                    #     @init.trigger 'newVersion'
 
-                else # no config.remote
+                    # else
+                    #     @regularStart()
+
+                # else # no config.remote
                     # App's first start
-                    @isFirstRun = true
-                    @router.navigate 'login', trigger: true
+                    # @isFirstRun = true # TODO !
+                    # @router.navigate 'login', trigger: true
+
 
 
     regularStart: ->
@@ -81,10 +87,49 @@ module.exports =
             @router.navigate 'first-sync', trigger: true
             return
 
-        @replicator.updateLocaleFromCozy (err) =>
-            log.error err if err
+        # @replicator.updateLocaleFromCozy (err) =>
+            # log.error err if err
             # Continue with default locale on error
 
+            # @foreground = true
+            # conf = @replicator.config.attributes
+            # # Display config to help remote debuging.
+            # log.info "Start v#{conf.appVersion}--\
+            # sync_contacts:#{conf.syncContacts},\
+            # sync_calendars:#{conf.syncCalendars},\
+            # sync_images:#{conf.syncImages},\
+            # sync_on_wifi:#{conf.syncOnWifi},\
+            # cozy_notifications:#{conf.cozyNotifications}"
+
+            # @setListeners()
+            # @router.navigate 'folder/', trigger: true
+            # @router.once 'collectionfetched', =>
+            #     @replicator.backup {}, (err) -> log.error err if err
+
+
+    setDeviceLocale: (callback) ->
+        # Monkey patch for browser debugging
+        if window.isBrowserDebugging
+            window.navigator = window.navigator or {}
+            window.navigator.globalization =
+                window.navigator.globalization or {}
+            window.navigator.globalization.getPreferredLanguage = (cb) =>
+                cb value: @translation.DEFAULT_LANGUAGE
+
+        # Use the device's locale until we get the config document.
+        navigator.globalization.getPreferredLanguage (properties) =>
+            @translation.setLocale(properties)
+            window.t = @translation.getTranslate()
+            callback()
+
+    postConfigInit: (callback) ->
+        @replicator.updateLocaleFromCozy (err) =>
+            return callback err if err
+            unless window.isBrowserDebugging # Monkey patch for browser debugging
+                @notificationManager = new Notifications()
+                @serviceManager = new ServiceManager()
+
+            DeviceStatus.initialize()
             @foreground = true
             conf = @replicator.config.attributes
             # Display config to help remote debuging.
@@ -95,10 +140,8 @@ module.exports =
             sync_on_wifi:#{conf.syncOnWifi},\
             cozy_notifications:#{conf.cozyNotifications}"
 
-            @setListeners()
-            @router.navigate 'folder/', trigger: true
-            @router.once 'collectionfetched', =>
-                @replicator.backup {}, (err) -> log.error err if err
+            # @setListeners()
+            callback()
 
 
     setListeners: ->

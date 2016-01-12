@@ -52,7 +52,8 @@ module.exports = class DeviceNamePickerView extends BaseView
                         return @displayError err.message
 
                     delete app.loginConfig
-                    app.router.navigate 'config', trigger: true
+                    # app.router.navigate 'config', trigger: true
+                    app.init.trigger 'deviceCreated'
 
     onCompleteDefaultValue: ->
         device = @$('#input-device').val()

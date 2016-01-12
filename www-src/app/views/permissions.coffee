@@ -15,17 +15,22 @@ module.exports = class PermissionsPickerView extends BaseView
 
 
     getRenderData: ->
-        return permissions: app.replicator.permissions, firstRun: app.isFirstRun
+        return {
+            permissions: app.replicator.permissions
+            firstRun: app.init.currentState is 'initPermissions' #isFirstRun
+        }
 
     doBack: ->
+        # TODO !
         if app.isFirstRun
             app.router.navigate 'login', trigger: true
         else
             navigator.app.exitApp()
 
     doNext: ->
-        if app.isFirstRun
-            return app.router.navigate 'device-name-picker', trigger: true
+        if app.init.currentState is 'initPermissions'
+            # return app.router.navigate 'device-name-picker', trigger: true
+            return app.init.trigger 'getPermissions'
 
         # else
         pass = @$('#input-pass').val()

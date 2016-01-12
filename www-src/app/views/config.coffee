@@ -31,7 +31,7 @@ module.exports = class ConfigView extends BaseView
             config,
             lastSync: @formatDate config?.lastSync
             lastBackup: @formatDate config?.lastBackup
-            firstRun: app.isFirstRun
+            firstRun: app.init.currentState is 'firstConfig' #isFirstRun
             locale: app.locale
             appVersion: app.replicator.config.appVersion()
 
@@ -46,7 +46,8 @@ module.exports = class ConfigView extends BaseView
 
     # only happens after the first config (post install)
     configDone: ->
-        app.router.navigate 'first-sync', trigger: true
+        # app.router.navigate 'first-sync', trigger: true
+        app.init.trigger 'configDone'
 
 
     # confirm, destroy the DB, force refresh the page (show login form)

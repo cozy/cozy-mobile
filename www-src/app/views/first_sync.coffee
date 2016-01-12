@@ -47,6 +47,7 @@ module.exports = class FirstSyncView extends BaseView
         log.info "end #{step}"
         return if step isnt LAST_STEP
 
-        app.isFirstRun = false
+        # app.isFirstRun = false
 
-        app.regularStart()
+        # app.regularStart()
+        app.init.trigger 'calendarsInited'

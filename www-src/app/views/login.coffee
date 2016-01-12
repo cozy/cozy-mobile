@@ -53,7 +53,8 @@ module.exports = class LoginView extends BaseView
         app.replicator.checkCredentials config, (error) =>
             return @displayError error if error?
             app.loginConfig = config
-            app.router.navigate 'permissions', trigger: true
+            #app.router.navigate 'permissions', trigger: true
+            app.init.trigger 'validCredentials'
 
     displayError: (text, field) ->
         $('#btn-save').text @saving

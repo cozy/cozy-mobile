@@ -35,6 +35,15 @@ module.exports = class Replicator extends Backbone.Model
         inBackup: false
 
 
+
+    initFileSystem: (callback) ->
+        fs.initialize (err, downloads, cache) =>
+            return callback err if err
+            @downloads = downloads
+            @cache = cache
+            callback()
+
+
     initDB: (callback) ->
         # Migrate to idb
         dbOptions = adapter: 'idb'
@@ -50,14 +59,21 @@ module.exports = class Replicator extends Backbone.Model
             @photosDB = new PouchDB DBPHOTOS, dbOptions
             @migrateDBs callback
 
+    initConfig: (callback) ->
+        @config = new ReplicatorConfig(this)
+        @config.fetch callback
+
+    upsertLocalDesignDocuments: (callback) ->
+        designDocs = new DesignDocuments @db, @photosDB
+        designDocs.createOrUpdateAllDesign callback
 
     init: (callback) ->
-        fs.initialize (err, downloads, cache) =>
-            return callback err if err
-            @downloads = downloads
-            @cache = cache
-            @initDB (err) =>
-                return callback err if err
+        # fs.initialize (err, downloads, cache) =>
+        #     return callback err if err
+        #     @downloads = downloads
+        #     @cache = cache
+        #     @initDB (err) =>
+                # return callback err if err
                 designDocs = new DesignDocuments @db, @photosDB
                 designDocs.createOrUpdateAllDesign (err) =>
                     return callback err if err
@@ -335,18 +351,11 @@ module.exports = class Replicator extends Backbone.Model
 
     # update index for further speeds up.
     updateIndex: (callback) ->
-        # build the search index
-        @db.search
-            build: true
-            fields: ['name']
-        , (err) =>
-            log.info "INDEX BUILT"
-            log.warn err if err
+        # build pouch's map indexes
+        @db.query DesignDocuments.FILES_AND_FOLDER, {}, =>
             # build pouch's map indexes
-            @db.query DesignDocuments.FILES_AND_FOLDER, {}, =>
-                # build pouch's map indexes
-                @db.query DesignDocuments.LOCAL_PATH, {}, ->
-                    callback null
+            @db.query DesignDocuments.LOCAL_PATH, {}, ->
+            callback null
 
 # END initialisations methods
 
