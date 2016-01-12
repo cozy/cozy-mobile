@@ -26,12 +26,13 @@ module.exports = class ConfigView extends BaseView
 
     getRenderData: ->
         config = app.replicator.config.toJSON()
-
+        console.log 'config'
+        console.log app.init.currentState
         return _.extend {},
             config,
             lastSync: @formatDate config?.lastSync
             lastBackup: @formatDate config?.lastBackup
-            firstRun: app.init.currentState is 'firstConfig' #isFirstRun
+            initState: app.init.currentState
             locale: app.locale
             appVersion: app.replicator.config.appVersion()
 
@@ -46,7 +47,6 @@ module.exports = class ConfigView extends BaseView
 
     # only happens after the first config (post install)
     configDone: ->
-        # app.router.navigate 'first-sync', trigger: true
         app.init.trigger 'configDone'
 
 
