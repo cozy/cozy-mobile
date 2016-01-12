@@ -18,7 +18,7 @@ module.exports = class Init
         @listenTo @, 'transition', (leaveState, enterState) ->
             log.info 'Transition from state "'+leaveState+'" to state "'+enterState+'"'
 
-        @listenTo @, 'all', () -> console.log arguments
+        # @listenTo @, 'all', () -> console.log arguments
         # TOOD / later, when config is available : @initializeMigration()
 
 
@@ -35,74 +35,63 @@ module.exports = class Init
 
 
     states:
-        # # First start states
+        # First commons steps
         setDeviceLocale: enter: ['setDeviceLocale']
-
         initFileSystem: enter: ['initFileSystem']
-
         initDatabase: enter: ['initDatabase']
-
         # migrateDatabase: # done in initDatabase
-
         initConfig: enter: ['initConfig']
 
-
-        # Post config initialized.
-#        postConfigInit
-        prepareToStart: enter: ['postConfigInit', 'quitSplashScreen']
-        # initDeviceStatus:
-        # initApplicationComponents # notifications et servicemanager
-
-        quitSplashScreen: enter: ['quitSplashScreen']
-        normalQuitSplashScreen: enter: ['quitSplashScreen']
-        normalPostConfigInit: enter: ['postConfigInit']
-        updatePostConfigInit: enter: ['postConfigInit']
+        # Normal (n) states
+        nPostConfigInit: enter: ['postConfigInit']
+        nQuitSplashScreen: enter: ['quitSplashScreen']
 
 
-        loadFilePage: enter: ['setListeners', 'loadFilePage']
-        backup: enter: ['backup']
+        # Migration (m) states
+        migrationInit: enter: ['initMigration']
+        mLocalDesignDocuments: enter: ['upsertLocalDesignDocuments']
+        mCheckPlatformVersions: enter: ['checkPlatformVersions']
+        mQuitSplashScreen: enter: ['quitSplashScreen']
+        mPermissions: enter: ['getPermissions']
+        mConfig: enter: ['config']
+        mRemoteRequest: enter: ['putRemoteRequest']
+        mUpdateVersion: enter: ['updateVersion']
+        mPostConfigInit: enter: ['postConfigInit']
 
 
-        # Migration states
-        initMigration: enter: ['initMigration']
-        updateLocalDesignDocuments: enter: ['upsertLocalDesignDocuments']
-        checkPlatformVersions:
-            enter: ['checkPlatformVersions']
-        updatePermissions: enter: ['getPermissions']
-        updateConfig: enter: ['config']
+        # First start (f) states
+        fQuitSplashScreen: enter: ['quitSplashScreen'] # RUN
+        fLogin: enter: ['login']
+        fPermissions: enter: ['getPermissions']
+        # TODO fCheckPlatformVersion: enter: ['checkPlatformVersions']
+        # todo ! getCozyLocale: enter: ['updateCozyLocale']
+        fDeviceName: enter: ['setDeviceName']
+        fConfig: enter: ['saveState', 'config']
+        fLocalDesignDocuments: enter: ['upsertLocalDesignDocuments']
+        fPostConfigInit: enter: ['postConfigInit'] # RUN
+        fSetVersion: enter: ['updateVersion']
+        fFirstSync: enter: ['firstSync']
 
-        updateRemoteRequest:
-            enter: ['putRemoteRequest']
-        updateVersion:
-            enter: ['updateVersion']
-        quitSplashScreenUpdate: enter: ['quitSplashScreen']
+        # TODO split initialReplication
+        # fRemoteRequests: enter: ['putRemoteRequest']
+        # fInitialFilesReplication: enter: ['initFilesReplication']
+        # fInitContacts: enter: ['saveState', 'initContacts']
+        # fInitCalendars: enter: ['saveState', 'initCalendars']
+        #
+        # # First start error steps
+        # # 2 error after File sync
+        # f2QuitSplashScreen: enter: ['quitSplashScreen']
+        # f2PostConfigInit: enter: ['postConfigInit'] # RUN
 
-
-        # First start
-
-        login: enter: ['login']
-
-        initPermissions: enter: ['getPermissions']
-
-        setDeviceName: enter: ['setDeviceName']
-        initCheckPlatformVersion: enter: ['checkPlatformVersions']
-
-        getCozyLocale: enter: ['updateCozyLocale']
-
-        firstConfig: enter: ['config']
-        insertLocalDesignDocuments: enter: ['upsertLocalDesignDocuments']
-        postConfigInit: enter: ['postConfigInit']
+        # # 3 error after calendars sync
+        # f3QuitSplashScreen: enter: ['quitSplashScreen']
+        # f3PostConfigInit: enter: ['postConfigInit'] # RUN
 
 
-        insertRemoteRequests: enter: ['putRemoteRequest']
+        # First start error steps
+        # 1 error before FirstSync End. --> Go to config.
+        f1QuitSplashScreen: enter: ['quitSplashScreen'] # RUN
 
-        setVersion: enter: ['updateVersion']
-
-        firstSync: enter: ['firstSync']
-        # initFilesReplication: enter: ['initFilesReplication']
-
-        # initContacts: enter: ['initContacts']
-        # initCalendars: enter: ['initCalendars']
 
         # Service state
         # initServiceDeviceLocale # <-- OSEF ?
@@ -111,6 +100,12 @@ module.exports = class Init
         # backup
         # launchApp
         # quitService
+
+
+
+        # Last commons steps
+        loadFilePage: enter: ['saveState', 'setListeners', 'loadFilePage']
+        backup: enter: ['backup']
 
 
     transitions:
@@ -124,48 +119,62 @@ module.exports = class Init
 
 
         'initConfig':
-            'configured': 'prepareToStart' # Normal start
-            'newVersion': 'initMigration' # Migration
-            'notConfigured': 'quitSplashScreen' # First start
+            'configured': 'nPostConfigInit' # Normal start
+            'newVersion': 'migrationInit' # Migration
+            'notConfigured': 'fQuitSplashScreen' # First start
+            # First start error
+            'goTofConfig': 'f1QuitSplashScreen'
 
-        'normalPostConfigInit': 'initsDone': 'normalQuitSplashScreen'
-        'normalQuitSplashScreen': 'viewInitialized': 'loadFilePage'
+        'nPostConfigInit': 'initsDone': 'nQuitSplashScreen'
+        'nQuitSplashScreen': 'viewInitialized': 'loadFilePage'
         'loadFilePage': 'onFilePage': 'backup'
 
         # Migration
-        'initMigration': 'migrationInited': 'updateLocalDesignDocuments'
-        'updateLocalDesignDocuments': 'localDesignUpToDate': 'checkPlatformVersions'
-        'checkPlatformVersions': 'validPlatformVersions': 'quitSplashScreenUpdate'
-        'quitSplashScreenUpdate': 'viewInitialized': 'updatePermissions'
-        'updatePermissions': 'getPermissions': 'updateConfig'
-        'updateConfig': 'configDone': 'updateRemoteRequest'
-        'updateRemoteRequest': 'putRemoteRequest': 'updateVersion'
-        'updateVersion': 'versionUpToDate': 'updatePostConfigInit'
-        'updatePostConfigInit': 'initsDone': 'loadFilePage' # Regular start.
+        'migrationInit': 'migrationInited': 'mLocalDesignDocuments'
+        'mLocalDesignDocuments':
+            'localDesignUpToDate': 'mCheckPlatformVersions'
+        'mCheckPlatformVersions': 'validPlatformVersions': 'mQuitSplashScreen'
+        'mQuitSplashScreen': 'viewInitialized': 'mPermissions'
+        'mPermissions': 'getPermissions': 'mConfig'
+        'mConfig': 'configDone': 'mRemoteRequest'
+        'mRemoteRequest': 'putRemoteRequest': 'mUpdateVersion'
+        'mUpdateVersion': 'versionUpToDate': 'mPostConfigInit'
+        'mPostConfigInit': 'initsDone': 'loadFilePage' # Regular start.
 
         # First start
-        'quitSplashScreen': 'viewInitialized': 'login'
-        'login': 'validCredentials': 'initPermissions'
-        'initPermissions': 'getPermissions': 'setDeviceName'
+        'fQuitSplashScreen': 'viewInitialized': 'fLogin'
+        'fLogin': 'validCredentials': 'fPermissions'
+        'fPermissions': 'getPermissions': 'fDeviceName'
         # TODO stub
-        'setDeviceName': 'deviceCreated': 'firstConfig'
+        'fDeviceName': 'deviceCreated': 'fConfig'
         # 'setDeviceName': 'deviceCreated': 'initCheckPlatformVersion'
         # 'initCheckPlatformVersion': 'validPlatformVersions': 'getCozyLocale'
         #'getCozyLocale': 'cozyLocaleUpToDate': 'config'
-        'firstConfig': 'configDone': 'insertLocalDesignDocuments'
-        'insertLocalDesignDocuments': 'localDesignUpToDate': 'postConfigInit'
-        'postConfigInit': 'initsDone': 'setVersion'
-        'setVersion': 'versionUpToDate': 'firstSync'
-        # TODO stub
-        #'config': 'configUpToDate': 'insertLocalDesignDocument'
-        #'insertLocalDesignDocument': 'localDesignUpToDate': 'insertRemoteRequests'
-        #'insertRemoteRequests': 'putRemoteRequest': 'setVersion'
-        #'setVersion': 'versionUpToDate': 'initFilesReplication'
-        #'initFilesReplication': 'filesReplicationInited': 'initContacts'
-        #'initContacts': 'contactsInited': 'initCalendars'
-        #'initCalendars': 'calendarsInited': 'postConfigInit' # Regular start.
+        'fConfig': 'configDone': 'fLocalDesignDocuments'
+        'fLocalDesignDocuments': 'localDesignUpToDate': 'fPostConfigInit'
+        'fPostConfigInit': 'initsDone': 'fSetVersion'
+        'fSetVersion': 'versionUpToDate': 'fFirstSync'
+        'fFirstSync': 'calendarsInited': 'loadFilePage'
 
-        'firstSync': 'calendarsInited': 'loadFilePage'
+
+        # # TODO move initialReplication in state machine.
+        # 'fRemoteRequests': 'putRemoteRequest': 'fInitialFilesReplication'
+        # 'fInitialFilesReplication': 'filesReplicationInited': 'fInitContacts'
+        # 'fInitContacts': 'contactsInited': 'fInitCalendars'
+        # 'fInitCalendars': 'calendarsInited': 'loadFilePage'
+
+        # # First start error transitions
+        # # 2 error after File sync
+        # 'f2QuitSplashScreen': 'viewInitialized': 'f2PostConfigInit'
+        # 'f2PostConfigInit': 'initsDone': 'fInitContacts'
+
+        # # 3 error after Calendars sync
+        # 'f3QuitSplashScreen': 'viewInitialized': 'f3PostConfigInit'
+        # 'f3PostConfigInit': 'initsDone': 'fInitCalendars'
+
+        # First start error transitions
+        # 1 error after before FirstSync End. --> Go to config.
+        'f1QuitSplashScreen': 'viewInitialized': 'fConfig'
 
 
     # Enter state methods.
@@ -181,21 +190,27 @@ module.exports = class Init
 
     initConfig: ->
         app.replicator.initConfig (err, config) =>
-            console.log 'toto'
             return @exitApp err if err
             if config.remote
-                if config.isNewVersion()
-                    console.log 'toto3'
+                # Check last state
+                # If state is "ready" -> newVersion ? newVersion : configured
+                # Else : go to this state (with preconditions checks ?)
+                lastState = config.get('lastInitState') or 'loadFilePage'
 
-                    @trigger 'newVersion'
-                else
-                    console.log 'toto4'
+                # Watchdog
+                if lastState not in ['loadFilePage', 'Config']
+                    return @trigger 'goTofConfig'
 
-                    # TODO : check first-replication is OK !
-                    @trigger 'configured'
+                if lastState is 'loadFilePage' # Previously in normal start.
+                    if config.isNewVersion()
+                        @trigger 'newVersion'
+                    else
+                        @trigger 'configured'
+                else # In init.
+                    @trigger "goTo#{lastState}"
+
+
             else
-                console.log 'toto2'
-
                 @trigger 'notConfigured'
 
     # Normal start
@@ -222,43 +237,35 @@ module.exports = class Init
 
     # Migration
     upsertLocalDesignDocuments: ->
-        return if @passUnlessInMigration 'updateLocalDesignDocuments', 'localDesignUpToDate'
+        return if @passUnlessInMigration 'mLocalDesignDocuments', 'localDesignUpToDate'
 
         app.replicator.upsertLocalDesignDocuments @getCallbackTriggerOrQuit 'localDesignUpToDate'
 
     checkPlatformVersions: ->
-        return if @passUnlessInMigration 'checkPlatformVersions', 'validPlatformVersions'
+        return if @passUnlessInMigration 'mCheckPlatformVersions', 'validPlatformVersions'
         app.replicator.checkPlatformVersions \
             @getCallbackTriggerOrQuit 'validPlatformVersions'
 
     getPermissions: ->
-        return if @passUnlessInMigration 'updatePermissions', 'getPermissions'
+        return if @passUnlessInMigration 'mPermissions', 'getPermissions'
         if app.replicator.config.hasPermissions()
             @trigger 'getPermissions'
         else
             app.router.navigate 'permissions', trigger: true
 
 
-    updateConfig: ->
-        return if @passUnlessInMigration 'updateConfig', 'configUpdated'
-        app.router.navigate 'config', trigger: true
-
-
     putRemoteRequest: ->
-        return if @passUnlessInMigration 'updateRemoteRequest', 'putRemoteRequest'
+        return if @passUnlessInMigration 'mRemoteRequest', 'putRemoteRequest'
 
         app.replicator.putRequests @getCallbackTriggerOrQuit 'putRemoteRequest'
 
     updateVersion: ->
-        return if @passUnlessInMigration 'updateVersion', 'versionUpToDate'
-
         app.replicator.config.updateVersion \
         @getCallbackTriggerOrQuit 'versionUpToDate'
 
 
     # First start
     login: ->
-        console.log 'toto12'
         app.router.navigate 'login', trigger: true
 
     #initPermissions: -> app.router.navigate 'permissions', trigger: true
@@ -266,7 +273,7 @@ module.exports = class Init
     setDeviceName: -> app.router.navigate 'device-name-picker', trigger: true
 
     config: ->
-        return if @passUnlessInMigration 'updateConfig', 'configDone'
+        return if @passUnlessInMigration 'mConfig', 'configDone'
         app.router.navigate 'config', trigger: true
 
     updateCozyLocale: -> app.replicator.updateLocaleFromCozy \
@@ -275,12 +282,16 @@ module.exports = class Init
     firstSync: ->
         app.router.navigate 'first-sync', trigger: true
 
-    initFilesReplication: ->
-        app.replicator.initialReplication @getCallbackTriggerOrQuit 'calendarsInited'
+    # initFilesReplication: ->
+    #     app.replicator.initialReplication @getCallbackTriggerOrQuit 'calendarsInited'
+
 
 
 #ready: -> app.regularStart @getCallbackTriggerOrQuit 'inited'
     # Tools
+    saveState: ->
+        app.replicator.config.save lastInitState: @currentState
+        , (err, config) -> log.warn err if err
 
     getCallbackTriggerOrQuit: (eventName) ->
         (err) =>

@@ -17,7 +17,7 @@ module.exports = class DeviceNamePickerView extends BaseView
         'keypress #input-device': 'blurIfEnter'
 
     doBack: ->
-        app.router.navigate 'login', trigger: true
+        app.init.toState 'fPermissions'
 
     blurIfEnter: (e) ->
         @$('#input-device').blur() if e.keyCode is 13
@@ -52,7 +52,6 @@ module.exports = class DeviceNamePickerView extends BaseView
                         return @displayError err.message
 
                     delete app.loginConfig
-                    # app.router.navigate 'config', trigger: true
                     app.init.trigger 'deviceCreated'
 
     onCompleteDefaultValue: ->
