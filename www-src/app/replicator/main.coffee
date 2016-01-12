@@ -61,7 +61,7 @@ module.exports = class Replicator extends Backbone.Model
                 designDocs = new DesignDocuments @db, @photosDB
                 designDocs.createOrUpdateAllDesign (err) =>
                     return callback err if err
-                    @config = new ReplicatorConfig(this)
+                    @config = new ReplicatorConfig(@db)
                     @config.fetch callback
 
 

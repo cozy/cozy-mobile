@@ -4,7 +4,7 @@ request = require '../lib/request'
 FilterManager = require './filter_manager'
 
 module.exports = class ReplicatorConfig extends Backbone.Model
-    constructor: (@replicator) ->
+    constructor: (@db) ->
         super null
         @remote = null
 
@@ -30,7 +30,7 @@ module.exports = class ReplicatorConfig extends Backbone.Model
             config: "function (doc) { return #{compare} }"
 
     fetch: (callback) ->
-        @replicator.db.get '_local/appconfig', (err, config) =>
+        @db.get '_local/appconfig', (err, config) =>
             if config
                 @set config
                 @remote = @createRemotePouchInstance()
@@ -40,11 +40,11 @@ module.exports = class ReplicatorConfig extends Backbone.Model
     save: (changes, callback) ->
         @set changes
         # Update _rev, if another process (service) has modified it since.
-        @replicator.db.get '_local/appconfig', (err, config) =>
+        @db.get '_local/appconfig', (err, config) =>
             unless err # may be 404, at doc initialization.
                 @set _rev: config._rev
 
-            @replicator.db.put @toJSON(), (err, res) =>
+            @db.put @toJSON(), (err, res) =>
                 return callback err if err
                 return callback new Error('cant save config') unless res.ok
                 @set _rev: res.rev
