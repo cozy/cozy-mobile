@@ -7,6 +7,8 @@ ReplicatorConfig = require './replicator_config'
 DeviceStatus = require '../lib/device_status'
 DBNAME = "cozy-files.db"
 DBPHOTOS = "cozy-photos.db"
+compareVersions = require('../lib/compare_versions').compareVersions
+
 
 PLATFORM_MIN_VERSIONS =
     'proxy': '2.1.11'
@@ -67,29 +69,8 @@ module.exports = class Replicator extends Backbone.Model
         designDocs = new DesignDocuments @db, @photosDB
         designDocs.createOrUpdateAllDesign callback
 
-    init: (callback) ->
-        # fs.initialize (err, downloads, cache) =>
-        #     return callback err if err
-        #     @downloads = downloads
-        #     @cache = cache
-        #     @initDB (err) =>
-                # return callback err if err
-                designDocs = new DesignDocuments @db, @photosDB
-                designDocs.createOrUpdateAllDesign (err) =>
-                    return callback err if err
-                    @config = new ReplicatorConfig(this)
-                    @config.fetch callback
-
 
     checkPlatformVersions: (callback) ->
-        # TODO use lib/compare_version
-        cutVersion = (s) ->
-            parts = s.match /(\d+)\.(\d+)\.(\d+)/
-            # Keep only useful data (first elem is full string)
-            parts = parts.slice 1, 4
-            parts = parts.map (s) -> parseInt s
-            return major: parts[0], minor: parts[1], patch: parts[2]
-
         request.get
             url: "#{@config.getScheme()}://#{@config.get('cozyURL')}/versions"
             auth: @config.get 'auth'
@@ -100,11 +81,7 @@ module.exports = class Replicator extends Backbone.Model
             for item in body
                 [s, app, version] = item.match /([^:]+): ([\d\.]+)/
                 if app of PLATFORM_MIN_VERSIONS
-                    minVersion = cutVersion PLATFORM_MIN_VERSIONS[app]
-                    version = cutVersion version
-                    if version.major < minVersion.major or
-                    version.minor < minVersion.minor or
-                    version.patch < minVersion.patch
+                    if compareVersion(version, PLATFORM_MIN_VERSIONS[app]) < 0
                         msg = t 'error need min %version for %app'
                         msg = msg.replace '%app', app
                         msg = msg.replace '%version', PLATFORM_MIN_VERSIONS[app]
@@ -115,6 +92,14 @@ module.exports = class Replicator extends Backbone.Model
 
     # Get locale from cozy, update in (saved) config, and in app if changed
     updateLocaleFromCozy: (callback) ->
+        end = =>
+            locale = @config.get 'locale'
+            if locale
+                app.translation.setLocale value: locale
+
+            callback()
+
+
         options = @config.makeDSUrl "/request/cozyinstance/all/"
         options.body = include_docs: true
 
@@ -124,20 +109,16 @@ module.exports = class Replicator extends Backbone.Model
                 return cb err if err
                 return cb err if res.statusCode isnt 200
                 return cb new Error 'No CozyInstance' if models.length <= 0
-
                 cb null, models
 
         , (err, models) =>
             return callback err if err
-
             instance = models[0].doc
             if instance.locale and instance.locale isnt @config.get('locale')
                 # Update
-                app.translation.setLocale value: instance.locale
-                @config.save { locale: instance.locale }, callback
+                @config.save { locale: instance.locale }, end
             else
-                callback()
-
+                end()
 
     destroyDB: (callback) ->
         @db.destroy (err) =>
@@ -145,7 +126,6 @@ module.exports = class Replicator extends Backbone.Model
             @photosDB.destroy (err) =>
                 return callback err if err
                 fs.rmrf @downloads, callback
-
 
 
     # pings the cozy to check the credentials without creating a device
@@ -273,9 +253,7 @@ module.exports = class Replicator extends Backbone.Model
 
     # Fetch current state of replicated views. Avoid pouchDB bug with heavy
     # change list.
-    initialReplication: (callback) ->
-        @set 'initialReplicationStep', 0
-
+    initialFilesReplication: (callback) ->
         DeviceStatus.checkReadyForSync (err, ready, msg) =>
             return callback err if err
             unless ready
@@ -301,34 +279,19 @@ module.exports = class Replicator extends Backbone.Model
 
                 # Force checkpoint to 0
                 (cb) => @copyView 'file', cb
-                (cb) => @set('initialReplicationStep', 1) and cb null
                 (cb) => @copyView 'folder', cb
-
-                (cb) => @set('initialReplicationStep', 2) and cb null
                 # TODO: it copies all notifications (persistent ones too).
                 (cb) =>
                     if @config.get 'cozyNotifications'
                         @copyView 'notification', cb
 
                     else cb()
-
-                (cb) => @set('initialReplicationStep', 3) and cb null
-                (cb) => @initContactsInPhone last_seq, cb
-                (cb) => @set('initialReplicationStep', 4) and cb null
-                (cb) => @initEventsInPhone last_seq, cb
-
-                (cb) => @set('initialReplicationStep', 5) and cb null
-                # Save last sequences
                 (cb) => @config.save checkpointed: last_seq, cb
-                # build the initial state of FilesAndFolder view index
-                (cb) => @db.query DesignDocuments.FILES_AND_FOLDER, {}, cb
-
             ], (err) =>
                 log.info "end of inital replication"
                 @set 'initialReplicationStep', 6
                 callback err
-                # updateIndex In background
-                @updateIndex -> log.info "Index built"
+
 
     copyView: (model, callback) ->
         options =
@@ -361,8 +324,7 @@ module.exports = class Replicator extends Backbone.Model
         # build pouch's map indexes
         @db.query DesignDocuments.FILES_AND_FOLDER, {}, =>
             # build pouch's map indexes
-            @db.query DesignDocuments.LOCAL_PATH, {}, ->
-            callback null
+            @db.query DesignDocuments.LOCAL_PATH, {}, -> callback()
 
 # END initialisations methods
 

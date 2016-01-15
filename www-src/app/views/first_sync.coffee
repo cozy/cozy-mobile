@@ -1,7 +1,5 @@
 BaseView = require '../lib/base_view'
 
-LAST_STEP = 5
-
 log = require('../lib/persistent_log')
     prefix: "FirstSyncView"
     date: true
@@ -14,38 +12,18 @@ module.exports = class FirstSyncView extends BaseView
     events: ->
         'tap #btn-end': 'end'
 
-    getRenderData: () ->
-        step = app.replicator.get 'initialReplicationStep'
-        log.info "onChange : #{step}"
-
-        if step is LAST_STEP
-            messageText = t 'ready message'
-            buttonText = t 'end'
-        else
-            messageText = t "message step #{step}"
-            buttonText = t 'waiting...'
-
-        return {messageText, buttonText}
+    steps: [
+        'fFirstSyncView' # 0
+        'fInitialFilesReplication' # 1
+        'fInitContacts' # 2
+        'fInitCalendars' # 3
+        'fUpdateIndex' # 4
+        ]
 
     initialize: ->
-        @listenTo app.replicator, 'change:initialReplicationStep', @onChange
-        log.info 'starting first replication'
-        app.replicator.initialReplication (err) ->
-            if err
-                log.error err
-                alert t err.message
-                setImmediate ->
-                    app.router.navigate 'config', trigger: true
+        @listenTo app.init, 'transition', @onChange
 
-    onChange: (replicator) ->
-        step = replicator.get 'initialReplicationStep'
-        @$('#finishSync .progress').text t "message step #{step}"
-        if step > LAST_STEP
-            @render()
-            app.init.trigger 'calendarsInited'
-
-
-    end: ->
-        step = parseInt(app.replicator.get('initialReplicationStep'))
-        log.info "end #{step}"
-        return if step isnt LAST_STEP
+    onChange: (leaveState, enterState) ->
+        step = @steps.indexOf enterState
+        if step isnt -1
+            @$('#finishSync .progress').text t "message step #{step}"
