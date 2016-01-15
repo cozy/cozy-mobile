@@ -36,13 +36,7 @@ module.exports =
                 if @config.has('contactsPullCheckpointed')
                     cb()
                 else
-                    url = '/_changes?descending=true&limit=1'
-                    request.get @config.makeReplicationUrl(url)
-                    , (err, res, body) =>
-                        return cb err if err
-                        # we store last_seq before copying files & folder
-                        # to avoid losing changes occuring during replication
-                        @initContactsInPhone body.last_seq, cb
+                    @initContactsInPhone cb
 
             (cb) => @syncPhone2Pouch cb
             (cb) => @syncToCozy cb
@@ -306,44 +300,51 @@ module.exports =
 
     # Initial replication task.
     # @param lastSeq lastseq in remote couchDB.
-    initContactsInPhone: (lastSeq, callback) ->
+    initContactsInPhone: (callback) ->
         unless @config.get 'syncContacts'
             return callback()
 
-        @createAccount (err) =>
-            # Fetch contacs from view all of contact app.
-            options = @config.makeDSUrl "/request/contact/all/"
-            options.body =
-                include_docs: true
-                show_revs: true
-            request.post options, (err, res, rows) =>
-                return callback err if err
-                return callback null unless rows?.length
+        url = '/_changes?descending=true&limit=1'
+        request.get @config.makeReplicationUrl(url), (err, res, body) =>
+            return cb err if err
+            # we store last_seq before copying contacts
+            # to avoid losing changes occuring during replication
+            lastSeq = body.last_seq
 
-                async.mapSeries rows, (row, cb) =>
-                    doc = row.doc
-                    # fetch attachments if exists.
-                    if doc._attachments?.picture?
-                        request.get @config.makeReplicationUrl(
-                            "/#{doc._id}?attachments=true")
-                        , (err, res, body) ->
-                            return cb err if err
-                            cb null, body
-                    else
-                        cb null, doc
-                , (err, docs) =>
+            @createAccount (err) =>
+                # Fetch contacs from view all of contact app.
+                options = @config.makeDSUrl "/request/contact/all/"
+                options.body =
+                    include_docs: true
+                    show_revs: true
+                request.post options, (err, res, rows) =>
                     return callback err if err
-                    async.mapSeries docs, (doc, cb) =>
-                        @db.put doc, 'new_edits':false, cb
-                    , (err, contacts) =>
+                    return callback null unless rows?.length
+
+                    async.mapSeries rows, (row, cb) =>
+                        doc = row.doc
+                        # fetch attachments if exists.
+                        if doc._attachments?.picture?
+                            request.get @config.makeReplicationUrl(
+                                "/#{doc._id}?attachments=true")
+                            , (err, res, body) ->
+                                return cb err if err
+                                cb null, body
+                        else
+                            cb null, doc
+                    , (err, docs) =>
                         return callback err if err
-                        @set 'backup_step', null # hide header: first-sync view
-                        @_applyContactsChangeToPhone docs, (err) =>
-                            # clean backup_step_done after applyChanges
-                            @set 'backup_step_done', null
-                            @config.save contactsPullCheckpointed: lastSeq
-                            , (err) =>
-                                @deleteObsoletePhoneContacts callback
+                        async.mapSeries docs, (doc, cb) =>
+                            @db.put doc, 'new_edits':false, cb
+                        , (err, contacts) =>
+                            return callback err if err
+                            @set 'backup_step', null # hide header: first-sync view
+                            @_applyContactsChangeToPhone docs, (err) =>
+                                # clean backup_step_done after applyChanges
+                                @set 'backup_step_done', null
+                                @config.save contactsPullCheckpointed: lastSeq
+                                , (err) =>
+                                    @deleteObsoletePhoneContacts callback
 
 
     # Synchronise delete state between pouch and the phone.

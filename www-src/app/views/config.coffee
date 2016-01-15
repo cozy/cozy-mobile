@@ -70,7 +70,8 @@ module.exports = class ConfigView extends BaseView
     # confirm, launch initial replication, navigate to first sync UI.
     synchroBtn: ->
         if confirm t 'confirm message'
-            app.router.navigate 'first-sync', trigger: true
+            app.init.toState 'fFirstSyncView'
+            # app.router.navigate 'first-sync', trigger: true
 
 
     sendlogBtn: ->

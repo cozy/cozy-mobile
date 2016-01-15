@@ -47,7 +47,6 @@ module.exports = class Init
         aDeviceLocale: enter: ['setDeviceLocale']
         aInitFileSystem: enter: ['initFileSystem']
         aInitDatabase: enter: ['initDatabase']
-        # migrateDatabase: # done in initDatabase
         aInitConfig: enter: ['initConfig']
 
         # Normal (n) states
@@ -71,58 +70,56 @@ module.exports = class Init
         fQuitSplashScreen: enter: ['quitSplashScreen'] # RUN
         fLogin: enter: ['login']
         fPermissions: enter: ['getPermissions']
-        # TODO fCheckPlatformVersion: enter: ['checkPlatformVersions']
-        # todo ! getCozyLocale: enter: ['updateCozyLocale']
         fDeviceName: enter: ['setDeviceName']
         fConfig: enter: ['saveState', 'config']
+        fFirstSyncView: enter: ['firstSyncView'] # RUN
         fLocalDesignDocuments: enter: ['upsertLocalDesignDocuments']
         fRemoteRequest: enter: ['putRemoteRequest']
         fPostConfigInit: enter: ['postConfigInit'] # RUN
         fSetVersion: enter: ['updateVersion']
-        fFirstSync: enter: ['firstSync']
 
-        # TODO split initialReplication
-        # fRemoteRequests: enter: ['putRemoteRequest']
-        # fInitialFilesReplication: enter: ['initFilesReplication']
-        # fInitContacts: enter: ['saveState', 'initContacts']
-        # fInitCalendars: enter: ['saveState', 'initCalendars']
-        #
-        # # First start error steps
-        # # 2 error after File sync
-        # f2QuitSplashScreen: enter: ['quitSplashScreen']
-        # f2PostConfigInit: enter: ['postConfigInit'] # RUN
-
-        # # 3 error after calendars sync
-        # f3QuitSplashScreen: enter: ['quitSplashScreen']
-        # f3PostConfigInit: enter: ['postConfigInit'] # RUN
+        fInitialFilesReplication: enter: ['initialFilesReplication']
+        fInitContacts: enter: ['saveState', 'initContacts']
+        fInitCalendars: enter: ['saveState', 'initCalendars']
+        fUpdateIndex: enter: ['saveState', 'updateIndex']
 
 
         # First start error steps
         # 1 error before FirstSync End. --> Go to config.
         f1QuitSplashScreen: enter: ['quitSplashScreen'] # RUN
 
+        # 2 error after File sync
+        f2QuitSplashScreen: enter: ['quitSplashScreen']
+        f2FirstSyncView: enter: ['firstSyncView'] # RUN
+        f2PostConfigInit: enter: ['postConfigInit'] # RUN
 
-        # Service state
-        # initServiceDeviceLocale # <-- OSEF ?
+        # 3 error after contacts sync
+        f3QuitSplashScreen: enter: ['quitSplashScreen']
+        f3FirstSyncView: enter: ['firstSyncView'] # RUN
+        f3PostConfigInit: enter: ['postConfigInit'] # RUN
 
-        # initServiceConfig:
-        # backup
-        # launchApp
-        # quitService
-
+        # 4 error after calendars sync
+        f4QuitSplashScreen: enter: ['quitSplashScreen']
+        f4FirstSyncView: enter: ['firstSyncView'] # RUN
+        f4PostConfigInit: enter: ['postConfigInit'] # RUN
 
 
         # Last commons steps
         aLoadFilePage: enter: ['saveState', 'setListeners', 'loadFilePage']
         aBackup: enter: ['backup']
 
+
         # Service
         sInitFileSystem: enter: ['initFileSystem']
         sInitDatabase: enter: ['initDatabase']
-        # migrateDatabase: # done in initDatabase
         sInitConfig: enter: ['sInitConfig']
 
-        # Migration (m) states
+        sPostConfigInit: enter: ['postConfigInit']
+        sBackup: enter: ['sBackup']
+        sSync: enter: ['sSync']
+        sQuit: enter: ['sQuit']
+
+        # Service Migration (m) states
         smMigrationInit: enter: ['initMigration']
         smLocalDesignDocuments: enter: ['upsertLocalDesignDocuments']
         smCheckPlatformVersions: enter: ['checkPlatformVersions']
@@ -132,10 +129,6 @@ module.exports = class Init
         smRemoteRequest: enter: ['putRemoteRequest']
         smUpdateVersion: enter: ['updateVersion']
 
-        sPostConfigInit: enter: ['postConfigInit']
-        sBackup: enter: ['sBackup']
-        sSync: enter: ['sSync']
-        sQuit: enter: ['sQuit']
 
     transitions:
         # Help :
@@ -148,15 +141,17 @@ module.exports = class Init
         'aDeviceLocale': 'deviceLocaleSetted': 'aInitFileSystem'
         'aInitFileSystem': 'fileSystemReady': 'aInitDatabase'
         'aInitDatabase': 'databaseReady': 'aInitConfig'
-
-
         'aInitConfig':
             'configured': 'nPostConfigInit' # Normal start
             'newVersion': 'migrationInit' # Migration
             'notConfigured': 'fQuitSplashScreen' # First start
             # First start error
             'goTofConfig': 'f1QuitSplashScreen'
+            'goTofInitContacts': 'f2QuitSplashScreen'
+            'goTofInitCalendars': 'f3QuitSplashScreen'
+            'goTofUpdateIndex': 'f4QuitSplashScreen'
 
+        # Normal start
         'nPostConfigInit': 'initsDone': 'nQuitSplashScreen'
         'nQuitSplashScreen': 'viewInitialized': 'aLoadFilePage'
         'aLoadFilePage': 'onFilePage': 'aBackup'
@@ -177,51 +172,49 @@ module.exports = class Init
         'fQuitSplashScreen': 'viewInitialized': 'fLogin'
         'fLogin': 'validCredentials': 'fPermissions'
         'fPermissions': 'getPermissions': 'fDeviceName'
-        # TODO stub
         'fDeviceName': 'deviceCreated': 'fConfig'
-        # 'setDeviceName': 'deviceCreated': 'initCheckPlatformVersion'
-        # 'initCheckPlatformVersion': 'validPlatformVersions': 'getCozyLocale'
-        #'getCozyLocale': 'cozyLocaleUpToDate': 'config'
-        'fConfig': 'configDone': 'fLocalDesignDocuments'
-        # TODO : display "first sync screen from here !"
+        'fConfig': 'configDone': 'fFirstSyncView'
+        'fFirstSyncView': 'firstSyncViewDisplayed': 'fLocalDesignDocuments'
         'fLocalDesignDocuments': 'localDesignUpToDate': 'fRemoteRequest'
         'fRemoteRequest': 'putRemoteRequest':'fSetVersion'
         'fSetVersion': 'versionUpToDate': 'fPostConfigInit'
-        'fPostConfigInit': 'initsDone': 'fFirstSync'
-        'fFirstSync': 'calendarsInited': 'aLoadFilePage'
-
-
-        # # TODO move initialReplication in state machine.
-        # 'fRemoteRequests': 'putRemoteRequest': 'fInitialFilesReplication'
-        # 'fInitialFilesReplication': 'filesReplicationInited': 'fInitContacts'
-        # 'fInitContacts': 'contactsInited': 'fInitCalendars'
-        # 'fInitCalendars': 'calendarsInited': 'loadFilePage'
-
-        # # First start error transitions
-        # # 2 error after File sync
-        # 'f2QuitSplashScreen': 'viewInitialized': 'f2PostConfigInit'
-        # 'f2PostConfigInit': 'initsDone': 'fInitContacts'
-
-        # # 3 error after Calendars sync
-        # 'f3QuitSplashScreen': 'viewInitialized': 'f3PostConfigInit'
-        # 'f3PostConfigInit': 'initsDone': 'fInitCalendars'
+        'fPostConfigInit': 'initsDone': 'fInitialFilesReplication'
+        'fInitialFilesReplication': 'filesReplicationInited': 'fInitContacts'
+        'fInitContacts': 'contactsInited': 'fInitCalendars'
+        'fInitCalendars': 'calendarsInited': 'fUpdateIndex'
+        'fUpdateIndex': 'indexUpdated': 'aLoadFilePage'
 
         # First start error transitions
         # 1 error after before FirstSync End. --> Go to config.
         'f1QuitSplashScreen': 'viewInitialized': 'fConfig'
 
+        # 2 error after File sync
+        'f2QuitSplashScreen': 'viewInitialized': 'f2FirstSyncView'
+        'f2FirstSyncView': 'firstSyncViewDisplayed': 'f2PostConfigInit'
+        'f2PostConfigInit': 'initsDone': 'fInitContacts'
+
+        # 3 error after Contacts sync
+        'f3QuitSplashScreen': 'viewInitialized': 'f3FirstSyncView'
+        'f3FirstSyncView': 'firstSyncViewDisplayed': 'f3PostConfigInit'
+        'f3PostConfigInit': 'initsDone': 'fInitCalendars'
+
+        # 4 error after Calendars sync
+        'f4QuitSplashScreen': 'viewInitialized': 'f4FirstSyncView'
+        'f4FirstSyncView': 'firstSyncViewDisplayed': 'f4PostConfigInit'
+        'f4PostConfigInit': 'initsDone': 'fUpdateIndex'
+
+
         # Start Service
         'sInitFileSystem': 'fileSystemReady': 'sInitDatabase'
         'sInitDatabase': 'databaseReady': 'sInitConfig'
-
         'sPostConfigInit': 'initsDone': 'sBackup'
         'sBackup': 'backupDone': 'sSync'
         'sSync': 'syncDone': 'sQuit'
-
         'sInitConfig':
             'configured': 'sPostConfigInit' # Normal start
             'newVersion': 'smMigrationInit' # Migration
 
+        # Migration in service
         'smMigrationInit': 'migrationInited': 'smLocalDesignDocuments'
         'smLocalDesignDocuments':
             'localDesignUpToDate': 'smCheckPlatformVersions'
@@ -236,12 +229,15 @@ module.exports = class Init
     setDeviceLocale: ->
         app.setDeviceLocale @getCallbackTriggerOrQuit 'deviceLocaleSetted'
 
+
     initFileSystem: ->
         app.replicator.initFileSystem \
             @getCallbackTriggerOrQuit 'fileSystemReady'
 
+
     initDatabase: ->
         app.replicator.initDB  @getCallbackTriggerOrQuit 'databaseReady'
+
 
     initConfig: ->
         app.replicator.initConfig (err, config) =>
@@ -253,7 +249,8 @@ module.exports = class Init
                 lastState = config.get('lastInitState') or 'aLoadFilePage'
 
                 # Watchdog
-                if lastState not in ['aLoadFilePage', 'fConfig']
+                if lastState not in ['aLoadFilePage', 'fConfig',
+                        'fInitContacts', 'fInitCalendars', 'fUpdateIndex']
                     return @trigger 'goTofConfig'
 
                 if lastState is 'aLoadFilePage' # Previously in normal start.
@@ -295,10 +292,12 @@ module.exports = class Init
 
         app.replicator.upsertLocalDesignDocuments @getCallbackTriggerOrQuit 'localDesignUpToDate'
 
+
     checkPlatformVersions: ->
         return if @passUnlessInMigration 'validPlatformVersions'
         app.replicator.checkPlatformVersions \
             @getCallbackTriggerOrQuit 'validPlatformVersions'
+
 
     getPermissions: ->
         return if @passUnlessInMigration 'getPermissions'
@@ -306,7 +305,6 @@ module.exports = class Init
             @trigger 'getPermissions'
         else if @currentState is 'smPermissions'
             app.startMainActivity 'smPermissions'
-
         else
             app.router.navigate 'permissions', trigger: true
 
@@ -325,8 +323,6 @@ module.exports = class Init
     login: ->
         app.router.navigate 'login', trigger: true
 
-    #initPermissions: -> app.router.navigate 'permissions', trigger: true
-
     setDeviceName: -> app.router.navigate 'device-name-picker', trigger: true
 
     config: ->
@@ -339,9 +335,26 @@ module.exports = class Init
     updateCozyLocale: -> app.replicator.updateLocaleFromCozy \
         @getCallbackTriggerOrQuit 'cozyLocaleUpToDate'
 
-    firstSync: ->
+    firstSyncView: ->
         app.router.navigate 'first-sync', trigger: true
+        @trigger 'firstSyncViewDisplayed'
 
+
+    initialFilesReplication: ->
+        app.replicator.initialFilesReplication \
+            @getCallbackTriggerOrQuit 'filesReplicationInited'
+
+
+    initContacts: ->
+        app.replicator.initContactsInPhone \
+            @getCallbackTriggerOrQuit 'contactsInited'
+
+    initCalendars: ->
+        app.replicator.initEventsInPhone \
+            @getCallbackTriggerOrQuit 'calendarsInited'
+
+    updateIndex: ->
+        app.replicator.updateIndex @getCallbackTriggerOrQuit 'indexUpdated'
 
     ###########################################################################
     # Service
@@ -370,8 +383,6 @@ module.exports = class Init
     sSync: ->
         app.replicator.sync background: true
         , (err) =>
-            console.log "here we are"
-            console.log err
             @getCallbackTriggerOrQuit('syncDone')(err)
 
     sQuit: ->
