@@ -1,10 +1,13 @@
 
 module.exports.splitVersion = splitVersion = (s) ->
-            parts = s.match /(\d+)\.(\d+)\.(\d+)/
-            # Keep only useful data (first elem is full string)
-            parts = parts.slice 1, 4
-            parts = parts.map (s) -> parseInt s
-            return major: parts[0], minor: parts[1], patch: parts[2]
+    unless s?
+        return major: 0, minor: 0, patch: 0
+
+    parts = s.match /(\d+)\.(\d+)\.(\d+)/
+    # Keep only useful data (first elem is full string)
+    parts = parts.slice 1, 4
+    parts = parts.map (s) -> parseInt s
+    return major: parts[0], minor: parts[1], patch: parts[2]
 
 
 module.exports.compareVersions = (version1, version2) ->

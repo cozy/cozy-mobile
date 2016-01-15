@@ -118,15 +118,23 @@ module.exports = class Replicator extends Backbone.Model
         options = @config.makeDSUrl "/request/cozyinstance/all/"
         options.body = include_docs: true
 
-        request.post options, (err, res, models) =>
+        retryOptions = times: 5, interval: 20 * 1000
+        async.retry retryOptions, (cb) =>
+            request.post options, (err, res, models) =>
+                return cb err if err
+                return cb err if res.statusCode isnt 200
+                return cb new Error 'No CozyInstance' if models.length <= 0
+
+                cb null, models
+
+        , (err, models) =>
             return callback err if err
-            return callback new Error 'No CozyInstance' if models.length <= 0
 
             instance = models[0].doc
             if instance.locale and instance.locale isnt @config.get('locale')
                 # Update
                 app.translation.setLocale value: instance.locale
-                @config.save locale: instance.locale, callback
+                @config.save { locale: instance.locale }, callback
             else
                 callback()
 
@@ -281,7 +289,6 @@ module.exports = class Replicator extends Backbone.Model
             last_seq = 0
 
             async.series [
-                (cb) => @putRequests cb
                 # we store last_seq before copying files & folder
                 # to avoid losing changes occuring during replication
                 (cb) =>
@@ -318,7 +325,7 @@ module.exports = class Replicator extends Backbone.Model
 
             ], (err) =>
                 log.info "end of inital replication"
-                @set 'initialReplicationStep', 5
+                @set 'initialReplicationStep', 6
                 callback err
                 # updateIndex In background
                 @updateIndex -> log.info "Index built"

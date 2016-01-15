@@ -15,16 +15,14 @@ module.exports = class Init
         Backbone.StateMachine.startStateMachine.bind(@)(arguments)
 
     initialize: ->
+        @migrationStates = {}
+
         @listenTo @, 'transition', (leaveState, enterState) ->
             log.info 'Transition from state "'+leaveState+'" to state "'+enterState+'"'
-
-        # @listenTo @, 'all', () -> console.log arguments
-        # TOOD / later, when config is available : @initializeMigration()
 
 
     initMigration: ->
         oldVersion = app.replicator.config.get 'appVersion'
-        @migrationStates = {}
         for version, migration of @migrations
             if compareVersions(version, oldVersion) <= 0
                 break
@@ -35,12 +33,22 @@ module.exports = class Init
 
 
     states:
+        # States naming convention :
+        # - a : application start.
+        # - n : normal start
+        # - f : first start
+        # - m : migration start
+        # - s : service start
+        # - sm : migration in service start
+
+        # Application
+
         # First commons steps
-        setDeviceLocale: enter: ['setDeviceLocale']
-        initFileSystem: enter: ['initFileSystem']
-        initDatabase: enter: ['initDatabase']
+        aDeviceLocale: enter: ['setDeviceLocale']
+        aInitFileSystem: enter: ['initFileSystem']
+        aInitDatabase: enter: ['initDatabase']
         # migrateDatabase: # done in initDatabase
-        initConfig: enter: ['initConfig']
+        aInitConfig: enter: ['initConfig']
 
         # Normal (n) states
         nPostConfigInit: enter: ['postConfigInit']
@@ -68,6 +76,7 @@ module.exports = class Init
         fDeviceName: enter: ['setDeviceName']
         fConfig: enter: ['saveState', 'config']
         fLocalDesignDocuments: enter: ['upsertLocalDesignDocuments']
+        fRemoteRequest: enter: ['putRemoteRequest']
         fPostConfigInit: enter: ['postConfigInit'] # RUN
         fSetVersion: enter: ['updateVersion']
         fFirstSync: enter: ['firstSync']
@@ -104,21 +113,44 @@ module.exports = class Init
 
 
         # Last commons steps
-        loadFilePage: enter: ['saveState', 'setListeners', 'loadFilePage']
-        backup: enter: ['backup']
+        aLoadFilePage: enter: ['saveState', 'setListeners', 'loadFilePage']
+        aBackup: enter: ['backup']
 
+        # Service
+        sInitFileSystem: enter: ['initFileSystem']
+        sInitDatabase: enter: ['initDatabase']
+        # migrateDatabase: # done in initDatabase
+        sInitConfig: enter: ['sInitConfig']
+
+        # Migration (m) states
+        smMigrationInit: enter: ['initMigration']
+        smLocalDesignDocuments: enter: ['upsertLocalDesignDocuments']
+        smCheckPlatformVersions: enter: ['checkPlatformVersions']
+        smQuitSplashScreen: enter: ['quitSplashScreen']
+        smPermissions: enter: ['getPermissions']
+        smConfig: enter: ['config']
+        smRemoteRequest: enter: ['putRemoteRequest']
+        smUpdateVersion: enter: ['updateVersion']
+
+        sPostConfigInit: enter: ['postConfigInit']
+        sBackup: enter: ['sBackup']
+        sSync: enter: ['sSync']
+        sQuit: enter: ['sQuit']
 
     transitions:
         # Help :
         # initial_state: event: end_state
 
-        'init': 'startApplication': 'setDeviceLocale'
-        'setDeviceLocale': 'deviceLocaleSetted': 'initFileSystem'
-        'initFileSystem': 'fileSystemReady': 'initDatabase'
-        'initDatabase': 'databaseReady': 'initConfig'
+        # Start application
+        'init':
+            'startApplication': 'aDeviceLocale'
+            'startService': 'sInitFileSystem'
+        'aDeviceLocale': 'deviceLocaleSetted': 'aInitFileSystem'
+        'aInitFileSystem': 'fileSystemReady': 'aInitDatabase'
+        'aInitDatabase': 'databaseReady': 'aInitConfig'
 
 
-        'initConfig':
+        'aInitConfig':
             'configured': 'nPostConfigInit' # Normal start
             'newVersion': 'migrationInit' # Migration
             'notConfigured': 'fQuitSplashScreen' # First start
@@ -126,8 +158,8 @@ module.exports = class Init
             'goTofConfig': 'f1QuitSplashScreen'
 
         'nPostConfigInit': 'initsDone': 'nQuitSplashScreen'
-        'nQuitSplashScreen': 'viewInitialized': 'loadFilePage'
-        'loadFilePage': 'onFilePage': 'backup'
+        'nQuitSplashScreen': 'viewInitialized': 'aLoadFilePage'
+        'aLoadFilePage': 'onFilePage': 'aBackup'
 
         # Migration
         'migrationInit': 'migrationInited': 'mLocalDesignDocuments'
@@ -139,7 +171,7 @@ module.exports = class Init
         'mConfig': 'configDone': 'mRemoteRequest'
         'mRemoteRequest': 'putRemoteRequest': 'mUpdateVersion'
         'mUpdateVersion': 'versionUpToDate': 'mPostConfigInit'
-        'mPostConfigInit': 'initsDone': 'loadFilePage' # Regular start.
+        'mPostConfigInit': 'initsDone': 'aLoadFilePage' # Regular start.
 
         # First start
         'fQuitSplashScreen': 'viewInitialized': 'fLogin'
@@ -151,10 +183,12 @@ module.exports = class Init
         # 'initCheckPlatformVersion': 'validPlatformVersions': 'getCozyLocale'
         #'getCozyLocale': 'cozyLocaleUpToDate': 'config'
         'fConfig': 'configDone': 'fLocalDesignDocuments'
-        'fLocalDesignDocuments': 'localDesignUpToDate': 'fPostConfigInit'
-        'fPostConfigInit': 'initsDone': 'fSetVersion'
-        'fSetVersion': 'versionUpToDate': 'fFirstSync'
-        'fFirstSync': 'calendarsInited': 'loadFilePage'
+        # TODO : display "first sync screen from here !"
+        'fLocalDesignDocuments': 'localDesignUpToDate': 'fRemoteRequest'
+        'fRemoteRequest': 'putRemoteRequest':'fSetVersion'
+        'fSetVersion': 'versionUpToDate': 'fPostConfigInit'
+        'fPostConfigInit': 'initsDone': 'fFirstSync'
+        'fFirstSync': 'calendarsInited': 'aLoadFilePage'
 
 
         # # TODO move initialReplication in state machine.
@@ -176,6 +210,27 @@ module.exports = class Init
         # 1 error after before FirstSync End. --> Go to config.
         'f1QuitSplashScreen': 'viewInitialized': 'fConfig'
 
+        # Start Service
+        'sInitFileSystem': 'fileSystemReady': 'sInitDatabase'
+        'sInitDatabase': 'databaseReady': 'sInitConfig'
+
+        'sPostConfigInit': 'initsDone': 'sBackup'
+        'sBackup': 'backupDone': 'sSync'
+        'sSync': 'syncDone': 'sQuit'
+
+        'sInitConfig':
+            'configured': 'sPostConfigInit' # Normal start
+            'newVersion': 'smMigrationInit' # Migration
+
+        'smMigrationInit': 'migrationInited': 'smLocalDesignDocuments'
+        'smLocalDesignDocuments':
+            'localDesignUpToDate': 'smCheckPlatformVersions'
+        'smCheckPlatformVersions': 'validPlatformVersions': 'smPermissions'
+        'smPermissions': 'getPermissions': 'smConfig'
+        'smConfig': 'configDone': 'smRemoteRequest'
+        'smRemoteRequest': 'putRemoteRequest': 'smUpdateVersion'
+        'smUpdateVersion': 'versionUpToDate': 'sPostConfigInit'
+
 
     # Enter state methods.
     setDeviceLocale: ->
@@ -195,13 +250,13 @@ module.exports = class Init
                 # Check last state
                 # If state is "ready" -> newVersion ? newVersion : configured
                 # Else : go to this state (with preconditions checks ?)
-                lastState = config.get('lastInitState') or 'loadFilePage'
+                lastState = config.get('lastInitState') or 'aLoadFilePage'
 
                 # Watchdog
-                if lastState not in ['loadFilePage', 'Config']
+                if lastState not in ['aLoadFilePage', 'fConfig']
                     return @trigger 'goTofConfig'
 
-                if lastState is 'loadFilePage' # Previously in normal start.
+                if lastState is 'aLoadFilePage' # Previously in normal start.
                     if config.isNewVersion()
                         @trigger 'newVersion'
                     else
@@ -215,7 +270,6 @@ module.exports = class Init
 
     # Normal start
     postConfigInit: ->
-        console.log 'toto5'
         app.postConfigInit @getCallbackTriggerOrQuit 'initsDone'
 
     backup: ->
@@ -237,25 +291,28 @@ module.exports = class Init
 
     # Migration
     upsertLocalDesignDocuments: ->
-        return if @passUnlessInMigration 'mLocalDesignDocuments', 'localDesignUpToDate'
+        return if @passUnlessInMigration 'localDesignUpToDate'
 
         app.replicator.upsertLocalDesignDocuments @getCallbackTriggerOrQuit 'localDesignUpToDate'
 
     checkPlatformVersions: ->
-        return if @passUnlessInMigration 'mCheckPlatformVersions', 'validPlatformVersions'
+        return if @passUnlessInMigration 'validPlatformVersions'
         app.replicator.checkPlatformVersions \
             @getCallbackTriggerOrQuit 'validPlatformVersions'
 
     getPermissions: ->
-        return if @passUnlessInMigration 'mPermissions', 'getPermissions'
+        return if @passUnlessInMigration 'getPermissions'
         if app.replicator.config.hasPermissions()
             @trigger 'getPermissions'
+        else if @currentState is 'smPermissions'
+            app.startMainActivity 'smPermissions'
+
         else
             app.router.navigate 'permissions', trigger: true
 
 
     putRemoteRequest: ->
-        return if @passUnlessInMigration 'mRemoteRequest', 'putRemoteRequest'
+        return if @passUnlessInMigration 'putRemoteRequest'
 
         app.replicator.putRequests @getCallbackTriggerOrQuit 'putRemoteRequest'
 
@@ -273,8 +330,11 @@ module.exports = class Init
     setDeviceName: -> app.router.navigate 'device-name-picker', trigger: true
 
     config: ->
-        return if @passUnlessInMigration 'mConfig', 'configDone'
-        app.router.navigate 'config', trigger: true
+        return if @passUnlessInMigration 'configDone'
+        if @currentState is 'smConfig'
+            app.startMainActivity 'smConfig'
+        else
+            app.router.navigate 'config', trigger: true
 
     updateCozyLocale: -> app.replicator.updateLocaleFromCozy \
         @getCallbackTriggerOrQuit 'cozyLocaleUpToDate'
@@ -282,12 +342,42 @@ module.exports = class Init
     firstSync: ->
         app.router.navigate 'first-sync', trigger: true
 
-    # initFilesReplication: ->
-    #     app.replicator.initialReplication @getCallbackTriggerOrQuit 'calendarsInited'
+
+    ###########################################################################
+    # Service
+    sInitConfig: ->
+        app.replicator.initConfig (err, config) =>
+            return exitApp err if err
+            return exitApp 'notConfigured' unless config.remote
 
 
+            # Check last state
+            # If state is "ready" -> newVersion ? newVersion : configured
+            # Else : go to this state (with preconditions checks ?)
+            lastState = config.get('lastInitState') or 'aLoadFilePage'
 
-#ready: -> app.regularStart @getCallbackTriggerOrQuit 'inited'
+            if lastState is 'aLoadFilePage' # Previously in normal start.
+                if config.isNewVersion()
+                    @trigger 'newVersion'
+                else
+                    @trigger 'configured'
+            else # In init.
+                return exitApp "notConfigured: #{lastState}"
+    sBackup: ->
+        app.replicator.backup background: true
+        , @getCallbackTriggerOrQuit 'backupDone'
+
+    sSync: ->
+        app.replicator.sync background: true
+        , (err) =>
+            console.log "here we are"
+            console.log err
+            @getCallbackTriggerOrQuit('syncDone')(err)
+
+    sQuit: ->
+        app.exit()
+
+    ###########################################################################
     # Tools
     saveState: ->
         app.replicator.config.save lastInitState: @currentState
@@ -296,30 +386,36 @@ module.exports = class Init
     getCallbackTriggerOrQuit: (eventName) ->
         (err) =>
             if err
-                @exitApp err
+                app.exit err
             else
                 @trigger eventName
 
-    exitApp: (err) ->
-        log.error err
-        msg = err.message or err
-        msg += "\n #{t('error try restart')}"
-        alert msg
-        navigator.app.exitApp()
 
-    passUnlessInMigration: (state, event) ->
-        if state is @currentState and state not of @migrationStates
+    passUnlessInMigration: (event) ->
+        state = @currentState
+
+        # Convert service states.
+        if state.indexOf('s') is 0
+            state = state.slice 1
+
+        if state.indexOf('m') is 0 and state not of @migrationStates
             log.info "Skip state #{state} during migration so fire #{event}."
             @trigger event
             return true
+        else
+            return false
 
 
     # Migrations
 
     migrations:
-        '0.1.18': states: ['updatePermissions', 'updateRemoteRequest']
-        '0.1.17':
-            states: ['checkPlatformVersions', 'updatePermissions',
-                'updateRemoteRequest']
-
-
+        '0.1.19':
+            # Check cozy-locale, new view in the cozy, new permissions.
+            states: ['mPermissions', 'mRemoteRequest']
+        '0.1.18': states: []
+        '0.1.17': states: []
+        '0.1.16': states: []
+        '0.1.15':
+            # New routes, calendar sync.
+            states: ['mCheckPlatformVersions', 'mPermissions',
+                'mConfig', 'mRemoteRequest']

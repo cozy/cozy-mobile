@@ -27,84 +27,6 @@ module.exports =
         @init = new Init()
         @init.startStateMachine()
         @init.trigger 'startApplication'
-        # Backbone.history.start()
-
-        # # Monkey patch for browser debugging
-        # if window.isBrowserDebugging
-        #     window.navigator = window.navigator or {}
-        #     window.navigator.globalization =
-        #         window.navigator.globalization or {}
-        #     window.navigator.globalization.getPreferredLanguage = (callback) =>
-        #         callback value: @translation.DEFAULT_LANGUAGE
-
-        # # Use the device's locale until we get the config document.
-        # navigator.globalization.getPreferredLanguage (properties) =>
-        #     @translation.setLocale(properties)
-        #     window.t = @translation.getTranslate()
-
-            # @replicator.init (err, config) =>
-            #     if err
-            #         log.error err
-            #         msg = err.message or err
-            #         msg += "\n #{t('error try restart')}"
-            #         alert msg
-            #         return navigator.app.exitApp()
-
-                # # Monkey patch for browser debugging
-                # unless window.isBrowserDebugging
-                #     @notificationManager = new Notifications()
-                #     @serviceManager = new ServiceManager()
-
-                # $('body').empty().append @layout.render().$el
-                # $('body').css 'background-color', 'white'
-
-                # DeviceStatus.initialize()
-
-                # if config.remote
-                    # if config.has 'locale'
-                        # @translation.setLocale value: config.get 'locale'
-
-                    # if config.isNewVersion()
-                    #     Init = require './replicator/init'
-                    #     @init = new Init()
-                    #     @init.startStateMachine()
-                    #     @init.trigger 'newVersion'
-
-                    # else
-                    #     @regularStart()
-
-                # else # no config.remote
-                    # App's first start
-                    # @isFirstRun = true # TODO !
-                    # @router.navigate 'login', trigger: true
-
-
-
-    regularStart: ->
-        # Update version tag if we reach here
-        unless @replicator.config.has('checkpointed')
-            log.info 'Launch first replication again.'
-            @router.navigate 'first-sync', trigger: true
-            return
-
-        # @replicator.updateLocaleFromCozy (err) =>
-            # log.error err if err
-            # Continue with default locale on error
-
-            # @foreground = true
-            # conf = @replicator.config.attributes
-            # # Display config to help remote debuging.
-            # log.info "Start v#{conf.appVersion}--\
-            # sync_contacts:#{conf.syncContacts},\
-            # sync_calendars:#{conf.syncCalendars},\
-            # sync_images:#{conf.syncImages},\
-            # sync_on_wifi:#{conf.syncOnWifi},\
-            # cozy_notifications:#{conf.cozyNotifications}"
-
-            # @setListeners()
-            # @router.navigate 'folder/', trigger: true
-            # @router.once 'collectionfetched', =>
-            #     @replicator.backup {}, (err) -> log.error err if err
 
 
     setDeviceLocale: (callback) ->
@@ -122,9 +44,13 @@ module.exports =
             window.t = @translation.getTranslate()
             callback()
 
+
     postConfigInit: (callback) ->
         @replicator.updateLocaleFromCozy (err) =>
-            return callback err if err
+            if err
+                # Continue on error, app can work offline.
+                log.error "Continue on updateLocaleFromCozy error: #{err.msg}"
+
             unless window.isBrowserDebugging # Monkey patch for browser debugging
                 @notificationManager = new Notifications()
                 @serviceManager = new ServiceManager()
@@ -166,6 +92,15 @@ module.exports =
             @foreground = false
             @replicator.stopRealtime()
         , false
+
+
+    exit: (err) ->
+        if err
+            log.error err
+            msg = err.message or err
+            msg += "\n #{t('error try restart')}"
+            alert msg
+        navigator.app.exitApp()
 
     addDeviceListener: ->
         document.addEventListener 'deviceready', =>
