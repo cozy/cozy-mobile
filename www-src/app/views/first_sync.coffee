@@ -40,7 +40,7 @@ module.exports = class FirstSyncView extends BaseView
     onChange: (replicator) ->
         step = replicator.get 'initialReplicationStep'
         @$('#finishSync .progress').text t "message step #{step}"
-        if step is LAST_STEP
+        if step > LAST_STEP
             @render()
             app.init.trigger 'calendarsInited'
 
