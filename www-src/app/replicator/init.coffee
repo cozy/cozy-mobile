@@ -1,4 +1,4 @@
-compareVersions = require('../lib/compare_versions').compareVersions
+semver = require 'semver'
 
 log = require('../lib/persistent_log')
     date: true
@@ -12,7 +12,8 @@ module.exports = class Init
     # Override this function to use it as initialize.
     startStateMachine: ->
         @initialize()
-        Backbone.StateMachine.startStateMachine.bind(@)(arguments)
+        Backbone.StateMachine.startStateMachine.apply @, arguments
+
 
     initialize: ->
         @migrationStates = {}
@@ -25,10 +26,9 @@ module.exports = class Init
     initMigration: ->
         oldVersion = app.replicator.config.get 'appVersion'
         for version, migration of @migrations
-            if compareVersions(version, oldVersion) <= 0
-                break
-            for state in migration.states
-                @migrationStates[state] = true
+            if semver.gte(version, oldVersion)
+                for state in migration.states
+                    @migrationStates[state] = true
 
         @trigger 'migrationInited'
 
