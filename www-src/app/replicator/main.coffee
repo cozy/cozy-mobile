@@ -5,14 +5,15 @@ fs = require './filesystem'
 DesignDocuments = require './design_documents'
 ReplicatorConfig = require './replicator_config'
 DeviceStatus = require '../lib/device_status'
+semver = require 'semver'
+
 DBNAME = "cozy-files.db"
 DBPHOTOS = "cozy-photos.db"
-compareVersions = require('../lib/compare_versions').compareVersions
 
 
 PLATFORM_MIN_VERSIONS =
-    'proxy': '2.1.11'
-    'data-system': '2.1.6'
+    'proxy': '>=2.1.11'
+    'data-system': '>=2.1.6'
 
 log = require('../lib/persistent_log')
     prefix: "replicator"
@@ -61,9 +62,11 @@ module.exports = class Replicator extends Backbone.Model
             @photosDB = new PouchDB DBPHOTOS, dbOptions
             @migrateDBs callback
 
+
     initConfig: (callback) ->
         @config = new ReplicatorConfig(this)
         @config.fetch callback
+
 
     upsertLocalDesignDocuments: (callback) ->
         designDocs = new DesignDocuments @db, @photosDB
@@ -80,7 +83,7 @@ module.exports = class Replicator extends Backbone.Model
             for item in body
                 [s, app, version] = item.match /([^:]+): ([\d\.]+)/
                 if app of PLATFORM_MIN_VERSIONS
-                    if compareVersion(version, PLATFORM_MIN_VERSIONS[app]) < 0
+                    if semver.satisfies(version, PLATFORM_VERSIONS[app])
                         msg = t 'error need min %version for %app'
                         msg = msg.replace '%app', app
                         msg = msg.replace '%version', PLATFORM_MIN_VERSIONS[app]

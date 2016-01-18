@@ -31,7 +31,8 @@
     "stylus-brunch": "1.8.1",
     "uglify-js-brunch": "1.7.8",
     "underscore": "1.8.3",
-    "backbone.statemachine": "0.2.7"
+    "backbone.statemachine": "0.2.7",
+    "semver":"5.1.0"
   },
   "devDependencies": {
     "chai": "3.5.0",
