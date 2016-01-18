@@ -51,7 +51,7 @@ module.exports =
                 # Continue on error, app can work offline.
                 log.error "Continue on updateLocaleFromCozy error: #{err.msg}"
 
-            unless window.isBrowserDebugging # Monkey patch for browser debugging
+            unless window.isBrowserDebugging # Patch for browser debugging
                 @notificationManager = new Notifications()
                 @serviceManager = new ServiceManager()
 

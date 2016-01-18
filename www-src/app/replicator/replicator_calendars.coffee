@@ -415,10 +415,11 @@ module.exports =
                         async.mapSeries rows, (row, cb) =>
                             doc = row.doc
                             @db.put doc, new_edits: false, (err, res) ->
-                                                                cb err, doc
+                                cb err, doc
                         , (err, docs) =>
                             return callback err if err
-                            @set 'backup_step', null # hide header: first-sync view
+                            # hide header: first-sync view
+                            @set 'backup_step', null
                             @_applyEventsChangeToPhone docs, (err) =>
                                 # clean backup_step_done after applyChanges
                                 @set 'backup_step_done', null

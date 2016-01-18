@@ -18,7 +18,8 @@ module.exports = class Init
         @migrationStates = {}
 
         @listenTo @, 'transition', (leaveState, enterState) ->
-            log.info 'Transition from state "'+leaveState+'" to state "'+enterState+'"'
+            log.info "Transition from state #{leaveState} \
+                      to state #{enterState}"
 
 
     initMigration: ->
@@ -250,7 +251,7 @@ module.exports = class Init
 
                 # Watchdog
                 if lastState not in ['aLoadFilePage', 'fConfig',
-                        'fInitContacts', 'fInitCalendars', 'fUpdateIndex']
+                'fInitContacts', 'fInitCalendars', 'fUpdateIndex']
                     return @trigger 'goTofConfig'
 
                 if lastState is 'aLoadFilePage' # Previously in normal start.
@@ -290,7 +291,8 @@ module.exports = class Init
     upsertLocalDesignDocuments: ->
         return if @passUnlessInMigration 'localDesignUpToDate'
 
-        app.replicator.upsertLocalDesignDocuments @getCallbackTriggerOrQuit 'localDesignUpToDate'
+        app.replicator.upsertLocalDesignDocuments \
+            @getCallbackTriggerOrQuit 'localDesignUpToDate'
 
 
     checkPlatformVersions: ->

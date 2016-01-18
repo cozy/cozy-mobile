@@ -338,7 +338,8 @@ module.exports =
                             @db.put doc, 'new_edits':false, cb
                         , (err, contacts) =>
                             return callback err if err
-                            @set 'backup_step', null # hide header: first-sync view
+                            # hide header: first-sync view
+                            @set 'backup_step', null
                             @_applyContactsChangeToPhone docs, (err) =>
                                 # clean backup_step_done after applyChanges
                                 @set 'backup_step_done', null
