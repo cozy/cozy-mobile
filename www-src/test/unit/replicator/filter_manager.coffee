@@ -6,6 +6,7 @@ module.exports = describe 'FilterManager Test', ->
 
     defaultId = 42
     cozyUrl = 'cozyUrl'
+    deviceName = "my-device"
 
     before ->
         mockery.enable
@@ -44,40 +45,27 @@ module.exports = describe 'FilterManager Test', ->
     describe '[When all is ok]', ->
 
         it "setFilter return true", (done) ->
-            filterManager = new @FilterManager cozyUrl, true
+            filterManager = new @FilterManager cozyUrl, true, deviceName
             filterManager.setFilter true, true, true, (response) ->
                 assert.equal response, true
                 done()
 
-        it "getFilterId return the filter id", (done) ->
-            filterManager = new @FilterManager cozyUrl, true
-            filterManager.getFilterId (id) ->
-                assert.equal id, defaultId
-                done()
+        it "getFilterName return the filter name", ->
+            filterManager = new @FilterManager cozyUrl, true, deviceName
+            name = filterManager.getFilterName()
+            assert.equal name, "filter-#{deviceName}-config/config"
 
 
     describe '[All errors]', ->
 
-        it "When API have an error getFilterId return false", (done) ->
-            filterManager = new @FilterManager cozyUrl, "err"
-            filterManager.getFilterId (id) ->
-                assert.equal id, false
-                done()
-
-        it "When API don't return _id getFilterId return false", (done) ->
-            filterManager = new @FilterManager cozyUrl, "body_empty"
-            filterManager.getFilterId (id) ->
-                assert.equal id, false
-                done()
-
         it "When API have an error setFilter return false", (done) ->
-            filterManager = new @FilterManager cozyUrl, "err"
+            filterManager = new @FilterManager cozyUrl, "err", deviceName
             filterManager.setFilter true, true, true, (id) ->
                 assert.equal id, false
                 done()
 
         it "When API don't return _id setFilter return false", (done) ->
-            filterManager = new @FilterManager cozyUrl, "body_empty"
+            filterManager = new @FilterManager cozyUrl, "body_empty", deviceName
             filterManager.setFilter true, true, true, (id) ->
                 assert.equal id, false
                 done()

@@ -3,6 +3,10 @@ PouchDB = require 'pouchdb'
 request = require '../lib/request'
 FilterManager = require './filter_manager'
 
+log = require('../lib/persistent_log')
+    prefix: "replicator_config"
+    date: true
+
 module.exports = class ReplicatorConfig extends Backbone.Model
     constructor: (@db) ->
         super null
@@ -18,18 +22,9 @@ module.exports = class ReplicatorConfig extends Backbone.Model
         cozyURL: ''
         deviceName: ''
 
-    getConfigFilter: ->
-        compare = "doc.docType === 'file' or doc.docType === 'folder'"
-        compare += " or doc.docType === 'contact'" if @get "syncContacts"
-        compare += " or doc.docType === 'event'" if @get "syncCalendars"
-        if @get "cozyNotifications"
-            compare += " or (doc.docType === 'notification'"
-            compare += " and doc.type === 'temporary')"
-
-        filters:
-            config: "function (doc) { return #{compare} }"
-
     fetch: (callback) ->
+        log.info "fetch"
+
         @db.get '_local/appconfig', (err, config) =>
             if config
                 @set config
@@ -38,6 +33,8 @@ module.exports = class ReplicatorConfig extends Backbone.Model
             callback null, this
 
     save: (changes, callback) ->
+        log.info "save changes"
+
         @set changes
         # Update _rev, if another process (service) has modified it since.
         @db.get '_local/appconfig', (err, config) =>
@@ -52,11 +49,12 @@ module.exports = class ReplicatorConfig extends Backbone.Model
                 return callback new Error('cant save config') unless res.ok
                 @set _rev: res.rev
                 @remote = @createRemotePouchInstance()
-                callback null, this
-
-        filterManager = new FilterManager @getCozyUrl(), @get 'auth'
-        filterManager.setFilter @get "syncContacts", @get "syncCalendars", \
-                @get "cozyNotifications", callback
+                if changes.syncContacts or changes.syncCalendars or \
+                        changes.cozyNotifications or changes.deviceName
+                    @setReplicationFilter (res) =>
+                        callback null, this
+                else
+                    callback null, this
 
     getScheme: ->
         # Monkey patch for browser debugging
@@ -105,3 +103,18 @@ module.exports = class ReplicatorConfig extends Backbone.Model
         _.isEqual \
             @get('devicePermissions'), \
             @serializePermissions(permissions)
+
+    getFilterManager: ->
+        unless @filterManager
+            @filterManager = new FilterManager @getCozyUrl(), @get('auth'), \
+                    @get("deviceName")
+        @filterManager
+
+    getReplicationFilter: ->
+        log.info "getReplicationFilter"
+        @getFilterManager().getFilterName()
+
+    setReplicationFilter: (callback) ->
+        log.info "setReplicationFilter"
+        @getFilterManager().setFilter @get("syncContacts"), \
+            @get("syncCalendars"), @get("cozyNotifications"), callback

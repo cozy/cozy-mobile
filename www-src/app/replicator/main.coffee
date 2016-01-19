@@ -316,7 +316,6 @@ module.exports = class Replicator extends Backbone.Model
     # update index for further speeds up.
     updateIndex: (callback) ->
         log.info "INDEX BUILT"
-        log.warn err if err
         # build pouch's map indexes
         @db.query DesignDocuments.FILES_AND_FOLDER, {}, =>
             # build pouch's map indexes
@@ -562,22 +561,6 @@ module.exports = class Replicator extends Backbone.Model
         return fileNEntriesInCache
 
 
-    _replicationFilter: ->
-        if @config.get 'cozyNotifications'
-            filter = (doc) ->
-                return doc.docType?.toLowerCase() is 'folder' or
-                    doc.docType?.toLowerCase() is 'file' or
-                    doc.docType?.toLowerCase() is 'notification' and
-                        doc.type?.toLowerCase() is 'temporary'
-
-        else
-            filter = (doc) ->
-                return doc.docType?.toLowerCase() is 'folder' or
-                    doc.docType?.toLowerCase() is 'file'
-
-        return filter
-
-
     # wrapper around _sync to maintain the state of inSync
     sync: (options, callback) ->
         return callback null if @get 'inSync'
@@ -598,6 +581,8 @@ module.exports = class Replicator extends Backbone.Model
     #    * replication at each start
     #    * replication force by user
     _sync: (options, callback) ->
+        log.info "_sync"
+
         @stopRealtime()
         changedDocs = []
         checkpoint = @config.get 'checkpointed'
@@ -605,7 +590,7 @@ module.exports = class Replicator extends Backbone.Model
         replication = @db.replicate.from @config.remote,
             batch_size: 20
             batches_limit: 5
-            filter: @_replicationFilter()
+            filter: @config.getReplicationFilter()
             live: false
             since: checkpoint
 
@@ -636,19 +621,15 @@ module.exports = class Replicator extends Backbone.Model
                         @updateIndex =>
                             @startRealtime()
 
-    # realtime
-    # start from the last checkpointed value
-    # smaller batches to limit memory usage
-    # if there is an error, we keep trying
-    # with exponential backoff 2^x s (max 1min)
-    #
-    realtimeBackupCoef = 1
-
+    ###*
+     * Start real time replication
+    ###
     startRealtime: =>
-        if @liveReplication or not app.foreground
-            return
+        log.info "startRealtime"
 
-        unless @config.has('checkpointed')
+        return if @replicatorManager or not app.foreground
+
+        unless @config.has 'checkpointed'
             log.error new Error "database not initialized"
 
             if confirm t 'Database not initialized. Do it now ?'
@@ -663,54 +644,13 @@ module.exports = class Replicator extends Backbone.Model
 
         log.info 'REALTIME START'
 
-        @liveReplication = @db.replicate.from @config.remote,
-            batch_size: 20
-            batches_limit: 5
-            filter: @_replicationFilter()
-            since: @config.get 'checkpointed'
-            live: true
-            heartbeat: false
-
-        @liveReplication.on 'change', (change) =>
-            realtimeBackupCoef = 1
-            app.router.forceRefresh()
-
-            @set 'inSync', true
-            fileNEntriesInCache = @_filesNEntriesInCache change.docs
-            async.eachSeries fileNEntriesInCache, @updateLocal, (err) ->
-                if err
-                    log.error err
-                else
-                    log.info "updated binary in realtime"
-
-
-        @liveReplication.on 'uptodate', (e) =>
-            realtimeBackupCoef = 1
-            @set 'inSync', false
-            app.router.forceRefresh()
-            # @TODO : save last_seq ?
-            log.info "UPTODATE realtime", e
-
-        @liveReplication.once 'complete', (e) =>
-            log.info "REALTIME CANCELLED"
-            @set 'inSync', false
-            @liveReplication = null
-
-        @liveReplication.once 'error', (e) =>
-            @liveReplication = null
-
-            realtimeBackupCoef++ if realtimeBackupCoef < 6
-            timeout = 1000 * (1 << realtimeBackupCoef)
-            log.error "REALTIME BROKE, TRY AGAIN IN #{timeout} #{e.toString()}"
-            @realtimeBackOff = setTimeout @startRealtime, timeout
+        ReplicatorManager = require "./replicator_manager"
+        @replicatorManager = new ReplicatorManager @config, app.router
+        @replicatorManager.start @config.get('checkpointed'), true
 
     stopRealtime: =>
         # Stop replication.
-        @liveReplication?.cancel()
-
-        # Kill backoff if exists.
-        clearTimeout @realtimeBackOff
-
+        @replicatorManager?.stop()
 
     # Update cache files with outdated revisions. Called while backup
     syncCache:  (callback) =>
