@@ -105,10 +105,8 @@ module.exports = class ReplicatorConfig extends Backbone.Model
             @serializePermissions(permissions)
 
     getFilterManager: ->
-        unless @filterManager
-            @filterManager = new FilterManager @getCozyUrl(), @get('auth'), \
+        @filterManager ?= new FilterManager @getCozyUrl(), @get('auth'), \
                     @get("deviceName")
-        @filterManager
 
     getReplicationFilter: ->
         log.info "getReplicationFilter"

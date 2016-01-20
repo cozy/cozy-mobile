@@ -627,7 +627,7 @@ module.exports = class Replicator extends Backbone.Model
     startRealtime: =>
         log.info "startRealtime"
 
-        return if @replicatorManager or not app.foreground
+        return if @replicationLauncher or not app.foreground
 
         unless @config.has 'checkpointed'
             log.error new Error "database not initialized"
@@ -644,13 +644,13 @@ module.exports = class Replicator extends Backbone.Model
 
         log.info 'REALTIME START'
 
-        ReplicatorManager = require "./replicator_manager"
-        @replicatorManager = new ReplicatorManager @config, app.router
-        @replicatorManager.start @config.get('checkpointed'), true
+        ReplicationLauncher = require "./replication_launcher"
+        @replicationLauncher = new ReplicationLauncher @config, app.router
+        @replicationLauncher.start @config.get('checkpointed'), true
 
     stopRealtime: =>
         # Stop replication.
-        @replicatorManager?.stop()
+        @replicationLauncher?.stop()
 
     # Update cache files with outdated revisions. Called while backup
     syncCache:  (callback) =>

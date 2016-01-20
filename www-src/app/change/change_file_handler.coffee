@@ -1,18 +1,18 @@
 DeviceStatus = require '../lib/device_status'
 fs = require '../replicator/filesystem'
 log = require('../lib/persistent_log')
-    prefix: "File Manager"
+    prefix: "ChangeFileHandler"
     date: true
 
 ###*
- * FileManager allows to download, rename and delete a file.
+ * ChangeFileHandler allows to download, rename and delete a file.
  *
- * @class FilterManager
+ * @class ChangeFileHandler
 ###
-module.exports = class FileManager
+module.exports = class ChangeFileHandler
 
     ###*
-     * Create a FileManager.
+     * Create a ChangeFileHandler.
      *
      * @param {ReplicatorConfig} config - it's replication config.
     ###
