@@ -65,7 +65,6 @@ module.exports = class ReplicatorConfig extends Backbone.Model
     createRemotePouchInstance: ->
         new PouchDB
             name: "#{@getCozyUrl()}/replication"
-            ajax: timeout: 55 * 1000 # Before the cozy's one.
 
     appVersion: ->
         APP_VERSION
