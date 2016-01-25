@@ -49,9 +49,14 @@ module.exports = class ReplicatorConfig extends Backbone.Model
                 return callback new Error('cant save config') unless res.ok
                 @set _rev: res.rev
                 @remote = @createRemotePouchInstance()
-                if changes.syncContacts or changes.syncCalendars or \
-                        changes.cozyNotifications or changes.deviceName
+                if changes.cozyNotifications isnt @cozyNotifications \
+                        or changes.syncCalendars isnt @syncCalendars \
+                        or changes.syncContacts isnt @syncContacts \
+                        or changes.deviceName
                     @setReplicationFilter (res) =>
+                        if app.replicator.replicationLauncher
+                            app.replicator.stopRealtime()
+                            app.replicator.startRealtime()
                         callback null, this
                 else
                     callback null, this

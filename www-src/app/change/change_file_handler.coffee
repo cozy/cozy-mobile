@@ -44,6 +44,7 @@ module.exports = class ChangeFileHandler
         # - get file directory
         # - delete this directory
         fs.getDirectory @directoryEntry, @_fileToEntryName(doc), (err, dir) =>
+            return if err and err.code and err.code is 1 # file isn't present
             return log.error err if err
             log.info "delete binary of #{doc.name}"
             fs.rmrf dir, (err) =>

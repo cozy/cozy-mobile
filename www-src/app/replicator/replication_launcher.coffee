@@ -33,7 +33,7 @@ module.exports = class ReplicationLauncher
      * @param {Integer} since - Replicate changes after given sequence number.
      * @param {Boolean} live - Continue replicating after changes.
     ###
-    start: (since, live) ->
+    start: (since, live, callback = ->) ->
         log.info "start"
 
         unless @replication
@@ -43,7 +43,6 @@ module.exports = class ReplicationLauncher
                 for doc in info.docs
                     if @changeDispatcher.isDispatched doc
                         @router.forceRefresh()
-                        @config.save checkpointed: info.last_seq, ->
                         @changeDispatcher.dispatch doc
             @replication.on 'paused', ->
                 log.info "replicate paused"
@@ -51,8 +50,10 @@ module.exports = class ReplicationLauncher
                 log.info "replicate active"
             @replication.on 'denied', (info) ->
                 log.info "replicate denied"
-            @replication.on 'complete', (info) ->
+            @replication.on 'complete', (info) =>
                 log.info "replicate complete"
+                @config.save checkpointed: info.last_seq, ->
+                callback()
             @replication.on 'error', (err) ->
                 log.info "replicate error"
                 log.error err
@@ -79,8 +80,6 @@ module.exports = class ReplicationLauncher
         batch_size: @BATCH_SIZE
         batches_limit: @BATCHES_LIMIT
         filter: @filterName
-        timeout: 10000
-        heartbeat: 10000
         since: since
         live: live
         retry: true

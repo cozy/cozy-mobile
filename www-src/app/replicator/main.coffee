@@ -584,42 +584,10 @@ module.exports = class Replicator extends Backbone.Model
         log.info "_sync"
 
         @stopRealtime()
-        changedDocs = []
-        checkpoint = @config.get 'checkpointed'
 
-        replication = @db.replicate.from @config.remote,
-            batch_size: 20
-            batches_limit: 5
-            filter: @config.getReplicationFilter()
-            live: false
-            since: checkpoint
-
-        replication.on 'change', (change) ->
-            log.info "changes received while sync"
-            changedDocs = changedDocs.concat change.docs
-
-        replication.once 'error', (err) =>
-            log.error "error while replication in sync", err
-            if err?.result?.status? and err.result.status is 'aborted'
-                replication?.cancel()
-                @_sync options, callback
-            else
-                callback err
-
-        replication.once 'complete', (result) =>
-            log.info "replication in sync completed."
-            async.eachSeries @_filesNEntriesInCache(changedDocs), \
-                    @updateLocal, (err) =>
-                # Continue on cache update error, 'syncCache' call on next
-                # backup may fix it.
-                log.warn err if err
-                @config.save checkpointed: result.last_seq, (err) =>
-                    callback err
-                    unless options.background
-                        app.router.forceRefresh()
-                        # updateIndex In background
-                        @updateIndex =>
-                            @startRealtime()
+        ReplicationLauncher = require "./replication_launcher"
+        @replicationLauncher = new ReplicationLauncher @config, app.router
+        @replicationLauncher.start @config.get('checkpointed'), false, callback
 
     ###*
      * Start real time replication
@@ -641,16 +609,14 @@ module.exports = class Replicator extends Backbone.Model
 
             return
 
-
-        log.info 'REALTIME START'
-
         ReplicationLauncher = require "./replication_launcher"
         @replicationLauncher = new ReplicationLauncher @config, app.router
         @replicationLauncher.start @config.get('checkpointed'), true
 
+    # Stop replication.
     stopRealtime: =>
-        # Stop replication.
         @replicationLauncher?.stop()
+        delete @replicationLauncher
 
     # Update cache files with outdated revisions. Called while backup
     syncCache:  (callback) =>

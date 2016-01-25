@@ -281,8 +281,7 @@ module.exports =
         replication = @db.replicate.from @config.remote,
             batch_size: 20
             batches_limit: 1
-            filter: (doc) ->
-                return doc? and doc.docType?.toLowerCase() is 'contact'
+            filter: @config.getReplicationFilter()
             live: false
             since: @config.get 'contactsPullCheckpointed'
 
