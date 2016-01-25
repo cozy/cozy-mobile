@@ -17,7 +17,7 @@ plugins = {
     "cordova-sqlite-storage": "https://github.com/litehelpers/Cordova-sqlite-storage#r1.0.4"
     "de.appplant.cordova.plugin.local-notification": "de.appplant.cordova.plugin.local-notification@0.8.2"
 
-    "io.cozy.cordova-images-browser": "https://github.com/aenario/cordova-images-browser"
+    "io.cozy.cordova-images-browser": "https://github.com/cozy/cordova-images-browser#v1.0.2"
     "io.cozy.jsbackgroundservice": "https://github.com/cozy/cordova-jsbackgroundservice#v1.1.2"
     "io.cozy.jsbgservice-newpicture": "https://github.com/cozy/cordova-jsbgservice-newpicture#v1.0.0"
     "io.cozy.contacts": "https://github.com/cozy/cordova-plugin-contacts#c1.0.3"
