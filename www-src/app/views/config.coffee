@@ -26,12 +26,13 @@ module.exports = class ConfigView extends BaseView
 
     getRenderData: ->
         config = app.replicator.config.toJSON()
-
+        console.log 'config'
+        console.log app.init.currentState
         return _.extend {},
             config,
             lastSync: @formatDate config?.lastSync
             lastBackup: @formatDate config?.lastBackup
-            firstRun: app.isFirstRun
+            initState: app.init.currentState
             locale: app.locale
             appVersion: app.replicator.config.appVersion()
 
@@ -46,7 +47,7 @@ module.exports = class ConfigView extends BaseView
 
     # only happens after the first config (post install)
     configDone: ->
-        app.router.navigate 'first-sync', trigger: true
+        app.init.trigger 'configDone'
 
 
     # confirm, destroy the DB, force refresh the page (show login form)
@@ -69,7 +70,8 @@ module.exports = class ConfigView extends BaseView
     # confirm, launch initial replication, navigate to first sync UI.
     synchroBtn: ->
         if confirm t 'confirm message'
-            app.router.navigate 'first-sync', trigger: true
+            app.init.toState 'fFirstSyncView'
+            # app.router.navigate 'first-sync', trigger: true
 
 
     sendlogBtn: ->

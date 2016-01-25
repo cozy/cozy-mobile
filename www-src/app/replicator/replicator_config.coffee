@@ -1,4 +1,4 @@
-APP_VERSION = "0.1.18"
+APP_VERSION = "0.1.19"
 PouchDB = require 'pouchdb'
 
 module.exports = class ReplicatorConfig extends Backbone.Model

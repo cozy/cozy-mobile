@@ -85,6 +85,10 @@ module.exports = class Layout extends BaseView
     closeMenu: =>
         @controller.toggleLeft false
 
+    quitSplashScreen: ->
+        $('body').empty().append @render().$el
+        $('body').css 'background-color', 'white'
+
     setBackButton: (href, icon) =>
         @backButton.attr 'href', href
         @backButton.removeClass 'ion-home ion-ios7-arrow-back'
