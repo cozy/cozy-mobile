@@ -3,6 +3,11 @@ request = require '../lib/request'
 ACH = require '../lib/android_calendar_helper'
 DesignDocuments = require './design_documents'
 
+log = require('../lib/persistent_log')
+    prefix: "calendars replicator"
+    date: true
+
+continueOnError = require('../lib/utils').continueOnError log
 
 # Account type and name of the created android contact account.
 ACCOUNT_TYPE = 'io.cozy'
@@ -11,10 +16,6 @@ ACCOUNT_NAME = 'myCozy'
 ACCOUNT =
     accountType: ACCOUNT_TYPE
     accountName: ACCOUNT_NAME
-
-log = require('../lib/persistent_log')
-    prefix: "calendars replicator"
-    date: true
 
 
 module.exports =
@@ -140,8 +141,10 @@ module.exports =
     _updateEventInPouch: (aEvent, callback) ->
         @db.get aEvent._sync_id, (err, cozyEvent) =>
             return callback err if err
-
-            cozyEvent = ACH.event2Cozy aEvent, @calendarNames, cozyEvent
+            try
+                cozyEvent = ACH.event2Cozy aEvent, @calendarNames, cozyEvent
+            catch err
+                return callback err
 
             @db.put cozyEvent, cozyEvent._id, cozyEvent._rev, (err, idNrev) ->
                 if err
@@ -167,7 +170,10 @@ module.exports =
     # @param phoneContact cordova contact format.
     # @param retry retry lighter update after a failed one.
     _createEventInPouch: (aEvent, callback) ->
-        cozyEvent = ACH.event2Cozy aEvent, @calendarNames
+        try
+            cozyEvent = ACH.event2Cozy aEvent, @calendarNames
+        catch err
+            return callback err
 
         @db.post cozyEvent, (err, idNrev) ->
             if err
@@ -195,6 +201,7 @@ module.exports =
             _deleted: true
 
         @db.put toDelete, toDelete._id, toDelete._rev, (err, res) ->
+            return callback err if err
             navigator.calendarsync.deleteEvent aEvent, ACCOUNT, callback
 
 
@@ -215,13 +222,13 @@ module.exports =
                 @set 'backup_step_done', processed++
                 setImmediate => # helps refresh UI
                     if event.deleted
-                        @_deleteEventInPouch event, cb
+                        @_deleteEventInPouch event, continueOnError cb
                     else
                         event = ACH.filterOrganizerAttendee event, ACCOUNT_NAME
                         if event._sync_id
-                            @_updateEventInPouch event, cb
+                            @_updateEventInPouch event, continueOnError cb
                         else
-                            @_createEventInPouch event, cb
+                            @_createEventInPouch event, continueOnError cb
             , callback
 
 
@@ -282,7 +289,10 @@ module.exports =
     _saveEventInPhone: (cozyEvent, androidEvent, callback) ->
         @_checkCalendarInPhone cozyEvent, (err) =>
             return callback err if err
-            toSaveInPhone = ACH.event2Android cozyEvent, @calendarIds
+            try
+                toSaveInPhone = ACH.event2Android cozyEvent, @calendarIds
+            catch err
+                return callback err
 
             options =
                 accountType: ACCOUNT_TYPE
@@ -334,18 +344,19 @@ module.exports =
             # precondition: backup_step_done initialized to 0.
             @set 'backup_step_done', @get('backup_step_done') + 1
             navigator.calendarsync.eventBySyncId doc._id, (err, aEvents) =>
+                return continueOnError(cb)(err) if err
                 aEvent = aEvents[0]
-                return cb err if err
 
                 if doc._deleted
                     if aEvent?
                         calendarDeletions[aEvent.calendar_id] = true
-                        navigator.calendarsync.deleteEvent aEvent, ACCOUNT, cb
+                        navigator.calendarsync.deleteEvent aEvent, ACCOUNT, \
+                            continueOnError cb
                     else # already done.
                         cb()
 
                 else
-                    @_saveEventInPhone doc, aEvent, cb
+                    @_saveEventInPhone doc, aEvent, continueOnError cb
         , (err) =>
             return callback err if err
             # Remove obsolete calendars.

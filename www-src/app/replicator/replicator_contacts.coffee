@@ -3,13 +3,16 @@ DesignDocuments = require './design_documents'
 request = require '../lib/request'
 Contact = require '../models/contact'
 
-# Account type and name of the created android contact account.
-ACCOUNT_TYPE = 'io.cozy'
-ACCOUNT_NAME = 'myCozy'
-
 log = require('../lib/persistent_log')
     prefix: "contacts replicator"
     date: true
+
+continueOnError = require('../lib/utils').continueOnError log
+
+
+# Account type and name of the created android contact account.
+ACCOUNT_TYPE = 'io.cozy'
+ACCOUNT_NAME = 'myCozy'
 
 
 module.exports =
@@ -59,7 +62,6 @@ module.exports =
 
     # Update contact in pouchDB with specified contact from phone.
     # @param phoneContact cordova contact format.
-    # @param retry retry lighter update after a failed one.
     _updateInPouch: (phoneContact, callback) ->
         async.parallel
             fromPouch: (cb) =>
@@ -154,6 +156,7 @@ module.exports =
             _deleted: true
 
         @db.put toDelete, toDelete._id, toDelete._rev, (err, res) ->
+            return callback err if err
             phoneContact.remove (-> callback()), callback, \
                     callerIsSyncAdapter: true
 
@@ -174,11 +177,11 @@ module.exports =
                 @set 'backup_step_done', processed++
                 setImmediate => # helps refresh UI
                     if contact.deleted
-                        @_deleteInPouch contact, cb
+                        @_deleteInPouch contact, continueOnError cb
                     else if contact.sourceId
-                        @_updateInPouch contact, cb
+                        @_updateInPouch contact, continueOnError cb
                     else
-                        @_createInPouch contact, cb
+                        @_createInPouch contact, continueOnError cb
             , callback
 
         , callback
@@ -209,7 +212,10 @@ module.exports =
     # @param cozyContact in cozy's format
     # @param phoneContact in cordova contact format.
     _saveContactInPhone: (cozyContact, phoneContact, callback) ->
-        toSaveInPhone = Contact.cozy2Cordova cozyContact
+        try
+            toSaveInPhone = Contact.cozy2Cordova cozyContact
+        catch err
+            return callback err
 
         if phoneContact
             toSaveInPhone.id = phoneContact.id
@@ -241,18 +247,19 @@ module.exports =
             # precondition: backup_step_done initialized to 0.
             @set 'backup_step_done', @get('backup_step_done') + 1
             getFromPhoneBySourceId doc._id, (err, contact) =>
-                return cb err if err
+                return continueOnError(cb)(err) if err
                 if doc._deleted
                     if contact?
                         # Use callerIsSyncAdapter flag to apply immediately in
                         # android(no dirty flag cycle)
-                        contact.remove (-> cb()), cb, callerIsSyncAdapter: true
+                        contact.remove (-> cb()), continueOnError(cb), \
+                            callerIsSyncAdapter: true
                     # else already done.
 
                 else
-                    @_saveContactInPhone doc, contact, cb
+                    @_saveContactInPhone doc, contact, continueOnError cb
         , (err) ->
-            callback err
+            callback err # Error should always be null.
 
 
     # Sync cozy's contact to phone.

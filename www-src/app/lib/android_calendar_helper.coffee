@@ -167,8 +167,6 @@ module.exports = ACH =
 
 
     event2Cozy: (android, calendarNames, cozy) ->
-
-
         start = undefined
         end = undefined
         timezone = undefined
