@@ -62,7 +62,7 @@ module.exports =
                                 alert err.message or err
                                 return navigator.app.exitApp()
 
-                            if config.hasPermissions()
+                            if config.hasPermissions(@replicator.permissions)
                                 @regularStart()
                             else
                                 @router.navigate 'permissions', trigger: true
@@ -81,7 +81,7 @@ module.exports =
                 alert err.message or err
                 return navigator.app.exitApp()
 
-            if @replicator.config.hasPermissions()
+            if @replicator.config.hasPermissions(@replicator.permissions)
                 @regularStart()
             else
                 @router.navigate 'permissions', trigger: true
