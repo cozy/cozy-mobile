@@ -86,5 +86,5 @@ module.exports = class ReplicatorConfig extends Backbone.Model
 
     hasPermissions: (permissions) ->
         _.isEqual \
-            @serializePermissions(@get('devicePermissions')), \
+            @get('devicePermissions'), \
             @serializePermissions(permissions)
