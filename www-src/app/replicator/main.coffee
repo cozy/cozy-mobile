@@ -315,18 +315,13 @@ module.exports = class Replicator extends Backbone.Model
 
     # update index for further speeds up.
     updateIndex: (callback) ->
-        # build the search index
-        @db.search
-            build: true
-            fields: ['name']
-        , (err) =>
-            log.info "INDEX BUILT"
-            log.warn err if err
+        log.info "INDEX BUILT"
+        log.warn err if err
+        # build pouch's map indexes
+        @db.query DesignDocuments.FILES_AND_FOLDER, {}, =>
             # build pouch's map indexes
-            @db.query DesignDocuments.FILES_AND_FOLDER, {}, =>
-                # build pouch's map indexes
-                @db.query DesignDocuments.LOCAL_PATH, {}, ->
-                    callback null
+            @db.query DesignDocuments.LOCAL_PATH, {}, ->
+                callback null
 
 # END initialisations methods
 
