@@ -14,7 +14,8 @@ or head over to the [Releases page](https://github.com/cozy/cozy-mobile/releases
 
 ## Built with
 
-- cordova
+    cordova build --release
+    ./www-src/node_modules/.bin/cake release
 
 ## Hack
 
