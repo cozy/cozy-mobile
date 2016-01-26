@@ -31,7 +31,10 @@ module.exports = class ReplicatorConfig extends Backbone.Model
             unless err # may be 404, at doc initialization.
                 @set _rev: config._rev
 
-            @replicator.db.put @toJSON(), (err, res) =>
+            doc = @toJSON()
+            delete doc.password if doc.password
+
+            @replicator.db.put doc, (err, res) =>
                 return callback err if err
                 return callback new Error('cant save config') unless res.ok
                 @set _rev: res.rev
