@@ -237,6 +237,7 @@ module.exports = Contact =
 
     # Convert a cordova contact to cozy contact (asynchronous).
     cordova2Cozy: (cordovaContact, callback) ->
+        return callback new Error 'No cordova contact' unless cordovaContact?
         cozyContact =
             docType: 'contact'
             _id: cordovaContact.sourceId
@@ -259,9 +260,7 @@ module.exports = Contact =
         Contact._cordova2Datapoints cordovaContact, cozyContact
 
         unless cordovaContact.photos?.length > 0
-
             return callback null, cozyContact
-
 
         photo = cordovaContact.photos[0]
 
@@ -275,6 +274,8 @@ module.exports = Contact =
 
         else if photo.type is 'url'
             img = new Image()
+
+            img.onerror = -> callback new Error 'While resizing avatar.'
 
             img.onload = ->
                 IMAGE_DIMENSION = 600
