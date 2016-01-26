@@ -1,4 +1,7 @@
 ChangeFileHandler = require "./change_file_handler"
+ChangeEventHandler = require "./change_event_handler"
+ChangeContactHandler = require "./change_contact_handler"
+ChangeTagHandler = require "./change_tag_handler"
 log = require('../lib/persistent_log')
     prefix: "ChangeDispatcher"
     date: true
@@ -13,6 +16,9 @@ module.exports = class ChangeDispatcher
     # docType
     FILE_DOC_TYPE: "file"
     FOLDER_DOC_TYPE: "folder"
+    EVENT_DOC_TYPE: "event"
+    CONTACT_DOC_TYPE: "contact"
+    TAG_DOC_TYPE: "tag"
 
     ###*
      * Create a ChangeDispatcher.
@@ -21,6 +27,9 @@ module.exports = class ChangeDispatcher
     ###
     constructor: (config) ->
         @changeFileHandler = new ChangeFileHandler config
+        @changeEventHandler = new ChangeEventHandler()
+        @changeContactHandler = new ChangeContactHandler()
+        @changeTagHandler = new ChangeTagHandler()
 
     ###*
      * Launch the good handler with specific state.
@@ -33,6 +42,9 @@ module.exports = class ChangeDispatcher
 
         switch doc.docType
             when @FILE_DOC_TYPE then @changeFileHandler[state] doc
+            when @EVENT_DOC_TYPE then @changeEventHandler[state] doc
+            when @CONTACT_DOC_TYPE then @changeContactHandler[state] doc
+            when @TAG_DOC_TYPE then @changeTagHandler[state] doc
 
     ###*
      * Check if a doc is authorized to be dispatched
@@ -43,7 +55,13 @@ module.exports = class ChangeDispatcher
     ###
     isDispatched: (doc) ->
         return false unless doc.docType
-        [@FILE_DOC_TYPE, @FOLDER_DOC_TYPE].indexOf(doc.docType) > -1
+        [
+            @FILE_DOC_TYPE
+            @FOLDER_DOC_TYPE
+            @EVENT_DOC_TYPE
+            @CONTACT_DOC_TYPE
+            @TAG_DOC_TYPE
+        ].indexOf(doc.docType) > -1
 
 
     ###*

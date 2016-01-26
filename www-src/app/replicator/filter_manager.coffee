@@ -75,7 +75,9 @@ module.exports = class FilterManager
     _getConfigFilter: (syncContacts, syncCalendars, syncNotifs) ->
         compare = "doc.docType === 'file' || doc.docType === 'folder'"
         compare += " || doc.docType === 'contact'" if syncContacts
-        compare += " || doc.docType === 'event'" if syncCalendars
+        if syncCalendars
+            compare += " || doc.docType === 'event'"
+            compare += " || doc.docType === 'tag'"
         if syncNotifs
             compare += " || (doc.docType === 'notification'"
             compare += " && doc.type === 'temporary')"
