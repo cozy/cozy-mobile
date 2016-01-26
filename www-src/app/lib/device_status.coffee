@@ -1,4 +1,4 @@
-log = require('/lib/persistent_log')
+log = require('./persistent_log')
     prefix: "device status"
     date: true
 
