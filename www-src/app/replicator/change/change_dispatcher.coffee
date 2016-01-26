@@ -2,7 +2,7 @@ ChangeFileHandler = require "./change_file_handler"
 ChangeEventHandler = require "./change_event_handler"
 ChangeContactHandler = require "./change_contact_handler"
 ChangeTagHandler = require "./change_tag_handler"
-log = require('../lib/persistent_log')
+log = require('../../lib/persistent_log')
     prefix: "ChangeDispatcher"
     date: true
 

@@ -1,4 +1,4 @@
-ChangeDispatcher = require "../change/change_dispatcher"
+ChangeDispatcher = require "./change/change_dispatcher"
 log = require('../lib/persistent_log')
     prefix: "ReplicationLauncher"
     date: true

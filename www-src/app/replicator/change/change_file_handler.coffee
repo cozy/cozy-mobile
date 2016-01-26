@@ -1,6 +1,6 @@
-DeviceStatus = require '../lib/device_status'
-fs = require '../replicator/filesystem'
-log = require('../lib/persistent_log')
+DeviceStatus = require '../../lib/device_status'
+fs = require '../filesystem'
+log = require('../../lib/persistent_log')
     prefix: "ChangeFileHandler"
     date: true
 
