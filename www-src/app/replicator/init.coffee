@@ -71,17 +71,21 @@ module.exports = class Init
         fQuitSplashScreen: enter: ['quitSplashScreen'] # RUN
         fLogin: enter: ['login']
         fPermissions: enter: ['getPermissions']
-        fDeviceName: enter: ['setDeviceName']
-        fConfig: enter: ['saveState', 'config']
+        fDeviceName: enter: ['setDeviceName'], leave: ['saveState']
+        fCheckPlatformVersion: enter: ['checkPlatformVersions']
+        fConfig: enter: ['config']
         fFirstSyncView: enter: ['firstSyncView'] # RUN
         fLocalDesignDocuments: enter: ['upsertLocalDesignDocuments']
         fRemoteRequest: enter: ['putRemoteRequest']
         fPostConfigInit: enter: ['postConfigInit'] # RUN
         fSetVersion: enter: ['updateVersion']
 
-        fInitialFilesReplication: enter: ['initialFilesReplication']
+        fTakeDBCheckpoint: enter: ['takeDBCheckpoint']
+        fInitFiles: enter: ['initFiles']
+        fInitFolders: enter: ['saveState', 'initFolders']
         fInitContacts: enter: ['saveState', 'initContacts']
         fInitCalendars: enter: ['saveState', 'initCalendars']
+        fSync: enter: ['postCopyViewSync']
         fUpdateIndex: enter: ['saveState', 'updateIndex']
 
 
@@ -147,7 +151,7 @@ module.exports = class Init
             'newVersion': 'migrationInit' # Migration
             'notConfigured': 'fQuitSplashScreen' # First start
             # First start error
-            'goTofConfig': 'f1QuitSplashScreen'
+            'goTofDeviceName': 'f1QuitSplashScreen'
             'goTofInitContacts': 'f2QuitSplashScreen'
             'goTofInitCalendars': 'f3QuitSplashScreen'
             'goTofUpdateIndex': 'f4QuitSplashScreen'
@@ -173,21 +177,25 @@ module.exports = class Init
         'fQuitSplashScreen': 'viewInitialized': 'fLogin'
         'fLogin': 'validCredentials': 'fPermissions'
         'fPermissions': 'getPermissions': 'fDeviceName'
-        'fDeviceName': 'deviceCreated': 'fConfig'
+        'fDeviceName': 'deviceCreated': 'fCheckPlatformVersion'
+        'fCheckPlatformVersion': 'validPlatformVersions': 'fConfig'
         'fConfig': 'configDone': 'fFirstSyncView'
         'fFirstSyncView': 'firstSyncViewDisplayed': 'fLocalDesignDocuments'
         'fLocalDesignDocuments': 'localDesignUpToDate': 'fRemoteRequest'
         'fRemoteRequest': 'putRemoteRequest':'fSetVersion'
         'fSetVersion': 'versionUpToDate': 'fPostConfigInit'
-        'fPostConfigInit': 'initsDone': 'fInitialFilesReplication'
-        'fInitialFilesReplication': 'filesReplicationInited': 'fInitContacts'
+        'fPostConfigInit': 'initsDone': 'fTakeDBCheckpoint'
+        'fTakeDBCheckpoint': 'checkPointed': 'fInitFiles'
+        'fInitFiles': 'filesInited': 'fInitFolders'
+        'fInitFolders': 'foldersInited': 'fInitContacts'
         'fInitContacts': 'contactsInited': 'fInitCalendars'
-        'fInitCalendars': 'calendarsInited': 'fUpdateIndex'
+        'fInitCalendars': 'calendarsInited': 'fSync'
+        'fSync': 'dbSynced': 'fUpdateIndex'
         'fUpdateIndex': 'indexUpdated': 'aLoadFilePage'
 
         # First start error transitions
         # 1 error after before FirstSync End. --> Go to config.
-        'f1QuitSplashScreen': 'viewInitialized': 'fConfig'
+        'f1QuitSplashScreen': 'viewInitialized': 'fCheckPlatformVersion'
 
         # 2 error after File sync
         'f2QuitSplashScreen': 'viewInitialized': 'f2FirstSyncView'
@@ -250,9 +258,9 @@ module.exports = class Init
                 lastState = config.get('lastInitState') or 'aLoadFilePage'
 
                 # Watchdog
-                if lastState not in ['aLoadFilePage', 'fConfig',
+                if lastState not in ['aLoadFilePage', 'fDeviceName',
                 'fInitContacts', 'fInitCalendars', 'fUpdateIndex']
-                    return @trigger 'goTofConfig'
+                    return @trigger 'goTofDeviceName'
 
                 if lastState is 'aLoadFilePage' # Previously in normal start.
                     if config.isNewVersion()
@@ -261,7 +269,6 @@ module.exports = class Init
                         @trigger 'configured'
                 else # In init.
                     @trigger "goTo#{lastState}"
-
 
             else
                 @trigger 'notConfigured'
@@ -303,7 +310,8 @@ module.exports = class Init
 
     getPermissions: ->
         return if @passUnlessInMigration 'getPermissions'
-        if app.replicator.config.hasPermissions()
+
+        if app.replicator.config.hasPermissions(app.replicator.permissions)
             @trigger 'getPermissions'
         else if @currentState is 'smPermissions'
             app.startMainActivity 'smPermissions'
@@ -341,10 +349,16 @@ module.exports = class Init
         app.router.navigate 'first-sync', trigger: true
         @trigger 'firstSyncViewDisplayed'
 
+    takeDBCheckpoint: ->
+        app.replicator.takeCheckpoint \
+            @getCallbackTriggerOrQuit 'checkPointed'
 
-    initialFilesReplication: ->
-        app.replicator.initialFilesReplication \
-            @getCallbackTriggerOrQuit 'filesReplicationInited'
+    initFiles: ->
+        app.replicator.copyView 'file', @getCallbackTriggerOrQuit 'filesInited'
+
+    initFolders: ->
+        app.replicator.copyView 'folder', \
+            @getCallbackTriggerOrQuit 'foldersInited'
 
 
     initContacts: ->
@@ -354,6 +368,13 @@ module.exports = class Init
     initCalendars: ->
         app.replicator.initEventsInPhone \
             @getCallbackTriggerOrQuit 'calendarsInited'
+
+    postCopyViewSync: ->
+        app.replicator.sync since: app.replicator.config.get('checkPointed'), \
+            @getCallbackTriggerOrQuit 'dbSynced'
+
+        # Coyp view is done. Unset this transition var.
+        app.replicator.config.unset 'checkPointed'
 
     updateIndex: ->
         app.replicator.updateIndex @getCallbackTriggerOrQuit 'indexUpdated'

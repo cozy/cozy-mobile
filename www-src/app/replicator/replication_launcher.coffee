@@ -33,11 +33,11 @@ module.exports = class ReplicationLauncher
      * @param {Integer} since - Replicate changes after given sequence number.
      * @param {Boolean} live - Continue replicating after changes.
     ###
-    start: (since, live, callback = ->) ->
+    start: (options, callback = ->) ->
         log.info "start"
 
         unless @replication
-            @replication = @dbFrom.sync @dbTo, @_getOptions since, live
+            @replication = @dbFrom.sync @dbTo, @_getOptions options
             @replication.on 'change', (info) =>
                 log.info "replicate change"
                 if info.direction is 'pull'
@@ -54,7 +54,6 @@ module.exports = class ReplicationLauncher
                 log.info "replicate denied"
             @replication.on 'complete', (info) =>
                 log.info "replicate complete"
-                @config.save checkpointed: info.last_seq, ->
                 callback()
             @replication.on 'error', (err) ->
                 log.info "replicate error"
@@ -78,14 +77,14 @@ module.exports = class ReplicationLauncher
      *
      * @see http://pouchdb.com/api.html#replication
     ###
-    _getOptions: (since, live) ->
-        batch_size: @BATCH_SIZE
-        batches_limit: @BATCHES_LIMIT
-        filter: @filterName
-        since: since
-        live: live
-        retry: true
-        back_off_function: (delay) ->
-            return 1000 if delay is 0
-            return delay if delay > 60000
-            return delay * 2
+    _getOptions: (options) ->
+        _.extend options,
+            batch_size: @BATCH_SIZE
+            batches_limit: @BATCHES_LIMIT
+            filter: @filterName
+            retry: true
+            heartbeat: false
+            back_off_function: (delay) ->
+                return 1000 if delay is 0
+                return delay if delay > 60000
+                return delay * 2

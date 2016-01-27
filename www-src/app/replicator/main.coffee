@@ -11,9 +11,9 @@ DBNAME = "cozy-files.db"
 DBPHOTOS = "cozy-photos.db"
 
 
-PLATFORM_MIN_VERSIONS =
+PLATFORM_VERSIONS =
     'proxy': '>=2.1.11'
-    'data-system': '>=2.1.6'
+    'data-system': '>=2.1.8'
 
 log = require('../lib/persistent_log')
     prefix: "replicator"
@@ -64,7 +64,7 @@ module.exports = class Replicator extends Backbone.Model
 
 
     initConfig: (callback) ->
-        @config = new ReplicatorConfig(this)
+        @config = new ReplicatorConfig @db
         @config.fetch callback
 
 
@@ -82,11 +82,11 @@ module.exports = class Replicator extends Backbone.Model
 
             for item in body
                 [s, app, version] = item.match /([^:]+): ([\d\.]+)/
-                if app of PLATFORM_MIN_VERSIONS
-                    if semver.satisfies(version, PLATFORM_VERSIONS[app])
+                if app of PLATFORM_VERSIONS
+                    unless semver.satisfies(version, PLATFORM_VERSIONS[app])
                         msg = t 'error need min %version for %app'
                         msg = msg.replace '%app', app
-                        msg = msg.replace '%version', PLATFORM_MIN_VERSIONS[app]
+                        msg = msg.replace '%version', PLATFORM_VERSIONS[app]
                         return callback new Error msg
 
             # Everything fine
@@ -252,6 +252,12 @@ module.exports = class Replicator extends Backbone.Model
             request.put options, cb
         , callback
 
+    takeCheckpoint: (callback) ->
+        url = '/_changes?descending=true&limit=1'
+        options = @config.makeReplicationUrl url
+        request.get options, (err, res, body) =>
+            return cb err if err
+            @config.save checkpointed: body.last_seq, callback
 
     # Fetch current state of replicated views. Avoid pouchDB bug with heavy
     # change list.
@@ -593,7 +599,7 @@ module.exports = class Replicator extends Backbone.Model
 
         ReplicationLauncher = require "./replication_launcher"
         @replicationLauncher = new ReplicationLauncher @config, app.router
-        @replicationLauncher.start @config.get('checkpointed'), false, callback
+        @replicationLauncher.start options, callback
 
     ###*
      * Start real time replication
@@ -617,7 +623,7 @@ module.exports = class Replicator extends Backbone.Model
 
         ReplicationLauncher = require "./replication_launcher"
         @replicationLauncher = new ReplicationLauncher @config, app.router
-        @replicationLauncher.start @config.get('checkpointed'), true
+        @replicationLauncher.start live: true
 
     # Stop replication.
     stopRealtime: =>
