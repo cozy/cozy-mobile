@@ -36,7 +36,15 @@ module.exports = class ChangeEventHandler
 
         console.log doc
 
-    delete: (doc) ->
+
+    delete: (cozyEvent) ->
         log.info "delete"
 
-        console.log doc
+        navigator.calendarsync.eventBySyncId cozyEvent._id, \
+                (err, androidEvents) =>
+            return log.error err if err
+
+            androidEvent = androidEvents[0]
+            navigator.calendarsync.deleteEvent androidEvent, \
+                    @androidCalendarHandler.ACCOUNT, (err, res) ->
+                log.error err if err
