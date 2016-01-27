@@ -19,7 +19,7 @@ module.exports = class CozyToAndroidEvent
 
     REMINDERS_METHOD_2_COZY = _.invert REMINDERS_METHOD_2_ANDROID
 
-    transform: (cozyEvent, calendarAndroid) ->
+    transform: (cozyEvent, calendarAndroid, androidEvent = undefined) ->
         log.info "transform"
 
         allDay = if cozyEvent.start.length is 10 then 1 else 0 # 1 == allday
@@ -80,6 +80,7 @@ module.exports = class CozyToAndroidEvent
                 method: REMINDERS_METHOD_2_ANDROID[alarm.action] or 0 # DEFAULT
 
         return {
+            _id: if androidEvent then androidEvent._id else undefined
             calendar_id: calendarAndroid._id
             # organizer: undefined
             title: cozyEvent.description
