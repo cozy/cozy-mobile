@@ -352,7 +352,8 @@ module.exports = class Init
             @getCallbackTriggerOrQuit 'checkPointed'
 
     initFiles: ->
-        app.replicator.copyView docType: 'file', @getCallbackTriggerOrQuit 'filesInited'
+        app.replicator.copyView docType: 'file', \
+            @getCallbackTriggerOrQuit 'filesInited'
 
     initFolders: ->
         app.replicator.copyView docType: 'folder', \
@@ -387,6 +388,13 @@ module.exports = class Init
                 changeDispatcher.dispatch event, cb
             , @getCallbackTriggerOrQuit 'calendarsInited'
 
+
+    postCopyViewSync: ->
+        app.replicator.sync since: app.replicator.config.get('checkPointed'), \
+            @getCallbackTriggerOrQuit 'dbSynced'
+
+        # Coyp view is done. Unset this transition var.
+        app.replicator.config.unset 'checkPointed'
 
     postCopyViewSync: ->
         app.replicator.sync since: app.replicator.config.get('checkPointed'), \
