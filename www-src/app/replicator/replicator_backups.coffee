@@ -59,6 +59,7 @@ module.exports =
                             log.error "in syncPictures: ", err
                             errors.push err
                         cb()
+
                 # (cb) =>
                 #     DeviceStatus.checkReadyForSync (err, ready, msg) =>
                 #         unless ready or err
@@ -82,6 +83,7 @@ module.exports =
                 #                 log.error "in syncContacts", err
                 #                 errors.push err
                 #             cb()
+
                 # (cb) =>
                 #     DeviceStatus.checkReadyForSync (err, ready, msg) =>
                 #         unless ready or err
@@ -93,7 +95,6 @@ module.exports =
                 #                 log.error "in syncCalendars", err
                 #                 errors.push err
                 #             cb()
-
 
             ], (err) ->
                 return callback err if err
