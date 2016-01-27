@@ -13,7 +13,6 @@ module.exports = class ChangeContactHandler
 
     change: (doc) ->
         log.info "change"
-        console.log doc
         try
             toSaveInPhone = Contact.cozy2Cordova doc
         catch err
@@ -35,7 +34,6 @@ module.exports = class ChangeContactHandler
 
     delete: (doc) ->
         log.info "delete"
-        console.log doc
 
         @_getFromPhoneByCozyId doc._id, (err, contact) =>
             return @_throwError err if err
