@@ -12,15 +12,16 @@ module.exports = class AndroidCalendarHandler
         accountType: 'io.cozy'
         accountName: 'myCozy'
 
-    constructor: (@db = undefined, @config = undefined) ->
+    constructor: (@db, @config, @calendarSync) ->
         @db = app.replicator.db unless @db
         @config = app.replicator.config unless @config
         @cozyToAndroidCalendar = new CozyToAndroidCalendar()
+        @calendarSync = navigator.calendarsync unless @calendarSync
 
     getAll: (callback) ->
         log.info "getAll"
 
-        navigator.calendarsync.allCalendars @ACCOUNT, (err, calendars) =>
+        @calendarSync.allCalendars @ACCOUNT, (err, calendars) =>
             return callback err if err
 
             callback null, calendars
@@ -41,7 +42,7 @@ module.exports = class AndroidCalendarHandler
         log.info "getById"
 
         @getAll (err, calendars) =>
-            log.error err if err
+            return callback err if err
 
             for calendar in calendars
                 if calendar._id is calendarId
@@ -56,7 +57,7 @@ module.exports = class AndroidCalendarHandler
             if err
                 @create calendarName, callback
             else
-                callback err, calendar
+                callback null, calendar
 
     create: (calendarName, callback) ->
         log.info "create"
@@ -67,24 +68,27 @@ module.exports = class AndroidCalendarHandler
             androidCalendar = @cozyToAndroidCalendar.transform cozyCalendar, \
                     @ACCOUNT
             # todo: addCalendar return calendar not only id
-            navigator.calendarsync.addCalendar androidCalendar, \
-                    (err, androidCalendarId) =>
+            @calendarSync.addCalendar androidCalendar, (err, calendarId) =>
                 return callback err if err
 
-                @getByName calendarName, (err, calendar) =>
+                @getById calendarId, (err, calendar) =>
                     callback err, calendar
 
 
-    update: (doc, callback) ->
+    update: (androidCalendar, callback) ->
         log.info "update"
+
+        @calendarSync.updateCalendar androidCalendar, @ACCOUNT, (err) ->
+            return callback err if err
+            callback null, true
 
     delete: (androidCalendar, callback) ->
         log.info "delete"
 
-        navigator.calendarsync.deleteCalendar androidCalendar, @ACCOUNT, \
+        @calendarSync.deleteCalendar androidCalendar, @ACCOUNT, \
                 (err, deletedCount) =>
-            callback err if err
-            callback err, true
+            return callback err if err
+            callback null, true
 
     deleteIfEmpty: (androidCalendar, callback) ->
         log.info "deleteIfEmpty"
@@ -94,7 +98,7 @@ module.exports = class AndroidCalendarHandler
             if doc.docType is 'event' and doc.tags[0] is androidCalendar.name
                 emit doc.name
         , {limit: 1} , (err, res) =>
-            callback err if err
+            return callback err if err
 
             @delete androidCalendar, callback if res.rows.length is 0
 

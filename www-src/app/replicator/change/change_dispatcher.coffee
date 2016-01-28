@@ -44,7 +44,7 @@ module.exports = class ChangeDispatcher
             when @FILE_DOC_TYPE then @changeFileHandler[state] doc
             when @EVENT_DOC_TYPE then @changeEventHandler.dispatch doc
             when @CONTACT_DOC_TYPE then @changeContactHandler[state] doc
-            when @TAG_DOC_TYPE then @changeTagHandler[state] doc
+            when @TAG_DOC_TYPE then @changeTagHandler.dispatch doc
 
     ###*
      * Check if a doc is authorized to be dispatched
