@@ -22,7 +22,7 @@ module.exports = class ChangeEventHandler
         log.info "create"
 
         calendarName = cozyEvent.tags[0]
-        @androidCalendarHandler.getOrCreeate calendarName, (err, calendar) =>
+        @androidCalendarHandler.getOrCreate calendarName, (err, calendar) =>
             return log.error err if err
 
             androidEvent = @cozyToAndroidEvent.transform cozyEvent, calendar
@@ -40,7 +40,7 @@ module.exports = class ChangeEventHandler
 
             androidEvent = androidEvents[0]
             calendarName = cozyEvent.tags[0]
-            @androidCalendarHandler.getOrCreeate calendarName, \
+            @androidCalendarHandler.getOrCreate calendarName, \
                     (err, calendar) =>
                 return log.error err if err
 

@@ -37,8 +37,8 @@ module.exports = class AndroidCalendarHandler
 
             callback new Error "No calendar found with '#{calendarName}' name."
 
-    getOrCreeate: (calendarName, callback) ->
-        log.info "getOrCreeate"
+    getOrCreate: (calendarName, callback) ->
+        log.info "getOrCreate"
 
         @get calendarName, (err, calendar) =>
             if err
