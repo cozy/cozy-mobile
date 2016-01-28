@@ -1,4 +1,6 @@
 semver = require 'semver'
+async = require 'async'
+ChangeDispatcher = require './change/change_dispatcher'
 
 log = require('../lib/persistent_log')
     date: true
@@ -354,20 +356,41 @@ module.exports = class Init
             @getCallbackTriggerOrQuit 'checkPointed'
 
     initFiles: ->
-        app.replicator.copyView 'file', @getCallbackTriggerOrQuit 'filesInited'
+        app.replicator.copyView docType: 'file', @getCallbackTriggerOrQuit 'filesInited'
 
     initFolders: ->
-        app.replicator.copyView 'folder', \
+        app.replicator.copyView docType: 'folder', \
             @getCallbackTriggerOrQuit 'foldersInited'
 
 
+    # 1. Copy view for contact
+    # 2. dispatch inserted contacts to android through the change dispatcher
     initContacts: ->
-        app.replicator.initContactsInPhone \
-            @getCallbackTriggerOrQuit 'contactsInited'
+        changeDispatcher = new ChangeDispatcher()
+        # 1. Copy view for contact
+        app.replicator.copyView
+            docType: 'contact'
+            attachments: true
+        , (err, contacts) =>
+            return @exitApp err if err
+            async.eachSeries contacts, (contact, cb) ->
+                # 2. dispatch inserted contacts to android
+                changeDispatcher.dispatch contact, cb
+            , @getCallbackTriggerOrQuit 'contactsInited'
 
+
+    # 1. Copy view for event
+    # 2. dispatch inserted events to android through the change dispatcher
     initCalendars: ->
-        app.replicator.initEventsInPhone \
-            @getCallbackTriggerOrQuit 'calendarsInited'
+        changeDispatcher = new ChangeDispatcher()
+        # 1. Copy view for event
+        app.replicator.copyView docType: 'event', (err, events) =>
+            return @exitApp err if err
+            async.eachSeries events, (event, cb) ->
+                # 2. dispatch inserted events to android
+                changeDispatcher.dispatch event, cb
+            , @getCallbackTriggerOrQuit 'calendarsInited'
+
 
     postCopyViewSync: ->
         app.replicator.sync since: app.replicator.config.get('checkPointed'), \
@@ -416,6 +439,9 @@ module.exports = class Init
     saveState: ->
         app.replicator.config.save lastInitState: @currentState
         , (err, config) -> log.warn err if err
+
+    exitApp: ->
+        app.exit()
 
     getCallbackTriggerOrQuit: (eventName) ->
         (err) =>

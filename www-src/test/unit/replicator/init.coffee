@@ -75,6 +75,8 @@ module.exports = describe 'Init Test', ->
     describe 'initMigration', ->
         init = new Init()
 
+
+
         init.migrations =
             "0.1.1": states: ['mTest1']
             "0.1.0": states: []
@@ -88,3 +90,5 @@ module.exports = describe 'Init Test', ->
                 'mTest1': true
                 'mTest2': true
                 'mTest3': true
+
+        # it 'should work with empty old rev'

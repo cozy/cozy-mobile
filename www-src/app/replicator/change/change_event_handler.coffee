@@ -16,47 +16,47 @@ module.exports = class ChangeEventHandler
         @cozyToAndroidEvent = new CozyToAndroidEvent()
         @calendarSync ?= navigator.calendarsync
 
-    dispatch: (cozyEvent) ->
-        log.info "dispatch"
 
+    dispatch: (cozyEvent, callback) ->
+        log.info "dispatch"
         @calendarSync.eventBySyncId cozyEvent._id, (err, androidEvents) =>
             if androidEvents.length > 0
                 androidEvent = androidEvents[0]
                 if cozyEvent._deleted
-                    @_delete cozyEvent, androidEvent
+                    @_delete cozyEvent, androidEvent, callback
                 else
-                    @_update cozyEvent, androidEvent
+                    @_update cozyEvent, androidEvent, callback
             else
                 # event may have already been deleted from device
                 # or event never been created
-                @_create cozyEvent unless cozyEvent._deleted
+                @_create cozyEvent, callback unless cozyEvent._deleted
 
-    _create: (cozyEvent) ->
+
+    _create: (cozyEvent, callback) ->
         log.info "create"
 
         calendarName = cozyEvent.tags[0]
         @androidCalendarHandler.getOrCreate calendarName, (err, calendar) =>
-            return log.error err if err
+            return callback err if err
 
             androidEvent = @cozyToAndroidEvent.transform cozyEvent, calendar
             @calendarSync.addEvent androidEvent, \
-                    AndroidCalendarHandler.ACCOUNT, (err, androidEventId) ->
-                log.error err if err
+                    AndroidCalendarHandler.ACCOUNT, callback
 
-    _update: (cozyEvent, androidEvent) ->
+    _update: (cozyEvent, androidEvent, callback) ->
         log.info "update"
 
         calendarName = cozyEvent.tags[0]
         @androidCalendarHandler.getOrCreate calendarName, (err, calendar) =>
-            return log.error err if err
+            return callback err if err
 
             androidEvent = @cozyToAndroidEvent.transform cozyEvent, calendar, \
                     androidEvent
             @calendarSync.updateEvent androidEvent, \
-                    AndroidCalendarHandler.ACCOUNT, (err) ->
-                return log.error err if err
+                    AndroidCalendarHandler.ACCOUNT, callback
 
-    _delete: (cozyEvent, androidEvent) ->
+
+    _delete: (cozyEvent, androidEvent, callback) ->
         log.info "delete"
 
         @calendarSync.deleteEvent androidEvent, \
@@ -67,5 +67,4 @@ module.exports = class ChangeEventHandler
                     (err, androidCalendar) =>
                 log.error err if err
 
-                @androidCalendarHandler.deleteIfEmpty androidCalendar, (err) ->
-                    log.error err if err
+                @androidCalendarHandler.deleteIfEmpty androidCalendar, callback

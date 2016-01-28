@@ -4,12 +4,15 @@ log = require('../../lib/persistent_log')
 
 module.exports = class ChangeContactHandler
 
-    change: (doc) ->
+    change: (doc, callback) ->
         log.info "change"
 
         console.log doc
+        callback()
 
-    delete: (doc) ->
+    delete: (doc, callback) ->
         log.info "delete"
 
         console.log doc
+        callback()
+

@@ -44,6 +44,7 @@ module.exports = class ReplicationLauncher
                     for doc in info.change.docs
                         if @changeDispatcher.isDispatched doc
                             @changeDispatcher.dispatch doc
+                            # TODO: put in files and folders change handler ?
                             if doc.docType in ['file', 'folder']
                                 @router.forceRefresh()
             @replication.on 'paused', ->

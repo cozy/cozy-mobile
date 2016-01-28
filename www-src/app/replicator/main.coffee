@@ -301,30 +301,62 @@ module.exports = class Replicator extends Backbone.Model
                 callback err
 
 
-    copyView: (model, callback) ->
-        options =
-            times: 5
+    # Fetch all documents, with a previously put couchdb view.
+    _fetchAll: (options, callback) ->
+        requestOptions = @config.makeDSUrl "/request/#{options.docType}/all/"
+        requestOptions.body = include_docs: true, show_revs: true
+
+        request.post requestOptions, (err, res, rows) =>
+            if not err and res.statusCode isnt 200
+                err = new Error res.statusCode, res.reason
+
+            return callback err if err
+            callback rows
+
+
+    # 1. Fetch all documents of specified docType
+    # 2. Put in PouchDB
+    # 2.1 : optionnaly, fetch attachments before putting in pouchDB
+    # Return the list of added doc to PouchDB.
+    copyView: (options, callback) ->
+        log.info "enter copyView for #{options.docType}."
+        # Last step
+        putInPouch = (doc, cb) =>
+            @db.put doc, 'new_edits':false, (err) ->
+                return cb err if err
+                cb null, doc
+
+        # 1. Fetch all documents
+        retryOptions =
+            times: options.retry or 0
             interval: 20 * 1000
 
-        async.retry options, ((cb) => @_copyView model, cb), callback
+        async.retry retryOptions, ((cb) => @_fetchAll options, cb)
+        , (err, rows) =>
+            return callback null unless rows?.length isnt 0
 
-    _copyView: (model, callback) ->
-        log.info "enter copyView for #{model}."
+            # 2. Put in PouchDB
+            async.mapSeries rows, (row, cb) =>
+                doc = row.doc
 
-        options = @config.makeDSUrl "/request/#{model}/all/"
-        options.body = include_docs: true, show_revs: true
+                # 2.1 Fetch attachment if needed (typically contact docType)
+                if options.attachments is true and doc._attachments?
+                # TODO? needed : .picture?
+                    request.get @config.makeReplicationUrl( \
+                    "/#{doc._id}?attachments=true"), (err, res, body) ->
+                        # Continue on error (we just miss the avatar in case
+                        # of contacts)
+                        unless err
+                            doc = body
 
-        request.post options, (err, res, models) =>
-            if err or res.statusCode isnt 200
-                unless err?
-                    err = new Error res.statusCode, res.reason
-                return callback err
+                        putInPouch doc, cb
 
-            return callback null unless models?.length isnt 0
-            async.eachSeries models, (doc, cb) =>
-                model = doc.doc
-                @db.put model, 'new_edits':false, cb()
+                else # No attachments
+                    putInPouch doc, cb
+
             , callback
+
+
 
 
     # update index for further speeds up.
