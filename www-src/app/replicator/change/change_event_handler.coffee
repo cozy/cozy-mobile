@@ -16,7 +16,6 @@ module.exports = class ChangeEventHandler
         @cozyToAndroidEvent = new CozyToAndroidEvent()
         @calendarSync ?= navigator.calendarsync
 
-
     dispatch: (cozyEvent, callback) ->
         log.info "dispatch"
         @calendarSync.eventBySyncId cozyEvent._id, (err, androidEvents) =>

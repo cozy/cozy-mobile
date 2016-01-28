@@ -112,3 +112,4 @@ module.exports = describe 'Init Test', ->
                 'mTest1': true
                 'mTest3': true
             done()
+

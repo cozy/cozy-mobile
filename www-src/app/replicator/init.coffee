@@ -396,13 +396,6 @@ module.exports = class Init
         # Coyp view is done. Unset this transition var.
         app.replicator.config.unset 'checkPointed'
 
-    postCopyViewSync: ->
-        app.replicator.sync since: app.replicator.config.get('checkPointed'), \
-            @getCallbackTriggerOrQuit 'dbSynced'
-
-        # Coyp view is done. Unset this transition var.
-        app.replicator.config.unset 'checkPointed'
-
     updateIndex: ->
         app.replicator.updateIndex @getCallbackTriggerOrQuit 'indexUpdated'
 

@@ -49,3 +49,4 @@ module.exports = class ChangeDispatcher
     ###
     isDispatched: (doc) ->
         return doc.docType of @changeHandlers
+

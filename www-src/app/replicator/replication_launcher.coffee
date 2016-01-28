@@ -47,6 +47,7 @@ module.exports = class ReplicationLauncher
                             # TODO: put in files and folders change handler ?
                             if doc.docType in ['file', 'folder']
                                 @router.forceRefresh()
+
             @replication.on 'paused', ->
                 log.info "replicate paused"
             @replication.on 'active', ->
