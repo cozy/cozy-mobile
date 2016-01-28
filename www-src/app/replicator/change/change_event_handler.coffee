@@ -6,17 +6,23 @@ log = require('../../lib/persistent_log')
 
 module.exports = class ChangeEventHandler
 
-    constructor: ->
+    constructor: (@calendarSync) ->
         @androidCalendarHandler = new AndroidCalendarHandler()
         @cozyToAndroidEvent = new CozyToAndroidEvent()
+        @calendarSync = navigator.calendarsync unless @calendarSync
 
-    change: (doc) ->
-        log.info "change"
+    dispatch: (cozyEvent) ->
+        log.info "dispatch"
 
-        if doc._rev.split('-')[0] is "1"
-            @create doc
-        else
-            @update doc
+        @calendarSync.eventBySyncId cozyEvent._id, (err, androidEvents) =>
+            if androidEvents.length > 0
+                androidEvent = androidEvents[0]
+                if cozyEvent._deleted
+                    @delete cozyEvent, androidEvent
+                else
+                    @update cozyEvent, androidEvent
+            else
+                @create cozyEvent unless cozyEvent._deleted
 
     create: (cozyEvent) ->
         log.info "create"
@@ -26,49 +32,37 @@ module.exports = class ChangeEventHandler
             return log.error err if err
 
             androidEvent = @cozyToAndroidEvent.transform cozyEvent, calendar
-            navigator.calendarsync.addEvent androidEvent, \
-                    @androidCalendarHandler.ACCOUNT, (err, res) ->
+            @calendarSync.addEvent androidEvent, \
+                    @androidCalendarHandler.ACCOUNT, (err, androidEventId) ->
                 log.error err if err
 
-    update: (cozyEvent) ->
+    update: (cozyEvent, androidEvent = undefined) ->
         log.info "update"
 
-        navigator.calendarsync.eventBySyncId cozyEvent._id, \
-                (err, androidEvents) =>
-            # todo: create event if not exist
+        return @dispatch cozyEvent unless androidEvent
+
+        calendarName = cozyEvent.tags[0]
+        @androidCalendarHandler.getOrCreate calendarName, (err, calendar) =>
             return log.error err if err
 
-            androidEvent = androidEvents[0]
-            calendarName = cozyEvent.tags[0]
-            @androidCalendarHandler.getOrCreate calendarName, \
-                    (err, calendar) =>
+            androidEvent = @cozyToAndroidEvent.transform cozyEvent, calendar, \
+                    androidEvent
+            @calendarSync.updateEvent androidEvent, \
+                    @androidCalendarHandler.ACCOUNT, (err) ->
                 return log.error err if err
 
-                androidEvent = @cozyToAndroidEvent.transform cozyEvent, \
-                        calendar, androidEvent
-                navigator.calendarsync.updateEvent androidEvent, \
-                        @androidCalendarHandler.ACCOUNT, (err, res) ->
-                    return log.error err if err
-
-    delete: (cozyEvent) ->
+    delete: (cozyEvent, androidEvent) ->
         log.info "delete"
 
-        navigator.calendarsync.eventBySyncId cozyEvent._id, \
-                (err, androidEvents) =>
-            return log.error err if err
+        return @dispatch cozyEvent unless androidEvent
 
-            androidEvent = androidEvents[0]
-            navigator.calendarsync.deleteEvent androidEvent, \
-                    @androidCalendarHandler.ACCOUNT, (err, res) =>
+        @calendarSync.deleteEvent androidEvent, \
+                @androidCalendarHandler.ACCOUNT, (err, deletedCount) =>
+            log.error err if err
+
+            @androidCalendarHandler.getById androidEvent.calendar_id, \
+                    (err, androidCalendar) =>
                 log.error err if err
-                @androidCalendarHandler.getAll (err, calendars) =>
+
+                @androidCalendarHandler.deleteIfEmpty androidCalendar, (err) ->
                     log.error err if err
-
-                    for calendar in calendars
-                        if calendar._id is androidEvent.calendar_id
-                            calendarToDelete = calendar
-
-                    if calendarToDelete
-                        @androidCalendarHandler.deleteIfEmpty calendarToDelete,\
-                                (err) ->
-                            log.error err if err

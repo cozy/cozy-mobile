@@ -25,8 +25,8 @@ module.exports = class AndroidCalendarHandler
 
             callback null, calendars
 
-    get: (calendarName, callback) ->
-        log.info "get"
+    getByName: (calendarName, callback) ->
+        log.info "getByName"
 
         @getAll (err, calendars) =>
             return callback err if err
@@ -37,10 +37,22 @@ module.exports = class AndroidCalendarHandler
 
             callback new Error "No calendar found with '#{calendarName}' name."
 
+    getById: (calendarId, callback) ->
+        log.info "getById"
+
+        @getAll (err, calendars) =>
+            log.error err if err
+
+            for calendar in calendars
+                if calendar._id is calendarId
+                    return callback null, calendar
+
+            callback new Error "Calendar isn't find with id:#{calendarId}"
+
     getOrCreate: (calendarName, callback) ->
         log.info "getOrCreate"
 
-        @get calendarName, (err, calendar) =>
+        @getByName calendarName, (err, calendar) =>
             if err
                 @create calendarName, callback
             else
@@ -54,11 +66,12 @@ module.exports = class AndroidCalendarHandler
 
             androidCalendar = @cozyToAndroidCalendar.transform cozyCalendar, \
                     @ACCOUNT
+            # todo: addCalendar return calendar not only id
             navigator.calendarsync.addCalendar androidCalendar, \
                     (err, androidCalendarId) =>
                 return callback err if err
 
-                @get calendarName, (err, calendar) =>
+                @getByName calendarName, (err, calendar) =>
                     callback err, calendar
 
 
