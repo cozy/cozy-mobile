@@ -1,32 +1,36 @@
 assert          = require 'assert'
 async           = require 'async'
-PouchDB         = require 'pouchdb'
-Init = require '../../../app/replicator/init'
+should      = require('chai').should()
+
+global._ = require 'underscore'
+global.Backbone = require 'backbone'
+require 'backbone.statemachine'
 
 module.exports = describe 'Init Test', ->
+    Init = require '../../../app/replicator/init'
 
-    # cozyDB     = new PouchDB 'cozyDB', {db: require 'memdown'}
-    # internalDB = new PouchDB 'internalDB', {db: require 'memdown'}
-    # designDocs = new DesignDocuments cozyDB, internalDB
+    ['mTest1', 'mTest2', 'mTetst3',
+     'smTest1', 'smTest2', 'smTetst3',
+     'fTest1', 'aTest2', 'sTetst3'].forEach (state) ->
+        Init.prototype.states[state] = {}
+
+    Init.prototype.transitions.mTest1 = 'next1': 'mTest2'
+    Init.prototype.transitions.mTest2 = 'next2': 'mTest3'
+
+    Init.prototype.transitions.smTest1 = 'next1': 'smTest2'
+    Init.prototype.transitions.smTest2 = 'next2': 'smTest3'
+
+    Init.prototype.transitions.fTest1 = 'next1': 'aTest2'
+    Init.prototype.transitions.aTest2 = 'next2': 'sTest3'
+
 
     # Tools
     describe 'passUnlessInMigration', ->
         init = new Init()
 
+        init.startStateMachine()
+        # Stub : init after migrationState default initialization.
         init.migrationStates = 'mTest1': true, 'mTest3': true
-        ['mTest1', 'mTest2', 'mTetst3',
-         'smTest1', 'smTest2', 'smTetst3',
-         'fTest1', 'aTest2', 'sTetst3'].forEach (state) ->
-            init.states[state] = {}
-
-        init.transitions.mTest1 = 'next1': 'mTest2'
-        init.transitions.mTest2 = 'next2': 'mTest3'
-
-        init.transitions.smTest1 = 'next1': 'smTest2'
-        init.transitions.smTest2 = 'next2': 'smTest3'
-
-        init.transitions.fTest1 = 'next1': 'aTest2'
-        init.transitions.aTest2 = 'next2': 'sTest3'
 
         it 'should return true to pass', (done) ->
             init.toState 'mTest2'
@@ -50,15 +54,15 @@ module.exports = describe 'Init Test', ->
 
             done()
 
-        it 'should return false if in migration', (done) ->
+        it 'should return false when included in migration', (done) ->
             init.toState 'mTest1'
             init.passUnlessInMigration('next1').should.be.false
             done()
 
-        it 'should not trigger if in migration', (done) ->
+        it 'should not trigger when included in migration', (done) ->
             init.toState 'mTest1'
             init.passUnlessInMigration('next1')
-            init.currentState.should.be 'mTest1'
+            init.currentState.should.be.equal 'mTest1'
             done()
 
         it 'should return false outside of migrations', (done) ->
@@ -69,15 +73,13 @@ module.exports = describe 'Init Test', ->
         it 'should not trigger outside of migration', (done) ->
             init.toState 'sTest3'
             init.passUnlessInMigration('next3')
-            init.currentState.should.be 'sTest3'
+            init.currentState.should.be.equal 'sTest3'
             done()
 
     describe 'initMigration', ->
-        init = new Init()
 
 
-
-        init.migrations =
+        Init.prototype.migrations =
             "0.1.1": states: ['mTest1']
             "0.1.0": states: []
             "0.0.3": states: ['mTest1', 'mTest3']
@@ -85,10 +87,29 @@ module.exports = describe 'Init Test', ->
 
 
         it 'should collect all states', (done) ->
-            init.initMigration undefined
+            init = new Init()
+            init.startStateMachine()
+            init.initMigrations undefined
             init.migrationStates.should.eql
                 'mTest1': true
                 'mTest2': true
                 'mTest3': true
+            done()
 
-        # it 'should work with empty old rev'
+        it 'should collect states down to old version', (done) ->
+            init = new Init()
+            init.startStateMachine()
+            init.initMigrations "0.1.0"
+            init.migrationStates.should.eql
+                'mTest1': true
+            done()
+
+        it 'should collect states down to old version (bis)', (done) ->
+            init = new Init()
+            init.startStateMachine()
+            init.initMigrations "0.0.2"
+            init.migrationStates.should.eql
+                'mTest1': true
+                'mTest3': true
+            done()
+

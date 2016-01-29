@@ -25,15 +25,6 @@ module.exports = class Init
                       to state #{enterState}"
 
 
-    initMigration: ->
-        oldVersion = app.replicator.config.get 'appVersion'
-        for version, migration of @migrations
-            if semver.gte(version, oldVersion)
-                for state in migration.states
-                    @migrationStates[state] = true
-
-        @trigger 'migrationInited'
-
 
     states:
         # States naming convention :
@@ -58,7 +49,7 @@ module.exports = class Init
 
 
         # Migration (m) states
-        migrationInit: enter: ['initMigration']
+        migrationInit: enter: ['initMigrationState']
         mLocalDesignDocuments: enter: ['upsertLocalDesignDocuments']
         mCheckPlatformVersions: enter: ['checkPlatformVersions']
         mQuitSplashScreen: enter: ['quitSplashScreen']
@@ -127,7 +118,7 @@ module.exports = class Init
         sQuit: enter: ['sQuit']
 
         # Service Migration (m) states
-        smMigrationInit: enter: ['initMigration']
+        smMigrationInit: enter: ['initMigrationState']
         smLocalDesignDocuments: enter: ['upsertLocalDesignDocuments']
         smCheckPlatformVersions: enter: ['checkPlatformVersions']
         smQuitSplashScreen: enter: ['quitSplashScreen']
@@ -297,6 +288,11 @@ module.exports = class Init
 
 
     # Migration
+    initMigrationState: ->
+        @initMigration app.replicator.config.get 'appVersion'
+        @trigger 'migrationInited'
+
+
     upsertLocalDesignDocuments: ->
         return if @passUnlessInMigration 'localDesignUpToDate'
 
@@ -464,6 +460,14 @@ module.exports = class Init
             return true
         else
             return false
+
+
+    initMigrations: (oldVersion) ->
+        oldVersion ?= '0.0.0'
+        for version, migration of @migrations
+            if semver.gt(version, oldVersion)
+                for state in migration.states
+                    @migrationStates[state] = true
 
 
     # Migrations
