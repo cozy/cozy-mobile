@@ -6,7 +6,7 @@ log = require('../../lib/persistent_log')
 module.exports = class ChangeSynchronizer
 
     constructor: (@eventSynchronizer) ->
-        @eventSynchronizer = new EventSynchronizer() unless @eventSynchronizer
+        @eventSynchronizer ?= new EventSynchronizer()
 
     synchronize: ->
         @eventSynchronizer.synchronize()

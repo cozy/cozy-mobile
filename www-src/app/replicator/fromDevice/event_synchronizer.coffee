@@ -10,8 +10,8 @@ continueOnError = require('../../lib/utils').continueOnError log
 module.exports = class EventSynchronizer
 
     constructor: (@db, @calendarSync) ->
-        @db = app.replicator.config.db unless @db
-        @calendarSync = navigator.calendarsync unless @calendarSync
+        @db ?= app.replicator.config.db
+        @calendarSync ?= navigator.calendarsync
         @androidCalendarHandler = new AndroidCalendarHandler()
         @cozyToAndroidEvent = new CozyToAndroidEvent()
         @androidCalendarCache = new AndroidCalendarCache()

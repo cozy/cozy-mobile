@@ -6,20 +6,19 @@ log = require('../../lib/persistent_log')
 
 module.exports = class ChangeTagHandler
 
-    constructor: (@calendarSync) ->
+    constructor: ->
         @androidCalendarHandler = new AndroidCalendarHandler()
         @cozyToAndroidCalendar = new CozyToAndroidCalendar()
 
-    dispatch: (cozyTag) ->
+    dispatch: (cozyCalendar) ->
         log.info "dispatch"
 
-        @androidCalendarHandler.getByName cozyTag.name, \
+        @androidCalendarHandler.getByName cozyCalendar.name, \
                 (err, androidCalendar) =>
             # if androidCalendar is not find, this tag is for another thing
             if androidCalendar
-                newCalendar = @cozyToAndroidCalendar.transform cozyTag, \
+                calendar = @cozyToAndroidCalendar.transform cozyCalendar, \
                         @androidCalendarHandler.ACCOUNT, androidCalendar
-                if newCalendar.calendar_color isnt \
-                        androidCalendar.calendar_color
-                    @androidCalendarHandler.update newCalendar, (err) ->
+                if calendar.calendar_color isnt androidCalendar.calendar_color
+                    @androidCalendarHandler.update calendar, (err) ->
                         log.error err if err

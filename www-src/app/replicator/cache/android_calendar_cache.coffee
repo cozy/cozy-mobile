@@ -6,8 +6,7 @@ log = require("../../lib/persistent_log")
 module.exports = class AndroidCalendarCache
 
     constructor: (@androidCalendarHandler) ->
-        unless @androidCalendarHandler
-            @androidCalendarHandler = new AndroidCalendarHandler()
+        @androidCalendarHandler ?= new AndroidCalendarHandler()
 
     getAll: (callback) ->
         log.info "getAll"

@@ -9,7 +9,7 @@ module.exports = class ChangeEventHandler
     constructor: (@calendarSync) ->
         @androidCalendarHandler = new AndroidCalendarHandler()
         @cozyToAndroidEvent = new CozyToAndroidEvent()
-        @calendarSync = navigator.calendarsync unless @calendarSync
+        @calendarSync ?= navigator.calendarsync
 
     dispatch: (cozyEvent) ->
         log.info "dispatch"

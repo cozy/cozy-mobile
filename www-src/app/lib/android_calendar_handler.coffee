@@ -13,10 +13,10 @@ module.exports = class AndroidCalendarHandler
         accountName: 'myCozy'
 
     constructor: (@db, @config, @calendarSync) ->
-        @db = app.replicator.db unless @db
-        @config = app.replicator.config unless @config
+        @db ?= app.replicator.db
+        @config ?= app.replicator.config
         @cozyToAndroidCalendar = new CozyToAndroidCalendar()
-        @calendarSync = navigator.calendarsync unless @calendarSync
+        @calendarSync ?= navigator.calendarsync
 
     getAll: (callback) ->
         log.info "getAll"
