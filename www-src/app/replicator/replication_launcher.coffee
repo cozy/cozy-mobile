@@ -37,13 +37,15 @@ module.exports = class ReplicationLauncher
         log.info "start"
 
         unless @replication
-            @replication = @dbFrom.replicate.from @dbTo, @_getOptions since, live
+            @replication = @dbFrom.sync @dbTo, @_getOptions since, live
             @replication.on 'change', (info) =>
                 log.info "replicate change"
-                for doc in info.docs
-                    if @changeDispatcher.isDispatched doc
-                        @router.forceRefresh()
-                        @changeDispatcher.dispatch doc
+                if info.direction is 'pull'
+                    for doc in info.change.docs
+                        if @changeDispatcher.isDispatched doc
+                            @changeDispatcher.dispatch doc
+                            if doc.docType in ['file', 'folder']
+                                @router.forceRefresh()
             @replication.on 'paused', ->
                 log.info "replicate paused"
             @replication.on 'active', ->
