@@ -225,6 +225,12 @@ module.exports = class Replicator extends Backbone.Model
                     password: body.password
             , callback
 
+    putFilters: (callback) ->
+        log.info "setReplicationFilter"
+        @getFilterManager().setFilter @config.get("syncContacts"), \
+            @config.get("syncCalendars"), @config.get("cozyNotifications"), \
+            callback
+
 
     putRequests: (callback) ->
         requests = require './remote_requests'

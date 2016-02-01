@@ -44,22 +44,22 @@ module.exports = class ReplicatorConfig extends Backbone.Model
             doc = @toJSON()
             delete doc.password if doc.password
 
+            needInit =
+                notifications: changes.cozyNotifications and \
+                    changes.cozyNotifications isnt @cozyNotifications
+                calendars: changes.syncCalendars and \
+                    changes.syncCalendars isnt @syncCalendars
+                contacts: changes.syncContacts and \
+                    changes.syncContacts isnt @syncContacts
+                deviceName: changes.deviceName
+
             @db.put doc, (err, res) =>
                 return callback err if err
                 return callback new Error('cant save config') unless res.ok
                 @set _rev: res.rev
                 @remote = @createRemotePouchInstance()
-                if changes.cozyNotifications isnt @cozyNotifications \
-                        or changes.syncCalendars isnt @syncCalendars \
-                        or changes.syncContacts isnt @syncContacts \
-                        or changes.deviceName
-                    @setReplicationFilter (res) =>
-                        if app.replicator.replicationLauncher
-                            app.replicator.stopRealtime()
-                            app.replicator.startRealtime()
-                        callback null, this
-                else
-                    callback null, this
+
+                callback null, @, needInit
 
     getScheme: ->
         # Monkey patch for browser debugging
@@ -117,7 +117,3 @@ module.exports = class ReplicatorConfig extends Backbone.Model
         log.info "getReplicationFilter"
         @getFilterManager().getFilterName()
 
-    setReplicationFilter: (callback) ->
-        log.info "setReplicationFilter"
-        @getFilterManager().setFilter @get("syncContacts"), \
-            @get("syncCalendars"), @get("cozyNotifications"), callback

@@ -1,6 +1,7 @@
 semver = require 'semver'
 async = require 'async'
 ChangeDispatcher = require './change/change_dispatcher'
+AndroidAccount = require './fromDevice/androidaccount'
 
 log = require('../lib/persistent_log')
     date: true
@@ -25,6 +26,28 @@ module.exports = class Init
                       to state #{enterState}"
 
 
+    # activating contact or calendar sync requires to init them,
+    # trough init state machine
+    # @param needSync {calendars: true, contacts: false } type object, if
+    # it should be updated or not.
+    configUpdated: (needInit) ->
+        # Do sync only on
+        if @currentState is 'aRun'
+            if needInit.calendars and needInit.contacts
+                @toState 'c3RemoteRequest'
+            else if needInit.contacts
+                @toState 'c1Remoterequest'
+            else if needInit.calendars
+                @toState 'c2RemoteRequest'
+            else unless _.empty(needInit)
+                @toState 'c4RemoteRequest'
+
+            else
+                @trigger 'initDone'
+
+        else
+            @trigger 'initDone'
+
 
     states:
         # States naming convention :
@@ -34,6 +57,7 @@ module.exports = class Init
         # - m : migration start
         # - s : service start
         # - sm : migration in service start
+        # - c : update config states
 
         # Application
 
@@ -43,11 +67,12 @@ module.exports = class Init
         aInitDatabase: enter: ['initDatabase']
         aInitConfig: enter: ['initConfig']
 
+        #######################################
         # Normal (n) states
         nPostConfigInit: enter: ['postConfigInit']
         nQuitSplashScreen: enter: ['quitSplashScreen']
 
-
+        #######################################
         # Migration (m) states
         migrationInit: enter: ['initMigrationState']
         mLocalDesignDocuments: enter: ['upsertLocalDesignDocuments']
@@ -59,7 +84,7 @@ module.exports = class Init
         mUpdateVersion: enter: ['updateVersion']
         mPostConfigInit: enter: ['postConfigInit']
 
-
+        #######################################
         # First start (f) states
         fQuitSplashScreen: enter: ['quitSplashScreen'] # RUN
         fLogin: enter: ['login']
@@ -76,12 +101,13 @@ module.exports = class Init
         fTakeDBCheckpoint: enter: ['takeDBCheckpoint']
         fInitFiles: enter: ['initFiles']
         fInitFolders: enter: ['saveState', 'initFolders']
+        fCreateAccount: enter: ['createAndroidAccount']
         fInitContacts: enter: ['saveState', 'initContacts']
         fInitCalendars: enter: ['saveState', 'initCalendars']
         fSync: enter: ['postCopyViewSync']
         fUpdateIndex: enter: ['saveState', 'updateIndex']
 
-
+        ###################
         # First start error steps
         # 1 error before FirstSync End. --> Go to config.
         f1QuitSplashScreen: enter: ['quitSplashScreen'] # RUN
@@ -105,8 +131,9 @@ module.exports = class Init
         # Last commons steps
         aLoadFilePage: enter: ['saveState', 'setListeners', 'loadFilePage']
         aBackup: enter: ['backup']
+        aRun: {}
 
-
+        #######################################
         # Service
         sInitFileSystem: enter: ['initFileSystem']
         sInitDatabase: enter: ['initDatabase']
@@ -126,6 +153,39 @@ module.exports = class Init
         smConfig: enter: ['config']
         smRemoteRequest: enter: ['putRemoteRequest']
         smUpdateVersion: enter: ['updateVersion']
+
+
+        #######################################
+        # Config update states (c)
+        # activate sync-contacts (c1)
+        c1RemoteRequest: enter: ['putRemoteRequest']
+        c1TakeDBCheckpoint: enter: ['takeDBCheckpoint']
+        c1CreateAccount: enter: ['createAccount']
+        c1InitContacts: enter: ['initContacts']
+        c1InitCalendars: enter: ['initCalendars']
+
+        # activate sync-calendars (c2)
+        c2RemoteRequest: enter: ['putRemoteRequest']
+        c2TakeDBCheckpoint: enter: ['takeDBCheckpoint']
+        c2CreateAccount: enter: ['createAccount']
+        c2InitContacts: enter: ['initContacts']
+        c2InitCalendars: enter: ['initCalendars']
+
+        # activate sync acontacts and sync calendars
+        c3RemoteRequest: enter: ['putRemoteRequest']
+        c3TakeDBCheckpoint: enter: ['takeDBCheckpoint']
+        c3CreateAccount: enter: ['createAccount']
+        c3InitContacts: enter: ['initContacts']
+        c3InitCalendars: enter: ['initCalendars']
+
+        # update filters
+        c4RemoteRequest: enter: ['putRemoteRequest']
+
+        # Commons update states.
+        uSync: enter: ['postCopyViewSync']
+        uUpdateIndex: enter: ['updateIndex']
+
+        # TODO errors states on config ?
 
 
     transitions:
@@ -149,11 +209,14 @@ module.exports = class Init
             'goTofInitCalendars': 'f3QuitSplashScreen'
             'goTofUpdateIndex': 'f4QuitSplashScreen'
 
+        #######################################
         # Normal start
         'nPostConfigInit': 'initsDone': 'nQuitSplashScreen'
         'nQuitSplashScreen': 'viewInitialized': 'aLoadFilePage'
         'aLoadFilePage': 'onFilePage': 'aBackup'
+        'aBackup': 'backupStarted': 'aRun'
 
+        #######################################
         # Migration
         'migrationInit': 'migrationInited': 'mLocalDesignDocuments'
         'mLocalDesignDocuments':
@@ -166,6 +229,7 @@ module.exports = class Init
         'mUpdateVersion': 'versionUpToDate': 'mPostConfigInit'
         'mPostConfigInit': 'initsDone': 'aLoadFilePage' # Regular start.
 
+        #######################################
         # First start
         'fQuitSplashScreen': 'viewInitialized': 'fLogin'
         'fLogin': 'validCredentials': 'fPermissions'
@@ -180,7 +244,8 @@ module.exports = class Init
         'fPostConfigInit': 'initsDone': 'fTakeDBCheckpoint'
         'fTakeDBCheckpoint': 'checkPointed': 'fInitFiles'
         'fInitFiles': 'filesInited': 'fInitFolders'
-        'fInitFolders': 'foldersInited': 'fInitContacts'
+        'fInitFolders': 'foldersInited': 'fCreateAccount'
+        'fCreateAccount': 'androidAccountCreated': 'fInitContacts'
         'fInitContacts': 'contactsInited': 'fInitCalendars'
         'fInitCalendars': 'calendarsInited': 'fSync'
         'fSync': 'dbSynced': 'fUpdateIndex'
@@ -205,7 +270,7 @@ module.exports = class Init
         'f4FirstSyncView': 'firstSyncViewDisplayed': 'f4PostConfigInit'
         'f4PostConfigInit': 'initsDone': 'fUpdateIndex'
 
-
+        #######################################
         # Start Service
         'sInitFileSystem': 'fileSystemReady': 'sInitDatabase'
         'sInitDatabase': 'databaseReady': 'sInitConfig'
@@ -216,6 +281,7 @@ module.exports = class Init
             'configured': 'sPostConfigInit' # Normal start
             'newVersion': 'smMigrationInit' # Migration
 
+        #######################################
         # Migration in service
         'smMigrationInit': 'migrationInited': 'smLocalDesignDocuments'
         'smLocalDesignDocuments':
@@ -225,6 +291,35 @@ module.exports = class Init
         'smConfig': 'configDone': 'smRemoteRequest'
         'smRemoteRequest': 'putRemoteRequest': 'smUpdateVersion'
         'smUpdateVersion': 'versionUpToDate': 'sPostConfigInit'
+
+        #######################################
+        # Config update
+        ###################
+        'c1RemoteRequest': 'putRemoteRequest': 'c1TakeDBCheckpoint'
+        'c1TakeDBCheckpoint': 'checkPointed': 'c1CreateAccount'
+        'c1CreateAccount': 'androidAccountCreated': 'c1InitContacts'
+        'c1InitContacts': 'contactsInited': 'cSync'
+
+        ###################
+        'c2RemoteRequest': 'putRemoteRequest': 'c2TakeDBCheckpoint'
+        'c2TakeDBCheckpoint': 'checkPointed': 'c2CreateAccount'
+        'c2CreateAccount': 'androidAccountCreated': 'c2InitCalendars'
+        'c2InitCalendars': 'calendarsInited': 'cSync'
+
+        ###################
+        'c3RemoteRequest': 'putRemoteRequest': 'c3TakeDBCheckpoint'
+        'c3TakeDBCheckpoint': 'checkPointed': 'c3CreateAccount'
+        'c3CreateAccount': 'androidAccountCreated': 'c3InitContacts'
+        'c3InitContacts': 'contactsInited': 'c3InitCalendars'
+        'c3InitCalendars': 'calendarsInited': 'cSync'
+
+        ###################
+        'c4RemoteRequest': 'putRemoteRequest': 'aBackup'
+
+        ###################
+        'cSync': 'dbSynced': 'cUpdateIndex'
+        'cUpdateIndex': 'indexUpdated': 'aBackup' #TODO : clean update headers
+
 
 
     # Enter state methods.
@@ -320,7 +415,11 @@ module.exports = class Init
     putRemoteRequest: ->
         return if @passUnlessInMigration 'putRemoteRequest'
 
-        app.replicator.putRequests @getCallbackTriggerOrQuit 'putRemoteRequest'
+        app.replicator.putRequests (err) =>
+            return @exitApp err if err
+            app.replicator.putFilters @getCallbackTriggerOrQuit \
+                'putRemoteRequest'
+
 
     updateVersion: ->
         app.replicator.config.updateVersion \
@@ -359,6 +458,9 @@ module.exports = class Init
         app.replicator.copyView docType: 'folder', \
             @getCallbackTriggerOrQuit 'foldersInited'
 
+    createAndroidAccount: ->
+        androidAccount = new AndroidAccount()
+        androidAccount.create @getCallbackTriggerOrQuit 'androidAccountCreated'
 
     # 1. Copy view for contact
     # 2. dispatch inserted contacts to android through the change dispatcher

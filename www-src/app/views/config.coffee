@@ -109,7 +109,6 @@ module.exports = class ConfigView extends BaseView
                         '#configDone, #calendarSyncCheck'
         checkboxes.prop 'disabled', true
 
-
         app.replicator.config.save
             syncContacts: @$('#contactSyncCheck').is ':checked'
             syncCalendars: @$('#calendarSyncCheck').is ':checked'
@@ -117,6 +116,8 @@ module.exports = class ConfigView extends BaseView
             syncOnWifi: @$('#wifiSyncCheck').is ':checked'
             cozyNotifications: @$('#cozyNotificationsCheck').is ':checked'
 
-        , ->
-            checkboxes.prop 'disabled', false
+        , (err, config, needSync) =>
+            @listenOnce app.init, 'dbSynced initDone', ->
+                checkboxes.prop 'disabled', false
 
+            app.init.configUpdated needInit
