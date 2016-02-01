@@ -488,6 +488,8 @@ module.exports = class Init
                 attachments: true
             , (err, contacts) =>
                 return @exitApp err if err
+                console.log contacts
+
                 async.eachSeries contacts, (contact, cb) ->
                     # 2. dispatch inserted contacts to android
                     changeDispatcher.dispatch contact, cb

@@ -1,48 +1,64 @@
-Contact = require '../../lib/cordova_contact_helper'
+CozyToAndroidContact = require "../transformer/cozy_to_android_contact"
+AndroidAccount = require '../fromDevice/android_account'
 
 
 log = require('../../lib/persistent_log')
     prefix: "ChangeContactHandler"
     date: true
 
+continueOnError = require('../../lib/utils').continueOnError log
 
-ACCOUNT_TYPE = 'io.cozy'
-ACCOUNT_NAME = 'myCozy'
 
 module.exports = class ChangeContactHandler
 
-    change: (doc) ->
-        log.info "change"
+    constructor: ->
+        @transformer = new CozyToAndroidContact()
+
+    dispatch: (doc, callback) ->
+        @_getFromPhoneByCozyId doc._id, (err, androidContact) =>
+            if androidContact?
+                if doc._delete
+                    @_delete doc, androidContact, continueOnError callback
+                else
+                    @_update doc, androidContact, continueOnError callback
+            else
+                # Contact may have already been deleted from device
+                # or Contact never been created on device
+                unless doc._deleted
+                    @_create doc, continueOnError callback
+
+    _create: (doc, callback) ->
+        @_update doc, undefined, callback
+
+
+    _update: (doc, androidContact, callback) ->
+        log.info "update"
+
         try
-            toSaveInPhone = Contact.cozy2Cordova doc
+            toSaveInPhone = @transformer.transform doc
         catch err
-            return @_throwError err
+            return callback err if err
 
-        @_getFromPhoneByCozyId doc._id, (err, phoneContact) =>
-            if phoneContact
-                toSaveInPhone.id = phoneContact.id
-                toSaveInPhone.rawId = phoneContact.rawId
+        if androidContact # Update
+            toSaveInPhone.id = androidContact.id
+            toSaveInPhone.rawId = androidContact.rawId
 
-            options =
-                accountType: ACCOUNT_TYPE
-                accountName: ACCOUNT_NAME
-                callerIsSyncAdapter: true # apply immediately
-                resetFields: true # remove all fields before update
+        options =
+            accountType: AndroidAccount.TYPE
+            accountName: AndroidAccount.NAME
+            callerIsSyncAdapter: true # apply immediately
+            resetFields: true # remove all fields before update
 
-            toSaveInPhone.save ((contact) => @_done null, contact), @_done, options
+        toSaveInPhone.save ((contact) => callback null, contact), callback
+        , options
 
 
-    delete: (doc) ->
+    _delete: (doc, androidContact, callback) ->
         log.info "delete"
-
-        @_getFromPhoneByCozyId doc._id, (err, contact) =>
-            return @_throwError err if err
-            if contact?
-                # Use callerIsSyncAdapter flag to apply immediately in
-                # android(no dirty flag cycle)
-                contact.remove (=> @_done()), @_done, \
-                    callerIsSyncAdapter: true
-            # else contact already missing.
+        # Use callerIsSyncAdapter flag to apply immediately in
+        # android(no dirty flag cycle)
+        androidContact.remove (=> callback()), callback
+        , callerIsSyncAdapter: true
 
 
     _getFromPhoneByCozyId: (cozyId, cb) ->
@@ -50,12 +66,5 @@ module.exports = class ChangeContactHandler
         , (contacts) ->
             cb null, contacts[0]
         , cb
-        , new ContactFindOptions cozyId, false, [], ACCOUNT_TYPE, \
-            ACCOUNT_NAME
-
-    _done: (err, result) ->
-        return log.error err if err
-        log.debug result
-
-    _throwError: (err) ->
-        log.error err
+        , new ContactFindOptions cozyId, false, [], AndroidAccount.TYPE, \
+            AndroidAccount.NAME
