@@ -1,6 +1,5 @@
 async = require 'async'
 CozyToAndroidEvent = require "../transformer/cozy_to_android_event"
-AndroidCalendarCache = require "../cache/android_calendar_cache"
 AndroidCalendarHandler = require "../../lib/android_calendar_handler"
 log = require('../../lib/persistent_log')
     prefix: "EventSynchronizer"
@@ -13,7 +12,7 @@ module.exports = class EventSynchronizer
         @db ?= app.replicator.config.db
         @calendarSync ?= navigator.calendarsync
         @cozyToAndroidEvent = new CozyToAndroidEvent()
-        @androidCalendarCache = new AndroidCalendarCache()
+        @androidCalendarHandler = new AndroidCalendarHandler()
 
     synchronize: ->
         log.info "synchronize"
@@ -31,7 +30,7 @@ module.exports = class EventSynchronizer
         if androidEvent.deleted
             @delete androidEvent, continueOnError callback
         else
-            @androidCalendarCache.getById androidEvent.calendar_id, \
+            @androidCalendarHandler.getById androidEvent.calendar_id, \
                 (err, androidCalendar) =>
                     return log.error err if err
 

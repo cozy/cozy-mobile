@@ -7,6 +7,8 @@ log = require("./persistent_log")
     prefix: "AndroidCalendarHandler"
     date: true
 
+androidCalendarsCache = null
+
 module.exports = class AndroidCalendarHandler
 
     @ACCOUNT:
@@ -22,9 +24,12 @@ module.exports = class AndroidCalendarHandler
     getAll: (callback) ->
         log.info "getAll"
 
+        return androidCalendarsCache if androidCalendarsCache
+
         @calendarSync.allCalendars @ACCOUNT, (err, calendars) =>
             return callback err if err
 
+            androidCalendarsCache = calendars
             callback null, calendars
 
     getByName: (calendarName, callback) ->
@@ -68,19 +73,28 @@ module.exports = class AndroidCalendarHandler
 
             androidCalendar = @cozyToAndroidCalendar.transform cozyCalendar, \
                     @ACCOUNT
-            # todo: addCalendar return calendar not only id
             @calendarSync.addCalendar androidCalendar, (err, calendarId) =>
                 return callback err if err
 
+                # add new calendar in cache
+                androidCalendar._id = calendarId
+                androidCalendarsCache ?= []
+                androidCalendarsCache.push androidCalendar
+
                 @getById calendarId, (err, calendar) =>
                     callback err, calendar
-
 
     update: (androidCalendar, callback) ->
         log.info "update"
 
         @calendarSync.updateCalendar androidCalendar, @ACCOUNT, (err) ->
             return callback err if err
+
+            # update cache
+            for key, calendar in androidCalendarsCache
+                if calendar._id is androidCalendar._id
+                    androidCalendarsCache[key] = androidCalendar
+
             callback null, true
 
     delete: (androidCalendar, callback) ->
@@ -89,6 +103,12 @@ module.exports = class AndroidCalendarHandler
         @calendarSync.deleteCalendar androidCalendar, @ACCOUNT, \
                 (err, deletedCount) =>
             return callback err if err
+
+            # delete cache
+            for key, calendar in androidCalendarsCache
+                if calendar._id is androidCalendar._id
+                    androidCalendarsCache.splice(key, 1)
+
             callback null, true
 
     deleteIfEmpty: (androidCalendar, callback) ->
