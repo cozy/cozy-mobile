@@ -56,15 +56,6 @@ module.exports = class EventSynchronizer
         @db.post cozyEvent, (err, response) =>
             return callback err if err
 
-#            if err
-#                if err.message is "Some query argument is invalid"
-#                    log.error "While retrying create event in pouch"
-#                    , err
-#                    # Continue with next one.
-#                    return callback null
-#                else
-#                    return callback err
-
             androidEvent._sync_id = response.id
             androidEvent.sync_data2 = response.rev
 
@@ -85,20 +76,6 @@ module.exports = class EventSynchronizer
 
             @db.put cozyEvent, cozyEvent._id, cozyEvent._rev, (err, response) =>
                 return callback err if err
-
-#                if err
-#                    if err.status is 409 # conflict, bad _rev
-#                        log.error "UpdateInPouch, immediate conflict with \
-#                            #{cozyEvent._id}.", err
-#                        # no error, no undirty, will try again next step.
-#                        return callback null
-#                    else if err.message is "Some query argument is invalid"
-#                        log.error "While retrying update event in pouch"
-#                        , err
-#                        # Continue with next one.
-#                        return callback null
-#                    else
-#                        return callback err
 
                 androidEvent.sync_data2 = response.rev
                 androidEvent.sync_data5 = cozyEvent.lastModified

@@ -4,6 +4,14 @@ log = require('../../lib/persistent_log')
     prefix: "ChangeTagHandler"
     date: true
 
+###*
+  * ChangeTagHandler Can only update color of calendar.
+  * For now, calendar is only a tag, so we do it this hack.
+  * Calendar is created when an event is created.
+  * Calendar is removed when last event of calendar is removed
+  *
+  * @class ChangeEventHandler
+###
 module.exports = class ChangeTagHandler
 
     constructor: ->

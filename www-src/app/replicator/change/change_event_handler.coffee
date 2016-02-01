@@ -4,6 +4,11 @@ log = require('../../lib/persistent_log')
     prefix: "ChangeEventHandler"
     date: true
 
+###*
+  * ChangeEventHandler Can create, update or delete an event on your device
+  *
+  * @class ChangeEventHandler
+###
 module.exports = class ChangeEventHandler
 
     constructor: (@calendarSync) ->
@@ -18,13 +23,15 @@ module.exports = class ChangeEventHandler
             if androidEvents.length > 0
                 androidEvent = androidEvents[0]
                 if cozyEvent._deleted
-                    @delete cozyEvent, androidEvent
+                    @_delete cozyEvent, androidEvent
                 else
-                    @update cozyEvent, androidEvent
+                    @_update cozyEvent, androidEvent
             else
-                @create cozyEvent unless cozyEvent._deleted
+                # event may have already been deleted from device
+                # or event never been created
+                @_create cozyEvent unless cozyEvent._deleted
 
-    create: (cozyEvent) ->
+    _create: (cozyEvent) ->
         log.info "create"
 
         calendarName = cozyEvent.tags[0]
@@ -36,10 +43,8 @@ module.exports = class ChangeEventHandler
                     @androidCalendarHandler.ACCOUNT, (err, androidEventId) ->
                 log.error err if err
 
-    update: (cozyEvent, androidEvent = undefined) ->
+    _update: (cozyEvent, androidEvent) ->
         log.info "update"
-
-        return @dispatch cozyEvent unless androidEvent
 
         calendarName = cozyEvent.tags[0]
         @androidCalendarHandler.getOrCreate calendarName, (err, calendar) =>
@@ -51,10 +56,8 @@ module.exports = class ChangeEventHandler
                     @androidCalendarHandler.ACCOUNT, (err) ->
                 return log.error err if err
 
-    delete: (cozyEvent, androidEvent) ->
+    _delete: (cozyEvent, androidEvent) ->
         log.info "delete"
-
-        return @dispatch cozyEvent unless androidEvent
 
         @calendarSync.deleteEvent androidEvent, \
                 @androidCalendarHandler.ACCOUNT, (err, deletedCount) =>
