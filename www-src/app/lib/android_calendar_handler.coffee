@@ -1,6 +1,7 @@
 androidCalendarHelper = require "./android_calendar_helper"
 CozyToAndroidCalendar = require \
         "../replicator/transformer/cozy_to_android_calendar"
+DesignDocuments = require "../replicator/design_documents"
 request = require "./request"
 log = require("./persistent_log")
     prefix: "AndroidCalendarHandler"
@@ -93,11 +94,11 @@ module.exports = class AndroidCalendarHandler
     deleteIfEmpty: (androidCalendar, callback) ->
         log.info "deleteIfEmpty"
 
-        # todo: optimize this request with _design map
-        @db.query (doc, emit) ->
-            if doc.docType is 'event' and doc.tags[0] is androidCalendar.name
-                emit doc.name
-        , {limit: 1} , (err, res) =>
+        @db.query DesignDocuments.CALENDARS
+        ,
+            key: androidCalendar.name
+            limit: 1
+        , (err, res) =>
             return callback err if err
 
             @delete androidCalendar, callback if res.rows.length is 0
