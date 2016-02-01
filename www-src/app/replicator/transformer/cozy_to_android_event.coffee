@@ -42,7 +42,8 @@ module.exports = class CozyToAndroidEvent
             duration = moment.duration duration
             duration = JSON.stringify duration
             duration = duration.replace /"/g, ''
-            dtstart = parseInt moment.tz(cozyEvent.start, cozyEvent.timezone).format 'x'
+            dtstart = parseInt \
+                    moment.tz(cozyEvent.start, cozyEvent.timezone).format 'x'
         else # Punctual, datetime are in UTC timezone.
             dtstart = parseInt moment.tz(cozyEvent.start, 'UTC').format 'x'
             dtend = parseInt moment.tz(cozyEvent.end, 'UTC').format 'x'
@@ -119,13 +120,15 @@ module.exports = class CozyToAndroidEvent
         timezone = undefined
 
         if androidEvent.rrule? and androidEvent.rrule isnt ''
-            startMoment = moment.tz androidEvent.dtstart, androidEvent.eventTimezone
+            startMoment = moment.tz androidEvent.dtstart, \
+                    androidEvent.eventTimezone
             duration = ACH.android2Duration androidEvent.duration
             #duration = parseInt androidEvent.duration.replace /[^\d]/g, ''
             endMoment = moment startMoment
             endMoment = endMoment.add duration
         else
-            startMoment = moment.tz androidEvent.dtstart, androidEvent.eventTimezone
+            startMoment = moment.tz androidEvent.dtstart, \
+                    androidEvent.eventTimezone
             endMoment = moment.tz androidEvent.dtend, androidEvent.eventTimezone
 
         if androidEvent.allDay
@@ -145,7 +148,8 @@ module.exports = class CozyToAndroidEvent
 
 
         attendees = androidEvent.attendees.map (attendee) ->
-            if cozyEvent? and cozyEvent.attendees? and cozyEvent.attendees.length isnt 0
+            if cozyEvent? and cozyEvent.attendees? and \
+                    cozyEvent.attendees.length isnt 0
                 cozyAttendee = cozyEvent.attendees.filter (cozyAttendee) ->
                     cozyAttendee.email is attendee.attendeeEmail
                 cozyAttendee = cozyAttendee[0]
