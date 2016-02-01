@@ -12,14 +12,13 @@ module.exports = class EventSynchronizer
     constructor: (@db, @calendarSync) ->
         @db ?= app.replicator.config.db
         @calendarSync ?= navigator.calendarsync
-        @androidCalendarHandler = new AndroidCalendarHandler()
         @cozyToAndroidEvent = new CozyToAndroidEvent()
         @androidCalendarCache = new AndroidCalendarCache()
 
     synchronize: ->
         log.info "synchronize"
 
-        @calendarSync.dirtyEvents @androidCalendarHandler.ACCOUNT, \
+        @calendarSync.dirtyEvents AndroidCalendarHandler.ACCOUNT, \
                 (err, androidEvents) =>
             return log.error err if err
 
@@ -32,7 +31,6 @@ module.exports = class EventSynchronizer
         if androidEvent.deleted
             @delete androidEvent, continueOnError callback
         else
-            # ? androidEvent = ACH.filterOrganizerAttendee androidEvent, @androidCalendarHandler.ACCOUNT
             @androidCalendarCache.getById androidEvent.calendar_id, \
                 (err, androidCalendar) =>
                     return log.error err if err
@@ -60,7 +58,7 @@ module.exports = class EventSynchronizer
             androidEvent.sync_data2 = response.rev
 
             @calendarSync.undirtyEvent androidEvent, \
-                    @androidCalendarHandler.ACCOUNT, callback
+                    AndroidCalendarHandler.ACCOUNT, callback
 
     # Update event in pouchDB with specified event from phone.
     # @param androidEvent
@@ -81,7 +79,7 @@ module.exports = class EventSynchronizer
                 androidEvent.sync_data5 = cozyEvent.lastModified
 
                 @calendarSync.undirtyEvent androidEvent, \
-                        @androidCalendarHandler.ACCOUNT, callback
+                        AndroidCalendarHandler.ACCOUNT, callback
 
 
     # Delete the specified contact in app's pouchdb.
@@ -99,4 +97,4 @@ module.exports = class EventSynchronizer
             return callback err if err
 
             @calendarSync.deleteEvent androidEvent, \
-                    @androidCalendarHandler.ACCOUNT, callback
+                    AndroidCalendarHandler.ACCOUNT, callback

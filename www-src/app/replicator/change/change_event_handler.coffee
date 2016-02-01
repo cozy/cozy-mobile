@@ -40,7 +40,7 @@ module.exports = class ChangeEventHandler
 
             androidEvent = @cozyToAndroidEvent.transform cozyEvent, calendar
             @calendarSync.addEvent androidEvent, \
-                    @androidCalendarHandler.ACCOUNT, (err, androidEventId) ->
+                    AndroidCalendarHandler.ACCOUNT, (err, androidEventId) ->
                 log.error err if err
 
     _update: (cozyEvent, androidEvent) ->
@@ -53,7 +53,7 @@ module.exports = class ChangeEventHandler
             androidEvent = @cozyToAndroidEvent.transform cozyEvent, calendar, \
                     androidEvent
             @calendarSync.updateEvent androidEvent, \
-                    @androidCalendarHandler.ACCOUNT, (err) ->
+                    AndroidCalendarHandler.ACCOUNT, (err) ->
                 return log.error err if err
 
     _delete: (cozyEvent, androidEvent) ->

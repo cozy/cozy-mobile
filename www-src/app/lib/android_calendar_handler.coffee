@@ -9,7 +9,7 @@ log = require("./persistent_log")
 
 module.exports = class AndroidCalendarHandler
 
-    ACCOUNT:
+    @ACCOUNT:
         accountType: 'io.cozy'
         accountName: 'myCozy'
 
