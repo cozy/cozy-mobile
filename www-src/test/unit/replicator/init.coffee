@@ -3,7 +3,7 @@ should = require('chai').should()
 
 global._ = require 'underscore'
 global.Backbone = require 'backbone'
-global.XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
+global.XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest
 
 require 'backbone.statemachine'
 
@@ -13,7 +13,7 @@ module.exports = describe 'Init Test', ->
     ['mTest1', 'mTest2', 'mTetst3',
      'smTest1', 'smTest2', 'smTetst3',
      'fTest1', 'aTest2', 'sTetst3'].forEach (state) ->
-        Init.prototype.states[state] = {}
+         Init.prototype.states[state] = {}
 
     Init.prototype.transitions.mTest1 = 'next1': 'mTest2'
     Init.prototype.transitions.mTest2 = 'next2': 'mTest3'

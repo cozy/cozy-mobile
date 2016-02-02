@@ -49,7 +49,7 @@ module.exports = class ReplicationLauncher
                         if @changeDispatcher.isDispatched doc
                             @changeDispatcher.dispatch doc
                         else
-                          log.warn 'unwanted doc !', doc.docType
+                            log.warn 'unwanted doc !', doc.docType
 
             @replication.on 'paused', ->
                 log.info "replicate paused"
@@ -58,7 +58,7 @@ module.exports = class ReplicationLauncher
             @replication.on 'denied', (info) ->
                 log.info "replicate denied"
                 callback new Error "Replication denied"
-            @replication.on 'complete', (info) =>
+            @replication.on 'complete', (info) ->
                 log.info "replicate complete"
                 callback()
             @replication.on 'error', (err) ->
@@ -90,9 +90,9 @@ module.exports = class ReplicationLauncher
               retry: true
               heartbeat: false
               back_off_function: (delay) ->
-                 return 1000 if delay is 0
-                 return delay if delay > 60000
-                 return delay * 2
+                  return 1000 if delay is 0
+                  return delay if delay > 60000
+                  return delay * 2
         else
             liveOptions = {}
 

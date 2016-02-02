@@ -468,7 +468,8 @@ module.exports = class Init
             @getCallbackTriggerOrQuit 'foldersInited'
 
     createAndroidAccount: ->
-        if app.replicator.config.get('syncContacts') or app.replicator.config.get('syncCalendars')
+        if app.replicator.config.get('syncContacts') or \
+                app.replicator.config.get('syncCalendars')
             androidAccount = new AndroidAccount()
             androidAccount.create @getCallbackTriggerOrQuit \
                 'androidAccountCreated'
