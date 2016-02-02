@@ -1,8 +1,10 @@
-async           = require 'async'
-should      = require('chai').should()
+async  = require 'async'
+should = require('chai').should()
 
 global._ = require 'underscore'
 global.Backbone = require 'backbone'
+global.XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
+
 require 'backbone.statemachine'
 
 module.exports = describe 'Init Test', ->
