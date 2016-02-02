@@ -1,6 +1,7 @@
 semver = require 'semver'
 async = require 'async'
 ChangeDispatcher = require './change/change_dispatcher'
+ChangesImporter = require './fromDevice/changes_importer'
 AndroidAccount = require './fromDevice/android_account'
 
 log = require('../lib/persistent_log')
@@ -41,7 +42,7 @@ module.exports = class Init
     # it should be updated or not.
     configUpdated: (needInit) ->
         # Do sync only on
-        if @currentState is 'aRun'
+        if @currentState is 'aRealtime'
             if needInit.calendars and needInit.contacts
                 @toState 'c3RemoteRequest'
             else if needInit.contacts
@@ -139,8 +140,9 @@ module.exports = class Init
 
         # Last commons steps
         aLoadFilePage: enter: ['saveState', 'setListeners', 'loadFilePage']
+        aImport: enter: ['import']
         aBackup: enter: ['backup']
-        aRun: {}
+        aRealtime: {}
 
         #######################################
         # Service
@@ -222,8 +224,9 @@ module.exports = class Init
         # Normal start
         'nPostConfigInit': 'initsDone': 'nQuitSplashScreen'
         'nQuitSplashScreen': 'viewInitialized': 'aLoadFilePage'
-        'aLoadFilePage': 'onFilePage': 'aBackup'
-        'aBackup': 'backupStarted': 'aRun'
+        'aLoadFilePage': 'onFilePage': 'aImport'
+        'aImport': 'importDone': 'aBackup'
+        'aBackup': 'backupStarted': 'aRealtime'
 
         #######################################
         # Migration
@@ -373,6 +376,12 @@ module.exports = class Init
     # Normal start
     postConfigInit: ->
         app.postConfigInit @getCallbackTriggerOrQuit 'initsDone'
+
+    import: ->
+        changesImporter = new ChangesImporter()
+        changesImporter.synchronize (err) =>
+            log.error err if err
+            @trigger 'importDone'
 
     backup: ->
         app.replicator.backup {}, (err) -> log.error err if err
