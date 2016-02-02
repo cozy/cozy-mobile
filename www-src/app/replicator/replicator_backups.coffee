@@ -26,18 +26,6 @@ module.exports =
 
         options = options or { force: false }
 
-        unless @config.has('checkpointed')
-            err = new Error "Database not initialized before realtime"
-            if options.background
-                callback err
-            else
-                log.warn err
-
-                if confirm t 'Database not initialized. Do it now ?'
-                    app.router.navigate 'first-sync', trigger: true
-
-            return
-
         try
             @set 'inBackup', true
             @set 'backup_step', null
@@ -71,40 +59,40 @@ module.exports =
                             log.error "in syncPictures: ", err
                             errors.push err
                         cb()
-                (cb) =>
-                    DeviceStatus.checkReadyForSync (err, ready, msg) =>
-                        unless ready or err
-                            err = new Error msg
-                        return cb err if err
+                # (cb) =>
+                #     DeviceStatus.checkReadyForSync (err, ready, msg) =>
+                #         unless ready or err
+                #             err = new Error msg
+                #         return cb err if err
 
-                        @syncCache (err) ->
-                            if err
-                                log.error "in syncCache", err
-                                errors.push err
-                            cb()
+                #         @syncCache (err) ->
+                #             if err
+                #                 log.error "in syncCache", err
+                #                 errors.push err
+                #             cb()
 
-                (cb) =>
-                    DeviceStatus.checkReadyForSync (err, ready, msg) =>
-                        unless ready or err
-                            err = new Error msg
-                        return cb err if err
+                # (cb) =>
+                #     DeviceStatus.checkReadyForSync (err, ready, msg) =>
+                #         unless ready or err
+                #             err = new Error msg
+                #         return cb err if err
 
-                        @syncContacts (err) ->
-                            if err
-                                log.error "in syncContacts", err
-                                errors.push err
-                            cb()
-                (cb) =>
-                    DeviceStatus.checkReadyForSync (err, ready, msg) =>
-                        unless ready or err
-                            err = new Error msg
-                        return cb err if err
+                #         @syncContacts (err) ->
+                #             if err
+                #                 log.error "in syncContacts", err
+                #                 errors.push err
+                #             cb()
+                # (cb) =>
+                #     DeviceStatus.checkReadyForSync (err, ready, msg) =>
+                #         unless ready or err
+                #             err = new Error msg
+                #         return cb err if err
 
-                        @syncCalendars (err) ->
-                            if err
-                                log.error "in syncCalendars", err
-                                errors.push err
-                            cb()
+                #         @syncCalendars (err) ->
+                #             if err
+                #                 log.error "in syncCalendars", err
+                #                 errors.push err
+                #             cb()
 
 
             ], (err) ->

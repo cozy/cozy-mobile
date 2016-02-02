@@ -33,32 +33,38 @@ module.exports = class ReplicationLauncher
      * @param {Integer} since - Replicate changes after given sequence number.
      * @param {Boolean} live - Continue replicating after changes.
     ###
-    start: (since, live, callback = ->) ->
+    start: (options, callback = ->) ->
         log.info "start"
 
         unless @replication
-            @replication = @dbFrom.sync @dbTo, @_getOptions since, live
+            # @replication = @dbFrom.replicate.from @dbTo, @_getOptions options
+            @replication = @dbFrom.sync @dbTo, @_getOptions options
             @replication.on 'change', (info) =>
                 log.info "replicate change"
                 if info.direction is 'pull'
                     for doc in info.change.docs
+                        # TODO: put in files and folders change handler ?
+                        if doc.docType in ['file', 'folder']
+                            @router.forceRefresh()
                         if @changeDispatcher.isDispatched doc
                             @changeDispatcher.dispatch doc
-                            if doc.docType in ['file', 'folder']
-                                @router.forceRefresh()
+                        else
+                          log.warn 'unwanted doc !', doc.docType
+
             @replication.on 'paused', ->
                 log.info "replicate paused"
             @replication.on 'active', ->
                 log.info "replicate active"
             @replication.on 'denied', (info) ->
                 log.info "replicate denied"
+                callback new Error "Replication denied"
             @replication.on 'complete', (info) =>
                 log.info "replicate complete"
-                @config.save checkpointed: info.last_seq, ->
                 callback()
             @replication.on 'error', (err) ->
                 log.info "replicate error"
                 log.error err
+                callback err
 
     ###*
      * Stop replicator
@@ -78,14 +84,19 @@ module.exports = class ReplicationLauncher
      *
      * @see http://pouchdb.com/api.html#replication
     ###
-    _getOptions: (since, live) ->
-        batch_size: @BATCH_SIZE
-        batches_limit: @BATCHES_LIMIT
-        filter: @filterName
-        since: since
-        live: live
-        retry: true
-        back_off_function: (delay) ->
-            return 1000 if delay is 0
-            return delay if delay > 60000
-            return delay * 2
+    _getOptions: (options) ->
+        if options.live
+            liveOptions =
+              retry: true
+              heartbeat: false
+              back_off_function: (delay) ->
+                 return 1000 if delay is 0
+                 return delay if delay > 60000
+                 return delay * 2
+        else
+            liveOptions = {}
+
+        return _.extend options, liveOptions,
+            batch_size: ReplicationLauncher.BATCH_SIZE
+            batches_limit: ReplicationLauncher.BATCHES_LIMIT
+            filter: @filterName

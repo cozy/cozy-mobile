@@ -390,33 +390,42 @@ module.exports =
 
     # Initial replication task.
     # @param lastSeq lastseq in remote couchDB.
-    initEventsInPhone: (lastSeq, callback) ->
+    initEventsInPhone: (callback) ->
         unless @config.get 'syncCalendars'
             return callback()
 
-        @createAccount (err) =>
-            @updateCalendars (err) =>
-                return callback err if err
-                options = @config.makeDSUrl "/request/event/all/"
-                options.body =
-                    include_docs: true
-                    show_revs: true
-                request.post options, (err, res, rows) =>
-                    return callback err if err
-                    return callback null unless rows?.length
+        url = '/_changes?descending=true&limit=1'
+        request.get @config.makeReplicationUrl(url), (err, res, body) =>
+            return cb err if err
+            # we store last_seq before copying files & folder
+            # to avoid losing changes occuring during replication
+            lastSeq = body.last_seq
 
-                    async.mapSeries rows, (row, cb) =>
-                        doc = row.doc
-                        @db.put doc, new_edits: false, (err, res) -> cb err, doc
-                    , (err, docs) =>
+            @createAccount (err) =>
+                @updateCalendars (err) =>
+                    return callback err if err
+                    options = @config.makeDSUrl "/request/event/all/"
+                    options.body =
+                        include_docs: true
+                        show_revs: true
+                    request.post options, (err, res, rows) =>
                         return callback err if err
-                        @set 'backup_step', null # hide header: first-sync view
-                        @_applyEventsChangeToPhone docs, (err) =>
-                            # clean backup_step_done after applyChanges
-                            @set 'backup_step_done', null
-                            @config.save eventsPullCheckpointed: lastSeq
-                            , (err) =>
-                                @deleteObsoletePhoneEvents callback
+                        return callback null unless rows?.length
+
+                        async.mapSeries rows, (row, cb) =>
+                            doc = row.doc
+                            @db.put doc, new_edits: false, (err, res) ->
+                                cb err, doc
+                        , (err, docs) =>
+                            return callback err if err
+                            # hide header: first-sync view
+                            @set 'backup_step', null
+                            @_applyEventsChangeToPhone docs, (err) =>
+                                # clean backup_step_done after applyChanges
+                                @set 'backup_step_done', null
+                                @config.save eventsPullCheckpointed: lastSeq
+                                , (err) =>
+                                    @deleteObsoletePhoneEvents callback
 
 
     # Synchronise delete state between pouch and the phone.
