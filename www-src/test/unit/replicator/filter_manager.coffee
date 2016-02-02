@@ -1,4 +1,4 @@
-assert = require 'assert'
+should = require('chai').should()
 mockery = require 'mockery'
 
 module.exports = describe 'FilterManager Test', ->
@@ -45,26 +45,26 @@ module.exports = describe 'FilterManager Test', ->
 
         it "setFilter return true", (done) ->
             filterManager = new @FilterManager cozyUrl, true, deviceName
-            filterManager.setFilter true, true, true, (response) ->
-                assert.equal response, true
+            filterManager.setFilter true, true, true, (err, response) ->
+                response.should.be.equal true
                 done()
 
         it "getFilterName return the filter name", ->
             filterManager = new @FilterManager cozyUrl, true, deviceName
             name = filterManager.getFilterName()
-            assert.equal name, "filter-#{deviceName}-config/config"
+            name.should.be.equal "filter-#{deviceName}-config/config"
 
 
     describe '[All errors]', ->
 
-        it "When API have an error setFilter return false", (done) ->
+        it "When API have an error setFilter return err", (done) ->
             filterManager = new @FilterManager cozyUrl, "err", deviceName
-            filterManager.setFilter true, true, true, (id) ->
-                assert.equal id, false
+            filterManager.setFilter true, true, true, (err, response) ->
+                err.should.not.to.be.null
                 done()
 
         it "When API don't return _id setFilter return false", (done) ->
             filterManager = new @FilterManager cozyUrl, "body_empty", deviceName
-            filterManager.setFilter true, true, true, (id) ->
-                assert.equal id, false
+            filterManager.setFilter true, true, true, (err, response) ->
+                err.should.not.to.be.null
                 done()
