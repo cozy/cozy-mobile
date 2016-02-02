@@ -1,12 +1,21 @@
 semver = require 'semver'
 async = require 'async'
 ChangeDispatcher = require './change/change_dispatcher'
-AndroidAccount = require './fromDevice/androidaccount'
+AndroidAccount = require './fromDevice/android_account'
 
 log = require('../lib/persistent_log')
     date: true
     processusTag: "Init"
 
+###*
+ * Conductor of the init process.
+ * It handle first start, migrations, normal start, service and config changes.
+ * It organize an explicit the different steps (such as put filters in remote
+ * cozy, copy view to init a replication on a doctype, ...).
+ *
+ * It structured as a finite state machine and event, trough this lib:
+ * https://github.com/sebpiq/backbone.statemachine
+###
 module.exports = class Init
 
     _.extend Init.prototype, Backbone.Events

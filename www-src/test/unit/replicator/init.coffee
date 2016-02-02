@@ -1,4 +1,3 @@
-assert          = require 'assert'
 async           = require 'async'
 should      = require('chai').should()
 
