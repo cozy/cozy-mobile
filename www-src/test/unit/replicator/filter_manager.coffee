@@ -1,5 +1,4 @@
 assert = require 'assert'
-sinon = require 'sinon'
 mockery = require 'mockery'
 
 module.exports = describe 'FilterManager Test', ->
