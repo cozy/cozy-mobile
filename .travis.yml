@@ -10,19 +10,10 @@ android:
     - build-tools-22.0.1
 
 install:
-  - npm install -g cordova
-  - cd www-src && npm install && cd ..
-  - export PATH=$PATH:$PWD/www-src/node_modules/.bin
-  - cake platforms && cake plugins
+  - npm install -g coffee-script
+  - cake install
 
 script:
-  - cd www-src && npm test && cd ..
+  - cd www-src && npm run test && cd ..
   - cd www-src && npm run lint && cd ..
-  - cordova build android
-
-after_script:
-  - codeclimate-test-reporter < lcov.info
-
-addons:
-  code_climate:
-    repo_token: 13155d5f51a14d839f38b525e864d9e581f5b85795911726c85b0760daab626b
+  - ./www-src/node_modules/.bin/cordova build android
