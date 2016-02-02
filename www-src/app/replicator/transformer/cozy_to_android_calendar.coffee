@@ -2,8 +2,19 @@ log = require('../../lib/persistent_log')
     prefix: "CozyToAndroidCalendar"
     date: true
 
+###*
+ * CozyToAndroidCalendar transform a cozy calendar to a android calendar and
+ * reverse transform an android calendar to a cozy calendar.
+ *
+ * @class CozyToAndroidCalendar
+###
 module.exports = class CozyToAndroidCalendar
 
+    ###*
+     * @param {Object} cozyCalendar - it's a cozy calendar
+     * @param {Object} account - it's android account
+     * @param {Object} androidCalendar - it's an android calendar (optional)
+    ###
     transform: (cozyCalendar, account, androidCalendar = undefined) ->
         log.info "transform"
 

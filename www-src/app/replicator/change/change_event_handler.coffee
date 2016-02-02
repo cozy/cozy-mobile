@@ -5,9 +5,9 @@ log = require('../../lib/persistent_log')
     date: true
 
 ###*
-  * ChangeEventHandler Can create, update or delete an event on your device
-  *
-  * @class ChangeEventHandler
+ * ChangeEventHandler Can create, update or delete an event on your device
+ *
+ * @class ChangeEventHandler
 ###
 module.exports = class ChangeEventHandler
 

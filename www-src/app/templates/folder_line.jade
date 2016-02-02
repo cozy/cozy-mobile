@@ -7,7 +7,7 @@
     if isFolder
         i.icon.icon-type.type-folder
 
-    else model.mime && this.mimeClasses[model.mime]
+    else if model.mime && this.mimeClasses[model.mime]
        i(class="icon icon-type #{this.mimeClasses[model.mime]}")
 
     span= model.name
