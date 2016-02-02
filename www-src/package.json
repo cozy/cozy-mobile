@@ -25,7 +25,6 @@
     "semver":"5.1.0"
   },
   "devDependencies": {
-    "auto-reload-brunch": "1.8.1",
     "brunch": "1.8.5",
     "chai": "3.5.0",
     "clean-css-brunch": "1.8.0",
