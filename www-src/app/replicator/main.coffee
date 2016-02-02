@@ -49,7 +49,7 @@ module.exports = class Replicator extends Backbone.Model
 
     initDB: (callback) ->
         # Migrate to idb
-        dbOptions = adapter: 'idb'
+        dbOptions = adapter: 'idb', cache: false
         new PouchDB DBNAME, dbOptions, (err, db) =>
             if err
                 #keep sqlite db, no migration.
@@ -227,7 +227,7 @@ module.exports = class Replicator extends Backbone.Model
 
     putFilters: (callback) ->
         log.info "setReplicationFilter"
-        @getFilterManager().setFilter @config.get("syncContacts"), \
+        @config.getFilterManager().setFilter @config.get("syncContacts"), \
             @config.get("syncCalendars"), @config.get("cozyNotifications"), \
             callback
 
@@ -317,7 +317,7 @@ module.exports = class Replicator extends Backbone.Model
                 err = new Error res.statusCode, res.reason
 
             return callback err if err
-            callback rows
+            callback null, rows
 
 
     # 1. Fetch all documents of specified docType
@@ -615,9 +615,6 @@ module.exports = class Replicator extends Backbone.Model
     sync: (options, callback) ->
         return callback null if @get 'inSync'
 
-        unless @config.has('checkpointed')
-            return callback new Error "database not initialized"
-
         log.info "start a sync"
         @set 'inSync', true
         @_sync options, (err) =>
@@ -632,6 +629,7 @@ module.exports = class Replicator extends Backbone.Model
     #    * replication force by user
     _sync: (options, callback) ->
         log.info "_sync"
+        options.live = false
 
         @stopRealtime()
 
@@ -646,18 +644,6 @@ module.exports = class Replicator extends Backbone.Model
         log.info "startRealtime"
 
         return if @replicationLauncher or not app.foreground
-
-        unless @config.has 'checkpointed'
-            log.error new Error "database not initialized"
-
-            if confirm t 'Database not initialized. Do it now ?'
-                app.router.navigate 'first-sync', trigger: true
-                @resetSynchro (err) ->
-                    if err
-                        log.error err
-                        return alert err.message
-
-            return
 
         ReplicationLauncher = require "./replication_launcher"
         @replicationLauncher = new ReplicationLauncher @config, app.router

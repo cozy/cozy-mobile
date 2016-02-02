@@ -4,12 +4,14 @@ log = require('../../lib/persistent_log')
 
 module.exports = class AndroidAccount
 
-    @account:
-        name: 'myCozy'
-        type: 'io.cozy'
+    @NAME: 'myCozy'
+    @TYPE: 'io.cozy'
+    @ACCOUNT:
+        name: AndroidAccount.NAME
+        type: AndroidAccount.TYPE
 
-    upsert: (callback) ->
-        navigator.contacts.createAccount @account.type, @account.name
-        , ->
+    create: (callback) ->
+        navigator.contacts.createAccount AndroidAccount.TYPE
+        , AndroidAccount.NAME, ->
             callback null
         , callback

@@ -33,8 +33,10 @@ module.exports = class ChangeDispatcher
      * @param {Object} doc - it's a pouchdb file document.
     ###
     dispatch: (doc, callback = ->) ->
-        state = @_getState doc
-        log.info "change #{doc.docType}: state is #{state}"
+        log.info "change #{doc.docType}"
+        if doc.docType is "file"
+            state = @_getState doc
+            @changeHandlers.file[state] doc
 
         handler = @changeHandlers[doc.docType]
         if handler?
@@ -50,3 +52,14 @@ module.exports = class ChangeDispatcher
     isDispatched: (doc) ->
         return doc.docType of @changeHandlers
 
+    ###*
+     * @deprecated : move  handler to 'dispatch' API
+     * Get state of document.
+     *
+     * @param {Object} doc - it's a pouchdb file document.
+     *
+     * @return {String}
+    ###
+    _getState: (doc) ->
+        return "delete" if doc._deleted
+        return "change"

@@ -116,8 +116,8 @@ module.exports = class ConfigView extends BaseView
             syncOnWifi: @$('#wifiSyncCheck').is ':checked'
             cozyNotifications: @$('#cozyNotificationsCheck').is ':checked'
 
-        , (err, config, needSync) =>
-            @listenOnce app.init, 'dbSynced initDone', ->
+        , (err, config, needInit) =>
+            @listenToOnce app.init, 'dbSynced initDone', ->
                 checkboxes.prop 'disabled', false
 
             app.init.configUpdated needInit

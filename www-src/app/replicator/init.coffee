@@ -160,21 +160,21 @@ module.exports = class Init
         # activate sync-contacts (c1)
         c1RemoteRequest: enter: ['putRemoteRequest']
         c1TakeDBCheckpoint: enter: ['takeDBCheckpoint']
-        c1CreateAccount: enter: ['createAccount']
+        c1CreateAccount: enter: ['createAndroidAccount']
         c1InitContacts: enter: ['initContacts']
         c1InitCalendars: enter: ['initCalendars']
 
         # activate sync-calendars (c2)
         c2RemoteRequest: enter: ['putRemoteRequest']
         c2TakeDBCheckpoint: enter: ['takeDBCheckpoint']
-        c2CreateAccount: enter: ['createAccount']
+        c2CreateAccount: enter: ['createAndroidAccount']
         c2InitContacts: enter: ['initContacts']
         c2InitCalendars: enter: ['initCalendars']
 
         # activate sync acontacts and sync calendars
         c3RemoteRequest: enter: ['putRemoteRequest']
         c3TakeDBCheckpoint: enter: ['takeDBCheckpoint']
-        c3CreateAccount: enter: ['createAccount']
+        c3CreateAccount: enter: ['createAndroidAccount']
         c3InitContacts: enter: ['initContacts']
         c3InitCalendars: enter: ['initCalendars']
 
@@ -459,44 +459,61 @@ module.exports = class Init
             @getCallbackTriggerOrQuit 'foldersInited'
 
     createAndroidAccount: ->
-        androidAccount = new AndroidAccount()
-        androidAccount.create @getCallbackTriggerOrQuit 'androidAccountCreated'
+        if app.replicator.config.get('syncContacts') or app.replicator.config.get('syncCalendars')
+            androidAccount = new AndroidAccount()
+            androidAccount.create @getCallbackTriggerOrQuit \
+                'androidAccountCreated'
+
+        else
+            @trigger 'androidAccountCreated' # TODO: rename event.
 
     # 1. Copy view for contact
     # 2. dispatch inserted contacts to android through the change dispatcher
     initContacts: ->
-        changeDispatcher = new ChangeDispatcher()
-        # 1. Copy view for contact
-        app.replicator.copyView
-            docType: 'contact'
-            attachments: true
-        , (err, contacts) =>
-            return @exitApp err if err
-            async.eachSeries contacts, (contact, cb) ->
-                # 2. dispatch inserted contacts to android
-                changeDispatcher.dispatch contact, cb
-            , @getCallbackTriggerOrQuit 'contactsInited'
+        if app.replicator.config.get('syncContacts')
+            changeDispatcher = new ChangeDispatcher()
+            # 1. Copy view for contact
+            app.replicator.copyView
+                docType: 'contact'
+                attachments: true
+            , (err, contacts) =>
+                return @exitApp err if err
+                async.eachSeries contacts, (contact, cb) ->
+                    # 2. dispatch inserted contacts to android
+                    changeDispatcher.dispatch contact, cb
+                , @getCallbackTriggerOrQuit 'contactsInited'
+        else
+            @trigger 'contactsInited' # TODO rename event to 'noSyncContacts'
 
 
     # 1. Copy view for event
     # 2. dispatch inserted events to android through the change dispatcher
     initCalendars: ->
-        changeDispatcher = new ChangeDispatcher()
-        # 1. Copy view for event
-        app.replicator.copyView docType: 'event', (err, events) =>
-            return @exitApp err if err
-            async.eachSeries events, (event, cb) ->
-                # 2. dispatch inserted events to android
-                changeDispatcher.dispatch event, cb
-            , @getCallbackTriggerOrQuit 'calendarsInited'
+        if app.replicator.config.get('syncCalendars')
+            changeDispatcher = new ChangeDispatcher()
+            # 1. Copy view for event
+            app.replicator.copyView docType: 'event', (err, events) =>
+                return @exitApp err if err
+                async.eachSeries events, (event, cb) ->
+                    # 2. dispatch inserted events to android
+                    changeDispatcher.dispatch event, cb
+                , @getCallbackTriggerOrQuit 'calendarsInited'
+        else
+            @trigger 'calendarsInited' # TODO: rename event to noSyncCalendars
 
 
     postCopyViewSync: ->
-        app.replicator.sync since: app.replicator.config.get('checkPointed'), \
-            @getCallbackTriggerOrQuit 'dbSynced'
+        app.replicator.sync since: app.replicator.config.get('checkpointed')
+        , (err) =>
+            console.log err
+            # TODO: we bypass this systematic missing error, but what is it!?
+            if err and err.message isnt 'missing'
+                return exitApp err if err
 
-        # Coyp view is done. Unset this transition var.
-        app.replicator.config.unset 'checkPointed'
+            # Copy view is done. Unset this transition var.
+            app.replicator.config.unset 'checkpointed'
+            @trigger 'dbSynced'
+
 
     updateIndex: ->
         app.replicator.updateIndex @getCallbackTriggerOrQuit 'indexUpdated'

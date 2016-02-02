@@ -26,18 +26,6 @@ module.exports =
 
         options = options or { force: false }
 
-        unless @config.has('checkpointed')
-            err = new Error "Database not initialized before realtime"
-            if options.background
-                callback err
-            else
-                log.warn err
-
-                if confirm t 'Database not initialized. Do it now ?'
-                    app.router.navigate 'first-sync', trigger: true
-
-            return
-
         try
             @set 'inBackup', true
             @set 'backup_step', null
