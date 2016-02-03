@@ -1,5 +1,11 @@
 APP_VERSION = "0.1.19"
 PouchDB = require 'pouchdb'
+request = require '../lib/request'
+FilterManager = require './filter_manager'
+
+log = require('../lib/persistent_log')
+    prefix: "replicator_config"
+    date: true
 
 module.exports = class ReplicatorConfig extends Backbone.Model
     constructor: (@db) ->
@@ -17,6 +23,8 @@ module.exports = class ReplicatorConfig extends Backbone.Model
         deviceName: ''
 
     fetch: (callback) ->
+        log.info "fetch"
+
         @db.get '_local/appconfig', (err, config) =>
             if config
                 @set config
@@ -25,6 +33,8 @@ module.exports = class ReplicatorConfig extends Backbone.Model
             callback null, this
 
     save: (changes, callback) ->
+        log.info "save changes"
+
         @set changes
         # Update _rev, if another process (service) has modified it since.
         @db.get '_local/appconfig', (err, config) =>
@@ -34,21 +44,31 @@ module.exports = class ReplicatorConfig extends Backbone.Model
             doc = @toJSON()
             delete doc.password if doc.password
 
+            needInit =
+                notifications: changes.cozyNotifications and \
+                    changes.cozyNotifications isnt @cozyNotifications
+                calendars: changes.syncCalendars and \
+                    changes.syncCalendars isnt @syncCalendars
+                contacts: changes.syncContacts and \
+                    changes.syncContacts isnt @syncContacts
+                deviceName: changes.deviceName
+
             @db.put doc, (err, res) =>
                 return callback err if err
                 return callback new Error('cant save config') unless res.ok
                 @set _rev: res.rev
                 @remote = @createRemotePouchInstance()
-                callback? null, this
 
-    getScheme: () ->
+                callback null, @, needInit
+
+    getScheme: ->
         # Monkey patch for browser debugging
         if window.isBrowserDebugging
             return 'http'
         else
             return 'https'
 
-    getCozyUrl: () ->
+    getCozyUrl: ->
         "#{@getScheme()}://#{@get("deviceName")}:#{@get('devicePassword')}" +
             "@#{@get('cozyURL')}"
 
@@ -88,3 +108,12 @@ module.exports = class ReplicatorConfig extends Backbone.Model
         _.isEqual \
             @get('devicePermissions'), \
             @serializePermissions(permissions)
+
+    getFilterManager: ->
+        @filterManager ?= new FilterManager @getCozyUrl(), @get('auth'), \
+                    @get("deviceName")
+
+    getReplicationFilter: ->
+        log.info "getReplicationFilter"
+        @getFilterManager().getFilterName()
+

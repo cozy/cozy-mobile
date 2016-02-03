@@ -22,8 +22,7 @@
         input#cozyNotificationsCheck(type="checkbox", checked=cozyNotifications)
         label(for='cozyNotificationsCheck')= t('cozy notifications sync label')
 
-    if firstRun
-
+    if initState === 'fConfig' || initState === 'mConfig'
         .item
             button#configDone.button.button-block.button-balanced= t('next')
 

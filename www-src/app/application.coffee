@@ -7,6 +7,7 @@ ServiceManager = require './models/service_manager'
 Notifications  = require './views/notifications'
 DeviceStatus   = require './lib/device_status'
 Translation    = require './lib/translation'
+Init            = require './replicator/init'
 
 log = require('./lib/persistent_log')
     prefix: "application"
@@ -23,90 +24,50 @@ module.exports =
         @layout = new LayoutView()
         @translation = new Translation()
 
+        @init = new Init()
+        @init.startStateMachine()
+        @init.trigger 'startApplication'
+
+
+    setDeviceLocale: (callback) ->
         # Monkey patch for browser debugging
         if window.isBrowserDebugging
             window.navigator = window.navigator or {}
             window.navigator.globalization =
                 window.navigator.globalization or {}
-            window.navigator.globalization.getPreferredLanguage = (callback) =>
-                callback value: @translation.DEFAULT_LANGUAGE
+            window.navigator.globalization.getPreferredLanguage = (cb) =>
+                cb value: @translation.DEFAULT_LANGUAGE
 
+        # Use the device's locale until we get the config document.
         navigator.globalization.getPreferredLanguage (properties) =>
             @translation.setLocale(properties)
             window.t = @translation.getTranslate()
+            callback()
 
-            @replicator.init (err, config) =>
-                if err
-                    log.error err
-                    msg = err.message or err
-                    msg += "\n #{t('error try restart')}"
-                    alert msg
-                    return navigator.app.exitApp()
 
-                # Monkey patch for browser debugging
-                unless window.isBrowserDebugging
-                    @notificationManager = new Notifications()
-                    @serviceManager = new ServiceManager()
-
-                $('body').empty().append @layout.render().$el
-                $('body').css 'background-color', 'white'
-                Backbone.history.start()
-
-                DeviceStatus.initialize()
-
-                if config.remote
-                    if config.isNewVersion()
-                        @replicator.checkPlatformVersions (err) =>
-                            if err
-                                log.error err
-                                alert err.message or err
-                                return navigator.app.exitApp()
-
-                            if config.hasPermissions(@replicator.permissions)
-                                @regularStart()
-                            else
-                                @router.navigate 'permissions', trigger: true
-                    else
-                        @regularStart()
-
-                else # no config.remote
-                    # App's first start
-                    @isFirstRun = true
-                    @router.navigate 'login', trigger: true
-
-    checkForUpdates: ->
-        @replicator.checkPlatformVersions (err) =>
+    postConfigInit: (callback) ->
+        @replicator.updateLocaleFromCozy (err) =>
             if err
-                log.error err
-                alert err.message or err
-                return navigator.app.exitApp()
+                # Continue on error, app can work offline.
+                log.error "Continue on updateLocaleFromCozy error: #{err.msg}"
 
-            if @replicator.config.hasPermissions(@replicator.permissions)
-                @regularStart()
-            else
-                @router.navigate 'permissions', trigger: true
+            unless window.isBrowserDebugging # Patch for browser debugging
+                @notificationManager = new Notifications()
+                @serviceManager = new ServiceManager()
 
-
-    regularStart: ->
-        # Update version tag if we reach here
-        @replicator.config.updateVersion =>
-            unless @replicator.config.has('checkpointed')
-                log.info 'Launch first replication again.'
-                @router.navigate 'first-sync', trigger: true
-                return
-
+            DeviceStatus.initialize()
             @foreground = true
             conf = @replicator.config.attributes
             # Display config to help remote debuging.
             log.info "Start v#{conf.appVersion}--\
-            sync_contacts:#{conf.syncContacts},sync_images:#{conf.syncImages},\
+            sync_contacts:#{conf.syncContacts},\
+            sync_calendars:#{conf.syncCalendars},\
+            sync_images:#{conf.syncImages},\
             sync_on_wifi:#{conf.syncOnWifi},\
             cozy_notifications:#{conf.cozyNotifications}"
 
-            @setListeners()
-            @router.navigate 'folder/', trigger: true
-            @router.once 'collectionfetched', =>
-                @replicator.backup {}, (err) -> log.error err if err
+            # @setListeners()
+            callback()
 
 
     setListeners: ->
@@ -131,6 +92,15 @@ module.exports =
             @foreground = false
             @replicator.stopRealtime()
         , false
+
+
+    exit: (err) ->
+        if err
+            log.error err
+            msg = err.message or err
+            msg += "\n #{t('error try restart')}"
+            alert msg
+        navigator.app.exitApp()
 
     addDeviceListener: ->
         document.addEventListener 'deviceready', =>
