@@ -37,7 +37,6 @@ module.exports = class ReplicationLauncher
         log.info "start"
 
         unless @replication
-            # @replication = @dbFrom.replicate.from @dbTo, @_getOptions options
             @replication = @dbFrom.sync @dbTo, @_getOptions options
             @replication.on 'change', (info) =>
                 log.info "replicate change"

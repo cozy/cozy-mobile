@@ -31,7 +31,6 @@ module.exports = class Init
     initialize: ->
         @migrationStates = {}
 
-        @listenTo @, 'all', -> console.log arguments
         @listenTo @, 'transition', (leaveState, enterState) ->
             log.info "Transition from state #{leaveState} \
                       to state #{enterState}"
@@ -144,6 +143,7 @@ module.exports = class Init
         aImport: enter: ['import']
         aBackup: enter: ['backup']
         aRealtime: enter: ['realtime']
+        aResume: enter: ['onResume']
         aPause: enter: ['onPause']
         aViewingFile: enter: ['onPause']
 
@@ -229,11 +229,12 @@ module.exports = class Init
         'nQuitSplashScreen': 'viewInitialized': 'aLoadFilePage'
         'aLoadFilePage': 'onFilePage': 'aImport'
         'aImport': 'importDone': 'aBackup'
-        'aBackup': 'backupStarted': 'aRealtime'
+        'aBackup': 'backupDone  ': 'aRealtime'
 
         #######################################
         # Running
-        'aPause': 'resume': 'aImport'
+        'aPause': 'resume': 'aResume'
+        'aResume': 'ready': 'aImport'
 
         'aRealtime':
             'pause': 'aPause'
@@ -397,8 +398,22 @@ module.exports = class Init
             @trigger 'importDone'
 
     backup: ->
-        app.replicator.backup {}, (err) -> log.error err if err
-        @trigger 'backupStarted'
+        app.replicator.backup {}, (err) =>
+            log.error err if err
+            @trigger 'backupDone'
+
+    onResume: ->
+        # Don't import, backup, ... while service still running
+        app.serviceManager.isRunning (err, running) =>
+            return log.error err if err
+
+            # If service still running, try again later
+            if running
+                setTimeout (() => @onResume()), 10 * 1000
+                log.info 'Service still running, backup later'
+
+            else
+                @trigger 'ready'
 
     onPause: ->
         app.replicator.stopRealtime()
@@ -516,7 +531,6 @@ module.exports = class Init
                 attachments: true
             , (err, contacts) =>
                 return @exitApp err if err
-                console.log contacts
 
                 async.eachSeries contacts, (contact, cb) ->
                     # 2. dispatch inserted contacts to android
@@ -545,9 +559,7 @@ module.exports = class Init
     postCopyViewSync: ->
         app.replicator.sync since: app.replicator.config.get('checkpointed')
         , (err) =>
-            console.log err
-            # TODO: we bypass this systematic missing error, but what is it!?
-            if err and err.message isnt 'missing'
+            if err
                 return exitApp err if err
 
             # Copy view is done. Unset this transition var.

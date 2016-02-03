@@ -49,7 +49,7 @@ module.exports = class ChangeContactHandler
             callerIsSyncAdapter: true # apply immediately
             resetFields: true # remove all fields before update
 
-        toSaveInPhone.save ((contact) => callback null, contact), callback
+        toSaveInPhone.save ((contact) -> callback null, contact), callback
         , options
 
 
@@ -57,7 +57,7 @@ module.exports = class ChangeContactHandler
         log.info "delete"
         # Use callerIsSyncAdapter flag to apply immediately in
         # android(no dirty flag cycle)
-        androidContact.remove (=> callback()), callback
+        androidContact.remove (-> callback()), callback
         , callerIsSyncAdapter: true
 
 

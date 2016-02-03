@@ -111,7 +111,7 @@ module.exports = class ReplicatorConfig extends Backbone.Model
 
     getFilterManager: ->
         @filterManager ?= new FilterManager @getCozyUrl(), @get('auth'), \
-                    @get("deviceName")
+                    @get("deviceName"), @db
 
     getReplicationFilter: ->
         log.info "getReplicationFilter"
