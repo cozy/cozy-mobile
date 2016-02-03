@@ -106,8 +106,8 @@ module.exports = class Replicator extends Backbone.Model
         options.body = include_docs: true
 
         retryOptions = times: 5, interval: 20 * 1000
-        async.retry retryOptions, (cb) =>
-            request.post options, (err, res, models) =>
+        async.retry retryOptions, (cb) ->
+            request.post options, (err, res, models) ->
                 return cb err if err
                 return cb err if res.statusCode isnt 200
                 return cb new Error 'No CozyInstance' if models.length <= 0
@@ -312,7 +312,7 @@ module.exports = class Replicator extends Backbone.Model
         requestOptions = @config.makeDSUrl "/request/#{options.docType}/all/"
         requestOptions.body = include_docs: true, show_revs: true
 
-        request.post requestOptions, (err, res, rows) =>
+        request.post requestOptions, (err, res, rows) ->
             if not err and res.statusCode isnt 200
                 err = new Error res.statusCode, res.reason
 

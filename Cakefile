@@ -1,46 +1,21 @@
 fs     = require 'fs'
 {exec} = require 'child_process'
-async  = require './www-src/modules/async'
+packageJson = require './www-src/package.json'
 
-plugins = {
-    "cordova-plugin-whitelist": "cordova-plugin-whitelist@1.0.0"
-
-    "cordova-plugin-device": "cordova-plugin-device@1.0.1"
-    "cordova-plugin-globalization": "cordova-plugin-globalization@1.0.1"
-    "cordova-plugin-inappbrowser": "cordova-plugin-inappbrowser@1.0.1"
-    "cordova-plugin-file": "cordova-plugin-file@3.0.0"
-    "cordova-plugin-file-transfer": "cordova-plugin-file-transfer@1.3.0"
-    "cordova-plugin-battery-status": "cordova-plugin-battery-status@1.1.0"
-    "cordova-plugin-network-information": "cordova-plugin-network-information@1.0.1"
-
-    "com.fgomiero.cordova.externafileutil": "https://github.com/aenario/cordova-external-file-open"
-    "cordova-sqlite-storage": "https://github.com/litehelpers/Cordova-sqlite-storage#r1.0.4"
-    "de.appplant.cordova.plugin.local-notification": "de.appplant.cordova.plugin.local-notification@0.8.2"
-
-    "io.cozy.cordova-images-browser": "https://github.com/cozy/cordova-images-browser#v1.0.2"
-    "io.cozy.jsbackgroundservice": "https://github.com/cozy/cordova-jsbackgroundservice#v1.1.2"
-    "io.cozy.jsbgservice-newpicture": "https://github.com/cozy/cordova-jsbgservice-newpicture#v1.0.0"
-    "io.cozy.contacts": "https://github.com/cozy/cordova-plugin-contacts#c1.0.3"
-    "io.cozy.calendarsync": "https://github.com/cozy/cordova-plugin-calendarsync#v1.0.0"
-}
-
-platforms = ['android']
-
-installPlugins = (done) ->
-    async.eachSeries Object.keys(plugins), (plugin, cb) ->
-        plugin = plugins[plugin]
-        console.log "installing plugin #{plugin} ..."
-        command = 'cordova plugin add ' + plugin
-        exec command, (err, stdout, stderr) ->
-            console.log stdout
-            console.log stderr
-            cb()
-    , done
+installDependencies = (done) ->
+    console.log "install dependencies"
+    command = "cd www-src && npm install && cd .."
+    exec command, (err, stdout, stderr) ->
+        console.log stdout
+        console.log stderr
+        done()
 
 installPlatforms = (done) ->
-    async.eachSeries platforms, (platform, cb) ->
+    console.log "install cordova platforms"
+    async  = require './www-src/modules/async'
+    async.eachSeries packageJson.cordovaPlatforms, (platform, cb) ->
         console.log "attempt to add platform #{platform} ..."
-        command = 'cordova platform add ' + platform
+        command = './www-src/node_modules/.bin/cordova platform add ' + platform
         exec command, (err, stdout, stderr) ->
             console.log stdout
             console.log stderr
@@ -48,9 +23,24 @@ installPlatforms = (done) ->
     , done
 
 uninstallPlatforms = (done) ->
-    async.eachSeries platforms, (platform, cb) ->
+    console.log "uninstall cordova platforms"
+    async  = require './www-src/modules/async'
+    async.eachSeries packageJson.cordovaPlatforms, (platform, cb) ->
         console.log "attempt to remove platform #{platform} ..."
-        command = 'cordova platform remove ' + platform
+        command = './www-src/node_modules/.bin/cordova platform remove ' + platform
+        exec command, (err, stdout, stderr) ->
+            console.log stdout
+            console.log stderr
+            cb()
+    , done
+
+installPlugins = (done) ->
+    console.log "install cordova plugins"
+    async  = require './www-src/modules/async'
+    async.eachSeries Object.keys(packageJson.cordovaPlugins), (plugin, cb) ->
+        pluginName = packageJson.cordovaPlugins[plugin]
+        console.log "installing plugin #{plugin} ..."
+        command = './www-src/node_modules/.bin/cordova plugin add ' + pluginName
         exec command, (err, stdout, stderr) ->
             console.log stdout
             console.log stderr
@@ -58,18 +48,24 @@ uninstallPlatforms = (done) ->
     , done
 
 uninstallPlugins = (done) ->
-    async.eachSeries Object.keys(plugins).reverse(), (plugin, cb) ->
+    console.log "uninstall cordova plugins"
+    async  = require './www-src/modules/async'
+    async.eachSeries Object.keys(packageJson.cordovaPlugins).reverse(), (plugin, cb) ->
         console.log "uninstalling plugin #{plugin} ..."
-        command = 'cordova plugin rm ' + plugin
+        command = './www-src/node_modules/.bin/cordova plugin rm ' + plugin
         exec command, (err, stdout, stderr) ->
             console.log stdout
             console.log stderr
             cb()
     , done
 
-resetPlugins = (done) -> uninstallPlatforms -> installPlatforms done
+resetPlugins = (done) ->
+    console.log "reset cordova plugins"
+    uninstallPlatforms -> installPlatforms done
 
-updatePlugins = (done) -> uninstallPlugins -> installPlugins -> resetPlugins done
+updatePlugins = (done) ->
+    console.log "update cordova plugins"
+    uninstallPlugins -> installPlugins -> resetPlugins done
 
 
 
@@ -96,4 +92,11 @@ release = (done) ->
 task 'platforms', 'install cordova platforms', -> installPlatforms -> console.log "DONE"
 task 'plugins', 'install cordova plugins', -> installPlugins -> console.log "DONE"
 task 'plugins:update', 'update cordova plugins', -> updatePlugins -> console.log "DONE"
-task 'release', 'create the released apk', -> release -> console.log "DONE"
+task 'release', 'create the released apk', -> release -> console.log "release DONE"
+task 'install', 'install all application', ->
+    installDependencies ->
+        console.log "install dependencies DONE"
+        installPlatforms ->
+            console.log "install cordova platforms DONE"
+            installPlugins ->
+                console.log "install cordova plugins DONE"

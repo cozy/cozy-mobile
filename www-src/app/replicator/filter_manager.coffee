@@ -38,11 +38,10 @@ module.exports = class FilterManager
 
         request.put options, (err, res, body) ->
             if body?.success or body?._id
-                callback()
+                callback null, true
             else
                 err ?= body
                 callback err
-
 
     ###*
      * Get filter name for this device.

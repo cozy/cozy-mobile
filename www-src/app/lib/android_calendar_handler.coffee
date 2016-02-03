@@ -26,7 +26,8 @@ module.exports = class AndroidCalendarHandler
 
         return androidCalendarsCache if androidCalendarsCache
 
-        @calendarSync.allCalendars AndroidCalendarHandler.ACCOUNT, (err, calendars) =>
+        @calendarSync.allCalendars AndroidCalendarHandler.ACCOUNT, \
+                (err, calendars) ->
             return callback err if err
 
             androidCalendarsCache = calendars
@@ -87,7 +88,8 @@ module.exports = class AndroidCalendarHandler
     update: (androidCalendar, callback) ->
         log.info "update"
 
-        @calendarSync.updateCalendar androidCalendar, AndroidCalendarHandler.ACCOUNT, (err) ->
+        @calendarSync.updateCalendar androidCalendar, \
+                AndroidCalendarHandler.ACCOUNT, (err) ->
             return callback err if err
 
             # update cache
@@ -100,8 +102,8 @@ module.exports = class AndroidCalendarHandler
     delete: (androidCalendar, callback) ->
         log.info "delete"
 
-        @calendarSync.deleteCalendar androidCalendar, AndroidCalendarHandler.ACCOUNT, \
-                (err, deletedCount) =>
+        @calendarSync.deleteCalendar androidCalendar, \
+                AndroidCalendarHandler.ACCOUNT, (err, deletedCount) ->
             return callback err if err
 
             # delete cache
