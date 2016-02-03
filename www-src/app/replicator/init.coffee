@@ -1,6 +1,7 @@
 semver = require 'semver'
 async = require 'async'
 ChangeDispatcher = require './change/change_dispatcher'
+ChangesImporter = require './fromDevice/changes_importer'
 AndroidAccount = require './fromDevice/android_account'
 
 log = require('../lib/persistent_log')
@@ -41,7 +42,7 @@ module.exports = class Init
     # it should be updated or not.
     configUpdated: (needInit) ->
         # Do sync only on
-        if @currentState is 'aRun'
+        if @currentState is 'aRealtime'
             if needInit.calendars and needInit.contacts
                 @toState 'c3RemoteRequest'
             else if needInit.contacts
@@ -139,8 +140,12 @@ module.exports = class Init
 
         # Last commons steps
         aLoadFilePage: enter: ['saveState', 'setListeners', 'loadFilePage']
+        aImport: enter: ['import']
         aBackup: enter: ['backup']
-        aRun: {}
+        aRealtime: enter: ['realtime']
+        aResume: enter: ['onResume']
+        aPause: enter: ['onPause']
+        aViewingFile: enter: ['onPause']
 
         #######################################
         # Service
@@ -222,8 +227,20 @@ module.exports = class Init
         # Normal start
         'nPostConfigInit': 'initsDone': 'nQuitSplashScreen'
         'nQuitSplashScreen': 'viewInitialized': 'aLoadFilePage'
-        'aLoadFilePage': 'onFilePage': 'aBackup'
-        'aBackup': 'backupStarted': 'aRun'
+        'aLoadFilePage': 'onFilePage': 'aImport'
+        'aImport': 'importDone': 'aBackup'
+        'aBackup': 'backupDone  ': 'aRealtime'
+
+        #######################################
+        # Running
+        'aPause': 'resume': 'aResume'
+        'aResume': 'ready': 'aImport'
+
+        'aRealtime':
+            'pause': 'aPause'
+            'openFile': 'aViewingFile'
+
+        'aViewingFile': 'resume': 'aRealtime'
 
         #######################################
         # Migration
@@ -374,9 +391,35 @@ module.exports = class Init
     postConfigInit: ->
         app.postConfigInit @getCallbackTriggerOrQuit 'initsDone'
 
+    import: ->
+        changesImporter = new ChangesImporter()
+        changesImporter.synchronize (err) =>
+            log.error err if err
+            @trigger 'importDone'
+
     backup: ->
-        app.replicator.backup {}, (err) -> log.error err if err
-        @trigger 'backupStarted'
+        app.replicator.backup {}, (err) =>
+            log.error err if err
+            @trigger 'backupDone'
+
+    onResume: ->
+        # Don't import, backup, ... while service still running
+        app.serviceManager.isRunning (err, running) =>
+            return log.error err if err
+
+            # If service still running, try again later
+            if running
+                setTimeout (() => @onResume()), 10 * 1000
+                log.info 'Service still running, backup later'
+
+            else
+                @trigger 'ready'
+
+    onPause: ->
+        app.replicator.stopRealtime()
+
+    realtime: ->
+        app.replicator.startRealtime()
 
     quitSplashScreen: ->
         app.layout.quitSplashScreen()
@@ -488,6 +531,7 @@ module.exports = class Init
                 attachments: true
             , (err, contacts) =>
                 return @exitApp err if err
+
                 async.eachSeries contacts, (contact, cb) ->
                     # 2. dispatch inserted contacts to android
                     changeDispatcher.dispatch contact, cb
@@ -515,9 +559,7 @@ module.exports = class Init
     postCopyViewSync: ->
         app.replicator.sync since: app.replicator.config.get('checkpointed')
         , (err) =>
-            console.log err
-            # TODO: we bypass this systematic missing error, but what is it!?
-            if err and err.message isnt 'missing'
+            if err
                 return exitApp err if err
 
             # Copy view is done. Unset this transition var.

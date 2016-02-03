@@ -29,12 +29,12 @@ module.exports =
         try
             @set 'inBackup', true
             @set 'backup_step', null
-            @stopRealtime()
+            # @stopRealtime()
             @_backup options.force, (err) =>
                 @set 'backup_step', null
                 @set 'backup_step_done', null
                 @set 'inBackup', false
-                @startRealtime() unless options.background
+                # @startRealtime() unless options.background
                 return callback err if err
                 @config.save lastBackup: new Date().toString(), (err) ->
                     log.info "Backup done."
@@ -59,6 +59,7 @@ module.exports =
                             log.error "in syncPictures: ", err
                             errors.push err
                         cb()
+
                 # (cb) =>
                 #     DeviceStatus.checkReadyForSync (err, ready, msg) =>
                 #         unless ready or err
@@ -82,6 +83,7 @@ module.exports =
                 #                 log.error "in syncContacts", err
                 #                 errors.push err
                 #             cb()
+
                 # (cb) =>
                 #     DeviceStatus.checkReadyForSync (err, ready, msg) =>
                 #         unless ready or err
@@ -93,7 +95,6 @@ module.exports =
                 #                 log.error "in syncCalendars", err
                 #                 errors.push err
                 #             cb()
-
 
             ], (err) ->
                 return callback err if err

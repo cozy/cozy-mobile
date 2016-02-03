@@ -1,7 +1,7 @@
 async = require 'async'
 DesignDocuments = require './design_documents'
 request = require '../lib/request'
-Contact = require '../models/contact'
+Contact = require '../lib/cordova_contact_helper'
 
 log = require('../lib/persistent_log')
     prefix: "contacts replicator"

@@ -37,10 +37,10 @@ module.exports = class ReplicationLauncher
         log.info "start"
 
         unless @replication
-            # @replication = @dbFrom.replicate.from @dbTo, @_getOptions options
             @replication = @dbFrom.sync @dbTo, @_getOptions options
             @replication.on 'change', (info) =>
                 log.info "replicate change"
+
                 if info.direction is 'pull'
                     for doc in info.change.docs
                         # TODO: put in files and folders change handler ?

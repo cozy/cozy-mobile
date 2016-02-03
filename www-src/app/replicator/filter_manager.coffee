@@ -18,8 +18,9 @@ module.exports = class FilterManager
      * @param {String} cozyUrl - it's url
      * @param {String} auth - it's header authentication
      * @param {String} deviceName - it's device name
+     * @param {PouchDB} db - the main PouchDB instance of the app.
     ###
-    constructor: (@cozyUrl, @auth, @deviceName) ->
+    constructor: (@cozyUrl, @auth, @deviceName, @db) ->
 
     ###*
      * Create or update a filter for a specific configuration.
@@ -32,16 +33,31 @@ module.exports = class FilterManager
     setFilter: (syncContacts, syncCalendars, syncNotifs, callback) ->
         log.info "setFilter syncContacts: #{syncContacts}, syncCalendars: " + \
                 "#{syncCalendars}, syncNotifs: #{syncNotifs}"
+        doc = @_getConfigFilter syncContacts, syncCalendars, syncNotifs
 
         options = @_getOptions()
-        options.body = @_getConfigFilter syncContacts, syncCalendars, syncNotifs
+        options.body = doc
 
-        request.put options, (err, res, body) ->
-            if body?.success or body?._id
-                callback null, true
-            else
-                err ?= body
-                callback err
+        # Add the filter in PouchDB
+        filterId = "_design/filter-#{@deviceName}-config"
+        doc._id = filterId
+        @db.get filterId, (err, existing) =>
+            # assume err is 404, which means no doc yet.
+            if existing?
+                doc._rev = existing._rev
+
+            @db.put doc, (err) ->
+                return callback err if err
+
+                # Delete rev before sending to Cozy
+                delete doc._rev
+                # Add filter in Cozy
+                request.put options, (err, res, body) ->
+                    if err or not body?.success
+                        err ?= body
+                        return callback err
+
+                    callback null, true
 
     ###*
      * Get filter name for this device.
@@ -73,14 +89,21 @@ module.exports = class FilterManager
      * @return {Object}
     ###
     _getConfigFilter: (syncContacts, syncCalendars, syncNotifs) ->
-        compare = "doc.docType === 'file' || doc.docType === 'folder'"
-        compare += " || doc.docType === 'contact'" if syncContacts
+        # First check for docType
+        compare = "doc.docType && ("
+        compare += "doc.docType.toLowerCase() === 'file'"
+        compare += " || doc.docType.toLowerCase() === 'folder'"
+        if syncContacts
+            compare += " || doc.docType.toLowerCase() === 'contact'"
         if syncCalendars
-            compare += " || doc.docType === 'event'"
-            compare += " || doc.docType === 'tag'"
+            compare += " || doc.docType.toLowerCase() === 'event'"
+            compare += " || doc.docType.toLowerCase() === 'tag'"
         if syncNotifs
-            compare += " || (doc.docType === 'notification'"
+            compare += " || (doc.docType.toLowerCase() === 'notification'"
             compare += " && doc.type === 'temporary')"
 
+        compare += ")"
+
         filters:
-            config: "function (doc) { return #{compare} }"
+            config: "function (doc) { return #{compare}; }"
+
