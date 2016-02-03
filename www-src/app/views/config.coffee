@@ -25,9 +25,9 @@ module.exports = class ConfigView extends BaseView
         'change #cozyNotificationsCheck' : 'saveChanges'
 
     getRenderData: ->
+        log.info "getRenderData"
         config = app.replicator.config.toJSON()
-        console.log 'config'
-        console.log app.init.currentState
+        log.info "Current state: #{app.init.currentState}"
         return _.extend {},
             config,
             lastSync: @formatDate config?.lastSync
