@@ -1,3 +1,4 @@
+AndroidAccount = require "../fromDevice/android_account"
 AndroidCalendarHandler = require "../../lib/android_calendar_handler"
 CozyToAndroidEvent = require "../transformer/cozy_to_android_event"
 log = require('../../lib/persistent_log')
@@ -40,7 +41,7 @@ module.exports = class ChangeEventHandler
 
             androidEvent = @cozyToAndroidEvent.transform cozyEvent, calendar
             @calendarSync.addEvent androidEvent, \
-                    AndroidCalendarHandler.ACCOUNT, callback
+                    AndroidAccount.ACCOUNT, callback
 
     _update: (cozyEvent, androidEvent, callback) ->
         log.info "update"
@@ -52,14 +53,14 @@ module.exports = class ChangeEventHandler
             androidEvent = @cozyToAndroidEvent.transform cozyEvent, calendar, \
                     androidEvent
             @calendarSync.updateEvent androidEvent, \
-                    AndroidCalendarHandler.ACCOUNT, callback
+                    AndroidAccount.ACCOUNT, callback
 
 
     _delete: (cozyEvent, androidEvent, callback) ->
         log.info "delete"
 
         @calendarSync.deleteEvent androidEvent, \
-                @androidCalendarHandler.ACCOUNT, (err, deletedCount) =>
+                AndroidAccount.ACCOUNT, (err, deletedCount) =>
             log.error err if err
 
             @androidCalendarHandler.getById androidEvent.calendar_id, \

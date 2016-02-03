@@ -1,3 +1,4 @@
+AndroidAccount = require "../replicator/fromDevice/android_account"
 androidCalendarHelper = require "./android_calendar_helper"
 CozyToAndroidCalendar = require \
         "../replicator/transformer/cozy_to_android_calendar"
@@ -11,10 +12,6 @@ androidCalendarsCache = null
 
 module.exports = class AndroidCalendarHandler
 
-    @ACCOUNT:
-        accountType: 'io.cozy'
-        accountName: 'myCozy'
-
     constructor: (@db, @config, @calendarSync) ->
         @db ?= app.replicator.db
         @config ?= app.replicator.config
@@ -26,7 +23,7 @@ module.exports = class AndroidCalendarHandler
 
         return androidCalendarsCache if androidCalendarsCache
 
-        @calendarSync.allCalendars AndroidCalendarHandler.ACCOUNT, \
+        @calendarSync.allCalendars AndroidAccount.ACCOUNT, \
                 (err, calendars) ->
             return callback err if err
 
@@ -73,7 +70,7 @@ module.exports = class AndroidCalendarHandler
             return callback err if err
 
             androidCalendar = @cozyToAndroidCalendar.transform cozyCalendar, \
-                    AndroidCalendarHandler.ACCOUNT
+                    AndroidAccount.ACCOUNT
             @calendarSync.addCalendar androidCalendar, (err, calendarId) =>
                 return callback err if err
 
@@ -89,7 +86,7 @@ module.exports = class AndroidCalendarHandler
         log.info "update"
 
         @calendarSync.updateCalendar androidCalendar, \
-                AndroidCalendarHandler.ACCOUNT, (err) ->
+                AndroidAccount.ACCOUNT, (err) ->
             return callback err if err
 
             # update cache
@@ -103,7 +100,7 @@ module.exports = class AndroidCalendarHandler
         log.info "delete"
 
         @calendarSync.deleteCalendar androidCalendar, \
-                AndroidCalendarHandler.ACCOUNT, (err, deletedCount) ->
+                AndroidAccount.ACCOUNT, (err, deletedCount) ->
             return callback err if err
 
             # delete cache
