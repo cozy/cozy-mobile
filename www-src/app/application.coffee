@@ -73,24 +73,26 @@ module.exports =
     setListeners: ->
         document.addEventListener "resume", =>
             log.info "RESUME EVENT"
-            @foreground = true
-            if @backFromOpen
-                @backFromOpen = false
-                @replicator.startRealtime()
-            else
-                @serviceManager.isRunning (err, running) =>
-                    return log.error err if err
-                    if running
-                        @replicator.startRealtime()
-                        log.info "No backup on resume, as service still running"
-                    else
-                        @replicator.backup {}, (err) -> log.error err if err
+            @init.trigger 'resume'
+            # @foreground = true
+            # if @backFromOpen
+            #     @backFromOpen = false
+            #     @replicator.startRealtime()
+            # else
+            #     @serviceManager.isRunning (err, running) =>
+            #         return log.error err if err
+            #         if running
+            #             @replicator.startRealtime()
+            #             log.info "No backup on resume, as service still running"
+            #         else
+            #             @replicator.backup {}, (err) -> log.error err if err
         , false
 
         document.addEventListener "pause", =>
             log.info "PAUSE EVENT"
-            @foreground = false
-            @replicator.stopRealtime()
+            @init.trigger 'pause'
+            # @foreground = false
+            # @replicator.stopRealtime()
         , false
 
 

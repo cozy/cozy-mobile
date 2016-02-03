@@ -31,6 +31,7 @@ module.exports = class Init
     initialize: ->
         @migrationStates = {}
 
+        @listenTo @, 'all', -> console.log arguments
         @listenTo @, 'transition', (leaveState, enterState) ->
             log.info "Transition from state #{leaveState} \
                       to state #{enterState}"
@@ -142,7 +143,9 @@ module.exports = class Init
         aLoadFilePage: enter: ['saveState', 'setListeners', 'loadFilePage']
         aImport: enter: ['import']
         aBackup: enter: ['backup']
-        aRealtime: {}
+        aRealtime: enter: ['realtime']
+        aPause: enter: ['onPause']
+        aViewingFile: enter: ['onPause']
 
         #######################################
         # Service
@@ -227,6 +230,16 @@ module.exports = class Init
         'aLoadFilePage': 'onFilePage': 'aImport'
         'aImport': 'importDone': 'aBackup'
         'aBackup': 'backupStarted': 'aRealtime'
+
+        #######################################
+        # Running
+        'aPause': 'resume': 'aImport'
+
+        'aRealtime':
+            'pause': 'aPause'
+            'openFile': 'aViewingFile'
+
+        'aViewingFile': 'resume': 'aRealtime'
 
         #######################################
         # Migration
@@ -386,6 +399,12 @@ module.exports = class Init
     backup: ->
         app.replicator.backup {}, (err) -> log.error err if err
         @trigger 'backupStarted'
+
+    onPause: ->
+        app.replicator.stopRealtime()
+
+    realtime: ->
+        app.replicator.startRealtime()
 
     quitSplashScreen: ->
         app.layout.quitSplashScreen()
