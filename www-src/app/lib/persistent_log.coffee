@@ -28,7 +28,6 @@ class Logger
             @noLog = true
 
 
-
     stringify: (text) ->
         if text instanceof Error
             err = text

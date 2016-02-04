@@ -36,6 +36,16 @@ module.exports = class Init
                       to state #{enterState}"
 
 
+        @listenTo @, 'transition', (leaveState, enterState) =>
+            if @states[enterState]?.display?
+                @trigger 'display', @states[enterState].display
+
+            # Hide display if no needed in comming state.
+            else if @states[leaveState]?.display?
+                @trigger 'noDisplay'
+
+
+
     # activating contact or calendar sync requires to init them,
     # trough init state machine
     # @param needSync {calendars: true, contacts: false } type object, if
@@ -109,20 +119,46 @@ module.exports = class Init
         fDeviceName: enter: ['setDeviceName'], leave: ['saveState']
         fCheckPlatformVersion: enter: ['checkPlatformVersions']
         fConfig: enter: ['config']
-        fFirstSyncView: enter: ['firstSyncView'] # RUN
-        fLocalDesignDocuments: enter: ['upsertLocalDesignDocuments']
-        fRemoteRequest: enter: ['putRemoteRequest']
-        fPostConfigInit: enter: ['postConfigInit'] # RUN
-        fSetVersion: enter: ['updateVersion']
+        fFirstSyncView:
+            enter: ['firstSyncView'] # RUN
+            display: 'message step 0' # TODO: more accurate translate key
+        fLocalDesignDocuments:
+            enter: ['upsertLocalDesignDocuments']
+            display: 'message step 0' # TODO: more accurate translate key
+        fRemoteRequest:
+            enter: ['putRemoteRequest']
+            display: 'message step 0' # TODO: more accurate translate key
+        fPostConfigInit:
+            enter: ['postConfigInit'] # RUN
+            display: 'message step 0' # TODO: more accurate translate key
+        fSetVersion:
+            enter: ['updateVersion']
+            display: 'message step 0' # TODO: more accurate translate key
 
-        fTakeDBCheckpoint: enter: ['takeDBCheckpoint']
-        fInitFiles: enter: ['initFiles']
-        fInitFolders: enter: ['saveState', 'initFolders']
-        fCreateAccount: enter: ['createAndroidAccount']
-        fInitContacts: enter: ['saveState', 'initContacts']
-        fInitCalendars: enter: ['saveState', 'initCalendars']
-        fSync: enter: ['postCopyViewSync']
-        fUpdateIndex: enter: ['saveState', 'updateIndex']
+        fTakeDBCheckpoint:
+            enter: ['takeDBCheckpoint']
+            display: 'message step 0' # TODO: more accurate translate key
+        fInitFiles:
+            enter: ['initFiles']
+            display: 'message step 0' # TODO: more accurate translate key
+        fInitFolders:
+            enter: ['saveState', 'initFolders']
+            display: 'message step 1' # TODO: more accurate translate key
+        fCreateAccount:
+            enter: ['createAndroidAccount']
+            display: 'message step 3' # TODO: more accurate translate key
+        fInitContacts:
+            enter: ['saveState', 'initContacts']
+            display: 'message step 3' # TODO: more accurate translate key
+        fInitCalendars:
+            enter: ['saveState', 'initCalendars']
+            display: 'message step 4' # TODO: more accurate translate key
+        fSync:
+            enter: ['postCopyViewSync']
+            display: 'message step 5' # TODO: more accurate translate key
+        fUpdateIndex:
+            enter: ['saveState', 'updateIndex']
+            display: 'message step 5' # TODO: more accurate translate key
 
         ###################
         # First start error steps
@@ -147,7 +183,9 @@ module.exports = class Init
 
         # Last commons steps
         aLoadFilePage: enter: ['saveState', 'setListeners', 'loadFilePage']
-        aImport: enter: ['import']
+        aImport:
+            enter: ['import']
+            display: 'syncing' # TODO: more accurate translate key
         aBackup: enter: ['backup']
         aRealtime: enter: ['startRealtime']
         aResume: enter: ['onResume']
@@ -184,31 +222,53 @@ module.exports = class Init
         # Config update states (c)
         # activate sync-contacts (c1)
         c1RemoteRequest: enter: ['stopRealtime', 'putRemoteRequest']
-        c1TakeDBCheckpoint: enter: ['takeDBCheckpoint']
-        c1CreateAccount: enter: ['createAndroidAccount']
-        c1InitContacts: enter: ['initContacts']
-        c1InitCalendars: enter: ['initCalendars']
+        c1TakeDBCheckpoint:
+            enter: ['takeDBCheckpoint']
+            display: 'contacts_sync'
+        c1CreateAccount:
+            enter: ['createAndroidAccount']
+            display: 'contacts_sync'
+        c1InitContacts:
+            enter: ['initContacts']
+            display: 'contacts_sync'
 
         # activate sync-calendars (c2)
         c2RemoteRequest: enter: ['stopRealtime', 'putRemoteRequest']
-        c2TakeDBCheckpoint: enter: ['takeDBCheckpoint']
-        c2CreateAccount: enter: ['createAndroidAccount']
-        c2InitContacts: enter: ['initContacts']
-        c2InitCalendars: enter: ['initCalendars']
+        c2TakeDBCheckpoint:
+            enter: ['takeDBCheckpoint']
+            display: 'calendar_sync'
+        c2CreateAccount:
+            enter: ['createAndroidAccount']
+            display: 'calendar_sync'
+        c2InitCalendars:
+            enter: ['initCalendars']
+            display: 'calendar_sync'
 
         # activate sync acontacts and sync calendars
         c3RemoteRequest: enter: ['stopRealtime', 'putRemoteRequest']
-        c3TakeDBCheckpoint: enter: ['takeDBCheckpoint']
-        c3CreateAccount: enter: ['createAndroidAccount']
-        c3InitContacts: enter: ['initContacts']
-        c3InitCalendars: enter: ['initCalendars']
+        c3TakeDBCheckpoint:
+            enter: ['takeDBCheckpoint']
+            display: 'contacts_sync'
+        c3CreateAccount:
+            enter: ['createAndroidAccount']
+            display: 'contacts_sync'
+        c3InitContacts:
+            enter: ['initContacts']
+            display: 'contacts_sync'
+        c3InitCalendars:
+            enter: ['initCalendars']
+            display: 'calendar_sync'
 
         # update filters
         c4RemoteRequest: enter: ['stopRealtime', 'putRemoteRequest']
 
         # Commons update states.
-        cSync: enter: ['postCopyViewSync']
-        cUpdateIndex: enter: ['updateIndex']
+        cSync:
+            enter: ['postCopyViewSync']
+            display: 'setup end'
+        cUpdateIndex:
+            enter: ['updateIndex']
+            display: 'setup end'
 
         # TODO errors states on config ?
 
