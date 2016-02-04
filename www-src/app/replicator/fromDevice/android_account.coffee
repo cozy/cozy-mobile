@@ -7,10 +7,12 @@ module.exports = class AndroidAccount
     @NAME: 'myCozy'
     @TYPE: 'io.cozy'
     @ACCOUNT:
-        name: AndroidAccount.NAME
-        type: AndroidAccount.TYPE
+        accountName: AndroidAccount.NAME
+        accountType: AndroidAccount.TYPE
 
     create: (callback) ->
+        log.info "create"
+
         navigator.contacts.createAccount AndroidAccount.TYPE
         , AndroidAccount.NAME, ->
             callback null
