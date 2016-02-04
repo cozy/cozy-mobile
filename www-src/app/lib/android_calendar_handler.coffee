@@ -18,10 +18,10 @@ module.exports = class AndroidCalendarHandler
         @cozyToAndroidCalendar = new CozyToAndroidCalendar()
         @calendarSync ?= navigator.calendarsync
 
-    getAll: (callback) ->
-        log.info "getAll"
+    _getAll: (callback) ->
+        log.info "_getAll"
 
-        return androidCalendarsCache if androidCalendarsCache
+        return callback null, androidCalendarsCache if androidCalendarsCache
 
         @calendarSync.allCalendars AndroidAccount.ACCOUNT, \
                 (err, calendars) ->
@@ -30,10 +30,10 @@ module.exports = class AndroidCalendarHandler
             androidCalendarsCache = calendars
             callback null, calendars
 
-    getByName: (calendarName, callback) ->
-        log.info "getByName"
+    _getByName: (calendarName, callback) ->
+        log.info "_getByName"
 
-        @getAll (err, calendars) ->
+        @_getAll (err, calendars) ->
             return callback err if err
 
             for calendar in calendars
@@ -45,7 +45,7 @@ module.exports = class AndroidCalendarHandler
     getById: (calendarId, callback) ->
         log.info "getById"
 
-        @getAll (err, calendars) ->
+        @_getAll (err, calendars) ->
             return callback err if err
 
             for calendar in calendars
@@ -57,14 +57,14 @@ module.exports = class AndroidCalendarHandler
     getOrCreate: (calendarName, callback) ->
         log.info "getOrCreate"
 
-        @getByName calendarName, (err, calendar) =>
+        @_getByName calendarName, (err, calendar) =>
             if err
-                @create calendarName, callback
+                @_create calendarName, callback
             else
                 callback null, calendar
 
-    create: (calendarName, callback) ->
-        log.info "create"
+    _create: (calendarName, callback) ->
+        log.info "_create"
 
         @_getCalendarFromCozy calendarName, (err, cozyCalendar) =>
             return callback err if err
@@ -96,8 +96,8 @@ module.exports = class AndroidCalendarHandler
 
             callback null, true
 
-    delete: (androidCalendar, callback) ->
-        log.info "delete"
+    _delete: (androidCalendar, callback) ->
+        log.info "_delete"
 
         @calendarSync.deleteCalendar androidCalendar, \
                 AndroidAccount.ACCOUNT, (err, deletedCount) ->
@@ -120,7 +120,7 @@ module.exports = class AndroidCalendarHandler
         , (err, res) =>
             return callback err if err
 
-            @delete androidCalendar, callback if res.rows.length is 0
+            @_delete androidCalendar, callback if res.rows.length is 0
 
 
 

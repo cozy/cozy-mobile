@@ -33,7 +33,7 @@ module.exports = class ChangeEventHandler
 
 
     _create: (cozyEvent, callback) ->
-        log.info "create"
+        log.info "_create"
 
         calendarName = cozyEvent.tags[0]
         @androidCalendarHandler.getOrCreate calendarName, (err, calendar) =>
@@ -44,7 +44,7 @@ module.exports = class ChangeEventHandler
                     AndroidAccount.ACCOUNT, callback
 
     _update: (cozyEvent, androidEvent, callback) ->
-        log.info "update"
+        log.info "_update"
 
         calendarName = cozyEvent.tags[0]
         @androidCalendarHandler.getOrCreate calendarName, (err, calendar) =>
@@ -57,7 +57,7 @@ module.exports = class ChangeEventHandler
 
 
     _delete: (cozyEvent, androidEvent, callback) ->
-        log.info "delete"
+        log.info "_delete"
 
         @calendarSync.deleteEvent androidEvent, \
                 AndroidAccount.ACCOUNT, (err, deletedCount) =>

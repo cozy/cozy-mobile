@@ -20,9 +20,9 @@ module.exports = class CozyToAndroidCalendar
 
         return {
             _id: if androidCalendar then androidCalendar._id else undefined
-            account_name: account.name
-            account_type: account.type
-            ownerAccount: account.name
+            account_name: account.accountName
+            account_type: account.accountType
+            ownerAccount: account.accountName
             name: cozyCalendar.name.replace /\s/g, ''
             calendar_displayName: cozyCalendar.name
             calendar_color: @_color2Android(cozyCalendar.color)
