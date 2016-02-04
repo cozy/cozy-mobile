@@ -117,7 +117,7 @@ module.exports = class ConfigView extends BaseView
             cozyNotifications: @$('#cozyNotificationsCheck').is ':checked'
 
         , (err, config, needInit) =>
-            @listenToOnce app.init, 'dbSynced initDone', ->
+            @listenToOnce app.init, 'dbSynced initDone importDone', ->
                 checkboxes.prop 'disabled', false
 
             app.init.configUpdated needInit

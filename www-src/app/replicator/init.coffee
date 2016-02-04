@@ -41,19 +41,22 @@ module.exports = class Init
     # @param needSync {calendars: true, contacts: false } type object, if
     # it should be updated or not.
     configUpdated: (needInit) ->
-        # Do sync only on
+        log.info 'configUpdated'
+        # Do sync only while on Realtime : TODO: hadnles others RUnning states
+        # waiting for them to end.
+        console.log needInit
         if @currentState is 'aRealtime'
             if needInit.calendars and needInit.contacts
                 @toState 'c3RemoteRequest'
             else if needInit.contacts
-                @toState 'c1Remoterequest'
+                @toState 'c1RemoteRequest'
             else if needInit.calendars
                 @toState 'c2RemoteRequest'
-            else unless _.empty(needInit)
-                @toState 'c4RemoteRequest'
+            #else unless _.isEmpty(needInit)
 
             else
-                @trigger 'initDone'
+                @toState 'c4RemoteRequest'
+                # @trigger 'initDone'
 
         else
             @trigger 'initDone'
@@ -142,7 +145,7 @@ module.exports = class Init
         aLoadFilePage: enter: ['saveState', 'setListeners', 'loadFilePage']
         aImport: enter: ['import']
         aBackup: enter: ['backup']
-        aRealtime: enter: ['realtime']
+        aRealtime: enter: ['startRealtime']
         aResume: enter: ['onResume']
         aPause: enter: ['onPause']
         aViewingFile: enter: ['onPause']
@@ -172,32 +175,32 @@ module.exports = class Init
         #######################################
         # Config update states (c)
         # activate sync-contacts (c1)
-        c1RemoteRequest: enter: ['putRemoteRequest']
+        c1RemoteRequest: enter: ['stopRealtime', 'putRemoteRequest']
         c1TakeDBCheckpoint: enter: ['takeDBCheckpoint']
         c1CreateAccount: enter: ['createAndroidAccount']
         c1InitContacts: enter: ['initContacts']
         c1InitCalendars: enter: ['initCalendars']
 
         # activate sync-calendars (c2)
-        c2RemoteRequest: enter: ['putRemoteRequest']
+        c2RemoteRequest: enter: ['stopRealtime', 'putRemoteRequest']
         c2TakeDBCheckpoint: enter: ['takeDBCheckpoint']
         c2CreateAccount: enter: ['createAndroidAccount']
         c2InitContacts: enter: ['initContacts']
         c2InitCalendars: enter: ['initCalendars']
 
         # activate sync acontacts and sync calendars
-        c3RemoteRequest: enter: ['putRemoteRequest']
+        c3RemoteRequest: enter: ['stopRealtime', 'putRemoteRequest']
         c3TakeDBCheckpoint: enter: ['takeDBCheckpoint']
         c3CreateAccount: enter: ['createAndroidAccount']
         c3InitContacts: enter: ['initContacts']
         c3InitCalendars: enter: ['initCalendars']
 
         # update filters
-        c4RemoteRequest: enter: ['putRemoteRequest']
+        c4RemoteRequest: enter: ['stopRealtime', 'putRemoteRequest']
 
         # Commons update states.
-        uSync: enter: ['postCopyViewSync']
-        uUpdateIndex: enter: ['updateIndex']
+        cSync: enter: ['postCopyViewSync']
+        cUpdateIndex: enter: ['updateIndex']
 
         # TODO errors states on config ?
 
@@ -340,11 +343,11 @@ module.exports = class Init
         'c3InitCalendars': 'calendarsInited': 'cSync'
 
         ###################
-        'c4RemoteRequest': 'putRemoteRequest': 'aBackup'
+        'c4RemoteRequest': 'putRemoteRequest': 'aImport'
 
         ###################
         'cSync': 'dbSynced': 'cUpdateIndex'
-        'cUpdateIndex': 'indexUpdated': 'aBackup' #TODO : clean update headers
+        'cUpdateIndex': 'indexUpdated': 'aImport' #TODO : clean update headers
 
 
 
@@ -416,10 +419,13 @@ module.exports = class Init
                 @trigger 'ready'
 
     onPause: ->
-        app.replicator.stopRealtime()
+        @stopRealtime()
 
-    realtime: ->
+    startRealtime: ->
         app.replicator.startRealtime()
+
+    stopRealtime: ->
+        app.replicator.stopRealtime()
 
     quitSplashScreen: ->
         app.layout.quitSplashScreen()

@@ -262,7 +262,7 @@ module.exports = class Replicator extends Backbone.Model
         url = '/_changes?descending=true&limit=1'
         options = @config.makeReplicationUrl url
         request.get options, (err, res, body) =>
-            return cb err if err
+            return callback err if err
             @config.save checkpointed: body.last_seq, callback
 
     # Fetch current state of replicated views. Avoid pouchDB bug with heavy
