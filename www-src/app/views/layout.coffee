@@ -14,6 +14,7 @@ module.exports = class Layout extends BaseView
     events: ->
         'tap #btn-back': 'onBackButtonClicked'
         'tap #btn-menu': 'onMenuButtonClicked'
+        'tap #closeerror': 'onCloseErrorIndicator'
 
     initialize: ->
         document.addEventListener "menubutton", @onMenuButtonClicked, false
@@ -39,8 +40,8 @@ module.exports = class Layout extends BaseView
             else
                 @backupIndicator.parent().slideUp()
                 @viewsPlaceholder.removeClass 'has-subheader'
-
         , 100
+
 
     afterRender: ->
         @menu = new Menu()
@@ -59,6 +60,15 @@ module.exports = class Layout extends BaseView
         @title = @container.find '#title'
         @backupIndicator = @container.find '#backupIndicator'
         @backupIndicator.parent().hide()
+
+        @errorIndicator = @container.find '#errorIndicator'
+        @errorIndicator.parent().hide()
+
+        @listenTo app.init, 'error', (error) =>
+            @errorIndicator.text error.message
+            @errorIndicator.parent().slideDown()
+            @viewsPlaceholder.addClass 'has-subheader'
+
 
         @ionicContainer = new ionic.views.SideMenuContent
             el: @container[0]
@@ -149,6 +159,9 @@ module.exports = class Layout extends BaseView
                 @currentView = view
                 @ionicScroll.scrollTo 0, 0, false, null
 
+    onCloseErrorIndicator: =>
+        @errorIndicator.parent().slideUp()
+        @viewsPlaceholder.removeClass 'has-subheader'
 
     onMenuButtonClicked: =>
         @menu.reset()

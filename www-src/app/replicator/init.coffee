@@ -75,21 +75,25 @@ module.exports = class Init
         # Application
 
         # First commons steps
-        aDeviceLocale: enter: ['setDeviceLocale']
-        aInitFileSystem: enter: ['initFileSystem']
-        aInitDatabase: enter: ['initDatabase']
-        aInitConfig: enter: ['initConfig']
+        aDeviceLocale: enter: ['setDeviceLocale'], quitOnError: true
+        aInitFileSystem: enter: ['initFileSystem'], quitOnError: true
+        aInitDatabase: enter: ['initDatabase'], quitOnError: true
+        aInitConfig: enter: ['initConfig'], quitOnError: true
 
         #######################################
         # Normal (n) states
-        nPostConfigInit: enter: ['postConfigInit']
-        nQuitSplashScreen: enter: ['quitSplashScreen']
+        nPostConfigInit: enter: ['postConfigInit'], quitOnError: true
+        nQuitSplashScreen: enter: ['quitSplashScreen'], quitOnError: true
 
         #######################################
         # Migration (m) states
-        migrationInit: enter: ['initMigrationState']
-        mLocalDesignDocuments: enter: ['upsertLocalDesignDocuments']
-        mCheckPlatformVersions: enter: ['checkPlatformVersions']
+        migrationInit: enter: ['initMigrationState'], quitOnError: true
+        mLocalDesignDocuments:
+            enter: ['upsertLocalDesignDocuments']
+            quitOnError: true
+        mCheckPlatformVersions:
+            enter: ['checkPlatformVersions']
+            quitOnError: true
         mQuitSplashScreen: enter: ['quitSplashScreen']
         mPermissions: enter: ['getPermissions']
         mConfig: enter: ['config']
@@ -99,7 +103,7 @@ module.exports = class Init
 
         #######################################
         # First start (f) states
-        fQuitSplashScreen: enter: ['quitSplashScreen'] # RUN
+        fQuitSplashScreen: enter: ['quitSplashScreen'], quitOnError: true # RUN
         fLogin: enter: ['login']
         fPermissions: enter: ['getPermissions']
         fDeviceName: enter: ['setDeviceName'], leave: ['saveState']
@@ -123,20 +127,20 @@ module.exports = class Init
         ###################
         # First start error steps
         # 1 error before FirstSync End. --> Go to config.
-        f1QuitSplashScreen: enter: ['quitSplashScreen'] # RUN
+        f1QuitSplashScreen: enter: ['quitSplashScreen'], quitOnError: true
 
         # 2 error after File sync
-        f2QuitSplashScreen: enter: ['quitSplashScreen']
+        f2QuitSplashScreen: enter: ['quitSplashScreen'], quitOnError: true
         f2FirstSyncView: enter: ['firstSyncView'] # RUN
         f2PostConfigInit: enter: ['postConfigInit'] # RUN
 
         # 3 error after contacts sync
-        f3QuitSplashScreen: enter: ['quitSplashScreen']
+        f3QuitSplashScreen: enter: ['quitSplashScreen'], quitOnError: true
         f3FirstSyncView: enter: ['firstSyncView'] # RUN
         f3PostConfigInit: enter: ['postConfigInit'] # RUN
 
         # 4 error after calendars sync
-        f4QuitSplashScreen: enter: ['quitSplashScreen']
+        f4QuitSplashScreen: enter: ['quitSplashScreen'], quitOnError: true
         f4FirstSyncView: enter: ['firstSyncView'] # RUN
         f4PostConfigInit: enter: ['postConfigInit'] # RUN
 
@@ -152,24 +156,28 @@ module.exports = class Init
 
         #######################################
         # Service
-        sInitFileSystem: enter: ['initFileSystem']
-        sInitDatabase: enter: ['initDatabase']
-        sInitConfig: enter: ['sInitConfig']
+        sInitFileSystem: enter: ['initFileSystem'], quitOnError: true
+        sInitDatabase: enter: ['initDatabase'], quitOnError: true
+        sInitConfig: enter: ['sInitConfig'], quitOnError: true
 
-        sPostConfigInit: enter: ['postConfigInit']
-        sBackup: enter: ['sBackup']
-        sSync: enter: ['sSync']
-        sQuit: enter: ['sQuit']
+        sPostConfigInit: enter: ['postConfigInit'], quitOnError: true
+        sBackup: enter: ['sBackup'], quitOnError: true
+        sSync: enter: ['sSync'], quitOnError: true
+        sQuit: enter: ['sQuit'], quitOnError: true
 
         # Service Migration (m) states
-        smMigrationInit: enter: ['initMigrationState']
-        smLocalDesignDocuments: enter: ['upsertLocalDesignDocuments']
-        smCheckPlatformVersions: enter: ['checkPlatformVersions']
-        smQuitSplashScreen: enter: ['quitSplashScreen']
-        smPermissions: enter: ['getPermissions']
-        smConfig: enter: ['config']
-        smRemoteRequest: enter: ['putRemoteRequest']
-        smUpdateVersion: enter: ['updateVersion']
+        smMigrationInit: enter: ['initMigrationState'], quitOnError: true
+        smLocalDesignDocuments:
+            enter: ['upsertLocalDesignDocuments']
+            quitOnError: true
+        smCheckPlatformVersions:
+            enter: ['checkPlatformVersions']
+            quitOnError: true
+        smQuitSplashScreen: enter: ['quitSplashScreen'], quitOnError: true
+        smPermissions: enter: ['getPermissions'], quitOnError: true
+        smConfig: enter: ['config'], quitOnError: true
+        smRemoteRequest: enter: ['putRemoteRequest'], quitOnError: true
+        smUpdateVersion: enter: ['updateVersion'], quitOnError: true
 
 
         #######################################
@@ -353,16 +361,15 @@ module.exports = class Init
 
     # Enter state methods.
     setDeviceLocale: ->
-        app.setDeviceLocale @getCallbackTriggerOrQuit 'deviceLocaleSetted'
+        app.setDeviceLocale @getCallbackTrigger 'deviceLocaleSetted'
 
 
     initFileSystem: ->
-        app.replicator.initFileSystem \
-            @getCallbackTriggerOrQuit 'fileSystemReady'
+        app.replicator.initFileSystem @getCallbackTrigger 'fileSystemReady'
 
 
     initDatabase: ->
-        app.replicator.initDB  @getCallbackTriggerOrQuit 'databaseReady'
+        app.replicator.initDB  @getCallbackTrigger 'databaseReady'
 
 
     initConfig: ->
@@ -392,7 +399,7 @@ module.exports = class Init
 
     # Normal start
     postConfigInit: ->
-        app.postConfigInit @getCallbackTriggerOrQuit 'initsDone'
+        app.postConfigInit @getCallbackTrigger 'initsDone'
 
     import: ->
         changesImporter = new ChangesImporter()
@@ -450,13 +457,13 @@ module.exports = class Init
         return if @passUnlessInMigration 'localDesignUpToDate'
 
         app.replicator.upsertLocalDesignDocuments \
-            @getCallbackTriggerOrQuit 'localDesignUpToDate'
+            @getCallbackTrigger 'localDesignUpToDate'
 
 
     checkPlatformVersions: ->
         return if @passUnlessInMigration 'validPlatformVersions'
         app.replicator.checkPlatformVersions \
-            @getCallbackTriggerOrQuit 'validPlatformVersions'
+            @getCallbackTrigger 'validPlatformVersions'
 
 
     getPermissions: ->
@@ -475,13 +482,12 @@ module.exports = class Init
 
         app.replicator.putRequests (err) =>
             return @exitApp err if err
-            app.replicator.putFilters @getCallbackTriggerOrQuit \
-                'putRemoteRequest'
+            app.replicator.putFilters @getCallbackTrigger 'putRemoteRequest'
 
 
     updateVersion: ->
         app.replicator.config.updateVersion \
-        @getCallbackTriggerOrQuit 'versionUpToDate'
+            @getCallbackTrigger 'versionUpToDate'
 
 
     # First start
@@ -498,7 +504,7 @@ module.exports = class Init
             app.router.navigate 'config', trigger: true
 
     updateCozyLocale: -> app.replicator.updateLocaleFromCozy \
-        @getCallbackTriggerOrQuit 'cozyLocaleUpToDate'
+        @getCallbackTrigger 'cozyLocaleUpToDate'
 
     firstSyncView: ->
         app.router.navigate 'first-sync', trigger: true
@@ -506,22 +512,21 @@ module.exports = class Init
 
     takeDBCheckpoint: ->
         app.replicator.takeCheckpoint \
-            @getCallbackTriggerOrQuit 'checkPointed'
+            @getCallbackTrigger 'checkPointed'
 
     initFiles: ->
         app.replicator.copyView docType: 'file', \
-            @getCallbackTriggerOrQuit 'filesInited'
+            @getCallbackTrigger 'filesInited'
 
     initFolders: ->
         app.replicator.copyView docType: 'folder', \
-            @getCallbackTriggerOrQuit 'foldersInited'
+            @getCallbackTrigger 'foldersInited'
 
     createAndroidAccount: ->
         if app.replicator.config.get('syncContacts') or \
                 app.replicator.config.get('syncCalendars')
             androidAccount = new AndroidAccount()
-            androidAccount.create @getCallbackTriggerOrQuit \
-                'androidAccountCreated'
+            androidAccount.create @getCallbackTrigger 'androidAccountCreated'
 
         else
             @trigger 'androidAccountCreated' # TODO: rename event.
@@ -541,7 +546,7 @@ module.exports = class Init
                 async.eachSeries contacts, (contact, cb) ->
                     # 2. dispatch inserted contacts to android
                     changeDispatcher.dispatch contact, cb
-                , @getCallbackTriggerOrQuit 'contactsInited'
+                , @getCallbackTrigger 'contactsInited'
         else
             @trigger 'contactsInited' # TODO rename event to 'noSyncContacts'
 
@@ -557,7 +562,7 @@ module.exports = class Init
                 async.eachSeries events, (event, cb) ->
                     # 2. dispatch inserted events to android
                     changeDispatcher.dispatch event, cb
-                , @getCallbackTriggerOrQuit 'calendarsInited'
+                , @getCallbackTrigger 'calendarsInited'
         else
             @trigger 'calendarsInited' # TODO: rename event to noSyncCalendars
 
@@ -574,7 +579,7 @@ module.exports = class Init
 
 
     updateIndex: ->
-        app.replicator.updateIndex @getCallbackTriggerOrQuit 'indexUpdated'
+        app.replicator.updateIndex @getCallbackTrigger 'indexUpdated'
 
     ###########################################################################
     # Service
@@ -598,12 +603,12 @@ module.exports = class Init
                 return exitApp "notConfigured: #{lastState}"
     sBackup: ->
         app.replicator.backup background: true
-        , @getCallbackTriggerOrQuit 'backupDone'
+        , @getCallbackTrigger 'backupDone'
 
     sSync: ->
         app.replicator.sync background: true
         , (err) =>
-            @getCallbackTriggerOrQuit('syncDone')(err)
+            @getCallbackTrigger('syncDone')(err)
 
     sQuit: ->
         app.exit()
@@ -617,10 +622,16 @@ module.exports = class Init
     exitApp: ->
         app.exit()
 
-    getCallbackTriggerOrQuit: (eventName) ->
+    # Provide a callback,
+    # - which appropriately regarding to the state show the error to the user
+    # - or trigger event if no error
+    getCallbackTrigger: (eventName) ->
         (err) =>
             if err
-                app.exit err
+                if @states[@currentState].quitOnError
+                    app.exit err
+                else
+                    @trigger 'error', err
             else
                 @trigger eventName
 
