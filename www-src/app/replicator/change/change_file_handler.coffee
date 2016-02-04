@@ -27,18 +27,21 @@ module.exports = class ChangeFileHandler
      *
      * @param {Object} doc - it's a pouchdb file document.
     ###
-    change: (doc) ->
-        log.info "change"
+    dispatch: (doc) ->
+        log.info "dispatch"
 
-        @rename doc
+        if doc._deleted
+            @_delete doc
+        else
+            @_rename doc
 
     ###*
      * To delete a file.
      *
      * @param {Object} doc - it's a pouchdb file document.
     ###
-    delete: (doc) ->
-        log.info "delete"
+    _delete: (doc) ->
+        log.info "_delete"
 
         # delete local file:
         # - get file directory
@@ -56,8 +59,8 @@ module.exports = class ChangeFileHandler
      *
      * @param {Object} doc - it's a pouchdb file document.
     ###
-    rename: (doc) ->
-        log.info "rename"
+    _rename: (doc) ->
+        log.info "_rename"
 
         entry = @_getCacheEntry doc
 
@@ -71,7 +74,7 @@ module.exports = class ChangeFileHandler
             if children.length is 0
                 # it's anomaly but download it !
                 log.warn "Missing file #{doc.name} on device, fetching it."
-                @download doc
+                @_download doc
             else if children[0].name isnt fileName
                 log.info "rename binary of #{doc.name}"
                 fs.moveTo children[0], entry, fileName, (err, res)->
@@ -82,8 +85,8 @@ module.exports = class ChangeFileHandler
      *
      * @param {Object} doc - it's a pouchdb file document.
     ###
-    download: (doc, forced = false) ->
-        log.info "download"
+    _download: (doc, forced = false) ->
+        log.info "_download"
 
         # Don't update the binary if "no wifi"
         DeviceStatus.checkReadyForSync (err, ready, msg) =>

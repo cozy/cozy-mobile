@@ -15,7 +15,7 @@ module.exports = class EventSynchronizer
         @cozyToAndroidEvent = new CozyToAndroidEvent()
         @androidCalendarHandler = new AndroidCalendarHandler()
 
-    synchronize: ->
+    synchronize: (callback) ->
         log.info "synchronize"
 
         @calendarSync.dirtyEvents AndroidAccount.ACCOUNT, \
@@ -24,6 +24,7 @@ module.exports = class EventSynchronizer
 
             async.eachSeries androidEvents, (androidEvent, cb) =>
                 @change androidEvent, cb
+            , callback
 
     change: (androidEvent, callback) ->
         log.info "change"
