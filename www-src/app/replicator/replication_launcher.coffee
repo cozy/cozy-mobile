@@ -88,7 +88,6 @@ module.exports = class ReplicationLauncher
         if options.live
             liveOptions =
               retry: true
-              heartbeat: false
               back_off_function: (delay) ->
                   return 1000 if delay is 0
                   return delay if delay > 60000

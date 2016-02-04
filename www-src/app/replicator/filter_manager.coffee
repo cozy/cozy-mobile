@@ -53,7 +53,7 @@ module.exports = class FilterManager
                 delete doc._rev
                 # Add filter in Cozy
                 request.put options, (err, res, body) ->
-                    if err or not body?.success
+                    if err or not (body?.success or body?._id)
                         err ?= body
                         return callback err
 

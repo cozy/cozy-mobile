@@ -21,6 +21,7 @@ module.exports = class ChangeDispatcher
     ###
     constructor: (config) ->
         @changeHandlers =
+            "folder": false
             "file": new ChangeFileHandler config
             "event": new ChangeEventHandler()
             "contact": new ChangeContactHandler()
@@ -33,14 +34,10 @@ module.exports = class ChangeDispatcher
      * @param {Object} doc - it's a pouchdb file document.
     ###
     dispatch: (doc, callback = ->) ->
-        log.info "change #{doc.docType}"
-        if doc.docType is "file"
-            state = @_getState doc
-            @changeHandlers.file[state] doc
+        log.info "dispatch #{doc.docType}"
 
-        handler = @changeHandlers[doc.docType]
-        if handler?
-            handler.dispatch doc, callback
+        if @isDispatched doc and @changeHandlers[doc.docType]
+            @changeHandlers[doc.docType]["dispatch"] doc, callback
 
     ###*
      * Check if a doc is authorized to be dispatched
@@ -51,15 +48,3 @@ module.exports = class ChangeDispatcher
     ###
     isDispatched: (doc) ->
         return doc.docType of @changeHandlers
-
-    ###*
-     * @deprecated : move  handler to 'dispatch' API
-     * Get state of document.
-     *
-     * @param {Object} doc - it's a pouchdb file document.
-     *
-     * @return {String}
-    ###
-    _getState: (doc) ->
-        return "delete" if doc._deleted
-        return "change"

@@ -1,3 +1,4 @@
+AndroidAccount = require "../fromDevice/android_account"
 async = require 'async'
 CozyToAndroidEvent = require "../transformer/cozy_to_android_event"
 AndroidCalendarHandler = require "../../lib/android_calendar_handler"
@@ -14,15 +15,16 @@ module.exports = class EventSynchronizer
         @cozyToAndroidEvent = new CozyToAndroidEvent()
         @androidCalendarHandler = new AndroidCalendarHandler()
 
-    synchronize: ->
+    synchronize: (callback) ->
         log.info "synchronize"
 
-        @calendarSync.dirtyEvents AndroidCalendarHandler.ACCOUNT, \
+        @calendarSync.dirtyEvents AndroidAccount.ACCOUNT, \
                 (err, androidEvents) =>
             return log.error err if err
 
             async.eachSeries androidEvents, (androidEvent, cb) =>
                 @change androidEvent, cb
+            , callback
 
     change: (androidEvent, callback) ->
         log.info "change"
@@ -57,7 +59,7 @@ module.exports = class EventSynchronizer
             androidEvent.sync_data2 = response.rev
 
             @calendarSync.undirtyEvent androidEvent, \
-                    AndroidCalendarHandler.ACCOUNT, callback
+                    AndroidAccount.ACCOUNT, callback
 
     # Update event in pouchDB with specified event from phone.
     # @param androidEvent
@@ -78,7 +80,7 @@ module.exports = class EventSynchronizer
                 androidEvent.sync_data5 = cozyEvent.lastModified
 
                 @calendarSync.undirtyEvent androidEvent, \
-                        AndroidCalendarHandler.ACCOUNT, callback
+                        AndroidAccount.ACCOUNT, callback
 
 
     # Delete the specified contact in app's pouchdb.
@@ -96,4 +98,4 @@ module.exports = class EventSynchronizer
             return callback err if err
 
             @calendarSync.deleteEvent androidEvent, \
-                    AndroidCalendarHandler.ACCOUNT, callback
+                    AndroidAccount.ACCOUNT, callback

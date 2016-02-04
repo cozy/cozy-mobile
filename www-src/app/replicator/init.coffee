@@ -229,7 +229,7 @@ module.exports = class Init
         'nQuitSplashScreen': 'viewInitialized': 'aLoadFilePage'
         'aLoadFilePage': 'onFilePage': 'aImport'
         'aImport': 'importDone': 'aBackup'
-        'aBackup': 'backupDone  ': 'aRealtime'
+        'aBackup': 'backupDone': 'aRealtime'
 
         #######################################
         # Running

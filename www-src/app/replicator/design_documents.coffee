@@ -50,8 +50,12 @@ module.exports = class DesignDocuments
             if existing?.version is design.version
                 callback null, {}
             else
-                log.info "_createOrUpdate: #{design._id} FROM #{existing}"
-                design._rev = existing._rev if existing
+                if existing
+                    log.info "Update: #{design._id} FROM #{existing.version}" \
+                            + "TO #{design.version}"
+                    design._rev = existing._rev
+                else
+                    log.info "Create: #{design._id}"
                 db.put design, callback
 
 
