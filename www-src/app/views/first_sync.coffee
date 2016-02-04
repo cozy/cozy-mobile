@@ -12,18 +12,20 @@ module.exports = class FirstSyncView extends BaseView
     events: ->
         'tap #btn-end': 'end'
 
-    steps: [
-        'fFirstSyncView' # 0
-        'fInitialFilesReplication' # 1
-        'fInitContacts' # 2
-        'fInitCalendars' # 3
-        'fUpdateIndex' # 4
-        ]
-
     initialize: ->
-        @listenTo app.init, 'transition', @onChange
+        # Hide layout message bar
+        app.layout.hideInitMessage()
+        app.layout.stopListening app.init, 'display'
 
-    onChange: (leaveState, enterState) ->
-        step = @steps.indexOf enterState
-        if step isnt -1
-            @$('#finishSync .progress').text t "message step #{step}"
+        # Put it back as living this page.
+        @listenTo app.init, 'transition', (leaveState, enterState) ->
+            if enterState is 'aLoadFilePage'
+                app.layout.listenTo app.init, 'display'
+                , app.layout.showInitMessage
+
+
+        @listenTo app.init, 'display', @onChange
+
+
+    onChange: (message) ->
+        @$('#finishSync .progress').text t message

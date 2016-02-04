@@ -36,6 +36,16 @@ module.exports = class Init
                       to state #{enterState}"
 
 
+        @listenTo @, 'transition', (leaveState, enterState) =>
+            if @states[enterState]?.display?
+                @trigger 'display', @states[enterState].display
+
+            # Hide display if no needed in comming state.
+            else if @states[leaveState]?.display?
+                @trigger 'noDisplay'
+
+
+
     # activating contact or calendar sync requires to init them,
     # trough init state machine
     # @param needSync {calendars: true, contacts: false } type object, if
@@ -75,21 +85,25 @@ module.exports = class Init
         # Application
 
         # First commons steps
-        aDeviceLocale: enter: ['setDeviceLocale']
-        aInitFileSystem: enter: ['initFileSystem']
-        aInitDatabase: enter: ['initDatabase']
-        aInitConfig: enter: ['initConfig']
+        aDeviceLocale: enter: ['setDeviceLocale'], quitOnError: true
+        aInitFileSystem: enter: ['initFileSystem'], quitOnError: true
+        aInitDatabase: enter: ['initDatabase'], quitOnError: true
+        aInitConfig: enter: ['initConfig'], quitOnError: true
 
         #######################################
         # Normal (n) states
-        nPostConfigInit: enter: ['postConfigInit']
-        nQuitSplashScreen: enter: ['quitSplashScreen']
+        nPostConfigInit: enter: ['postConfigInit'], quitOnError: true
+        nQuitSplashScreen: enter: ['quitSplashScreen'], quitOnError: true
 
         #######################################
         # Migration (m) states
-        migrationInit: enter: ['initMigrationState']
-        mLocalDesignDocuments: enter: ['upsertLocalDesignDocuments']
-        mCheckPlatformVersions: enter: ['checkPlatformVersions']
+        migrationInit: enter: ['initMigrationState'], quitOnError: true
+        mLocalDesignDocuments:
+            enter: ['upsertLocalDesignDocuments']
+            quitOnError: true
+        mCheckPlatformVersions:
+            enter: ['checkPlatformVersions']
+            quitOnError: true
         mQuitSplashScreen: enter: ['quitSplashScreen']
         mPermissions: enter: ['getPermissions']
         mConfig: enter: ['config']
@@ -99,51 +113,79 @@ module.exports = class Init
 
         #######################################
         # First start (f) states
-        fQuitSplashScreen: enter: ['quitSplashScreen'] # RUN
+        fQuitSplashScreen: enter: ['quitSplashScreen'], quitOnError: true # RUN
         fLogin: enter: ['login']
         fPermissions: enter: ['getPermissions']
         fDeviceName: enter: ['setDeviceName'], leave: ['saveState']
         fCheckPlatformVersion: enter: ['checkPlatformVersions']
         fConfig: enter: ['config']
-        fFirstSyncView: enter: ['firstSyncView'] # RUN
-        fLocalDesignDocuments: enter: ['upsertLocalDesignDocuments']
-        fRemoteRequest: enter: ['putRemoteRequest']
-        fPostConfigInit: enter: ['postConfigInit'] # RUN
-        fSetVersion: enter: ['updateVersion']
+        fFirstSyncView:
+            enter: ['firstSyncView'] # RUN
+            display: 'message step 0' # TODO: more accurate translate key
+        fLocalDesignDocuments:
+            enter: ['upsertLocalDesignDocuments']
+            display: 'message step 0' # TODO: more accurate translate key
+        fRemoteRequest:
+            enter: ['putRemoteRequest']
+            display: 'message step 0' # TODO: more accurate translate key
+        fPostConfigInit:
+            enter: ['postConfigInit'] # RUN
+            display: 'message step 0' # TODO: more accurate translate key
+        fSetVersion:
+            enter: ['updateVersion']
+            display: 'message step 0' # TODO: more accurate translate key
 
-        fTakeDBCheckpoint: enter: ['takeDBCheckpoint']
-        fInitFiles: enter: ['initFiles']
-        fInitFolders: enter: ['saveState', 'initFolders']
-        fCreateAccount: enter: ['createAndroidAccount']
-        fInitContacts: enter: ['saveState', 'initContacts']
-        fInitCalendars: enter: ['saveState', 'initCalendars']
-        fSync: enter: ['postCopyViewSync']
-        fUpdateIndex: enter: ['saveState', 'updateIndex']
+        fTakeDBCheckpoint:
+            enter: ['takeDBCheckpoint']
+            display: 'message step 0' # TODO: more accurate translate key
+        fInitFiles:
+            enter: ['initFiles']
+            display: 'message step 0' # TODO: more accurate translate key
+        fInitFolders:
+            enter: ['saveState', 'initFolders']
+            display: 'message step 1' # TODO: more accurate translate key
+        fCreateAccount:
+            enter: ['createAndroidAccount']
+            display: 'message step 3' # TODO: more accurate translate key
+        fInitContacts:
+            enter: ['saveState', 'initContacts']
+            display: 'message step 3' # TODO: more accurate translate key
+        fInitCalendars:
+            enter: ['saveState', 'initCalendars']
+            display: 'message step 4' # TODO: more accurate translate key
+        fSync:
+            enter: ['postCopyViewSync']
+            display: 'message step 5' # TODO: more accurate translate key
+        fUpdateIndex:
+            enter: ['saveState', 'updateIndex']
+            display: 'message step 5' # TODO: more accurate translate key
 
         ###################
         # First start error steps
         # 1 error before FirstSync End. --> Go to config.
-        f1QuitSplashScreen: enter: ['quitSplashScreen'] # RUN
+        f1QuitSplashScreen: enter: ['quitSplashScreen'], quitOnError: true
 
         # 2 error after File sync
-        f2QuitSplashScreen: enter: ['quitSplashScreen']
+        f2QuitSplashScreen: enter: ['quitSplashScreen'], quitOnError: true
         f2FirstSyncView: enter: ['firstSyncView'] # RUN
         f2PostConfigInit: enter: ['postConfigInit'] # RUN
 
         # 3 error after contacts sync
-        f3QuitSplashScreen: enter: ['quitSplashScreen']
+        f3QuitSplashScreen: enter: ['quitSplashScreen'], quitOnError: true
         f3FirstSyncView: enter: ['firstSyncView'] # RUN
         f3PostConfigInit: enter: ['postConfigInit'] # RUN
 
         # 4 error after calendars sync
-        f4QuitSplashScreen: enter: ['quitSplashScreen']
+        f4QuitSplashScreen: enter: ['quitSplashScreen'], quitOnError: true
         f4FirstSyncView: enter: ['firstSyncView'] # RUN
         f4PostConfigInit: enter: ['postConfigInit'] # RUN
 
 
         # Last commons steps
         aLoadFilePage: enter: ['saveState', 'setListeners', 'loadFilePage']
-        aImport: enter: ['import']
+        aImport:
+            enter: ['import']
+            display: 'syncing' # TODO: more accurate translate key
         aBackup: enter: ['backup']
         aRealtime: enter: ['startRealtime']
         aResume: enter: ['onResume']
@@ -152,55 +194,81 @@ module.exports = class Init
 
         #######################################
         # Service
-        sInitFileSystem: enter: ['initFileSystem']
-        sInitDatabase: enter: ['initDatabase']
-        sInitConfig: enter: ['sInitConfig']
+        sInitFileSystem: enter: ['initFileSystem'], quitOnError: true
+        sInitDatabase: enter: ['initDatabase'], quitOnError: true
+        sInitConfig: enter: ['sInitConfig'], quitOnError: true
 
-        sPostConfigInit: enter: ['postConfigInit']
-        sBackup: enter: ['sBackup']
-        sSync: enter: ['sSync']
-        sQuit: enter: ['sQuit']
+        sPostConfigInit: enter: ['postConfigInit'], quitOnError: true
+        sBackup: enter: ['sBackup'], quitOnError: true
+        sSync: enter: ['sSync'], quitOnError: true
+        sQuit: enter: ['sQuit'], quitOnError: true
 
         # Service Migration (m) states
-        smMigrationInit: enter: ['initMigrationState']
-        smLocalDesignDocuments: enter: ['upsertLocalDesignDocuments']
-        smCheckPlatformVersions: enter: ['checkPlatformVersions']
-        smQuitSplashScreen: enter: ['quitSplashScreen']
-        smPermissions: enter: ['getPermissions']
-        smConfig: enter: ['config']
-        smRemoteRequest: enter: ['putRemoteRequest']
-        smUpdateVersion: enter: ['updateVersion']
+        smMigrationInit: enter: ['initMigrationState'], quitOnError: true
+        smLocalDesignDocuments:
+            enter: ['upsertLocalDesignDocuments']
+            quitOnError: true
+        smCheckPlatformVersions:
+            enter: ['checkPlatformVersions']
+            quitOnError: true
+        smQuitSplashScreen: enter: ['quitSplashScreen'], quitOnError: true
+        smPermissions: enter: ['getPermissions'], quitOnError: true
+        smConfig: enter: ['config'], quitOnError: true
+        smRemoteRequest: enter: ['putRemoteRequest'], quitOnError: true
+        smUpdateVersion: enter: ['updateVersion'], quitOnError: true
 
 
         #######################################
         # Config update states (c)
         # activate sync-contacts (c1)
         c1RemoteRequest: enter: ['stopRealtime', 'putRemoteRequest']
-        c1TakeDBCheckpoint: enter: ['takeDBCheckpoint']
-        c1CreateAccount: enter: ['createAndroidAccount']
-        c1InitContacts: enter: ['initContacts']
-        c1InitCalendars: enter: ['initCalendars']
+        c1TakeDBCheckpoint:
+            enter: ['takeDBCheckpoint']
+            display: 'contacts_sync'
+        c1CreateAccount:
+            enter: ['createAndroidAccount']
+            display: 'contacts_sync'
+        c1InitContacts:
+            enter: ['initContacts']
+            display: 'contacts_sync'
 
         # activate sync-calendars (c2)
         c2RemoteRequest: enter: ['stopRealtime', 'putRemoteRequest']
-        c2TakeDBCheckpoint: enter: ['takeDBCheckpoint']
-        c2CreateAccount: enter: ['createAndroidAccount']
-        c2InitContacts: enter: ['initContacts']
-        c2InitCalendars: enter: ['initCalendars']
+        c2TakeDBCheckpoint:
+            enter: ['takeDBCheckpoint']
+            display: 'calendar_sync'
+        c2CreateAccount:
+            enter: ['createAndroidAccount']
+            display: 'calendar_sync'
+        c2InitCalendars:
+            enter: ['initCalendars']
+            display: 'calendar_sync'
 
         # activate sync acontacts and sync calendars
         c3RemoteRequest: enter: ['stopRealtime', 'putRemoteRequest']
-        c3TakeDBCheckpoint: enter: ['takeDBCheckpoint']
-        c3CreateAccount: enter: ['createAndroidAccount']
-        c3InitContacts: enter: ['initContacts']
-        c3InitCalendars: enter: ['initCalendars']
+        c3TakeDBCheckpoint:
+            enter: ['takeDBCheckpoint']
+            display: 'contacts_sync'
+        c3CreateAccount:
+            enter: ['createAndroidAccount']
+            display: 'contacts_sync'
+        c3InitContacts:
+            enter: ['initContacts']
+            display: 'contacts_sync'
+        c3InitCalendars:
+            enter: ['initCalendars']
+            display: 'calendar_sync'
 
         # update filters
         c4RemoteRequest: enter: ['stopRealtime', 'putRemoteRequest']
 
         # Commons update states.
-        cSync: enter: ['postCopyViewSync']
-        cUpdateIndex: enter: ['updateIndex']
+        cSync:
+            enter: ['postCopyViewSync']
+            display: 'setup end'
+        cUpdateIndex:
+            enter: ['updateIndex']
+            display: 'setup end'
 
         # TODO errors states on config ?
 
@@ -353,16 +421,15 @@ module.exports = class Init
 
     # Enter state methods.
     setDeviceLocale: ->
-        app.setDeviceLocale @getCallbackTriggerOrQuit 'deviceLocaleSetted'
+        app.setDeviceLocale @getCallbackTrigger 'deviceLocaleSetted'
 
 
     initFileSystem: ->
-        app.replicator.initFileSystem \
-            @getCallbackTriggerOrQuit 'fileSystemReady'
+        app.replicator.initFileSystem @getCallbackTrigger 'fileSystemReady'
 
 
     initDatabase: ->
-        app.replicator.initDB  @getCallbackTriggerOrQuit 'databaseReady'
+        app.replicator.initDB  @getCallbackTrigger 'databaseReady'
 
 
     initConfig: ->
@@ -392,7 +459,7 @@ module.exports = class Init
 
     # Normal start
     postConfigInit: ->
-        app.postConfigInit @getCallbackTriggerOrQuit 'initsDone'
+        app.postConfigInit @getCallbackTrigger 'initsDone'
 
     import: ->
         changesImporter = new ChangesImporter()
@@ -450,13 +517,13 @@ module.exports = class Init
         return if @passUnlessInMigration 'localDesignUpToDate'
 
         app.replicator.upsertLocalDesignDocuments \
-            @getCallbackTriggerOrQuit 'localDesignUpToDate'
+            @getCallbackTrigger 'localDesignUpToDate'
 
 
     checkPlatformVersions: ->
         return if @passUnlessInMigration 'validPlatformVersions'
         app.replicator.checkPlatformVersions \
-            @getCallbackTriggerOrQuit 'validPlatformVersions'
+            @getCallbackTrigger 'validPlatformVersions'
 
 
     getPermissions: ->
@@ -475,13 +542,12 @@ module.exports = class Init
 
         app.replicator.putRequests (err) =>
             return @exitApp err if err
-            app.replicator.putFilters @getCallbackTriggerOrQuit \
-                'putRemoteRequest'
+            app.replicator.putFilters @getCallbackTrigger 'putRemoteRequest'
 
 
     updateVersion: ->
         app.replicator.config.updateVersion \
-        @getCallbackTriggerOrQuit 'versionUpToDate'
+            @getCallbackTrigger 'versionUpToDate'
 
 
     # First start
@@ -498,7 +564,7 @@ module.exports = class Init
             app.router.navigate 'config', trigger: true
 
     updateCozyLocale: -> app.replicator.updateLocaleFromCozy \
-        @getCallbackTriggerOrQuit 'cozyLocaleUpToDate'
+        @getCallbackTrigger 'cozyLocaleUpToDate'
 
     firstSyncView: ->
         app.router.navigate 'first-sync', trigger: true
@@ -506,22 +572,21 @@ module.exports = class Init
 
     takeDBCheckpoint: ->
         app.replicator.takeCheckpoint \
-            @getCallbackTriggerOrQuit 'checkPointed'
+            @getCallbackTrigger 'checkPointed'
 
     initFiles: ->
         app.replicator.copyView docType: 'file', \
-            @getCallbackTriggerOrQuit 'filesInited'
+            @getCallbackTrigger 'filesInited'
 
     initFolders: ->
         app.replicator.copyView docType: 'folder', \
-            @getCallbackTriggerOrQuit 'foldersInited'
+            @getCallbackTrigger 'foldersInited'
 
     createAndroidAccount: ->
         if app.replicator.config.get('syncContacts') or \
                 app.replicator.config.get('syncCalendars')
             androidAccount = new AndroidAccount()
-            androidAccount.create @getCallbackTriggerOrQuit \
-                'androidAccountCreated'
+            androidAccount.create @getCallbackTrigger 'androidAccountCreated'
 
         else
             @trigger 'androidAccountCreated' # TODO: rename event.
@@ -541,7 +606,7 @@ module.exports = class Init
                 async.eachSeries contacts, (contact, cb) ->
                     # 2. dispatch inserted contacts to android
                     changeDispatcher.dispatch contact, cb
-                , @getCallbackTriggerOrQuit 'contactsInited'
+                , @getCallbackTrigger 'contactsInited'
         else
             @trigger 'contactsInited' # TODO rename event to 'noSyncContacts'
 
@@ -557,7 +622,7 @@ module.exports = class Init
                 async.eachSeries events, (event, cb) ->
                     # 2. dispatch inserted events to android
                     changeDispatcher.dispatch event, cb
-                , @getCallbackTriggerOrQuit 'calendarsInited'
+                , @getCallbackTrigger 'calendarsInited'
         else
             @trigger 'calendarsInited' # TODO: rename event to noSyncCalendars
 
@@ -574,7 +639,7 @@ module.exports = class Init
 
 
     updateIndex: ->
-        app.replicator.updateIndex @getCallbackTriggerOrQuit 'indexUpdated'
+        app.replicator.updateIndex @getCallbackTrigger 'indexUpdated'
 
     ###########################################################################
     # Service
@@ -598,12 +663,12 @@ module.exports = class Init
                 return exitApp "notConfigured: #{lastState}"
     sBackup: ->
         app.replicator.backup background: true
-        , @getCallbackTriggerOrQuit 'backupDone'
+        , @getCallbackTrigger 'backupDone'
 
     sSync: ->
         app.replicator.sync background: true
         , (err) =>
-            @getCallbackTriggerOrQuit('syncDone')(err)
+            @getCallbackTrigger('syncDone')(err)
 
     sQuit: ->
         app.exit()
@@ -617,10 +682,16 @@ module.exports = class Init
     exitApp: ->
         app.exit()
 
-    getCallbackTriggerOrQuit: (eventName) ->
+    # Provide a callback,
+    # - which appropriately regarding to the state show the error to the user
+    # - or trigger event if no error
+    getCallbackTrigger: (eventName) ->
         (err) =>
             if err
-                app.exit err
+                if @states[@currentState].quitOnError
+                    app.exit err
+                else
+                    @trigger 'error', err
             else
                 @trigger eventName
 
