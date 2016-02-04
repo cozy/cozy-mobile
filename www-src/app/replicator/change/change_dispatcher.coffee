@@ -36,7 +36,7 @@ module.exports = class ChangeDispatcher
     dispatch: (doc, callback = ->) ->
         log.info "dispatch #{doc.docType}"
 
-        if @isDispatched doc and @changeHandlers[doc.docType]
+        if @isDispatched(doc) and @changeHandlers[doc.docType]
             @changeHandlers[doc.docType]["dispatch"] doc, callback
 
     ###*

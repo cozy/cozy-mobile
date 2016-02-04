@@ -35,6 +35,15 @@ module.exports = class ReplicatorConfig extends Backbone.Model
     save: (changes, callback) ->
         log.info "save changes"
 
+        needInit =
+            notifications: changes.cozyNotifications and \
+                (changes.cozyNotifications isnt @get('cozyNotifications'))
+            calendars: changes.syncCalendars and \
+                (changes.syncCalendars isnt @get('syncCalendars'))
+            contacts: changes.syncContacts and \
+                (changes.syncContacts isnt @get('syncContacts'))
+            deviceName: changes.deviceName
+
         @set changes
         # Update _rev, if another process (service) has modified it since.
         @db.get '_local/appconfig', (err, config) =>
@@ -43,15 +52,6 @@ module.exports = class ReplicatorConfig extends Backbone.Model
 
             doc = @toJSON()
             delete doc.password if doc.password
-
-            needInit =
-                notifications: changes.cozyNotifications and \
-                    changes.cozyNotifications isnt @cozyNotifications
-                calendars: changes.syncCalendars and \
-                    changes.syncCalendars isnt @syncCalendars
-                contacts: changes.syncContacts and \
-                    changes.syncContacts isnt @syncContacts
-                deviceName: changes.deviceName
 
             @db.put doc, (err, res) =>
                 return callback err if err
