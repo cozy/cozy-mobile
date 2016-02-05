@@ -23,9 +23,6 @@ log = require('./lib/persistent_log')
 module.exports = BackgroundService =
 
     initialize: ->
-        # TODO STUB : deactivate service while working on replications refactor
-        return window.service.workDone()
-
         @replicator = new Replicator()
         @translation = new Translation()
 
