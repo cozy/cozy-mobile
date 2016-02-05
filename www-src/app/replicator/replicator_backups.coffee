@@ -104,7 +104,7 @@ module.exports =
                 else
                     callback()
 
-    # Uupload photos take with device on the cozy.
+    # Upload photos take with device on the cozy.
     # 1. check device folder
     # 2. Get list of image from android (--> images)
     # 3. Get list of already added image from this device (photoDB -> dbImages)

@@ -1,5 +1,6 @@
 ChangeDispatcher = require "./change/change_dispatcher"
 FilterManager = require './filter_manager'
+ConflictsHandler = require './conflicts_handler'
 
 log = require('../lib/persistent_log')
     prefix: "ReplicationLauncher"
@@ -27,6 +28,7 @@ module.exports = class ReplicationLauncher
         @dbRemote = @config.remote
         @filterName = @config.getReplicationFilter()
         @changeDispatcher = new ChangeDispatcher @config
+        @conflictsHandler = new ConflictsHandler @config.db
 
 
     ###*
@@ -42,16 +44,18 @@ module.exports = class ReplicationLauncher
             @replication = @dbLocal.sync @dbRemote, @_getOptions options
             @replication.on 'change', (info) =>
                 log.info "replicate change"
+                console.log info
 
                 if info.direction is 'pull'
                     for doc in info.change.docs
-                        # TODO: put in files and folders change handler ?
-                        if doc.docType in ['file', 'folder']
-                            @router.forceRefresh()
-                        if @changeDispatcher.isDispatched doc
-                            @changeDispatcher.dispatch doc
-                        else
-                            log.warn 'unwanted doc !', doc.docType
+                        @conflictsHandler.handleConflicts doc, (err, doc) =>
+                            # TODO: put in files and folders change handler ?
+                            if doc.docType?.toLowerCase() in ['file', 'folder']
+                                @router.forceRefresh()
+                            if @changeDispatcher.isDispatched doc
+                                @changeDispatcher.dispatch doc
+                            else
+                                log.warn 'unwanted doc !', doc.docType
 
             @replication.on 'paused', ->
                 log.info "replicate paused"
@@ -90,7 +94,6 @@ module.exports = class ReplicationLauncher
         if options.live
             liveOptions =
               retry: true
-              heartbeat: false
               back_off_function: (delay) ->
                   return 1000 if delay is 0
                   return delay if delay > 60000
