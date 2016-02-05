@@ -21,8 +21,8 @@ module.exports = class ReplicationLauncher
      * @param {Router} router - it's app router.
     ###
     constructor: (@config, @router) ->
-        @dbFrom = @config.db
-        @dbTo = @config.remote
+        @dbLocal = @config.db
+        @dbRemote = @config.remote
         @filterName = @config.getReplicationFilter()
         @changeDispatcher = new ChangeDispatcher @config
 
@@ -37,7 +37,7 @@ module.exports = class ReplicationLauncher
         log.info "start"
 
         unless @replication
-            @replication = @dbFrom.sync @dbTo, @_getOptions options
+            @replication = @dbLocal.sync @dbRemote, @_getOptions options
             @replication.on 'change', (info) =>
                 log.info "replicate change"
 
@@ -98,4 +98,7 @@ module.exports = class ReplicationLauncher
         return _.extend options, liveOptions,
             batch_size: ReplicationLauncher.BATCH_SIZE
             batches_limit: ReplicationLauncher.BATCHES_LIMIT
-            filter: @filterName
+            push: filter: (doc) ->
+                console.log doc
+                return true
+            pull: filter: @filterName
