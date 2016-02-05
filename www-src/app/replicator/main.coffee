@@ -38,7 +38,6 @@ module.exports = class Replicator extends Backbone.Model
         inBackup: false
 
 
-
     initFileSystem: (callback) ->
         fs.initialize (err, downloads, cache) =>
             return callback err if err
@@ -105,7 +104,12 @@ module.exports = class Replicator extends Backbone.Model
         options = @config.makeDSUrl "/request/cozyinstance/all/"
         options.body = include_docs: true
 
-        retryOptions = times: 5, interval: 20 * 1000
+        retryOptions =
+            # Spend time on this step only if cozy locale haven't been
+            # fetched yet (mostly first  start)
+            times: if @config.has('locale') then 1 else 5
+            interval: 20 * 1000
+
         async.retry retryOptions, (cb) ->
             request.post options, (err, res, models) ->
                 return cb err if err
@@ -332,7 +336,7 @@ module.exports = class Replicator extends Backbone.Model
 
         # 1. Fetch all documents
         retryOptions =
-            times: options.retry or 0
+            times: options.retry or 1
             interval: 20 * 1000
 
         async.retry retryOptions, ((cb) => @_fetchAll options, cb)

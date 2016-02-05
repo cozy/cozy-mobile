@@ -35,7 +35,6 @@ module.exports = class Init
             log.info "Transition from state #{leaveState} \
                       to state #{enterState}"
 
-
         @listenTo @, 'transition', (leaveState, enterState) =>
             if @states[enterState]?.display?
                 @trigger 'display', @states[enterState].display
@@ -43,7 +42,6 @@ module.exports = class Init
             # Hide display if no needed in comming state.
             else if @states[leaveState]?.display?
                 @trigger 'noDisplay'
-
 
 
     # activating contact or calendar sync requires to init them,
@@ -54,7 +52,6 @@ module.exports = class Init
         log.info 'configUpdated'
         # Do sync only while on Realtime : TODO: hadnles others RUnning states
         # waiting for them to end.
-        console.log needInit
         if @currentState is 'aRealtime'
             if needInit.calendars and needInit.contacts
                 @toState 'c3RemoteRequest'
