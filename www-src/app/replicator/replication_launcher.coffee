@@ -1,12 +1,14 @@
 ChangeDispatcher = require "./change/change_dispatcher"
+FilterManager = require './filter_manager'
+
 log = require('../lib/persistent_log')
     prefix: "ReplicationLauncher"
     date: true
 
 ###*
-  * ReplicationLauncher allows to synchronise Couchdb with pouchdb
-  *
-  * @class ReplicationLauncher
+ * ReplicationLauncher allows to synchronise Couchdb with pouchdb
+ *
+ * @class ReplicationLauncher
 ###
 module.exports = class ReplicationLauncher
 
@@ -96,10 +98,11 @@ module.exports = class ReplicationLauncher
         else
             liveOptions = {}
 
+
+        filterManager = new FilterManager @config
+
         return _.extend options, liveOptions,
             batch_size: ReplicationLauncher.BATCH_SIZE
             batches_limit: ReplicationLauncher.BATCHES_LIMIT
-            push: filter: (doc) ->
-                console.log doc
-                return true
+            push: filter: filterManager.getFilterFunction()
             pull: filter: @filterName

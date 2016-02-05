@@ -20,7 +20,12 @@ module.exports = class FilterManager
      * @param {String} deviceName - it's device name
      * @param {PouchDB} db - the main PouchDB instance of the app.
     ###
-    constructor: (@cozyUrl, @auth, @deviceName, @db) ->
+    # constructor: (@cozyUrl, @auth, @deviceName, @db) ->
+    constructor: (@config) ->
+        @cozyUrl = @config.getCozyUrl()
+        @auth = @config.get 'auth'
+        @deviceName = @config.get 'deviceName'
+        @db = @config.db
 
     ###*
      * Create or update a filter for a specific configuration.
@@ -30,10 +35,15 @@ module.exports = class FilterManager
      * @param {Boolean} syncNotifs - if you want notification synchronization
      * @param {Function} callback - The callback that handles the response.
     ###
-    setFilter: (syncContacts, syncCalendars, syncNotifs, callback) ->
+    # setFilter: (syncContacts, syncCalendars, syncNotifs, callback) ->
+    setFilter: (callback) ->
+        syncContacts = @config.get 'syncContacts'
+        syncCalendars = @config.get 'syncCalendars'
+        syncNotifs = @config.get 'syncNotifications'
+
         log.info "setFilter syncContacts: #{syncContacts}, syncCalendars: " + \
                 "#{syncCalendars}, syncNotifs: #{syncNotifs}"
-        doc = @_getConfigFilter syncContacts, syncCalendars, syncNotifs
+        doc = @_getConfigFilter @config.attributes
 
         options = @_getOptions()
         options.body = doc
@@ -59,6 +69,9 @@ module.exports = class FilterManager
 
                     callback null, true
 
+    getFilterFunction: ->
+        return new Function "doc", @_getFilterCode @config.attributes
+
     ###*
      * Get filter name for this device.
      *
@@ -79,6 +92,24 @@ module.exports = class FilterManager
         auth: @auth
         url: "#{@cozyUrl}/ds-api/filters/config"
 
+
+    _getFilterCode: (options) ->
+        # First check for docType
+        compare = "doc.docType && ("
+        compare += "doc.docType.toLowerCase() === 'file'"
+        compare += " || doc.docType.toLowerCase() === 'folder'"
+        if options.syncContacts
+            compare += " || doc.docType.toLowerCase() === 'contact'"
+        if options.syncCalendars
+            compare += " || doc.docType.toLowerCase() === 'event'"
+            compare += " || doc.docType.toLowerCase() === 'tag'"
+        if options.syncNotifications
+            compare += " || (doc.docType.toLowerCase() === 'notification'"
+            compare += " && doc.type === 'temporary')"
+
+        compare += ")"
+
+        return "return #{compare};"
     ###*
      * Get configuration to create a filter
      *
@@ -88,22 +119,7 @@ module.exports = class FilterManager
      *
      * @return {Object}
     ###
-    _getConfigFilter: (syncContacts, syncCalendars, syncNotifs) ->
-        # First check for docType
-        compare = "doc.docType && ("
-        compare += "doc.docType.toLowerCase() === 'file'"
-        compare += " || doc.docType.toLowerCase() === 'folder'"
-        if syncContacts
-            compare += " || doc.docType.toLowerCase() === 'contact'"
-        if syncCalendars
-            compare += " || doc.docType.toLowerCase() === 'event'"
-            compare += " || doc.docType.toLowerCase() === 'tag'"
-        if syncNotifs
-            compare += " || (doc.docType.toLowerCase() === 'notification'"
-            compare += " && doc.type === 'temporary')"
-
-        compare += ")"
-
+    _getConfigFilter: (options) ->
+        # TODO ? add views attribute, required by the datasystem ?
         filters:
-            config: "function (doc) { return #{compare}; }"
-
+            config: "function (doc) { #{@_getFilterCode(options)} }"
