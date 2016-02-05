@@ -199,8 +199,10 @@ module.exports = class Init
         sInitConfig: enter: ['sInitConfig'], quitOnError: true
 
         sPostConfigInit: enter: ['postConfigInit'], quitOnError: true
-        sBackup: enter: ['sBackup'], quitOnError: true
+        sImport: enter: ['import'], quitOnError: true
         sSync: enter: ['sSync'], quitOnError: true
+        sBackup: enter: ['sBackup'], quitOnError: true
+        sSync2: enter: ['sSync'], quitOnError: true
         sQuit: enter: ['sQuit'], quitOnError: true
 
         # Service Migration (m) states
@@ -371,9 +373,11 @@ module.exports = class Init
         # Start Service
         'sInitFileSystem': 'fileSystemReady': 'sInitDatabase'
         'sInitDatabase': 'databaseReady': 'sInitConfig'
-        'sPostConfigInit': 'initsDone': 'sBackup'
-        'sBackup': 'backupDone': 'sSync'
-        'sSync': 'syncDone': 'sQuit'
+        'sPostConfigInit': 'initsDone': 'sImport'
+        'sImport': 'importDone': 'sSync'
+        'sSync': 'syncDone': 'sBackup'
+        'sBackup': 'backupDone': 'sSync2'
+        'sSync2': 'syncDone': 'sQuit'
         'sInitConfig':
             'configured': 'sPostConfigInit' # Normal start
             'newVersion': 'smMigrationInit' # Migration
@@ -645,8 +649,8 @@ module.exports = class Init
     # Service
     sInitConfig: ->
         app.replicator.initConfig (err, config) =>
-            return exitApp err if err
-            return exitApp 'notConfigured' unless config.remote
+            return @exitApp err if err
+            return @exitApp 'notConfigured' unless config.remote
 
 
             # Check last state
@@ -666,9 +670,7 @@ module.exports = class Init
         , @getCallbackTrigger 'backupDone'
 
     sSync: ->
-        app.replicator.sync background: true
-        , (err) =>
-            @getCallbackTrigger('syncDone')(err)
+        app.replicator.sync {}, @getCallbackTrigger 'syncDone'
 
     sQuit: ->
         app.exit()
@@ -679,8 +681,8 @@ module.exports = class Init
         app.replicator.config.save lastInitState: @currentState
         , (err, config) -> log.warn err if err
 
-    exitApp: ->
-        app.exit()
+    exitApp: (err) ->
+        app.exit err
 
     # Provide a callback,
     # - which appropriately regarding to the state show the error to the user

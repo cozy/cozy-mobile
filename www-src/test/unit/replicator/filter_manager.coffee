@@ -4,11 +4,23 @@ mockery = require 'mockery'
 module.exports = describe 'FilterManager Test', ->
 
     defaultId = 42
-    cozyUrl = 'cozyUrl'
     deviceName = "my-device"
-    db =
-        put: (doc, callback) -> callback null, doc
-        get: (id, callback) -> callback 'missing' # TODO : better PouchDB mock
+
+    config =
+        attributes:
+            deviceName: deviceName
+            auth: null
+            syncContacts: true
+            syncCalendars: true
+            syncNotifications: true
+
+        getCozyUrl: -> 'cozyUrl'
+        get: (key) -> @attributes[key]
+
+        db:
+            put: (doc, callback) -> callback null, doc
+            get: (id, callback) -> callback 'missing' # TODO: better PouchDB
+                                                      # mock
 
     before ->
         mockery.enable
@@ -47,28 +59,34 @@ module.exports = describe 'FilterManager Test', ->
     describe '[When all is ok]', ->
 
         it "setFilter return true", (done) ->
-            filterManager = new @FilterManager cozyUrl, true, deviceName, db
-            filterManager.setFilter true, true, true, (err, response) ->
+            config.attributes.auth = true
+            filterManager = new @FilterManager config
+            filterManager.setFilter (err, response) ->
                 response.should.be.equal true
                 done()
 
         it "getFilterName return the filter name", ->
-            filterManager = new @FilterManager cozyUrl, true, deviceName, db
+            config.attributes.auth = true
+            filterManager = new @FilterManager config
             name = filterManager.getFilterName()
             name.should.be.equal "filter-#{deviceName}-config/config"
 
+        it 'getFilterFunction return a function', ->
+            filterManager = new @FilterManager config
+            filterManager.getFilterFunction().should.be.a 'function'
 
     describe '[All errors]', ->
 
         it "When API have an error setFilter return err", (done) ->
-            filterManager = new @FilterManager cozyUrl, "err", deviceName, db
-            filterManager.setFilter true, true, true, (err, response) ->
+            config.attributes.auth = "err"
+            filterManager = new @FilterManager config
+            filterManager.setFilter (err, response) ->
                 err.should.not.to.be.null
                 done()
 
         it "When API don't return _id setFilter return false", (done) ->
-            filterManager = new @FilterManager cozyUrl, "body_empty", \
-                                    deviceName, db
-            filterManager.setFilter true, true, true, (err, response) ->
+            config.attributes.auth = 'body_empty'
+            filterManager = new @FilterManager config
+            filterManager.setFilter (err, response) ->
                 err.should.not.to.be.null
                 done()

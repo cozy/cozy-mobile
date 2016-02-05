@@ -47,4 +47,4 @@ module.exports = class ChangeDispatcher
      * @return {Boolean}
     ###
     isDispatched: (doc) ->
-        return doc.docType of @changeHandlers
+        return doc.docType?.toLowerCase() of @changeHandlers

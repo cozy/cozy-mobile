@@ -227,9 +227,7 @@ module.exports = class Replicator extends Backbone.Model
 
     putFilters: (callback) ->
         log.info "setReplicationFilter"
-        @config.getFilterManager().setFilter @config.get("syncContacts"), \
-            @config.get("syncCalendars"), @config.get("cozyNotifications"), \
-            callback
+        @config.getFilterManager().setFilter callback
 
 
     putRequests: (callback) ->

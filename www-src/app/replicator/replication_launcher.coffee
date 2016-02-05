@@ -1,12 +1,15 @@
 ChangeDispatcher = require "./change/change_dispatcher"
+FilterManager = require './filter_manager'
+ConflictsHandler = require './conflicts_handler'
+
 log = require('../lib/persistent_log')
     prefix: "ReplicationLauncher"
     date: true
 
 ###*
-  * ReplicationLauncher allows to synchronise Couchdb with pouchdb
-  *
-  * @class ReplicationLauncher
+ * ReplicationLauncher allows to synchronise Couchdb with pouchdb
+ *
+ * @class ReplicationLauncher
 ###
 module.exports = class ReplicationLauncher
 
@@ -21,10 +24,11 @@ module.exports = class ReplicationLauncher
      * @param {Router} router - it's app router.
     ###
     constructor: (@config, @router) ->
-        @dbFrom = @config.db
-        @dbTo = @config.remote
+        @dbLocal = @config.db
+        @dbRemote = @config.remote
         @filterName = @config.getReplicationFilter()
         @changeDispatcher = new ChangeDispatcher @config
+        @conflictsHandler = new ConflictsHandler @config.db
 
 
     ###*
@@ -37,19 +41,21 @@ module.exports = class ReplicationLauncher
         log.info "start"
 
         unless @replication
-            @replication = @dbFrom.sync @dbTo, @_getOptions options
+            @replication = @dbLocal.sync @dbRemote, @_getOptions options
             @replication.on 'change', (info) =>
                 log.info "replicate change"
+                console.log info
 
                 if info.direction is 'pull'
                     for doc in info.change.docs
-                        # TODO: put in files and folders change handler ?
-                        if doc.docType in ['file', 'folder']
-                            @router.forceRefresh()
-                        if @changeDispatcher.isDispatched doc
-                            @changeDispatcher.dispatch doc
-                        else
-                            log.warn 'unwanted doc !', doc.docType
+                        @conflictsHandler.handleConflicts doc, (err, doc) =>
+                            # TODO: put in files and folders change handler ?
+                            if doc.docType?.toLowerCase() in ['file', 'folder']
+                                @router.forceRefresh()
+                            if @changeDispatcher.isDispatched doc
+                                @changeDispatcher.dispatch doc
+                            else
+                                log.warn 'unwanted doc !', doc.docType
 
             @replication.on 'paused', ->
                 log.info "replicate paused"
@@ -95,7 +101,11 @@ module.exports = class ReplicationLauncher
         else
             liveOptions = {}
 
+
+        filterManager = new FilterManager @config
+
         return _.extend options, liveOptions,
             batch_size: ReplicationLauncher.BATCH_SIZE
             batches_limit: ReplicationLauncher.BATCHES_LIMIT
-            filter: @filterName
+            push: filter: filterManager.getFilterFunction()
+            pull: filter: @filterName

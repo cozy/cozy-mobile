@@ -104,7 +104,19 @@ module.exports =
                 else
                     callback()
 
-
+    # Upload photos take with device on the cozy.
+    # 1. check device folder
+    # 2. Get list of image from android (--> images)
+    # 3. Get list of already added image from this device (photoDB -> dbImages)
+    # 4. Get list of files in t'photos' folder (--> dbPictures).
+    # 5. For each images from android :
+    # 5.1 - skip images already uploaded (in photoDB)
+    # 5.2 - image already present on cozy : then flag it (add to photoDB)
+    # 5.3 - add to upload list
+    # 6. Upload image list
+    # 6.1 create File document in Cozy
+    # 6.2 create Ninary document in Cozy
+    # 6.3 add to PhotoDB
     syncPictures: (force, callback) ->
         return callback null unless @config.get 'syncImages'
 
