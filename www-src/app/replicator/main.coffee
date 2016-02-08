@@ -638,7 +638,9 @@ module.exports = class Replicator extends Backbone.Model
 
         ReplicationLauncher = require "./replication_launcher"
         @replicationLauncher = new ReplicationLauncher @config, app.router
-        @replicationLauncher.start options, callback
+        @replicationLauncher.start options, =>
+            @stopRealtime()
+            callback.apply @, arguments
 
     ###*
      * Start real time replication
@@ -646,7 +648,7 @@ module.exports = class Replicator extends Backbone.Model
     startRealtime: =>
         log.info "startRealtime"
 
-        return if @replicationLauncher or not app.foreground
+        @stopRealtime() if @replicationLauncher
 
         ReplicationLauncher = require "./replication_launcher"
         @replicationLauncher = new ReplicationLauncher @config, app.router

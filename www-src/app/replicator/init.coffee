@@ -717,7 +717,7 @@ module.exports = class Init
         app.replicator.sync since: app.replicator.config.get('checkpointed')
         , (err) =>
             if err
-                return exitApp err if err
+                return @exitApp err if err
 
             # Copy view is done. Unset this transition var.
             app.replicator.config.unset 'checkpointed'
@@ -748,7 +748,7 @@ module.exports = class Init
                 else
                     @trigger 'configured'
             else # In init.
-                return exitApp "notConfigured: #{lastState}"
+                return @exitApp "notConfigured: #{lastState}"
     sBackup: ->
         app.replicator.backup background: true
         , @getCallbackTrigger 'backupDone'

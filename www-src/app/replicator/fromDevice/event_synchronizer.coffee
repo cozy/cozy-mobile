@@ -23,31 +23,31 @@ module.exports = class EventSynchronizer
             return log.error err if err
 
             async.eachSeries androidEvents, (androidEvent, cb) =>
-                @change androidEvent, cb
+                @_change androidEvent, cb
             , callback
 
-    change: (androidEvent, callback) ->
-        log.info "change"
+    _change: (androidEvent, callback) ->
+        log.info "_change"
 
         if androidEvent.deleted
-            @delete androidEvent, continueOnError callback
+            @_delete androidEvent, continueOnError callback
         else
             @androidCalendarHandler.getById androidEvent.calendar_id, \
                 (err, androidCalendar) =>
                     return log.error err if err
 
                     if androidEvent._sync_id
-                        @update androidEvent, androidCalendar, continueOnError \
-                                callback
+                        @_update androidEvent, androidCalendar, \
+                                continueOnError callback
                     else
-                        @create androidEvent, androidCalendar, continueOnError \
-                                callback
+                        @_create androidEvent, androidCalendar, \
+                                continueOnError callback
 
     # Create a new contact in app's pouchDB from newly created phone contact.
     # @param phoneContact cordova contact format.
     # @param retry retry lighter update after a failed one.
-    create: (androidEvent, androidCalendar, callback) ->
-        log.info "create"
+    _create: (androidEvent, androidCalendar, callback) ->
+        log.info "_create"
 
         cozyEvent = @cozyToAndroidEvent.reverseTransform androidEvent, \
                 androidCalendar
@@ -64,8 +64,8 @@ module.exports = class EventSynchronizer
     # Update event in pouchDB with specified event from phone.
     # @param androidEvent
     # @param retry retry lighter update after a failed one.
-    update: (androidEvent, androidCalendar, callback) ->
-        log.info "update"
+    _update: (androidEvent, androidCalendar, callback) ->
+        log.info "_update"
 
         @db.get androidEvent._sync_id, (err, cozyEvent) =>
             return callback err if err
@@ -85,8 +85,8 @@ module.exports = class EventSynchronizer
 
     # Delete the specified contact in app's pouchdb.
     # @param phoneContact cordova contact format.
-    delete: (androidEvent, callback) ->
-        log.info "delete"
+    _delete: (androidEvent, callback) ->
+        log.info "_delete"
 
         toDelete =
             docType: 'event'
