@@ -61,17 +61,17 @@ module.exports =
                             errors.push err
                         cb()
 
-                # (cb) =>
-                #     DeviceStatus.checkReadyForSync (err, ready, msg) =>
-                #         unless ready or err
-                #             err = new Error msg
-                #         return cb err if err
+                (cb) =>
+                    DeviceStatus.checkReadyForSync (err, ready, msg) =>
+                        unless ready or err
+                            err = new Error msg
+                        return cb err if err
 
-                #         @syncCache (err) ->
-                #             if err
-                #                 log.error "in syncCache", err
-                #                 errors.push err
-                #             cb()
+                        @syncCache (err) ->
+                            if err
+                                log.error "in syncCache", err
+                                errors.push err
+                            cb()
 
                 # (cb) =>
                 #     DeviceStatus.checkReadyForSync (err, ready, msg) =>

@@ -17,9 +17,8 @@ module.exports = class ChangeFileHandler
      * @param {ReplicatorConfig} config - it's replication config.
     ###
     constructor: (@config) ->
-        fs.initialize (err, directoryEntry, cache) =>
-            @directoryEntry = directoryEntry
-            @cache = cache
+        @directoryEntry = app.replicator.directoryEntry
+        @cache = app.replicator.cache
 
 
     ###*
@@ -27,13 +26,23 @@ module.exports = class ChangeFileHandler
      *
      * @param {Object} doc - it's a pouchdb file document.
     ###
-    dispatch: (doc) ->
+    dispatch: (doc, callback) ->
         log.info "dispatch"
 
         if doc._deleted
             @_delete doc
+
         else
-            @_rename doc
+            entry = @_getCacheEntry doc
+
+            # Entry is false if this file isn't cached.
+            return callback() unless entry
+
+            if entry.name isnt @_fileToEntryName(doc)
+                @_update doc, callback
+
+            else
+                @_rename doc, entry, callback
 
     ###*
      * To delete a file.
@@ -54,59 +63,63 @@ module.exports = class ChangeFileHandler
                 return log.error err if err
                 @_removeFromCacheList @_fileToEntryName doc
 
+    _update: (doc, callback) ->
+        @_download doc, callback
+
+
+
     ###*
      * To rename a file.
      *
      * @param {Object} doc - it's a pouchdb file document.
     ###
-    _rename: (doc) ->
+    _rename: (doc, entry, callback) ->
         log.info "_rename"
 
-        entry = @_getCacheEntry doc
-
-        # the binary isn't downloaded
-        return null unless entry
-
         fs.getChildren entry, (err, children) =>
-            return log.error err if err
+            return callback err if err
 
             fileName = encodeURIComponent doc.name
             if children.length is 0
                 # it's anomaly but download it !
                 log.warn "Missing file #{doc.name} on device, fetching it."
-                @_download doc
+                @_download doc, callback
             else if children[0].name isnt fileName
                 log.info "rename binary of #{doc.name}"
-                fs.moveTo children[0], entry, fileName, (err, res)->
-                    log.error err if err
+                fs.moveTo children[0], entry, fileName, callback
+
+            else
+                # Nothing to do
+                callback()
 
     ###*
+     * TODO: factoryze with main.getBinary in some way.
      * To download a file.
      *
      * @param {Object} doc - it's a pouchdb file document.
     ###
-    _download: (doc, forced = false) ->
+    _download: (doc, callback) ->
         log.info "_download"
 
         # Don't update the binary if "no wifi"
         DeviceStatus.checkReadyForSync (err, ready, msg) =>
-            log.error err if err
+            return callback err if err
 
-            if ready or forced
+            if ready
                 name = @_fileToEntryName doc
                 fs.getOrCreateSubFolder @downloads, name, (err, directory) =>
                     if err and err.code isnt FileError.PATH_EXISTS_ERR
-                        return log.error err
+                        return callback err
 
                     unless doc.name
                         err = new Error "no doc name: #{JSON.stringify doc}"
-                        return log.error err
+                        return callback err
                     fileName = encodeURIComponent doc.name
 
                     fs.getFile directory, fileName, (err, entry) =>
 
                         # file already exist
-                        return null if entry
+                        return callback null, entry.toURL() if entry
 
                         # getFile failed, let's download
                         url = "/data/#{doc._id}/binaries/file"
@@ -117,11 +130,10 @@ module.exports = class ChangeFileHandler
                             if err
                                 # failed to download
                                 log.error err
-                                fs.delete directory, (err) ->
-                                    log.error err
+                                fs.delete directory, callback
                             else
                                 @cache.push directory
-                                @_removeAllLocal doc, ->
+                                @_removeAllLocal doc, callback
             else
                 log.info msg
 

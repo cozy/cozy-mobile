@@ -1,11 +1,12 @@
 async = require 'async'
 PouchDB = require 'pouchdb'
+semver = require 'semver'
 request = require '../lib/request'
 fs = require './filesystem'
 DesignDocuments = require './design_documents'
 ReplicatorConfig = require './replicator_config'
 DeviceStatus = require '../lib/device_status'
-semver = require 'semver'
+ChangeDispatcher = require './change/change_dispatcher'
 
 DBNAME = "cozy-files.db"
 DBPHOTOS = "cozy-photos.db"
@@ -657,7 +658,10 @@ module.exports = class Replicator extends Backbone.Model
         delete @replicationLauncher
 
     # Update cache files with outdated revisions. Called while backup
-    syncCache:  (callback) =>
+    # 1. Fetch all file document of file in cache (trouhgh binary id)
+    # 2. Generate the { file, entry} list
+    # 3. Update all of them (updateLocal will update as needed)
+    syncCache:  (callback) ->
         @set 'backup_step', 'cache_sync'
         @set 'backup_step_done', null
 
@@ -668,13 +672,13 @@ module.exports = class Replicator extends Backbone.Model
 
         @db.query DesignDocuments.BY_BINARY_ID, options, (err, results) =>
             return callback err if err
-            toUpdate = @_filesNEntriesInCache results.rows.map (row) -> row.doc
 
+            changeDispatcher = new ChangeDispatcher @config
             processed = 0
             @set 'backup_step', 'cache_sync'
-            @set 'backup_step_total', toUpdate.length
-            async.eachSeries toUpdate, (fileNEntry, cb) =>
+            @set 'backup_step_total', results.rows.length
+            async.eachSeries results.rows, (row, cb) =>
                 @set 'backup_step_done', processed++
-                @updateLocal fileNEntry, cb
+                changeDispatcher.dispatch row.doc, cb
             , callback
 
