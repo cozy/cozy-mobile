@@ -1,4 +1,4 @@
-APP_VERSION = "0.1.19"
+APP_VERSION = "0.1.20"
 PouchDB = require 'pouchdb'
 request = require '../lib/request'
 FilterManager = require './filter_manager'
@@ -32,9 +32,7 @@ module.exports = class ReplicatorConfig extends Backbone.Model
 
             callback null, this
 
-    save: (changes, callback) ->
-        log.info "save changes"
-
+    updateAndGetInitNeeds: (changes) ->
         needInit =
             notifications: changes.cozyNotifications and \
                 (changes.cozyNotifications isnt @get('cozyNotifications'))
@@ -45,6 +43,21 @@ module.exports = class ReplicatorConfig extends Backbone.Model
             deviceName: changes.deviceName
 
         @set changes
+
+        return needInit
+
+    ###*
+     *
+     * @param changes [optional] object with attributes to changes
+     * @param callback
+    ###
+    save: (changes, callback) ->
+        log.info "save changes"
+        if arguments.length is 2
+            @set changes if changes?
+        else if arguments.length is 1
+            callback = changes
+
         # Update _rev, if another process (service) has modified it since.
         @db.get '_local/appconfig', (err, config) =>
             unless err # may be 404, at doc initialization.
@@ -59,7 +72,7 @@ module.exports = class ReplicatorConfig extends Backbone.Model
                 @set _rev: res.rev
                 @remote = @createRemotePouchInstance()
 
-                callback null, @, needInit
+                callback null, @
 
     getScheme: ->
         # Monkey patch for browser debugging

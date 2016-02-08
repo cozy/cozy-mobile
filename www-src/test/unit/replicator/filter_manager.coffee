@@ -12,7 +12,7 @@ module.exports = describe 'FilterManager Test', ->
             auth: null
             syncContacts: true
             syncCalendars: true
-            syncNotifications: true
+            cozyNotifications: true
 
         getCozyUrl: -> 'cozyUrl'
         get: (key) -> @attributes[key]

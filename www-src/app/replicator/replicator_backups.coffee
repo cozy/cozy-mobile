@@ -35,10 +35,11 @@ module.exports =
                 @set 'backup_step_done', null
                 @set 'inBackup', false
                 # @startRealtime() unless options.background
-                return callback err if err
-                @config.save lastBackup: new Date().toString(), (err) ->
-                    log.info "Backup done."
-                    callback null
+                callback err
+                # return callback err if err
+                # @config.save lastBackup: new Date().toString(), (err) ->
+                #     log.info "Backup done."
+                #     callback null
         catch e
             log.error "Error in backup: ", e
 

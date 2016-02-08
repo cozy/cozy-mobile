@@ -35,7 +35,6 @@ module.exports = class Init
             log.info "Transition from state #{leaveState} \
                       to state #{enterState}"
 
-
         @listenTo @, 'transition', (leaveState, enterState) =>
             if @states[enterState]?.display?
                 @trigger 'display', @states[enterState].display
@@ -44,17 +43,35 @@ module.exports = class Init
             else if @states[leaveState]?.display?
                 @trigger 'noDisplay'
 
+    updateConfig: (needInit) ->
+        log.info 'updateConfig'
+        # Do sync only while on Realtime : TODO: handles others Running states
+        # waiting for them to end.
+        if @currentState is 'aRealtime'
+            if needInit.calendars and needInit.contacts
+                @toState 'c3RemoteRequest'
+            else if needInit.contacts
+                @toState 'c1RemoteRequest'
+            else if needInit.calendars
+                @toState 'c2RemoteRequest'
+            #else unless _.isEmpty(needInit)
 
+            else
+                @toState 'c4RemoteRequest'
+                # @trigger 'initDone'
 
+        else if @currentState in ['fConfig', 'mConfig']
+            @saveConfig()
+        else
+            @trigger 'error', new Error 'App is busy'
     # activating contact or calendar sync requires to init them,
     # trough init state machine
     # @param needSync {calendars: true, contacts: false } type object, if
     # it should be updated or not.
     configUpdated: (needInit) ->
         log.info 'configUpdated'
-        # Do sync only while on Realtime : TODO: hadnles others RUnning states
+        # Do sync only while on Realtime : TODO: handles others Running states
         # waiting for them to end.
-        console.log needInit
         if @currentState is 'aRealtime'
             if needInit.calendars and needInit.contacts
                 @toState 'c3RemoteRequest'
@@ -268,6 +285,9 @@ module.exports = class Init
         cSync:
             enter: ['postCopyViewSync']
             display: 'setup end'
+        cSaveConfig:
+            enter: ['saveConfig']
+            display: 'setup end'
         cUpdateIndex:
             enter: ['updateIndex']
             display: 'setup end'
@@ -336,19 +356,46 @@ module.exports = class Init
         'fDeviceName': 'deviceCreated': 'fCheckPlatformVersion'
         'fCheckPlatformVersion': 'validPlatformVersions': 'fConfig'
         'fConfig': 'configDone': 'fFirstSyncView'
-        'fFirstSyncView': 'firstSyncViewDisplayed': 'fLocalDesignDocuments'
-        'fLocalDesignDocuments': 'localDesignUpToDate': 'fRemoteRequest'
-        'fRemoteRequest': 'putRemoteRequest':'fSetVersion'
-        'fSetVersion': 'versionUpToDate': 'fPostConfigInit'
-        'fPostConfigInit': 'initsDone': 'fTakeDBCheckpoint'
-        'fTakeDBCheckpoint': 'checkPointed': 'fInitFiles'
-        'fInitFiles': 'filesInited': 'fInitFolders'
-        'fInitFolders': 'foldersInited': 'fCreateAccount'
-        'fCreateAccount': 'androidAccountCreated': 'fInitContacts'
-        'fInitContacts': 'contactsInited': 'fInitCalendars'
-        'fInitCalendars': 'calendarsInited': 'fSync'
-        'fSync': 'dbSynced': 'fUpdateIndex'
-        'fUpdateIndex': 'indexUpdated': 'aLoadFilePage'
+        'fFirstSyncView':
+            'firstSyncViewDisplayed': 'fLocalDesignDocuments'
+            'errorViewed': 'fConfig'
+        'fLocalDesignDocuments':
+            'localDesignUpToDate': 'fRemoteRequest'
+            'errorViewed': 'fConfig'
+        'fRemoteRequest':
+            'putRemoteRequest':'fSetVersion'
+            'errorViewed': 'fConfig'
+        'fSetVersion':
+            'versionUpToDate': 'fPostConfigInit'
+            'errorViewed': 'fConfig'
+        'fPostConfigInit':
+            'initsDone': 'fTakeDBCheckpoint'
+            'errorViewed': 'fConfig'
+        'fTakeDBCheckpoint':
+            'checkPointed': 'fInitFiles'
+            'errorViewed': 'fConfig'
+        'fInitFiles':
+            'filesInited': 'fInitFolders'
+            'errorViewed': 'fInitFiles'
+        'fInitFolders':
+            'foldersInited': 'fCreateAccount'
+            'errorViewed': 'fInitFolders'
+        'fCreateAccount':
+            'androidAccountCreated': 'fInitContacts'
+            'errorViewed': 'fCreateAccount'
+        'fInitContacts':
+            'contactsInited': 'fInitCalendars'
+            'errorViewed': 'fInitContacts'
+        'fInitCalendars':
+            'calendarsInited': 'fSync'
+            'errorViewed': 'fInitCalendars'
+        'fSync':
+            'dbSynced': 'fUpdateIndex'
+            'errorViewed': 'fSync'
+        'fUpdateIndex':
+            'indexUpdated': 'aLoadFilePage'
+            'errorViewed': 'aLoadFilePage'
+
 
         # First start error transitions
         # 1 error after before FirstSync End. --> Go to config.
@@ -396,31 +443,66 @@ module.exports = class Init
         #######################################
         # Config update
         ###################
-        'c1RemoteRequest': 'putRemoteRequest': 'c1TakeDBCheckpoint'
-        'c1TakeDBCheckpoint': 'checkPointed': 'c1CreateAccount'
-        'c1CreateAccount': 'androidAccountCreated': 'c1InitContacts'
-        'c1InitContacts': 'contactsInited': 'cSync'
+        'c1RemoteRequest':
+            'putRemoteRequest': 'c1TakeDBCheckpoint'
+            'errorViewed': 'aRealtime'
+        'c1TakeDBCheckpoint':
+            'checkPointed': 'c1CreateAccount'
+            'errorViewed': 'aRealtime'
+        'c1CreateAccount':
+            'androidAccountCreated': 'c1InitContacts'
+            'errorViewed': 'aRealtime'
+        'c1InitContacts':
+            'contactsInited': 'cSync'
+            'errorViewed': 'aRealtime'
+
 
         ###################
-        'c2RemoteRequest': 'putRemoteRequest': 'c2TakeDBCheckpoint'
-        'c2TakeDBCheckpoint': 'checkPointed': 'c2CreateAccount'
-        'c2CreateAccount': 'androidAccountCreated': 'c2InitCalendars'
-        'c2InitCalendars': 'calendarsInited': 'cSync'
+        'c2RemoteRequest':
+            'putRemoteRequest': 'c2TakeDBCheckpoint'
+            'errorViewed': 'aRealtime'
+        'c2TakeDBCheckpoint':
+            'checkPointed': 'c2CreateAccount'
+            'errorViewed': 'aRealtime'
+        'c2CreateAccount':
+            'androidAccountCreated': 'c2InitCalendars'
+            'errorViewed': 'aRealtime'
+        'c2InitCalendars':
+            'calendarsInited': 'cSync'
+            'errorViewed': 'aRealtime'
 
         ###################
-        'c3RemoteRequest': 'putRemoteRequest': 'c3TakeDBCheckpoint'
-        'c3TakeDBCheckpoint': 'checkPointed': 'c3CreateAccount'
-        'c3CreateAccount': 'androidAccountCreated': 'c3InitContacts'
-        'c3InitContacts': 'contactsInited': 'c3InitCalendars'
-        'c3InitCalendars': 'calendarsInited': 'cSync'
+        'c3RemoteRequest':
+            'putRemoteRequest': 'c3TakeDBCheckpoint'
+            'errorViewed': 'aRealtime'
+        'c3TakeDBCheckpoint':
+            'checkPointed': 'c3CreateAccount'
+            'errorViewed': 'aRealtime'
+        'c3CreateAccount':
+            'androidAccountCreated': 'c3InitContacts'
+            'errorViewed': 'aRealtime'
+        'c3InitContacts':
+            'contactsInited': 'c3InitCalendars'
+            'errorViewed': 'aRealtime'
+        'c3InitCalendars':
+            'calendarsInited': 'cSync'
+            'errorViewed': 'aRealtime'
 
         ###################
-        'c4RemoteRequest': 'putRemoteRequest': 'aImport'
+        'c4RemoteRequest':
+            'putRemoteRequest': 'cSaveConfig'
+            'errorViewed': 'aRealtime'
 
         ###################
-        'cSync': 'dbSynced': 'cUpdateIndex'
-        'cUpdateIndex': 'indexUpdated': 'aImport' #TODO : clean update headers
-
+        'cSync':
+            'dbSynced': 'cSaveConfig'
+            'errorViewed': 'aRealtime'
+        'cSaveConfig':
+            'configSaved': 'cUpdateIndex'
+            'errorViewed': 'aRealtime'
+        'cUpdateIndex':
+            'indexUpdated': 'aImport' #TODO : clean update headers
+            'errorViewed': 'aRealtime'
 
 
     # Enter state methods.
@@ -513,7 +595,7 @@ module.exports = class Init
 
     # Migration
     initMigrationState: ->
-        @initMigration app.replicator.config.get 'appVersion'
+        @initMigrations app.replicator.config.get 'appVersion'
         @trigger 'migrationInited'
 
 
@@ -545,7 +627,7 @@ module.exports = class Init
         return if @passUnlessInMigration 'putRemoteRequest'
 
         app.replicator.putRequests (err) =>
-            return @exitApp err if err
+
             app.replicator.putFilters @getCallbackTrigger 'putRemoteRequest'
 
 
@@ -645,6 +727,8 @@ module.exports = class Init
     updateIndex: ->
         app.replicator.updateIndex @getCallbackTrigger 'indexUpdated'
 
+    saveConfig: ->
+        app.replicator.config.save @getCallbackTrigger 'configSaved'
     ###########################################################################
     # Service
     sInitConfig: ->
@@ -684,16 +768,21 @@ module.exports = class Init
     exitApp: (err) ->
         app.exit err
 
+    # show the error to the user appropriately regarding to the current state
+
+    handleError: (err) ->
+        if @states[@currentState].quitOnError
+            app.exit err
+        else
+            @trigger 'error', err
+
     # Provide a callback,
     # - which appropriately regarding to the state show the error to the user
     # - or trigger event if no error
     getCallbackTrigger: (eventName) ->
         (err) =>
             if err
-                if @states[@currentState].quitOnError
-                    app.exit err
-                else
-                    @trigger 'error', err
+                @handleError err
             else
                 @trigger eventName
 
@@ -722,11 +811,19 @@ module.exports = class Init
 
 
     # Migrations
-
+    # For each version update, list which optionnal states are requiered in
+    # - mLocalDesignDocuments
+    # - mCheckPlatformVersions
+    # - mPermissions
+    # - mConfig
+    # - mRemoteRequest
     migrations:
-        '0.1.19':
+        '0.1.20':
             # Check cozy-locale, new view in the cozy, new permissions.
-            states: ['mPermissions', 'mRemoteRequest']
+            # Filters: upper version of platform requiered.
+            states: ['mLocalDesignDocuments', 'mCheckPlatformVersions', \
+                'mPermissions', 'mRemoteRequest']
+        '0.1.19': states: []
         '0.1.18': states: []
         '0.1.17': states: []
         '0.1.16': states: []

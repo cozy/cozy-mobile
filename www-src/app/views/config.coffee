@@ -103,21 +103,28 @@ module.exports = class ConfigView extends BaseView
     # save config changes in local pouchdb
     # prevent simultaneous changes by disabling checkboxes
     saveChanges: ->
+        # disabl UI
+        # put changes in replicatorConfig object
+        # perform sync /init required
+        # rollback on error
+        # save in config on success.
+
         log.info "Save changes"
         checkboxes = @$ '#contactSyncCheck, #imageSyncCheck,' +
                         '#wifiSyncCheck, #cozyNotificationsCheck' +
                         '#configDone, #calendarSyncCheck'
         checkboxes.prop 'disabled', true
 
-        app.replicator.config.save
+        # app.replicator.config.save
+        @listenTo app.init, 'configSaved error', =>
+            checkboxes.prop 'disabled', false
+            app.replicator.config.fetch (err) =>
+                @render()
+
+        app.init.updateConfig app.replicator.config.updateAndGetInitNeeds
             syncContacts: @$('#contactSyncCheck').is ':checked'
             syncCalendars: @$('#calendarSyncCheck').is ':checked'
             syncImages: @$('#imageSyncCheck').is ':checked'
             syncOnWifi: @$('#wifiSyncCheck').is ':checked'
             cozyNotifications: @$('#cozyNotificationsCheck').is ':checked'
 
-        , (err, config, needInit) =>
-            @listenToOnce app.init, 'dbSynced initDone importDone', ->
-                checkboxes.prop 'disabled', false
-
-            app.init.configUpdated needInit
