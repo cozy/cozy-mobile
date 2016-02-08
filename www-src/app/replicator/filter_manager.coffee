@@ -39,7 +39,7 @@ module.exports = class FilterManager
     setFilter: (callback) ->
         syncContacts = @config.get 'syncContacts'
         syncCalendars = @config.get 'syncCalendars'
-        syncNotifs = @config.get 'syncNotifications'
+        syncNotifs = @config.get 'cozyNotifications'
 
         log.info "setFilter syncContacts: #{syncContacts}, syncCalendars: " + \
                 "#{syncCalendars}, syncNotifs: #{syncNotifs}"
@@ -103,7 +103,7 @@ module.exports = class FilterManager
         if options.syncCalendars
             compare += " || doc.docType.toLowerCase() === 'event'"
             compare += " || doc.docType.toLowerCase() === 'tag'"
-        if options.syncNotifications
+        if options.cozyNotifications
             compare += " || (doc.docType.toLowerCase() === 'notification'"
             compare += " && doc.type === 'temporary')"
 

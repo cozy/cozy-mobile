@@ -165,26 +165,27 @@ module.exports = class Layout extends BaseView
                 @ionicScroll.scrollTo 0, 0, false, null
 
     showInitMessage: (message) =>
-        log.debug 'showInitMessage', arguments
+        log.debug 'showInitMessage'
         @initIndicator.text t message
         @initIndicator.parent().slideDown()
         @viewsPlaceholder.addClass 'has-subheader'
 
     hideInitMessage: =>
-        log.debug 'hideInitMessage', arguments
+        log.debug 'hideInitMessage'
         @initIndicator.parent().slideUp()
         @viewsPlaceholder.removeClass 'has-subheader'
 
     showError: (error) =>
-        log.debug 'showError', arguments
+        log.debug 'showError'
         @errorIndicator.text t error.message
         @errorIndicator.parent().slideDown()
         @viewsPlaceholder.addClass 'has-subheader'
 
     onCloseErrorIndicator: =>
-        log.debug 'onCloseErrorIndicator', arguments
+        log.debug 'onCloseErrorIndicator'
         @errorIndicator.parent().slideUp()
         @viewsPlaceholder.removeClass 'has-subheader'
+        app.init.trigger 'errorViewed'
 
     onMenuButtonClicked: =>
         @menu.reset()
