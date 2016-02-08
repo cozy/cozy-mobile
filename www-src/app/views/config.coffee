@@ -117,9 +117,9 @@ module.exports = class ConfigView extends BaseView
 
         # app.replicator.config.save
         @listenTo app.init, 'configSaved error', =>
-                checkboxes.prop 'disabled', false
-                app.replicator.config.fetch (err) =>
-                    @render()
+            checkboxes.prop 'disabled', false
+            app.replicator.config.fetch (err) =>
+                @render()
 
         app.init.updateConfig app.replicator.config.updateAndGetInitNeeds
             syncContacts: @$('#contactSyncCheck').is ':checked'

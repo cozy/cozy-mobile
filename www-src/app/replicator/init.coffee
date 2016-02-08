@@ -595,7 +595,7 @@ module.exports = class Init
 
     # Migration
     initMigrationState: ->
-        @initMigration app.replicator.config.get 'appVersion'
+        @initMigrations app.replicator.config.get 'appVersion'
         @trigger 'migrationInited'
 
 
@@ -811,11 +811,19 @@ module.exports = class Init
 
 
     # Migrations
-
+    # For each version update, list which optionnal states are requiered in
+    # - mLocalDesignDocuments
+    # - mCheckPlatformVersions
+    # - mPermissions
+    # - mConfig
+    # - mRemoteRequest
     migrations:
-        '0.1.19':
+        '0.1.20':
             # Check cozy-locale, new view in the cozy, new permissions.
-            states: ['mPermissions', 'mRemoteRequest']
+            # Filters: upper version of platform requiered.
+            states: ['mLocalDesignDocuments', 'mCheckPlatformVersions', \
+                'mPermissions', 'mRemoteRequest']
+        '0.1.19': states: []
         '0.1.18': states: []
         '0.1.17': states: []
         '0.1.16': states: []
