@@ -1,6 +1,6 @@
 async = require 'async'
 
-log = require('../lib/persistent_log')
+log = require('../../lib/persistent_log')
     prefix: "ConflictsHandler"
     date: true
 
@@ -9,6 +9,8 @@ module.exports = class ConflictsHandler
     constructor: (@db)->
 
     handleConflicts: (doc, callback) ->
+        log.info "handleConflicts"
+
         # Get the doc with conflicts (and revs) infos from Pouch
         @db.get doc._id, { conflicts: true, revs: true }, (err, local) =>
             return callback err if err
@@ -41,6 +43,7 @@ module.exports = class ConflictsHandler
 
         # Apply clean up.
         async.each revsToDelete, (rev, cb) =>
+            log.info "remove revision #{rev}"
             @db.remove doc._id, rev, cb
         , (err) ->
             callback err, doc

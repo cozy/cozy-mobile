@@ -1,6 +1,6 @@
 ChangeDispatcher = require "./change/change_dispatcher"
 FilterManager = require './filter_manager'
-ConflictsHandler = require './conflicts_handler'
+ConflictsHandler = require './change/conflicts_handler'
 
 log = require('../lib/persistent_log')
     prefix: "ReplicationLauncher"
