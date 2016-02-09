@@ -95,7 +95,7 @@ module.exports = class ReplicationLauncher
             liveOptions =
               retry: true
               back_off_function: (delay) ->
-                  console.log "back_off_function", delay
+                  log.info "back_off_function", delay
                   return 1000 if delay is 0
                   return delay if delay > 60000
                   return delay * 2

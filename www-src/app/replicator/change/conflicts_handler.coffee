@@ -12,8 +12,7 @@ module.exports = class ConflictsHandler
         log.info "handleConflicts"
 
         # Get the doc with conflicts (and revs) infos from Pouch
-        @db.get doc._id, { conflicts: true, revs: true, open_revs: all }, \
-                (err, local) =>
+        @db.get doc._id, { conflicts: true, open_revs: "all" }, (err, local) =>
             return callback err if err
 
             if local._conflicts?

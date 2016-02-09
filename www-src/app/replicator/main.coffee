@@ -639,6 +639,7 @@ module.exports = class Replicator extends Backbone.Model
         ReplicationLauncher = require "./replication_launcher"
         @replicationLauncher = new ReplicationLauncher @config, app.router
         @replicationLauncher.start options, =>
+            # clean @replicationLauncher when sync finished
             @stopRealtime()
             callback.apply @, arguments
 

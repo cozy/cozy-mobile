@@ -21,6 +21,7 @@ module.exports = class EventSynchronizer
         @calendarSync.dirtyEvents AndroidAccount.ACCOUNT, \
                 (err, androidEvents) =>
             return log.error err if err
+            log.info "syncPhone2Pouch #{androidEvents.length} events."
 
             async.eachSeries androidEvents, (androidEvent, cb) =>
                 @_change androidEvent, cb
