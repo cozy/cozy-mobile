@@ -17,7 +17,7 @@ module.exports = class ChangeFileHandler
      * @param {ReplicatorConfig} config - it's replication config.
     ###
     constructor: (@config) ->
-        @directoryEntry = app.replicator.directoryEntry
+        @directoryEntry = app.replicator.downloads
         @cache = app.replicator.cache
 
 

@@ -50,7 +50,8 @@ module.exports = class ReplicationLauncher
                         @conflictsHandler.handleConflicts doc, (err, doc) =>
                             log.error err if err
 
-                            if doc.docType?.toLowerCase() in ['file', 'folder']
+                            if @router and doc.docType?.toLowerCase() in \
+                                    ['file', 'folder']
                                 @router.forceRefresh()
 
                             if @changeDispatcher.isDispatched doc
@@ -110,8 +111,8 @@ module.exports = class ReplicationLauncher
             batch_size: ReplicationLauncher.BATCH_SIZE
             batches_limit: ReplicationLauncher.BATCHES_LIMIT
             push:
-              filter: @filterName
-              since: options.localCheckpoint
+                filter: @filterName
+                since: options.localCheckpoint
             pull:
                 filter: @filterName
                 since: options.remoteCheckpoint

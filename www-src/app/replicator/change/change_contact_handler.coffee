@@ -26,6 +26,9 @@ module.exports = class ChangeContactHandler
                 # or Contact never been created on device
                 unless doc._deleted
                     @_create doc, continueOnError callback
+                else
+                    callback()
+
 
     _create: (doc, callback) ->
         @_update doc, undefined, callback
