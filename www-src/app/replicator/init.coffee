@@ -716,14 +716,24 @@ module.exports = class Init
 
 
     postCopyViewSync: ->
-        app.replicator.sync since: app.replicator.config.get('checkpointed')
-        , (err) =>
-            if err
-                return @exitApp err if err
 
-            # Copy view is done. Unset this transition var.
-            app.replicator.config.unset 'checkpointed'
-            @trigger 'dbSynced'
+        # Get the local last seq :
+        app.replicator.db.changes
+            descending: true
+            limit: 1
+        , (err, changes) =>
+            localCheckpoint = changes.last_seq
+
+            app.replicator.sync
+                remoteCheckpoint: app.replicator.config.get('checkpointed')
+                localCheckpoint: localCheckpoint
+            , (err) =>
+                if err
+                    return @exitApp err if err
+
+                # Copy view is done. Unset this transition var.
+                app.replicator.config.unset 'checkpointed'
+                @trigger 'dbSynced'
 
 
     updateIndex: ->
