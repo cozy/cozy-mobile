@@ -72,6 +72,7 @@ module.exports = class ReplicationLauncher
                 log.error "replicate error", err
                 callback err
 
+
     ###*
      * Stop replicator
     ###
@@ -94,6 +95,7 @@ module.exports = class ReplicationLauncher
         if options.live
             liveOptions =
               retry: true
+              # heartbeat: false
               back_off_function: (delay) ->
                   log.info "back_off_function", delay
                   return 1000 if delay is 0
@@ -104,8 +106,12 @@ module.exports = class ReplicationLauncher
 
         filterManager = new FilterManager @config
 
-        return _.extend options, liveOptions,
+        return _.extend liveOptions,
             batch_size: ReplicationLauncher.BATCH_SIZE
             batches_limit: ReplicationLauncher.BATCHES_LIMIT
-            push: filter: filterManager.getFilterFunction()
-            pull: filter: @filterName
+            push:
+              filter: @filterName
+              since: options.localCheckpoint
+            pull:
+                filter: @filterName
+                since: options.remoteCheckpoint
