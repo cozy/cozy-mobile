@@ -15,6 +15,8 @@ module.exports = class ChangesImporter
 
 
     synchronize: (callback) ->
+        log.info "synchronize"
+
         async.series [
             (cb) =>
                 if @config.get('syncCalendars')

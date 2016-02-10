@@ -110,6 +110,7 @@ module.exports = class FilterManager
         compare += ")"
 
         return "return #{compare};"
+
     ###*
      * Get configuration to create a filter
      *

@@ -49,7 +49,7 @@ module.exports = class AndroidCalendarHandler
             return callback err if err
 
             for calendar in calendars
-                if calendar._id is calendarId
+                if calendar._id.toString() is calendarId.toString()
                     return callback null, calendar
 
             callback new Error "Calendar isn't find with id:#{calendarId}"
