@@ -211,6 +211,7 @@ module.exports = class Init
 
         #######################################
         # Service
+        sDeviceLocale: enter: ['setDeviceLocale'], quitOnError: true
         sInitFileSystem: enter: ['initFileSystem'], quitOnError: true
         sInitDatabase: enter: ['initDatabase'], quitOnError: true
         sInitConfig: enter: ['sInitConfig'], quitOnError: true
@@ -418,6 +419,7 @@ module.exports = class Init
 
         #######################################
         # Start Service
+        'sDeviceLocale': 'deviceLocaleSetted': 'sInitFileSystem'
         'sInitFileSystem': 'fileSystemReady': 'sInitDatabase'
         'sInitDatabase': 'databaseReady': 'sInitConfig'
         'sPostConfigInit': 'initsDone': 'sImport'
@@ -818,11 +820,10 @@ module.exports = class Init
     # - mConfig
     # - mRemoteRequest
     migrations:
-        '0.1.20':
-            # Check cozy-locale, new view in the cozy, new permissions.
+        '0.2.0':
             # Filters: upper version of platform requiered.
             states: ['mLocalDesignDocuments', 'mCheckPlatformVersions', \
-                'mPermissions', 'mRemoteRequest']
+                     'mRemoteRequest']
         '0.1.19': states: []
         '0.1.18': states: []
         '0.1.17': states: []

@@ -46,28 +46,23 @@ module.exports =
 
 
     postConfigInit: (callback) ->
-        @replicator.updateLocaleFromCozy (err) =>
-            if err
-                # Continue on error, app can work offline.
-                log.error "Continue on updateLocaleFromCozy error: #{err.msg}"
+        unless window.isBrowserDebugging # Patch for browser debugging
+            @notificationManager = new Notifications()
+            @serviceManager = new ServiceManager()
 
-            unless window.isBrowserDebugging # Patch for browser debugging
-                @notificationManager = new Notifications()
-                @serviceManager = new ServiceManager()
+        DeviceStatus.initialize()
+        @foreground = true
+        conf = @replicator.config.attributes
+        # Display config to help remote debuging.
+        log.info "Start v#{conf.appVersion}--\
+        sync_contacts:#{conf.syncContacts},\
+        sync_calendars:#{conf.syncCalendars},\
+        sync_images:#{conf.syncImages},\
+        sync_on_wifi:#{conf.syncOnWifi},\
+        cozy_notifications:#{conf.cozyNotifications}"
 
-            DeviceStatus.initialize()
-            @foreground = true
-            conf = @replicator.config.attributes
-            # Display config to help remote debuging.
-            log.info "Start v#{conf.appVersion}--\
-            sync_contacts:#{conf.syncContacts},\
-            sync_calendars:#{conf.syncCalendars},\
-            sync_images:#{conf.syncImages},\
-            sync_on_wifi:#{conf.syncOnWifi},\
-            cozy_notifications:#{conf.cozyNotifications}"
-
-            # @setListeners()
-            callback()
+        # @setListeners()
+        callback()
 
 
     setListeners: ->

@@ -30,7 +30,7 @@ module.exports = class ChangeFileHandler
         log.info "dispatch"
 
         if doc._deleted
-            @_delete doc
+            @_delete doc, callback
 
         else
             entry = @_getCacheEntry doc
@@ -49,19 +49,22 @@ module.exports = class ChangeFileHandler
      *
      * @param {Object} doc - it's a pouchdb file document.
     ###
-    _delete: (doc) ->
+    _delete: (doc, callback) ->
         log.info "_delete"
 
         # delete local file:
         # - get file directory
         # - delete this directory
         fs.getDirectory @directoryEntry, @_fileToEntryName(doc), (err, dir) =>
-            return if err and err.code and err.code is 1 # file isn't present
-            return log.error err if err
+            # file isn't present, everything allright
+            return callback() if err and err.code and err.code is 1
+
+            return callback err if err # other errors
             log.info "delete binary of #{doc.name}"
             fs.rmrf dir, (err) =>
-                return log.error err if err
+                return callback err if err
                 @_removeFromCacheList @_fileToEntryName doc
+                callback()
 
     _update: (doc, callback) ->
         @_download doc, callback

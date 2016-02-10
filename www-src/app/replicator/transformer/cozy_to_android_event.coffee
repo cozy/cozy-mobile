@@ -122,8 +122,7 @@ module.exports = class CozyToAndroidEvent
         if androidEvent.rrule? and androidEvent.rrule isnt ''
             startMoment = moment.tz androidEvent.dtstart, \
                     androidEvent.eventTimezone
-            duration = ACH.android2Duration androidEvent.duration
-            #duration = parseInt androidEvent.duration.replace /[^\d]/g, ''
+            duration = @android2Duration androidEvent.duration
             endMoment = moment startMoment
             endMoment = endMoment.add duration
         else
@@ -209,3 +208,11 @@ module.exports = class CozyToAndroidEvent
             event.created = created
 
         return event
+
+    # Android may ommit the 'T' in PT3600S, which is required by momentjs
+    # Return a moment.duration
+    android2Duration: (duration) ->
+        if 'T' not in duration and not /[YMD]/.test(duration)
+            duration = 'PT' + duration.slice 1
+
+        return moment.duration duration

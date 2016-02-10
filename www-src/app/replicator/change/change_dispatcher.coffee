@@ -39,6 +39,9 @@ module.exports = class ChangeDispatcher
         if @isDispatched(doc) and @changeHandlers[doc.docType]
             @changeHandlers[doc.docType]["dispatch"] doc, callback
 
+        else
+            callback new Error 'No dispatcher for this document'
+
     ###*
      * Check if a doc is authorized to be dispatched
      *

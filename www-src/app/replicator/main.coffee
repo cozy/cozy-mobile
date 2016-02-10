@@ -92,40 +92,6 @@ module.exports = class Replicator extends Backbone.Model
             # Everything fine
             callback()
 
-    # Get locale from cozy, update in (saved) config, and in app if changed
-    updateLocaleFromCozy: (callback) ->
-        end = =>
-            locale = @config.get 'locale'
-            if locale
-                app.translation.setLocale value: locale
-
-            callback()
-
-
-        options = @config.makeDSUrl "/request/cozyinstance/all/"
-        options.body = include_docs: true
-
-        retryOptions =
-            # Spend time on this step only if cozy locale haven't been
-            # fetched yet (mostly first  start)
-            times: if @config.has('locale') then 1 else 5
-            interval: 20 * 1000
-
-        async.retry retryOptions, (cb) ->
-            request.post options, (err, res, models) ->
-                return cb err if err
-                return cb err if res.statusCode isnt 200
-                return cb new Error 'No CozyInstance' if models.length <= 0
-                cb null, models
-
-        , (err, models) =>
-            return callback err if err
-            instance = models[0].doc
-            if instance.locale and instance.locale isnt @config.get('locale')
-                # Update
-                @config.save { locale: instance.locale }, end
-            else
-                end()
 
     destroyDB: (callback) ->
         @db.destroy (err) =>
@@ -170,7 +136,6 @@ module.exports = class Replicator extends Backbone.Model
         Event: description: "event permission description"
         Notification: description: "notification permission description"
         Tag: description: "tag permission description"
-        CozyInstance: description: "cozyinstance permission description"
 
 
     registerRemote: (newConfig, callback) ->
