@@ -34,27 +34,37 @@ module.exports = BackgroundService =
         @init.startStateMachine()
         @init.trigger 'startService'
 
+    setDeviceLocale: (callback) ->
+        # Monkey patch for browser debugging
+        if window.isBrowserDebugging
+            window.navigator = window.navigator or {}
+            window.navigator.globalization =
+                window.navigator.globalization or {}
+            window.navigator.globalization.getPreferredLanguage = (cb) =>
+                cb value: @translation.DEFAULT_LANGUAGE
+
+        # Use the device's locale until we get the config document.
+        navigator.globalization.getPreferredLanguage (properties) =>
+            @translation.setLocale(properties)
+            window.t = @translation.getTranslate()
+            callback()
 
     postConfigInit: (callback) ->
-        @replicator.updateLocaleFromCozy (err) =>
-            # Service is useless offline, quit on error.
-            return callback err if err
+        DeviceStatus.initialize()
+        if @replicator.config.get 'cozyNotifications'
+            # Activate notifications handling
+            @notificationManager = new Notifications()
 
-            DeviceStatus.initialize()
-            if @replicator.config.get 'cozyNotifications'
-                # Activate notifications handling
-                @notificationManager = new Notifications()
+        conf = @replicator.config.attributes
+        # Display config to help remote debuging.
+        log.info "Service #{conf.appVersion}--\
+        sync_contacts:#{conf.syncContacts},\
+        sync_calendars:#{conf.syncCalendars},\
+        sync_images:#{conf.syncImages},\
+        sync_on_wifi:#{conf.syncOnWifi},\
+        cozy_notifications:#{conf.cozyNotifications}"
 
-            conf = @replicator.config.attributes
-            # Display config to help remote debuging.
-            log.info "Service #{conf.appVersion}--\
-            sync_contacts:#{conf.syncContacts},\
-            sync_calendars:#{conf.syncCalendars},\
-            sync_images:#{conf.syncImages},\
-            sync_on_wifi:#{conf.syncOnWifi},\
-            cozy_notifications:#{conf.cozyNotifications}"
-
-            callback()
+        callback()
 
 
     startMainActivity: (err)->
