@@ -1,5 +1,6 @@
 async = require 'async'
 PouchDB = require 'pouchdb'
+semver = require 'semver'
 request = require '../lib/request'
 fs = require './filesystem'
 DesignDocuments = require './design_documents'
@@ -8,9 +9,9 @@ DeviceStatus = require '../lib/device_status'
 DBNAME = "cozy-files.db"
 DBPHOTOS = "cozy-photos.db"
 
-PLATFORM_MIN_VERSIONS =
-    'proxy': '2.1.11'
-    'data-system': '2.1.6'
+PLATFORM_VERSIONS =
+    'proxy': '>=2.1.11'
+    'data-system': '>=2.1.6'
 
 log = require('../lib/persistent_log')
     prefix: "replicator"
@@ -66,13 +67,6 @@ module.exports = class Replicator extends Backbone.Model
 
 
     checkPlatformVersions: (callback) ->
-        cutVersion = (s) ->
-            parts = s.match /(\d+)\.(\d+)\.(\d+)/
-            # Keep only useful data (first elem is full string)
-            parts = parts.slice 1, 4
-            parts = parts.map (s) -> parseInt s
-            return major: parts[0], minor: parts[1], patch: parts[2]
-
         request.get
             url: "#{@config.getScheme()}://#{@config.get('cozyURL')}/versions"
             auth: @config.get 'auth'
@@ -82,15 +76,11 @@ module.exports = class Replicator extends Backbone.Model
 
             for item in body
                 [s, app, version] = item.match /([^:]+): ([\d\.]+)/
-                if app of PLATFORM_MIN_VERSIONS
-                    minVersion = cutVersion PLATFORM_MIN_VERSIONS[app]
-                    version = cutVersion version
-                    if version.major < minVersion.major or
-                    version.minor < minVersion.minor or
-                    version.patch < minVersion.patch
+                if app of PLATFORM_VERSIONS
+                    unless semver.satisfies(version, PLATFORM_VERSIONS[app])
                         msg = t 'error need min %version for %app'
                         msg = msg.replace '%app', app
-                        msg = msg.replace '%version', PLATFORM_MIN_VERSIONS[app]
+                        msg = msg.replace '%version', PLATFORM_VERSIONS[app]
                         return callback new Error msg
 
             # Everything fine
