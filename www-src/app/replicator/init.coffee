@@ -64,29 +64,17 @@ module.exports = class Init
             @saveConfig()
         else
             @trigger 'error', new Error 'App is busy'
-    # activating contact or calendar sync requires to init them,
-    # trough init state machine
-    # @param needSync {calendars: true, contacts: false } type object, if
-    # it should be updated or not.
-    configUpdated: (needInit) ->
-        log.info 'configUpdated'
-        # Do sync only while on Realtime : TODO: handles others Running states
-        # waiting for them to end.
-        if @currentState is 'aRealtime'
-            if needInit.calendars and needInit.contacts
-                @toState 'c3RemoteRequest'
-            else if needInit.contacts
-                @toState 'c1RemoteRequest'
-            else if needInit.calendars
-                @toState 'c2RemoteRequest'
-            #else unless _.isEmpty(needInit)
 
-            else
-                @toState 'c4RemoteRequest'
-                # @trigger 'initDone'
+
+    launchBackup: ->
+        log.debug 'backup'
+
+        if @currentState is 'aRealtime'
+            @stopRealtime()
+            @toState 'aImport'
 
         else
-            @trigger 'initDone'
+            @trigger 'error', new Error 'App is busy'
 
 
     states:
@@ -556,6 +544,7 @@ module.exports = class Init
             @trigger 'importDone'
 
     backup: ->
+        app.replicator.startRealtime()
         app.replicator.backup {}, (err) =>
             log.error err if err
             @trigger 'backupDone'

@@ -29,12 +29,10 @@ module.exports =
         try
             @set 'inBackup', true
             @set 'backup_step', null
-            # @stopRealtime()
             @_backup options.force, (err) =>
                 @set 'backup_step', null
                 @set 'backup_step_done', null
                 @set 'inBackup', false
-                # @startRealtime() unless options.background
                 callback err
                 # return callback err if err
                 # @config.save lastBackup: new Date().toString(), (err) ->
@@ -342,12 +340,9 @@ module.exports =
             options.body = folder
             request.post options, (err, result, body) ->
                 return callback err if err
-
-                app.replicator.startRealtime()
                 # Wait to receive folder in local database
                 findFolder body._id, () ->
                     return callback err if err
-                    app.replicator.stopRealtime()
                     callback null, folder
 
         options = key: ['', "1_#{t('photos').toLowerCase()}"]
