@@ -17,6 +17,10 @@ or compile it.
     npm install -g coffee-script
     cake install
 
+### Resource for cordova installation
+- [ubuntu todolist](http://askubuntu.com/questions/318246/complete-installation-guide-for-android-sdk-adt-bundle-on-ubuntu)
+- [cordova manual](https://cordova.apache.org/docs/en/latest/guide/platforms/android/index.html)
+
 ## Built with
 
     ./www-src/node_modules/.bin/cordova build --release
