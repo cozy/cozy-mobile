@@ -71,9 +71,6 @@ module.exports = describe 'FilterManager Test', ->
             name = filterManager.getFilterName()
             name.should.be.equal "filter-#{deviceName}-config/config"
 
-        it 'getFilterFunction return a function', ->
-            filterManager = new @FilterManager config
-            filterManager.getFilterFunction().should.be.a 'function'
 
     describe '[All errors]', ->
 

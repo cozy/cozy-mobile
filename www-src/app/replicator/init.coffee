@@ -303,7 +303,7 @@ module.exports = class Init
         # Start application
         'init':
             'startApplication': 'aDeviceLocale'
-            'startService': 'sInitFileSystem'
+            'startService': 'sDeviceLocale'
         'aDeviceLocale': 'deviceLocaleSetted': 'aInitFileSystem'
         'aInitFileSystem': 'fileSystemReady': 'aInitDatabase'
         'aInitDatabase': 'databaseReady': 'aInitConfig'
@@ -522,7 +522,7 @@ module.exports = class Init
 
     initConfig: ->
         app.replicator.initConfig (err, config) =>
-            return @exitApp err if err
+            return @handleError err if err
             if config.remote
                 # Check last state
                 # If state is "ready" -> newVersion ? newVersion : configured
@@ -689,7 +689,7 @@ module.exports = class Init
                 docType: 'contact'
                 attachments: true
             , (err, contacts) =>
-                return @exitApp err if err
+                return @handleError err if err
 
                 async.eachSeries contacts, (contact, cb) ->
                     # 2. dispatch inserted contacts to android
@@ -706,7 +706,7 @@ module.exports = class Init
             changeDispatcher = new ChangeDispatcher()
             # 1. Copy view for event
             app.replicator.copyView docType: 'event', (err, events) =>
-                return @exitApp err if err
+                return @handleError err if err
                 async.eachSeries events, (event, cb) ->
                     # 2. dispatch inserted events to android
                     changeDispatcher.dispatch event, cb
@@ -716,7 +716,6 @@ module.exports = class Init
 
 
     postCopyViewSync: ->
-
         # Get the local last seq :
         app.replicator.db.changes
             descending: true
@@ -728,8 +727,7 @@ module.exports = class Init
                 remoteCheckpoint: app.replicator.config.get('checkpointed')
                 localCheckpoint: localCheckpoint
             , (err) =>
-                if err
-                    return @exitApp err if err
+                return @handleError err if err
 
                 # Copy view is done. Unset this transition var.
                 app.replicator.config.unset 'checkpointed'
@@ -745,8 +743,8 @@ module.exports = class Init
     # Service
     sInitConfig: ->
         app.replicator.initConfig (err, config) =>
-            return @exitApp err if err
-            return @exitApp 'notConfigured' unless config.remote
+            return @handleError err if err
+            return @handleError new Error('notConfigured') unless config.remote
 
 
             # Check last state
@@ -760,7 +758,7 @@ module.exports = class Init
                 else
                     @trigger 'configured'
             else # In init.
-                return @exitApp "notConfigured: #{lastState}"
+                return @handleError new Error "notConfigured: #{lastState}"
     sBackup: ->
         app.replicator.backup background: true
         , @getCallbackTrigger 'backupDone'
@@ -777,11 +775,7 @@ module.exports = class Init
         app.replicator.config.save lastInitState: @currentState
         , (err, config) -> log.warn err if err
 
-    exitApp: (err) ->
-        app.exit err
-
     # show the error to the user appropriately regarding to the current state
-
     handleError: (err) ->
         if @states[@currentState].quitOnError
             app.exit err

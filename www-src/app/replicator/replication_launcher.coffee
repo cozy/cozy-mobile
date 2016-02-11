@@ -93,26 +93,25 @@ module.exports = class ReplicationLauncher
      * @see http://pouchdb.com/api.html#replication
     ###
     _getOptions: (options) ->
+        replicationOptions =
+            batch_size: ReplicationLauncher.BATCH_SIZE
+            batches_limit: ReplicationLauncher.BATCHES_LIMIT
+            filter: @filterName
+
         if options.live
-            liveOptions =
-              retry: true
-              # heartbeat: false
-              back_off_function: (delay) ->
+            replicationOptions.live = true
+            replicationOptions.retry = true
+            # replicationOptions.heartbeat = false
+            replicationOptions.back_off_function = (delay) ->
                   log.info "back_off_function", delay
                   return 1000 if delay is 0
                   return delay if delay > 60000
                   return delay * 2
-        else
-            liveOptions = {}
 
-        filterManager = new FilterManager @config
+        if options.localCheckpoint?
+            replicationOptions.push = since: options.localCheckpoint
 
-        return _.extend liveOptions,
-            batch_size: ReplicationLauncher.BATCH_SIZE
-            batches_limit: ReplicationLauncher.BATCHES_LIMIT
-            push:
-                filter: @filterName
-                since: options.localCheckpoint
-            pull:
-                filter: @filterName
-                since: options.remoteCheckpoint
+        if options.remoteCheckpoint?
+            replicationOptions.pull = since: options.remoteCheckpoint
+
+        return replicationOptions

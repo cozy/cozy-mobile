@@ -1,7 +1,6 @@
 CozyToAndroidContact = require "../transformer/cozy_to_android_contact"
 AndroidAccount = require '../fromDevice/android_account'
 
-
 log = require('../../lib/persistent_log')
     prefix: "ChangeContactHandler"
     date: true
@@ -14,6 +13,7 @@ module.exports = class ChangeContactHandler
     constructor: ->
         @transformer = new CozyToAndroidContact()
 
+
     dispatch: (doc, callback) ->
         @_getFromPhoneByCozyId doc._id, (err, androidContact) =>
             if androidContact?
@@ -24,10 +24,10 @@ module.exports = class ChangeContactHandler
             else
                 # Contact may have already been deleted from device
                 # or Contact never been created on device
-                unless doc._deleted
-                    @_create doc, continueOnError callback
-                else
+                if doc._deleted
                     callback()
+                else
+                    @_create doc, continueOnError callback
 
 
     _create: (doc, callback) ->
