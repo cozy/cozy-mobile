@@ -49,7 +49,7 @@ module.exports = class FilterManager
         options.body = doc
 
         # Add the filter in PouchDB
-        filterId = "_design/filter-#{@deviceName}-config"
+        filterId = @getFilterDocId()
         doc._id = filterId
         @db.get filterId, (err, existing) =>
             # assume err is 404, which means no doc yet.
@@ -69,8 +69,18 @@ module.exports = class FilterManager
 
                     callback null, true
 
-    getFilterFunction: ->
-        return new Function "doc", @_getFilterCode @config.attributes
+
+    _getFilterDocName: ->
+        log.debug "getFilterDocId"
+        "filter-#{@deviceName}-config"
+
+    ###*
+     * Get the design docId of the filter this device.
+     *
+     * @return {String}
+    ###
+    getFilterDocId: ->
+        return "_design/#{@_getFilterDocName()}"
 
     ###*
      * Get filter name for this device.
@@ -80,7 +90,7 @@ module.exports = class FilterManager
     getFilterName: ->
         log.info "getFilterName"
 
-        "filter-#{@deviceName}-config/config"
+        "#{@_getFilterDocName()}/config"
 
     ###*
      * Get options to create a request.
@@ -93,7 +103,16 @@ module.exports = class FilterManager
         url: "#{@cozyUrl}/ds-api/filters/config"
 
 
-    _getFilterCode: (options) ->
+    ###*
+     * Get configuration to create a filter
+     *
+     * @param {Boolean} syncContacts - if you want contact synchronization
+     * @param {Boolean} syncCalendars - if you want calendar synchronization
+     * @param {Boolean} syncNotifs - if you want notification synchronization
+     *
+     * @return {Object}
+    ###
+    _getConfigFilter: (options) ->
         # First check for docType
         compare = "doc.docType && ("
         compare += "doc.docType.toLowerCase() === 'file'"
@@ -109,18 +128,6 @@ module.exports = class FilterManager
 
         compare += ")"
 
-        return "return #{compare};"
-
-    ###*
-     * Get configuration to create a filter
-     *
-     * @param {Boolean} syncContacts - if you want contact synchronization
-     * @param {Boolean} syncCalendars - if you want calendar synchronization
-     * @param {Boolean} syncNotifs - if you want notification synchronization
-     *
-     * @return {Object}
-    ###
-    _getConfigFilter: (options) ->
-        # TODO ? add views attribute, required by the datasystem ?
+        # TODO ? add views attribute here, required by the DataSystem ?
         filters:
-            config: "function (doc) { #{@_getFilterCode(options)} }"
+            config: "function (doc) { return #{compare}; }"

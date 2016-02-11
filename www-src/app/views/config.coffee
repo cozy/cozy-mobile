@@ -116,7 +116,7 @@ module.exports = class ConfigView extends BaseView
         checkboxes.prop 'disabled', true
 
         # app.replicator.config.save
-        @listenTo app.init, 'configSaved error', =>
+        @listenToOnce app.init, 'configSaved error', =>
             checkboxes.prop 'disabled', false
             app.replicator.config.fetch (err) =>
                 @render()

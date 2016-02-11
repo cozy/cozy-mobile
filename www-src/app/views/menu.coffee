@@ -23,29 +23,9 @@ module.exports = class Menu extends BaseView
 
     closeMenu: -> app.layout.closeMenu()
 
-    sync: ->
-        return if app.replicator.get 'inSync'
-        app.replicator.sync {}, (err) ->
-            if err
-                log.error err
-                alert t if err.message? then err.message else "no connection"
-            app.layout.currentView?.collection?.fetch()
-
-
     backup: ->
         app.layout.closeMenu()
-
-        if app.replicator.get 'inBackup'
-            @sync()
-        else
-            app.replicator.backup { force: false }, (err) =>
-                if err
-                    log.error err
-                    alert t err.message
-                    return
-
-                app.layout.currentView?.collection?.fetch()
-                @sync()
+        app.init.launchBackup()
 
     doSearchIfEnter: (event) => @doSearch() if event.which is 13
     doSearch: ->
