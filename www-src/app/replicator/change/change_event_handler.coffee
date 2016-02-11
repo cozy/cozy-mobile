@@ -43,6 +43,7 @@ module.exports = class ChangeEventHandler
             @calendarSync.addEvent androidEvent, \
                     AndroidAccount.ACCOUNT, callback
 
+
     _update: (cozyEvent, androidEvent, callback) ->
         log.info "_update"
 

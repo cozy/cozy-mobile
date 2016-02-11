@@ -32,13 +32,13 @@ module.exports = class ChangeDispatcher
      * Launch the good handler with specific state.
      *
      * @param {Object} doc - it's a pouchdb file document.
+     * @param {Function} callback
     ###
     dispatch: (doc, callback = ->) ->
         log.info "dispatch #{doc.docType}"
 
         if @isDispatched(doc) and @changeHandlers[doc.docType]
             @changeHandlers[doc.docType]["dispatch"] doc, callback
-
         else
             callback new Error 'No dispatcher for this document'
 
@@ -50,4 +50,6 @@ module.exports = class ChangeDispatcher
      * @return {Boolean}
     ###
     isDispatched: (doc) ->
+        log.info "isDispatched"
+
         return doc?.docType?.toLowerCase() of @changeHandlers
