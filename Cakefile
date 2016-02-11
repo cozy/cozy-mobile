@@ -86,7 +86,12 @@ release = (done) ->
             console.log stderr
             return done err
 
-
+cordovaRun = (done) ->
+    command = "./www-src/node_modules/.bin/cordova run android"
+    exec command, (err, stdout, stderr) ->
+        console.log stdout
+        console.log stderr
+        done()
 
 
 task 'platforms', 'install cordova platforms', -> installPlatforms -> console.log "DONE"
@@ -100,3 +105,4 @@ task 'install', 'install all application', ->
             console.log "install cordova platforms DONE"
             installPlugins ->
                 console.log "install cordova plugins DONE"
+task 'run', 'cordova run android', -> cordovaRun -> console.log "DONE"
