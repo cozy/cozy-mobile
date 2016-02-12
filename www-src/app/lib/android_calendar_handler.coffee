@@ -118,9 +118,14 @@ module.exports = class AndroidCalendarHandler
             key: androidCalendar.name
             limit: 1
         , (err, res) =>
-            return callback err if err
+            return log.error err if err
 
-            @_delete androidCalendar, callback if res.rows.length is 0
+            if res.rows.length is 0
+                @_delete androidCalendar, (err) ->
+                    log.error err if err
+
+        # we call the callback to delete in background and no bloc the app
+        callback()
 
 
 
