@@ -1,3 +1,4 @@
+AndroidAccount = require '../fromDevice/android_account'
 random = require '../../lib/random'
 log = require('../../lib/persistent_log')
     prefix: "CozyToAndroidEvent"
@@ -170,7 +171,7 @@ module.exports = class CozyToAndroidEvent
 
         if attendees
             attendees = attendees.filter (attendee) ->
-                return attendee.email isnt androidCalendar.accountName
+                return attendee.email isnt AndroidAccount.NAME
 
 
         alarms = androidEvent.reminders.map (reminder) ->
