@@ -1,4 +1,5 @@
 AndroidAccount = require "../fromDevice/android_account"
+ChangeEventHandler = require "../change/change_event_handler"
 async = require 'async'
 CozyToAndroidEvent = require "../transformer/cozy_to_android_event"
 AndroidCalendarHandler = require "../../lib/android_calendar_handler"
@@ -14,6 +15,7 @@ module.exports = class EventSynchronizer
         @calendarSync ?= navigator.calendarsync
         @cozyToAndroidEvent = new CozyToAndroidEvent()
         @androidCalendarHandler = new AndroidCalendarHandler()
+        @changeEventHandler = new ChangeEventHandler()
 
     synchronize: (callback) ->
         log.info "synchronize"
@@ -89,14 +91,13 @@ module.exports = class EventSynchronizer
     _delete: (androidEvent, callback) ->
         log.info "_delete"
 
-        toDelete =
+        cozyEvent =
             docType: 'event'
             _id: androidEvent._sync_id
             _rev: androidEvent.sync_data2
             _deleted: true
 
-        @db.put toDelete, toDelete._id, toDelete._rev, (err, res) =>
+        @db.put cozyEvent, cozyEvent._id, cozyEvent._rev, (err, res) =>
             return callback err if err
 
-            @calendarSync.deleteEvent androidEvent, \
-                    AndroidAccount.ACCOUNT, callback
+            @changeEventHandler._delete cozyEvent, androidEvent, callback
