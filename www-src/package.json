@@ -30,7 +30,7 @@
     "io.cozy.cordova-images-browser": "https://github.com/cozy/cordova-images-browser#v1.0.2",
     "io.cozy.jsbackgroundservice": "https://github.com/cozy/cordova-jsbackgroundservice#v1.1.2",
     "io.cozy.jsbgservice-newpicture": "https://github.com/cozy/cordova-jsbgservice-newpicture#v1.0.0",
-    "io.cozy.contacts": "https://github.com/cozy/cordova-plugin-contacts#c1.0.3",
+    "io.cozy.contacts": "https://github.com/cozy/cordova-plugin-contacts#c1.0.4",
     "io.cozy.calendarsync": "https://github.com/cozy/cordova-plugin-calendarsync#v1.0.0"
   },
   "dependencies": {
