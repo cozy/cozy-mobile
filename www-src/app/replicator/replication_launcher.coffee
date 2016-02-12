@@ -1,5 +1,4 @@
 ChangeDispatcher = require "./change/change_dispatcher"
-FilterManager = require './filter_manager'
 ConflictsHandler = require './change/conflicts_handler'
 
 log = require('../lib/persistent_log')

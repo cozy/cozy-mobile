@@ -67,8 +67,9 @@ module.exports = class ChangeFileHandler
                 callback()
 
     _update: (doc, callback) ->
-        @_download doc, callback
+        log.info "_update"
 
+        @_download doc, callback
 
 
     ###*
@@ -94,6 +95,7 @@ module.exports = class ChangeFileHandler
             else
                 # Nothing to do
                 callback()
+
 
     ###*
      * TODO: factoryze with main.getBinary in some way.
@@ -156,6 +158,7 @@ module.exports = class ChangeFileHandler
             return entries[0] if entries.length isnt 0
         return false
 
+
     ###*
      * Return the conventional name of the in filesystem folder for the
      * specified file.
@@ -167,6 +170,7 @@ module.exports = class ChangeFileHandler
     _fileToEntryName: (doc) ->
         return doc.binary.file.id + '-' + doc.binary.file.rev
 
+
     ###*
      * Remove specified entry from @cache.
      *
@@ -176,6 +180,7 @@ module.exports = class ChangeFileHandler
         for currentEntry, index in @cache when currentEntry.name is entryName
             @cache.splice index, 1
             break
+
 
     ###*
      * Remove all versions in saved locally of the specified file-id, except the
