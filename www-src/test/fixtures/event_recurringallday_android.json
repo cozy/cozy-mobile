@@ -8,6 +8,7 @@
     "dtstart": 1415318400000,
     "duration": "PT24H",
     "allDay": 1,
+    "eventTimezone": "UTC",
     "rrule": "FREQ=YEARLY;INTERVAL=1",
     "accessLevel": 0,
     "availability": 0,
