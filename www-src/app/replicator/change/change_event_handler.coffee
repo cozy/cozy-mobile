@@ -51,6 +51,12 @@ module.exports = class ChangeEventHandler
         @androidCalendarHandler.getOrCreate calendarName, (err, calendar) =>
             return callback err if err
 
+            # delete calendar in background
+            if calendar._id isnt androidEvent.calendar_id
+                @androidCalendarHandler.deleteIfEmptyById \
+                        androidEvent.calendar_id, (err) ->
+                    log.error err if err
+
             androidEvent = @cozyToAndroidEvent.transform cozyEvent, calendar, \
                     androidEvent
             @calendarSync.updateEvent androidEvent, \
@@ -64,8 +70,9 @@ module.exports = class ChangeEventHandler
                 AndroidAccount.ACCOUNT, (err, deletedCount) =>
             log.error err if err
 
-            @androidCalendarHandler.getById androidEvent.calendar_id, \
-                    (err, androidCalendar) =>
+            # delete calendar in background
+            @androidCalendarHandler.deleteIfEmptyById \
+                    androidEvent.calendar_id, (err) ->
                 log.error err if err
 
-                @androidCalendarHandler.deleteIfEmpty androidCalendar, callback
+            callback()

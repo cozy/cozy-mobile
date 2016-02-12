@@ -90,8 +90,8 @@ module.exports = class AndroidCalendarHandler
             return callback err if err
 
             # update cache
-            for key, calendar in androidCalendarsCache
-                if calendar._id is androidCalendar._id
+            for calendar, key in androidCalendarsCache
+                if calendar?._id is androidCalendar._id
                     androidCalendarsCache[key] = androidCalendar
 
             callback null, true
@@ -104,8 +104,8 @@ module.exports = class AndroidCalendarHandler
             return callback err if err
 
             # delete cache
-            for key, calendar in androidCalendarsCache
-                if calendar._id is androidCalendar._id
+            for calendar, key in androidCalendarsCache
+                if calendar?._id is androidCalendar._id
                     androidCalendarsCache.splice(key, 1)
 
             callback null, true
@@ -118,14 +118,20 @@ module.exports = class AndroidCalendarHandler
             key: androidCalendar.name
             limit: 1
         , (err, res) =>
-            return log.error err if err
+            return callback err if err
 
             if res.rows.length is 0
-                @_delete androidCalendar, (err) ->
-                    log.error err if err
+                @_delete androidCalendar, callback
+            else
+                callback()
 
-        # we call the callback to delete in background and no bloc the app
-        callback()
+    deleteIfEmptyById: (androidCalendarId, callback) ->
+        log.info "deleteIfEmptyById"
+
+        @getById androidCalendarId, (err, androidCalendar) =>
+            return callback err if err
+
+            @deleteIfEmpty androidCalendar, callback
 
 
 
