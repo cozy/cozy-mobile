@@ -1,3 +1,4 @@
+AndroidAccount = require '../fromDevice/android_account'
 random = require '../../lib/random'
 log = require('../../lib/persistent_log')
     prefix: "CozyToAndroidEvent"
@@ -37,7 +38,7 @@ module.exports = class CozyToAndroidEvent
         if cozyEvent.rrule? and cozyEvent.rrule isnt ''
             rrule = cozyEvent.rrule
             # Europe/Paris is a stub for buggy docs.
-            eventTimezone = cozyEvent.timezone or 'Europe/Paris'
+            eventTimezone = cozyEvent.timezone or 'Europe/Paris' unless allDay
             duration = moment(cozyEvent.end).diff cozyEvent.start
             duration = moment.duration duration
             duration = JSON.stringify duration
@@ -82,9 +83,10 @@ module.exports = class CozyToAndroidEvent
             return minutes
 
         reminders = cozyEvent.alarms.map (alarm) ->
-            return \
+            return {
                 minutes: iCalDuration2Minutes alarm.trigg
                 method: REMINDERS_METHOD_2_ANDROID[alarm.action] or 0 # DEFAULT
+            }
 
         return {
             _id: if androidEvent then androidEvent._id else undefined
@@ -169,7 +171,7 @@ module.exports = class CozyToAndroidEvent
 
         if attendees
             attendees = attendees.filter (attendee) ->
-                return attendee.attendeeEmail isnt androidCalendar.accountName
+                return attendee.email isnt AndroidAccount.NAME
 
 
         alarms = androidEvent.reminders.map (reminder) ->

@@ -47,7 +47,7 @@ module.exports = class Init
         log.info 'updateConfig'
         # Do sync only while on Realtime : TODO: handles others Running states
         # waiting for them to end.
-        if @currentState is 'aRealtime'
+        if @currentState in ['aRealtime', 'cUpdateIndex', 'aImport', 'aBackup']
             if needInit.calendars and needInit.contacts
                 @toState 'c3RemoteRequest'
             else if needInit.contacts
