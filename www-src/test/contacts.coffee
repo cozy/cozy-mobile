@@ -1,4 +1,4 @@
-Contact = require 'models/contact'
+Contact = require 'lib/cordova_contact_helper'
 
 # Helpers
 structuredToFlat = (t) ->

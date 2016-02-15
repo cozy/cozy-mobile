@@ -25,13 +25,14 @@ module.exports = class ConfigView extends BaseView
         'change #cozyNotificationsCheck' : 'saveChanges'
 
     getRenderData: ->
+        log.info "getRenderData"
         config = app.replicator.config.toJSON()
-
+        log.info "Current state: #{app.init.currentState}"
         return _.extend {},
             config,
             lastSync: @formatDate config?.lastSync
             lastBackup: @formatDate config?.lastBackup
-            firstRun: app.isFirstRun
+            initState: app.init.currentState
             locale: app.locale
             appVersion: app.replicator.config.appVersion()
 
@@ -46,7 +47,7 @@ module.exports = class ConfigView extends BaseView
 
     # only happens after the first config (post install)
     configDone: ->
-        app.router.navigate 'first-sync', trigger: true
+        app.init.trigger 'configDone'
 
 
     # confirm, destroy the DB, force refresh the page (show login form)
@@ -69,7 +70,8 @@ module.exports = class ConfigView extends BaseView
     # confirm, launch initial replication, navigate to first sync UI.
     synchroBtn: ->
         if confirm t 'confirm message'
-            app.router.navigate 'first-sync', trigger: true
+            app.replicator.stopRealtime()
+            app.init.toState 'fFirstSyncView'
 
 
     sendlogBtn: ->
@@ -101,20 +103,28 @@ module.exports = class ConfigView extends BaseView
     # save config changes in local pouchdb
     # prevent simultaneous changes by disabling checkboxes
     saveChanges: ->
+        # disabl UI
+        # put changes in replicatorConfig object
+        # perform sync /init required
+        # rollback on error
+        # save in config on success.
+
         log.info "Save changes"
         checkboxes = @$ '#contactSyncCheck, #imageSyncCheck,' +
                         '#wifiSyncCheck, #cozyNotificationsCheck' +
                         '#configDone, #calendarSyncCheck'
         checkboxes.prop 'disabled', true
 
+        # app.replicator.config.save
+        @listenToOnce app.init, 'configSaved error', =>
+            checkboxes.prop 'disabled', false
+            app.replicator.config.fetch (err) =>
+                @render()
 
-        app.replicator.config.save
+        app.init.updateConfig app.replicator.config.updateAndGetInitNeeds
             syncContacts: @$('#contactSyncCheck').is ':checked'
             syncCalendars: @$('#calendarSyncCheck').is ':checked'
             syncImages: @$('#imageSyncCheck').is ':checked'
             syncOnWifi: @$('#wifiSyncCheck').is ':checked'
             cozyNotifications: @$('#cozyNotificationsCheck').is ':checked'
-
-        , ->
-            checkboxes.prop 'disabled', false
 

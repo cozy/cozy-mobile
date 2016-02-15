@@ -7,6 +7,10 @@ FolderView = require './folder'
 Menu = require './menu'
 BreadcrumbsView = require './breadcrumbs'
 
+log = require('../lib/persistent_log')
+    prefix: "LayoutView"
+    date: true
+
 module.exports = class Layout extends BaseView
 
     template: require '../templates/layout'
@@ -14,6 +18,7 @@ module.exports = class Layout extends BaseView
     events: ->
         'tap #btn-back': 'onBackButtonClicked'
         'tap #btn-menu': 'onMenuButtonClicked'
+        'tap #closeerror': 'onCloseErrorIndicator'
 
     initialize: ->
         document.addEventListener "menubutton", @onMenuButtonClicked, false
@@ -39,8 +44,8 @@ module.exports = class Layout extends BaseView
             else
                 @backupIndicator.parent().slideUp()
                 @viewsPlaceholder.removeClass 'has-subheader'
-
         , 100
+
 
     afterRender: ->
         @menu = new Menu()
@@ -59,6 +64,16 @@ module.exports = class Layout extends BaseView
         @title = @container.find '#title'
         @backupIndicator = @container.find '#backupIndicator'
         @backupIndicator.parent().hide()
+
+        @errorIndicator = @container.find '#errorIndicator'
+        @errorIndicator.parent().hide()
+        @listenTo app.init, 'error', @showError
+
+        @initIndicator = @container.find '#initIndicator'
+        @initIndicator.parent().hide()
+        @errorIndicator.parent().hide()
+        @listenTo app.init, 'display', @showInitMessage
+        @listenTo app.init, 'noDisplay', @hideInitMessage
 
         @ionicContainer = new ionic.views.SideMenuContent
             el: @container[0]
@@ -84,6 +99,10 @@ module.exports = class Layout extends BaseView
 
     closeMenu: =>
         @controller.toggleLeft false
+
+    quitSplashScreen: ->
+        $('body').empty().append @render().$el
+        $('body').css 'background-color', 'white'
 
     setBackButton: (href, icon) =>
         @backButton.attr 'href', href
@@ -145,6 +164,28 @@ module.exports = class Layout extends BaseView
                 @currentView = view
                 @ionicScroll.scrollTo 0, 0, false, null
 
+    showInitMessage: (message) =>
+        log.debug 'showInitMessage'
+        @initIndicator.text t message
+        @initIndicator.parent().slideDown()
+        @viewsPlaceholder.addClass 'has-subheader'
+
+    hideInitMessage: =>
+        log.debug 'hideInitMessage'
+        @initIndicator.parent().slideUp()
+        @viewsPlaceholder.removeClass 'has-subheader'
+
+    showError: (error) =>
+        log.debug 'showError'
+        @errorIndicator.text t error.message
+        @errorIndicator.parent().slideDown()
+        @viewsPlaceholder.addClass 'has-subheader'
+
+    onCloseErrorIndicator: =>
+        log.debug 'onCloseErrorIndicator'
+        @errorIndicator.parent().slideUp()
+        @viewsPlaceholder.removeClass 'has-subheader'
+        app.init.trigger 'errorViewed'
 
     onMenuButtonClicked: =>
         @menu.reset()

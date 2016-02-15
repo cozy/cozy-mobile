@@ -1,6 +1,6 @@
-assert          = require 'assert'
 async           = require 'async'
 PouchDB         = require 'pouchdb'
+should          = require('chai').should()
 DesignDocuments = require '../../../app/replicator/design_documents'
 
 module.exports = describe 'DesignDocuments Test', ->
@@ -13,10 +13,10 @@ module.exports = describe 'DesignDocuments Test', ->
         designDocs.createOrUpdateAllDesign (error, responses) ->
             async.series [
                 (next) -> cozyDB.allDocs {}, (error, response) ->
-                    assert.equal 8, response.total_rows
+                    response.total_rows.should.be.equal 8
                     next()
                 (next) -> internalDB.allDocs {}, (error, response) ->
-                    assert.equal 1, response.total_rows
+                    response.total_rows.should.be.equal 1
                     next()
             ], done
 
@@ -24,5 +24,5 @@ module.exports = describe 'DesignDocuments Test', ->
         DesignDocuments.PicturesDesignDoc.version++
         designDocs.createOrUpdateAllDesign (error, responses) ->
             updated = responses.filter((doc) -> doc.id != undefined).length
-            assert.equal 1, updated
+            updated.should.be.equal 1
             done()

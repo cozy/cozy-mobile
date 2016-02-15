@@ -90,7 +90,8 @@ module.exports = class FolderLineView extends BaseView
         app.replicator.getBinary @model.attributes, @updateProgress, \
           @getOnDownloadedCallback (err, url) ->
               # let android open the file
-              app.backFromOpen = true
+              app.init.trigger 'openFile'
+              # app.backFromOpen = true
               ExternalFileUtil.openWith url, '', undefined,
                 (success) -> , # do nothing
                 (err) ->

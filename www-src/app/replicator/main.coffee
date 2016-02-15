@@ -1,16 +1,20 @@
 async = require 'async'
 PouchDB = require 'pouchdb'
+semver = require 'semver'
 request = require '../lib/request'
 fs = require './filesystem'
 DesignDocuments = require './design_documents'
 ReplicatorConfig = require './replicator_config'
 DeviceStatus = require '../lib/device_status'
+ChangeDispatcher = require './change/change_dispatcher'
+
 DBNAME = "cozy-files.db"
 DBPHOTOS = "cozy-photos.db"
 
-PLATFORM_MIN_VERSIONS =
-    'proxy': '2.1.11'
-    'data-system': '2.1.6'
+
+PLATFORM_VERSIONS =
+    'proxy': '>=2.1.11'
+    'data-system': '>=2.1.8'
 
 log = require('../lib/persistent_log')
     prefix: "replicator"
@@ -35,9 +39,17 @@ module.exports = class Replicator extends Backbone.Model
         inBackup: false
 
 
+    initFileSystem: (callback) ->
+        fs.initialize (err, downloads, cache) =>
+            return callback err if err
+            @downloads = downloads
+            @cache = cache
+            callback()
+
+
     initDB: (callback) ->
         # Migrate to idb
-        dbOptions = adapter: 'idb'
+        dbOptions = adapter: 'idb', cache: false
         new PouchDB DBNAME, dbOptions, (err, db) =>
             if err
                 #keep sqlite db, no migration.
@@ -51,28 +63,16 @@ module.exports = class Replicator extends Backbone.Model
             @migrateDBs callback
 
 
-    init: (callback) ->
-        fs.initialize (err, downloads, cache) =>
-            return callback err if err
-            @downloads = downloads
-            @cache = cache
-            @initDB (err) =>
-                return callback err if err
-                designDocs = new DesignDocuments @db, @photosDB
-                designDocs.createOrUpdateAllDesign (err) =>
-                    return callback err if err
-                    @config = new ReplicatorConfig @db
-                    @config.fetch callback
+    initConfig: (callback) ->
+        @config = new ReplicatorConfig @db
+        @config.fetch callback
 
+
+    upsertLocalDesignDocuments: (callback) ->
+        designDocs = new DesignDocuments @db, @photosDB
+        designDocs.createOrUpdateAllDesign callback
 
     checkPlatformVersions: (callback) ->
-        cutVersion = (s) ->
-            parts = s.match /(\d+)\.(\d+)\.(\d+)/
-            # Keep only useful data (first elem is full string)
-            parts = parts.slice 1, 4
-            parts = parts.map (s) -> parseInt s
-            return major: parts[0], minor: parts[1], patch: parts[2]
-
         request.get
             url: "#{@config.getScheme()}://#{@config.get('cozyURL')}/versions"
             auth: @config.get 'auth'
@@ -82,15 +82,11 @@ module.exports = class Replicator extends Backbone.Model
 
             for item in body
                 [s, app, version] = item.match /([^:]+): ([\d\.]+)/
-                if app of PLATFORM_MIN_VERSIONS
-                    minVersion = cutVersion PLATFORM_MIN_VERSIONS[app]
-                    version = cutVersion version
-                    if version.major < minVersion.major or
-                    version.minor < minVersion.minor or
-                    version.patch < minVersion.patch
+                if app of PLATFORM_VERSIONS
+                    unless semver.satisfies(version, PLATFORM_VERSIONS[app])
                         msg = t 'error need min %version for %app'
                         msg = msg.replace '%app', app
-                        msg = msg.replace '%version', PLATFORM_MIN_VERSIONS[app]
+                        msg = msg.replace '%version', PLATFORM_VERSIONS[app]
                         return callback new Error msg
 
             # Everything fine
@@ -199,6 +195,10 @@ module.exports = class Replicator extends Backbone.Model
                     password: body.password
             , callback
 
+    putFilters: (callback) ->
+        log.info "setReplicationFilter"
+        @config.getFilterManager().setFilter callback
+
 
     putRequests: (callback) ->
         requests = require './remote_requests'
@@ -226,12 +226,16 @@ module.exports = class Replicator extends Backbone.Model
             request.put options, cb
         , callback
 
+    takeCheckpoint: (callback) ->
+        url = '/_changes?descending=true&limit=1'
+        options = @config.makeReplicationUrl url
+        request.get options, (err, res, body) =>
+            return callback err if err
+            @config.save checkpointed: body.last_seq, callback
 
     # Fetch current state of replicated views. Avoid pouchDB bug with heavy
     # change list.
-    initialReplication: (callback) ->
-        @set 'initialReplicationStep', 0
-
+    initialFilesReplication: (callback) ->
         DeviceStatus.checkReadyForSync (err, ready, msg) =>
             return callback err if err
             unless ready
@@ -245,7 +249,6 @@ module.exports = class Replicator extends Backbone.Model
             last_seq = 0
 
             async.series [
-                (cb) => @putRequests cb
                 # we store last_seq before copying files & folder
                 # to avoid losing changes occuring during replication
                 (cb) =>
@@ -258,70 +261,84 @@ module.exports = class Replicator extends Backbone.Model
 
                 # Force checkpoint to 0
                 (cb) => @copyView 'file', cb
-                (cb) => @set('initialReplicationStep', 1) and cb null
                 (cb) => @copyView 'folder', cb
-
-                (cb) => @set('initialReplicationStep', 2) and cb null
                 # TODO: it copies all notifications (persistent ones too).
                 (cb) =>
                     if @config.get 'cozyNotifications'
                         @copyView 'notification', cb
 
                     else cb()
-
-                (cb) => @set('initialReplicationStep', 3) and cb null
-                (cb) => @initContactsInPhone last_seq, cb
-                (cb) => @set('initialReplicationStep', 4) and cb null
-                (cb) => @initEventsInPhone last_seq, cb
-
-                (cb) => @set('initialReplicationStep', 5) and cb null
-                # Save last sequences
                 (cb) => @config.save checkpointed: last_seq, cb
-                # build the initial state of FilesAndFolder view index
-                (cb) => @db.query DesignDocuments.FILES_AND_FOLDER, {}, cb
-
             ], (err) =>
                 log.info "end of inital replication"
-                @set 'initialReplicationStep', 5
+                @set 'initialReplicationStep', 6
                 callback err
-                # updateIndex In background
-                @updateIndex -> log.info "Index built"
 
-    copyView: (model, callback) ->
-        options =
-            times: 5
+
+    # Fetch all documents, with a previously put couchdb view.
+    _fetchAll: (options, callback) ->
+        requestOptions = @config.makeDSUrl "/request/#{options.docType}/all/"
+        requestOptions.body = include_docs: true, show_revs: true
+
+        request.post requestOptions, (err, res, rows) ->
+            if not err and res.statusCode isnt 200
+                err = new Error res.statusCode, res.reason
+
+            return callback err if err
+            callback null, rows
+
+
+    # 1. Fetch all documents of specified docType
+    # 2. Put in PouchDB
+    # 2.1 : optionnaly, fetch attachments before putting in pouchDB
+    # Return the list of added doc to PouchDB.
+    copyView: (options, callback) ->
+        log.info "enter copyView for #{options.docType}."
+        # Last step
+        putInPouch = (doc, cb) =>
+            @db.put doc, 'new_edits':false, (err) ->
+                return cb err if err
+                cb null, doc
+
+        # 1. Fetch all documents
+        retryOptions =
+            times: options.retry or 1
             interval: 20 * 1000
 
-        async.retry options, ((cb) => @_copyView model, cb), callback
+        async.retry retryOptions, ((cb) => @_fetchAll options, cb)
+        , (err, rows) =>
+            return callback null unless rows?.length isnt 0
 
-    _copyView: (model, callback) ->
-        log.info "enter copyView for #{model}."
+            # 2. Put in PouchDB
+            async.mapSeries rows, (row, cb) =>
+                doc = row.doc
 
-        options = @config.makeDSUrl "/request/#{model}/all/"
-        options.body = include_docs: true, show_revs: true
+                # 2.1 Fetch attachment if needed (typically contact docType)
+                if options.attachments is true and doc._attachments?
+                # TODO? needed : .picture?
+                    request.get @config.makeReplicationUrl( \
+                    "/#{doc._id}?attachments=true"), (err, res, body) ->
+                        # Continue on error (we just miss the avatar in case
+                        # of contacts)
+                        unless err
+                            doc = body
 
-        request.post options, (err, res, models) =>
-            if err or res.statusCode isnt 200
-                unless err?
-                    err = new Error res.statusCode, res.reason
-                return callback err
+                        putInPouch doc, cb
 
-            return callback null unless models?.length isnt 0
-            async.eachSeries models, (doc, cb) =>
-                model = doc.doc
-                @db.put model, 'new_edits':false, cb()
+                else # No attachments
+                    putInPouch doc, cb
+
             , callback
+
+
 
 
     # update index for further speeds up.
     updateIndex: (callback) ->
-        log.info "INDEX BUILT"
-        log.warn err if err
         # build pouch's map indexes
         @db.query DesignDocuments.FILES_AND_FOLDER, {}, =>
             # build pouch's map indexes
-            @db.query DesignDocuments.LOCAL_PATH, {}, ->
-                callback null
+            @db.query DesignDocuments.LOCAL_PATH, {}, -> callback()
 
 # END initialisations methods
 
@@ -562,28 +579,9 @@ module.exports = class Replicator extends Backbone.Model
         return fileNEntriesInCache
 
 
-    _replicationFilter: ->
-        if @config.get 'cozyNotifications'
-            filter = (doc) ->
-                return doc.docType?.toLowerCase() is 'folder' or
-                    doc.docType?.toLowerCase() is 'file' or
-                    doc.docType?.toLowerCase() is 'notification' and
-                        doc.type?.toLowerCase() is 'temporary'
-
-        else
-            filter = (doc) ->
-                return doc.docType?.toLowerCase() is 'folder' or
-                    doc.docType?.toLowerCase() is 'file'
-
-        return filter
-
-
     # wrapper around _sync to maintain the state of inSync
     sync: (options, callback) ->
         return callback null if @get 'inSync'
-
-        unless @config.has('checkpointed')
-            return callback new Error "database not initialized"
 
         log.info "start a sync"
         @set 'inSync', true
@@ -598,122 +596,40 @@ module.exports = class Replicator extends Backbone.Model
     #    * replication at each start
     #    * replication force by user
     _sync: (options, callback) ->
+        log.info "_sync"
+        options.live = false
+
         @stopRealtime()
-        changedDocs = []
-        checkpoint = @config.get 'checkpointed'
 
-        replication = @db.replicate.from @config.remote,
-            batch_size: 20
-            batches_limit: 5
-            filter: @_replicationFilter()
-            live: false
-            since: checkpoint
+        ReplicationLauncher = require "./replication_launcher"
+        @replicationLauncher = new ReplicationLauncher @config, app.router
+        @replicationLauncher.start options, =>
+            # clean @replicationLauncher when sync finished
+            @stopRealtime()
+            callback.apply @, arguments
 
-        replication.on 'change', (change) ->
-            log.info "changes received while sync"
-            changedDocs = changedDocs.concat change.docs
-
-        replication.once 'error', (err) =>
-            log.error "error while replication in sync", err
-            if err?.result?.status? and err.result.status is 'aborted'
-                replication?.cancel()
-                @_sync options, callback
-            else
-                callback err
-
-        replication.once 'complete', (result) =>
-            log.info "replication in sync completed."
-            async.eachSeries @_filesNEntriesInCache(changedDocs), \
-                    @updateLocal, (err) =>
-                # Continue on cache update error, 'syncCache' call on next
-                # backup may fix it.
-                log.warn err if err
-                @config.save checkpointed: result.last_seq, (err) =>
-                    callback err
-                    unless options.background
-                        app.router.forceRefresh()
-                        # updateIndex In background
-                        @updateIndex =>
-                            @startRealtime()
-
-    # realtime
-    # start from the last checkpointed value
-    # smaller batches to limit memory usage
-    # if there is an error, we keep trying
-    # with exponential backoff 2^x s (max 1min)
-    #
-    realtimeBackupCoef = 1
-
+    ###*
+     * Start real time replication
+    ###
     startRealtime: =>
-        if @liveReplication or not app.foreground
-            return
+        log.info "startRealtime"
 
-        unless @config.has('checkpointed')
-            log.error new Error "database not initialized"
+        @stopRealtime() if @replicationLauncher
 
-            if confirm t 'Database not initialized. Do it now ?'
-                app.router.navigate 'first-sync', trigger: true
-                @resetSynchro (err) ->
-                    if err
-                        log.error err
-                        return alert err.message
+        ReplicationLauncher = require "./replication_launcher"
+        @replicationLauncher = new ReplicationLauncher @config, app.router
+        @replicationLauncher.start live: true
 
-            return
-
-
-        log.info 'REALTIME START'
-
-        @liveReplication = @db.replicate.from @config.remote,
-            batch_size: 20
-            batches_limit: 5
-            filter: @_replicationFilter()
-            since: @config.get 'checkpointed'
-            live: true
-            heartbeat: false
-
-        @liveReplication.on 'change', (change) =>
-            realtimeBackupCoef = 1
-            app.router.forceRefresh()
-
-            @set 'inSync', true
-            fileNEntriesInCache = @_filesNEntriesInCache change.docs
-            async.eachSeries fileNEntriesInCache, @updateLocal, (err) ->
-                if err
-                    log.error err
-                else
-                    log.info "updated binary in realtime"
-
-
-        @liveReplication.on 'uptodate', (e) =>
-            realtimeBackupCoef = 1
-            @set 'inSync', false
-            app.router.forceRefresh()
-            # @TODO : save last_seq ?
-            log.info "UPTODATE realtime", e
-
-        @liveReplication.once 'complete', (e) =>
-            log.info "REALTIME CANCELLED"
-            @set 'inSync', false
-            @liveReplication = null
-
-        @liveReplication.once 'error', (e) =>
-            @liveReplication = null
-
-            realtimeBackupCoef++ if realtimeBackupCoef < 6
-            timeout = 1000 * (1 << realtimeBackupCoef)
-            log.error "REALTIME BROKE, TRY AGAIN IN #{timeout} #{e.toString()}"
-            @realtimeBackOff = setTimeout @startRealtime, timeout
-
+    # Stop replication.
     stopRealtime: =>
-        # Stop replication.
-        @liveReplication?.cancel()
-
-        # Kill backoff if exists.
-        clearTimeout @realtimeBackOff
-
+        @replicationLauncher?.stop()
+        delete @replicationLauncher
 
     # Update cache files with outdated revisions. Called while backup
-    syncCache:  (callback) =>
+    # 1. Fetch all file document of file in cache (trouhgh binary id)
+    # 2. Generate the { file, entry} list
+    # 3. Update all of them (updateLocal will update as needed)
+    syncCache:  (callback) ->
         @set 'backup_step', 'cache_sync'
         @set 'backup_step_done', null
 
@@ -724,13 +640,13 @@ module.exports = class Replicator extends Backbone.Model
 
         @db.query DesignDocuments.BY_BINARY_ID, options, (err, results) =>
             return callback err if err
-            toUpdate = @_filesNEntriesInCache results.rows.map (row) -> row.doc
 
+            changeDispatcher = new ChangeDispatcher @config
             processed = 0
             @set 'backup_step', 'cache_sync'
-            @set 'backup_step_total', toUpdate.length
-            async.eachSeries toUpdate, (fileNEntry, cb) =>
+            @set 'backup_step_total', results.rows.length
+            async.eachSeries results.rows, (row, cb) =>
                 @set 'backup_step_done', processed++
-                @updateLocal fileNEntry, cb
+                changeDispatcher.dispatch row.doc, cb
             , callback
 

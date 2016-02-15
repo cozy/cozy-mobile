@@ -13,7 +13,7 @@
 
 
     .card.no-shadow.more-spacing
-        if firstRun
+        if state === 'fPermissions'
             .button-bar
                 button#btn-back.button.button-dark.button-clear= t('back')
                 button#btn-save.button.button-balanced= t('next')

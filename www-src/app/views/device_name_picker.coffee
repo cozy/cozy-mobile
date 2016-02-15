@@ -17,7 +17,7 @@ module.exports = class DeviceNamePickerView extends BaseView
         'keypress #input-device': 'blurIfEnter'
 
     doBack: ->
-        app.router.navigate 'login', trigger: true
+        app.init.toState 'fPermissions'
 
     blurIfEnter: (e) ->
         @$('#input-device').blur() if e.keyCode is 13
@@ -38,21 +38,20 @@ module.exports = class DeviceNamePickerView extends BaseView
 
 
         config = app.loginConfig
-        config.deviceName = device
+        if config
+            config.deviceName = device
 
-        $('#btn-save').text t 'registering...'
-        app.replicator.registerRemote config, (err) =>
-            if err?
-                log.error err
-                @displayError t err.message
-            else
-                app.replicator.checkPlatformVersions (err) =>
-                    if err?
-                        log.error err
-                        return @displayError err.message
-
+            config.lastInitState = app.init.currentState
+            $('#btn-save').text t 'registering...'
+            app.replicator.registerRemote config, (err) =>
+                if err?
+                    log.error err
+                    return @displayError t err.message
+                else
                     delete app.loginConfig
-                    app.router.navigate 'config', trigger: true
+                    app.init.trigger 'deviceCreated'
+        else
+            app.init.trigger 'deviceCreated'
 
     onCompleteDefaultValue: ->
         device = @$('#input-device').val()

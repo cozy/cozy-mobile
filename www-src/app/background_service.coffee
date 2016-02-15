@@ -5,6 +5,8 @@ Replicator    = require '../replicator/main'
 Notifications = require '../views/notifications'
 DeviceStatus  = require '../lib/device_status'
 Translation   = require '../lib/translation'
+Init            = require './replicator/init'
+
 
 log = require('./lib/persistent_log')
     prefix: "application"
@@ -21,79 +23,49 @@ log = require('./lib/persistent_log')
 module.exports = BackgroundService =
 
     initialize: ->
-
-        @translation = new Translation()
         @replicator = new Replicator()
+        @translation = new Translation()
 
+        # Pre-init with english locale in service
+        @translation.setLocale value: 'en'
+        window.t = @translation.getTranslate()
+
+        @init = new Init()
+        @init.startStateMachine()
+        @init.trigger 'startService'
+
+    setDeviceLocale: (callback) ->
         # Monkey patch for browser debugging
         if window.isBrowserDebugging
             window.navigator = window.navigator or {}
             window.navigator.globalization =
                 window.navigator.globalization or {}
-            window.navigator.globalization.getPreferredLanguage = (callback) =>
-                callback value: @translation.DEFAULT_LANGUAGE
+            window.navigator.globalization.getPreferredLanguage = (cb) =>
+                cb value: @translation.DEFAULT_LANGUAGE
 
+        # Use the device's locale until we get the config document.
         navigator.globalization.getPreferredLanguage (properties) =>
             @translation.setLocale(properties)
             window.t = @translation.getTranslate()
+            callback()
 
-            @replicator.init (err, config) =>
-                if err
-                    log.error err
-                    return window.service.workDone()
+    postConfigInit: (callback) ->
+        DeviceStatus.initialize()
+        if @replicator.config.get 'cozyNotifications'
+            # Activate notifications handling
+            @notificationManager = new Notifications()
 
-                if config.remote
-                    if config.isNewVersion()
-                        @updatesChecks()
+        conf = @replicator.config.attributes
+        # Display config to help remote debuging.
+        log.info "Service #{conf.appVersion}--\
+        sync_contacts:#{conf.syncContacts},\
+        sync_calendars:#{conf.syncCalendars},\
+        sync_images:#{conf.syncImages},\
+        sync_on_wifi:#{conf.syncOnWifi},\
+        cozy_notifications:#{conf.cozyNotifications}"
 
-                    else
-                        @startService()
+        callback()
 
-                else
-                    log.error "App not initialized."
-                    # Then shutdown service
-                    window.service.workDone()
-
-    updatesChecks: ->
-        app.replicator.checkPlatformVersions (err) =>
-            if err
-                return @startMainActivity err
-
-            if @replicator.config.hasPermissions(@replicator.permissions)
-                @startService()
-            else
-                @startMainActivity "Need permissions"
-
-
-    startService: ->
-        unless @replicator.config.has('checkpointed')
-            log.error new Error "Database not initialized"
-            return window.service.workDone()
-
-        # If we reach here, we could safely update version
-        @replicator.config.updateVersion =>
-            DeviceStatus.initialize()
-
-            if @replicator.config.get 'cozyNotifications'
-                # Activate notifications handling
-                @notificationManager = new Notifications()
-
-
-            delayedQuit = (err) ->
-                log.error err if err
-                # give some time to finish and close things.
-                setTimeout ->
-                    # call this javabinding directly on object to avoid
-                    # Error 'NPMethod called on non-NPObject'
-                    window.service.workDone()
-                , 5 * 1000
-
-            app.replicator.backup { background: true }, (err) ->
-                if err
-                    log.error "Error launching backup: ", err
-                    delayedQuit()
-                else
-                    app.replicator.sync {background: true}, delayedQuit
 
     startMainActivity: (err)->
         log.error err
@@ -103,6 +75,15 @@ module.exports = BackgroundService =
             log.error err if err
             # Then shutdown service
             window.service.workDone()
+
+    exit: (err) ->
+        log.error err if err
+        # give some time to finish and close things.
+        setTimeout ->
+            # call this javabinding directly on object to avoid
+            # Error 'NPMethod called on non-NPObject'
+            window.service.workDone()
+        , 5 * 1000
 
 
     addDeviceListener: ->

@@ -26,31 +26,18 @@ module.exports =
 
         options = options or { force: false }
 
-        unless @config.has('checkpointed')
-            err = new Error "Database not initialized before realtime"
-            if options.background
-                callback err
-            else
-                log.warn err
-
-                if confirm t 'Database not initialized. Do it now ?'
-                    app.router.navigate 'first-sync', trigger: true
-
-            return
-
         try
             @set 'inBackup', true
             @set 'backup_step', null
-            @stopRealtime()
             @_backup options.force, (err) =>
                 @set 'backup_step', null
                 @set 'backup_step_done', null
                 @set 'inBackup', false
-                @startRealtime() unless options.background
-                return callback err if err
-                @config.save lastBackup: new Date().toString(), (err) ->
-                    log.info "Backup done."
-                    callback null
+                callback err
+                # return callback err if err
+                # @config.save lastBackup: new Date().toString(), (err) ->
+                #     log.info "Backup done."
+                #     callback null
         catch e
             log.error "Error in backup: ", e
 
@@ -71,6 +58,7 @@ module.exports =
                             log.error "in syncPictures: ", err
                             errors.push err
                         cb()
+
                 (cb) =>
                     DeviceStatus.checkReadyForSync (err, ready, msg) =>
                         unless ready or err
@@ -83,29 +71,29 @@ module.exports =
                                 errors.push err
                             cb()
 
-                (cb) =>
-                    DeviceStatus.checkReadyForSync (err, ready, msg) =>
-                        unless ready or err
-                            err = new Error msg
-                        return cb err if err
+                # (cb) =>
+                #     DeviceStatus.checkReadyForSync (err, ready, msg) =>
+                #         unless ready or err
+                #             err = new Error msg
+                #         return cb err if err
 
-                        @syncContacts (err) ->
-                            if err
-                                log.error "in syncContacts", err
-                                errors.push err
-                            cb()
-                (cb) =>
-                    DeviceStatus.checkReadyForSync (err, ready, msg) =>
-                        unless ready or err
-                            err = new Error msg
-                        return cb err if err
+                #         @syncContacts (err) ->
+                #             if err
+                #                 log.error "in syncContacts", err
+                #                 errors.push err
+                #             cb()
 
-                        @syncCalendars (err) ->
-                            if err
-                                log.error "in syncCalendars", err
-                                errors.push err
-                            cb()
+                # (cb) =>
+                #     DeviceStatus.checkReadyForSync (err, ready, msg) =>
+                #         unless ready or err
+                #             err = new Error msg
+                #         return cb err if err
 
+                #         @syncCalendars (err) ->
+                #             if err
+                #                 log.error "in syncCalendars", err
+                #                 errors.push err
+                #             cb()
 
             ], (err) ->
                 return callback err if err
@@ -115,7 +103,19 @@ module.exports =
                 else
                     callback()
 
-
+    # Upload photos take with device on the cozy.
+    # 1. check device folder
+    # 2. Get list of image from android (--> images)
+    # 3. Get list of already added image from this device (photoDB -> dbImages)
+    # 4. Get list of files in t'photos' folder (--> dbPictures).
+    # 5. For each images from android :
+    # 5.1 - skip images already uploaded (in photoDB)
+    # 5.2 - image already present on cozy : then flag it (add to photoDB)
+    # 5.3 - add to upload list
+    # 6. Upload image list
+    # 6.1 create File document in Cozy
+    # 6.2 create Ninary document in Cozy
+    # 6.3 add to PhotoDB
     syncPictures: (force, callback) ->
         return callback null unless @config.get 'syncImages'
 
@@ -340,12 +340,9 @@ module.exports =
             options.body = folder
             request.post options, (err, result, body) ->
                 return callback err if err
-
-                app.replicator.startRealtime()
                 # Wait to receive folder in local database
                 findFolder body._id, () ->
                     return callback err if err
-                    app.replicator.stopRealtime()
                     callback null, folder
 
         options = key: ['', "1_#{t('photos').toLowerCase()}"]
