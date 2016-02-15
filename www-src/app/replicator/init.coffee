@@ -605,8 +605,16 @@ module.exports = class Init
 
     checkPlatformVersions: ->
         return if @passUnlessInMigration 'validPlatformVersions'
-        app.replicator.checkPlatformVersions \
-            @getCallbackTrigger 'validPlatformVersions'
+        app.replicator.checkPlatformVersions (err, response) =>
+            if err
+                if app.layout.currentView
+                    # currentView is device-name view
+                    return app.layout.currentView.displayError err.message
+                else
+                    alert err.message
+                    return app.exit()
+
+            @trigger 'validPlatformVersions'
 
 
     getPermissions: ->
