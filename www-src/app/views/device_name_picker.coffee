@@ -38,17 +38,20 @@ module.exports = class DeviceNamePickerView extends BaseView
 
 
         config = app.loginConfig
-        config.deviceName = device
+        if config
+            config.deviceName = device
 
-        config.lastInitState = app.init.currentState
-        $('#btn-save').text t 'registering...'
-        app.replicator.registerRemote config, (err) =>
-            if err?
-                log.error err
-                @displayError t err.message
-            else
-                delete app.loginConfig
-                app.init.trigger 'deviceCreated'
+            config.lastInitState = app.init.currentState
+            $('#btn-save').text t 'registering...'
+            app.replicator.registerRemote config, (err) =>
+                if err?
+                    log.error err
+                    return @displayError t err.message
+                else
+                    delete app.loginConfig
+                    app.init.trigger 'deviceCreated'
+        else
+            app.init.trigger 'deviceCreated'
 
     onCompleteDefaultValue: ->
         device = @$('#input-device').val()
