@@ -1,3 +1,4 @@
+async = require "async"
 ChangeDispatcher = require "./change/change_dispatcher"
 ConflictsHandler = require './change/conflicts_handler'
 
@@ -45,18 +46,21 @@ module.exports = class ReplicationLauncher
                 log.info "replicate change", info
 
                 if info.direction is 'pull'
-                    for doc in info.change.docs
+
+                    async.eachSeries info.change.docs, (doc, next) =>
                         @conflictsHandler.handleConflicts doc, (err, doc) =>
                             log.error err if err
 
-                            if @router and doc.docType?.toLowerCase() in \
+                            if @router and doc?.docType?.toLowerCase() in \
                                     ['file', 'folder']
                                 @router.forceRefresh()
 
                             if @changeDispatcher.isDispatched doc
-                                @changeDispatcher.dispatch doc
+                                @changeDispatcher.dispatch doc, next
                             else
                                 log.warn 'unwanted doc !', doc.docType
+                                next()
+                    , callback
 
             @replication.on 'paused', ->
                 log.info "replicate paused"
