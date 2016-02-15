@@ -115,6 +115,7 @@ module.exports = class Init
         mRemoteRequest: enter: ['putRemoteRequest']
         mUpdateVersion: enter: ['updateVersion']
         mPostConfigInit: enter: ['postConfigInit']
+        mSync: enter: ['postCopyViewSync']
 
         #######################################
         # First start (f) states
@@ -224,6 +225,8 @@ module.exports = class Init
         smConfig: enter: ['config'], quitOnError: true
         smRemoteRequest: enter: ['putRemoteRequest'], quitOnError: true
         smUpdateVersion: enter: ['updateVersion'], quitOnError: true
+        smPostConfigInit: enter: ['postConfigInit'], quitOnError: true
+        smSync: enter: ['postCopyViewSync'], quitOnError: true
 
 
         #######################################
@@ -335,7 +338,8 @@ module.exports = class Init
         'mConfig': 'configDone': 'mRemoteRequest'
         'mRemoteRequest': 'putRemoteRequest': 'mUpdateVersion'
         'mUpdateVersion': 'versionUpToDate': 'mPostConfigInit'
-        'mPostConfigInit': 'initsDone': 'aLoadFilePage' # Regular start.
+        'mPostConfigInit': 'initsDone': 'mSync'
+        'mSync': 'dbSynced': 'aLoadFilePage' # Regular start.
 
         #######################################
         # First start
@@ -428,7 +432,9 @@ module.exports = class Init
         'smPermissions': 'getPermissions': 'smConfig'
         'smConfig': 'configDone': 'smRemoteRequest'
         'smRemoteRequest': 'putRemoteRequest': 'smUpdateVersion'
-        'smUpdateVersion': 'versionUpToDate': 'sPostConfigInit'
+        'smUpdateVersion': 'versionUpToDate': 'smPostConfigInit'
+        'smPostConfigInit': 'initsDone': 'smSync'
+        'smSync': 'dbSynced': 'sImport'
 
         #######################################
         # Config update
@@ -705,6 +711,8 @@ module.exports = class Init
 
 
     postCopyViewSync: ->
+        return if @passUnlessInMigration 'dbSynced'
+
         # Get the local last seq :
         app.replicator.db.changes
             descending: true
@@ -816,12 +824,11 @@ module.exports = class Init
         '0.2.0':
             # Filters: upper version of platform requiered.
             states: ['mLocalDesignDocuments', 'mCheckPlatformVersions', \
-                     'mRemoteRequest']
+                     'mRemoteRequest', 'mSync']
         '0.1.19': states: []
         '0.1.18': states: []
         '0.1.17': states: []
         '0.1.16': states: []
         '0.1.15':
             # New routes, calendar sync.
-            states: ['mCheckPlatformVersions', 'mPermissions',
-                'mConfig', 'mRemoteRequest']
+            states: ['mCheckPlatformVersions', 'mPermissions', 'mRemoteRequest']
