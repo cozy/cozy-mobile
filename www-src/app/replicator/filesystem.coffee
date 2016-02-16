@@ -15,11 +15,9 @@ getFileSystem = (callback) ->
         __chromeSafe()
         return initDebugFS onSuccess, onError
 
-    # TODO: use a cache directory (cordova.file.externalCacheDirectory),
-    # instead of putting some noise at system root ?
     # TODO: stub when externalRootDirectory is null (has in emulators).
     # CacheDirectory is private to the app, so files won't open.
-    uri = cordova.file.externalRootDirectory or cordova.file.cacheDirectory
+    uri = cordova.file.externalCacheDirectory or cordova.file.cacheDirectory
     window.resolveLocalFileSystemURL uri, onSuccess, onError
 
 
