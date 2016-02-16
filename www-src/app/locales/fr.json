@@ -20,7 +20,7 @@
     "reset action": "Remise à Zéro",
     "retry synchro": "Synchroniser",
     "synchro warning": "Relancer une synchronisation depuis le début. Cela peut prendre du temps.",
-    "reset warning": "Supprime les données de votre terminal, et relance l'application comme à la premier démarrage.",
+    "reset warning": "Supprime les données de votre terminal, et lance la synchronisation comme au premier démarrage.",
     "support": "Support",
     "send log": "Envoyer Journal",
     "send log info": "Envoyer un email avec le journal de l'application afin de nous aider à améliorer sa qualité et sa fiabilité.",
