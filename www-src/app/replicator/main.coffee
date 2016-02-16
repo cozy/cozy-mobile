@@ -523,7 +523,7 @@ module.exports = class Replicator extends Backbone.Model
 
     # Update cache files with outdated revisions. Called while backup<
     syncCache:  (callback) ->
-        @set 'backup_step', 'cache_sync'
+        @set 'backup_step', 'files_sync'
         @set 'backup_step_done', null
 
         # TODO: Add optimizations on db.query : avoid include_docs on big list.
@@ -536,7 +536,7 @@ module.exports = class Replicator extends Backbone.Model
 
             changeDispatcher = new ChangeDispatcher @config
             processed = 0
-            @set 'backup_step', 'cache_sync'
+            @set 'backup_step', 'files_sync'
             @set 'backup_step_total', results.rows.length
             async.eachSeries results.rows, (row, cb) =>
                 @set 'backup_step_done', processed++
