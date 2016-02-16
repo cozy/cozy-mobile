@@ -64,6 +64,8 @@ module.exports = class ReplicationLauncher
                             else
                                 log.warn 'unwanted doc !', doc.docType
                                 next()
+                    , (err) ->
+                        log.error err if err
 
             @replication.on 'paused', ->
                 log.info "replicate paused"
