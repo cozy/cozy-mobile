@@ -24,25 +24,20 @@ module.exports =
 
         return callback null if @get 'inBackup'
 
-        options = options or { force: false }
-
         try
             @set 'inBackup', true
             @set 'backup_step', null
-            @_backup options.force, (err) =>
+            @_backup (err) =>
                 @set 'backup_step', null
                 @set 'backup_step_done', null
                 @set 'inBackup', false
                 callback err
-                # return callback err if err
-                # @config.save lastBackup: new Date().toString(), (err) ->
-                #     log.info "Backup done."
-                #     callback null
+                # TODO : save lastBackup date in config.
         catch e
             log.error "Error in backup: ", e
 
 
-    _backup: (force, callback) ->
+    _backup: (callback) ->
         DeviceStatus.checkReadyForSync (err, ready, msg) =>
             log.info "SYNC STATUS", err, ready, msg
             return callback err if err
@@ -53,7 +48,7 @@ module.exports =
             errors = []
             async.series [
                 (cb) =>
-                    @syncPictures force, (err) ->
+                    @syncPictures (err) ->
                         if err
                             log.error "in syncPictures: ", err
                             errors.push err
@@ -70,31 +65,6 @@ module.exports =
                                 log.error "in syncCache", err
                                 errors.push err
                             cb()
-
-                # (cb) =>
-                #     DeviceStatus.checkReadyForSync (err, ready, msg) =>
-                #         unless ready or err
-                #             err = new Error msg
-                #         return cb err if err
-
-                #         @syncContacts (err) ->
-                #             if err
-                #                 log.error "in syncContacts", err
-                #                 errors.push err
-                #             cb()
-
-                # (cb) =>
-                #     DeviceStatus.checkReadyForSync (err, ready, msg) =>
-                #         unless ready or err
-                #             err = new Error msg
-                #         return cb err if err
-
-                #         @syncCalendars (err) ->
-                #             if err
-                #                 log.error "in syncCalendars", err
-                #                 errors.push err
-                #             cb()
-
             ], (err) ->
                 return callback err if err
 
@@ -116,7 +86,7 @@ module.exports =
     # 6.1 create File document in Cozy
     # 6.2 create Ninary document in Cozy
     # 6.3 add to PhotoDB
-    syncPictures: (force, callback) ->
+    syncPictures: (callback) ->
         return callback null unless @config.get 'syncImages'
 
         log.info "sync pictures"

@@ -1,5 +1,4 @@
 AndroidAccount = require "../replicator/fromDevice/android_account"
-androidCalendarHelper = require "./android_calendar_helper"
 CozyToAndroidCalendar = require \
         "../replicator/transformer/cozy_to_android_calendar"
 DesignDocuments = require "../replicator/design_documents"
