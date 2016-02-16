@@ -34,8 +34,11 @@ module.exports = class ReplicationLauncher
     ###*
      * Start replicator
      *
-     * @param {Integer} since - Replicate changes after given sequence number.
-     * @param {Boolean} live - Continue replicating after changes.
+     * @param {Object} options - Use live: true to start a live replication.
+     *         - use remoteCheckpoint: 12. to set the since option from CouchDB
+     *         - use localCheckpoint: 12. to set the since option from PouchDB
+               - see _getOptions for more details
+     * @param {Function} callback [optionnal]
     ###
     start: (options, callback = ->) ->
         log.info "start"
@@ -43,10 +46,11 @@ module.exports = class ReplicationLauncher
         unless @replication
             @replication = @dbLocal.sync @dbRemote, @_getOptions options
             @replication.on 'change', (info) =>
-                log.info "replicate change", info
+                log.info "replicate change"
 
                 if info.direction is 'pull'
-
+                    # Changes are not trully serialized here, because change
+                    # event don't wait for the callback
                     async.eachSeries info.change.docs, (doc, next) =>
                         @conflictsHandler.handleConflicts doc, (err, doc) =>
                             log.error err if err
@@ -60,7 +64,6 @@ module.exports = class ReplicationLauncher
                             else
                                 log.warn 'unwanted doc !', doc.docType
                                 next()
-                    , callback
 
             @replication.on 'paused', ->
                 log.info "replicate paused"
@@ -89,9 +92,9 @@ module.exports = class ReplicationLauncher
 
     ###*
      * Get options for replication
-     *
-     * @param {Integer} since - Replicate changes after given sequence number.
-     * @param {Boolean} live - Continue replicating after changes.
+     * @param {Object} options - Use live: true to start a live replication.
+     *         - use remoteCheckpoint: 12. to set the since option from CouchDB
+     *         - use localCheckpoint: 12. to set the since option from PouchDB
      *
      * @see http://pouchdb.com/api.html#replication
     ###
