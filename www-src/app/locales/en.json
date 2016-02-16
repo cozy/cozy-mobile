@@ -2,7 +2,6 @@
     "app name": "Cozy mobile",
     "cozy url": "Cozy's domain",
     "cozy password": "Cozy's password",
-    "name device": "Name this device",
     "device name": "Device name",
     "search": "search",
     "files": "Files",
@@ -31,16 +30,9 @@
     "pull to sync": "Pull to sync",
     "syncing": "Syncing",
     "contacts_sync": "Syncing contacts",
-    "contacts_sync_to_pouch": "Syncing contacts",
-    "contacts_sync_to_cozy": "Syncing contacts",
-    "contacts_sync_to_phone": "Syncing contacts",
     "calendar_sync": "Syncing calendars",
-    "events_sync_to_pouch": "Syncing calendars",
-    "events_sync_to_cozy": "Syncing calendars",
-    "events_sync_to_phone": "Syncing calendars",
-    "events_sync_from_cozy": "Syncing calendars",
     "pictures_sync": "Syncing pictures",
-    "cache_sync": "Updating cache",
+    "files_sync": "Syncing files",
     "destroying database": "Destroying database",
     "synchronized with": "Synchronized with",
     "this folder is empty": "This folder is empty.",
@@ -113,5 +105,6 @@
     "no connection": "No connection, Backup cancelled.",
     "bad credentials, did you enter an email address": "Bad credentials, did you enter an email address, instead of the url of your Cozy?",
     "error try restart": "Please try restarting the application.",
-    "error need min %version for %app": "Please upgrade your %app on your Cozy. The app requires at least version %version"
+    "error need min %version for %app": "Please upgrade your %app on your Cozy. The app requires at least version %version",
+    "Unexpected token <": "<a href='%url' target='_system'>Check that your cozy working properly.</a>"
 }

@@ -64,19 +64,21 @@ module.exports = class ReplicationLauncher
                             else
                                 log.warn 'unwanted doc !', doc.docType
                                 next()
+                    , (err) ->
+                        log.error err if err
 
             @replication.on 'paused', ->
                 log.info "replicate paused"
             @replication.on 'active', ->
                 log.info "replicate active"
             @replication.on 'denied', (info) ->
-                log.info "replicate denied", info
+                log.info "replicate denied"
                 callback new Error "Replication denied"
             @replication.on 'complete', (info) ->
-                log.info "replicate complete", info
+                log.info "replicate complete"
                 callback()
             @replication.on 'error', (err) ->
-                log.error "replicate error", err
+                log.error "replicate error"
                 callback err
 
 

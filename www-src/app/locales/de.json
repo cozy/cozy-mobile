@@ -2,7 +2,6 @@
     "app name": "Cozy mobil",
     "cozy url": "Cozys Domain",
     "cozy password": "Cozys Passwort",
-    "name device": "Name für das Gerat",
     "device name": "Gerätename",
     "search": "suche",
     "files": "Dateien",
@@ -31,16 +30,9 @@
     "pull to sync": "Ziehen für sync",
     "syncing": "Aktualisiert ",
     "contacts_sync": "Aktualisiere Kontakte",
-    "contacts_sync_to_pouch": "Aktualisiere Kontakte",
-    "contacts_sync_to_cozy": "Aktualisiere Kontakte",
-    "contacts_sync_to_phone": "Aktualisiere Kontakte",
     "calendar_sync": "Aktualisiere Kalender",
-    "events_sync_to_pouch": "Aktualisiere Kalender",
-    "events_sync_to_cozy": "Aktualisiere Kalender",
-    "events_sync_to_phone": "Aktualisiere Kalender",
-    "events_sync_from_cozy": "Syncing calendars",
     "pictures_sync": "Aktualisiere Bilder",
-    "cache_sync": "Updating cache",
+    "files_sync": "Syncing files",
     "destroying database": "Destroying database",
     "synchronized with": "Syncronisiert mit",
     "this folder is empty": "Dieser Ordner ist leer",
@@ -113,5 +105,6 @@
     "no connection": "Keine Verbindung. Backup abgebrochen",
     "bad credentials, did you enter an email address": "Bad credentials, did you enter an email address, instead of the url of your Cozy?",
     "error try restart": "Please try restarting the application.",
-    "error need min %version for %app": "Please upgrade your %app on your Cozy. The app requires at least version %version"
+    "error need min %version for %app": "Please upgrade your %app on your Cozy. The app requires at least version %version",
+    "Unexpected token <": "<a href='%url' target='_system'>Check that your cozy working properly.</a>"
 }
