@@ -100,8 +100,9 @@ module.exports = class Replicator extends Backbone.Model
 
     # pings the cozy to check the credentials without creating a device
     checkCredentials: (config, callback) ->
+        url = "#{@config.getScheme()}://#{config.cozyURL}"
         request.post
-            uri: "#{@config.getScheme()}://#{config.cozyURL}/login"
+            uri: "#{url}/login"
             json:
                 username: 'owner'
                 password: config.password
@@ -109,6 +110,9 @@ module.exports = class Replicator extends Backbone.Model
             if err
                 if config.cozyURL.indexOf('@') isnt -1
                     error = t 'bad credentials, did you enter an email address'
+                else if err.message is "Unexpected token <"
+                    error = t err.message
+                    error = error.replace '%url', url
                 else
                     # Unexpected error, just show it to the user.
                     log.error err
@@ -523,7 +527,7 @@ module.exports = class Replicator extends Backbone.Model
 
     # Update cache files with outdated revisions. Called while backup<
     syncCache:  (callback) ->
-        @set 'backup_step', 'cache_sync'
+        @set 'backup_step', 'files_sync'
         @set 'backup_step_done', null
 
         # TODO: Add optimizations on db.query : avoid include_docs on big list.
@@ -536,7 +540,7 @@ module.exports = class Replicator extends Backbone.Model
 
             changeDispatcher = new ChangeDispatcher @config
             processed = 0
-            @set 'backup_step', 'cache_sync'
+            @set 'backup_step', 'files_sync'
             @set 'backup_step_total', results.rows.length
             async.eachSeries results.rows, (row, cb) =>
                 @set 'backup_step_done', processed++
