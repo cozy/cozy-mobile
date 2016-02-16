@@ -1,7 +1,7 @@
 # [Cozy](http://cozy.io) Mobile client
 
 [![Build Status](https://travis-ci.org/cozy/cozy-mobile.svg)](https://travis-ci.org/cozy/cozy-mobile)
-[![Dependency Status](https://www.versioneye.com/user/projects/565486a3ff016c003300183a/badge.svg)](https://www.versioneye.com/user/projects/565486a3ff016c003300183a)
+[![Dependency Status](https://www.versioneye.com/user/projects/56c35ee518b271003b392193/badge.svg)](https://www.versioneye.com/user/projects/56c35ee518b271003b392193)
 [![Code Climate](https://codeclimate.com/github/cozy/cozy-mobile/badges/gpa.svg)](https://codeclimate.com/github/cozy/cozy-mobile)
 
 This is the native mobile client for Cozy.
@@ -44,16 +44,27 @@ document.dispatchEvent(new Event('deviceready'));
 
 Expect all things related to binary, contact or calendar to fail in browser.
 
-If you want to test on your Android device directly, please install the Android SDK http://developer.android.com/sdk/index.html. Then enable USB debugging and `cordova run android` will run the application within your phone instead of from the emulator.
+If you want to test on your Android device directly, please install the Android
+SDK http://developer.android.com/sdk/index.html. Then enable USB debugging and
+`cordova run android` will run the application within your phone instead of from
+the emulator.
 
 ## Contribute with Transifex
 
-Transifex can be used the same way as git. It can push or pull translations. The config file in the .tx repository configure the way Transifex is working : it will get the json files from the client/app/locales repository.
-If you want to learn more about how to use this tool, I'll invite you to check [this](http://docs.transifex.com/introduction/) tutorial.
+Transifex can be used the same way as git. It can push or pull translations. The
+config file in the .tx repository configure the way Transifex is working : it
+will get the json files from the client/app/locales repository.
+If you want to learn more about how to use this tool, I'll invite you to check
+ [this](http://docs.transifex.com/introduction/) tutorial.
+
+### import
+
+    tx pull
 
 ## License
 
-Cozy Mobile Client is developed by Cozy Cloud and distributed under the AGPL v3 license.
+Cozy Mobile Client is developed by Cozy Cloud and distributed under the AGPL v3
+license.
 
 ## What is Cozy?
 
