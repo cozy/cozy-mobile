@@ -61,6 +61,10 @@ module.exports = class Init
             else if @states[leaveState]?.display?
                 @trigger 'noDisplay'
 
+    # activating contact or calendar sync requires to init them,
+    # trough init state machine
+    # @param needSync {calendars: true, contacts: false } type object, if
+    # it should be updated or not.
     updateConfig: (needInit) ->
         log.info 'updateConfig'
         # Do sync only while on Realtime : TODO: handles others Running states
@@ -76,7 +80,6 @@ module.exports = class Init
 
             else
                 @toState 'c4RemoteRequest'
-                # @trigger 'initDone'
 
         else if @currentState in ['fConfig', 'mConfig']
             @saveConfig()
