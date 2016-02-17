@@ -32,7 +32,7 @@
     "contacts_sync": "連絡先の同期中",
     "calendar_sync": "カレンダーの同期中",
     "pictures_sync": "写真の同期中",
-    "files_sync": "Syncing files",
+    "files_sync": "ファイルの同期中",
     "destroying database": "データベースの破棄中",
     "synchronized with": "同期しました",
     "this folder is empty": "このフォルダーは空です。",
@@ -106,5 +106,5 @@
     "bad credentials, did you enter an email address": "資格情報が不良。Cozy の URL ではなく、メールアドレスを入力しましたか?",
     "error try restart": "アプリケーションを再起動してみてください。",
     "error need min %version for %app": "お使いの Cozy の %app をアップグレードしてください。少なくともバージョン %version のアプリが必要です",
-    "Unexpected token <": "<a href='%url' target='_system'>Check that your cozy working properly.</a>"
+    "Unexpected token <": "Check that your cozy working properly."
 }

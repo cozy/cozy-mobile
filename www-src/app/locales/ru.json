@@ -106,5 +106,5 @@
     "bad credentials, did you enter an email address": "Bad credentials, did you enter an email address, instead of the url of your Cozy?",
     "error try restart": "Please try restarting the application.",
     "error need min %version for %app": "Please upgrade your %app on your Cozy. The app requires at least version %version",
-    "Unexpected token <": "<a href='%url' target='_system'>Check that your cozy working properly.</a>"
+    "Unexpected token <": "Check that your cozy working properly."
 }
