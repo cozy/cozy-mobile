@@ -1,0 +1,19 @@
+button#btn-back-fsm ✖
+
+if error
+    div.error-msg= error
+
+label
+    input#input-url(
+        autofocus=true,
+        type="url",
+        placeholder=t('url placeholder'),
+        value=cozyURL)
+    = t('url help')
+
+a#btn-register(target="_system",
+    href="https://cozy.io/en/try-it/")
+    = t('no account register')
+
+.button-block
+    button#btn-next.button= t('next')

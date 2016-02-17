@@ -19,6 +19,7 @@ module.exports = class Layout extends BaseView
         'tap #btn-back': 'onBackButtonClicked'
         'tap #btn-menu': 'onMenuButtonClicked'
         'tap #closeerror': 'onCloseErrorIndicator'
+        "click a[target='_system']": 'openInSystemBrowser'
 
     initialize: ->
         document.addEventListener "menubutton", @onMenuButtonClicked, false
@@ -109,6 +110,12 @@ module.exports = class Layout extends BaseView
         @backButton.removeClass 'ion-home ion-ios7-arrow-back'
         @backButton.addClass 'ion-' + icon
 
+    hideTitle: ->
+        @$('#breadcrumbs').remove()
+        @title.hide()
+        @$('#bar-header').hide()
+        @$('#viewsPlaceholder').removeClass('has-header')
+
     setTitle: (text) =>
         @$('#breadcrumbs').remove()
         @title.text text
@@ -136,8 +143,10 @@ module.exports = class Layout extends BaseView
             type = 'none'
 
         if type is 'none' # no animation
+            @resetScroll()
             @currentView?.remove()
             @viewsBlock.append $next
+            @viewsPlaceholder
             @ionicScroll.hintResize()
             @currentView = view
             @ionicScroll.scrollTo 0, 0, false, null
@@ -160,9 +169,16 @@ module.exports = class Layout extends BaseView
                 'oTransitionEnd msTransitionEnd transitionend'
             # double one & once because there is multiple events type
             $next.one transitionend, _.once =>
+                @resetScroll()
                 @currentView.remove()
                 @currentView = view
+                @ionicScroll.hintResize()
                 @ionicScroll.scrollTo 0, 0, false, null
+
+    resetScroll: ->
+        ionic.trigger 'resetScrollView',
+            target: @ionicScroll.__container
+        , true
 
     showInitMessage: (message) =>
         log.debug 'showInitMessage'
@@ -209,3 +225,8 @@ module.exports = class Layout extends BaseView
         else
             # navigator.app.backHistory()
             window.history.back()
+
+    openInSystemBrowser: (e) ->
+        window.open e.currentTarget.href, '_system', ''
+        e.preventDefault()
+        return false

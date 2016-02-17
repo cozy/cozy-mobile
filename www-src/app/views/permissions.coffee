@@ -13,18 +13,13 @@ module.exports = class PermissionsPickerView extends BaseView
         'click #btn-save': 'doNext'
         'click #btn-back': 'doBack'
 
-
     getRenderData: ->
         return {
             permissions: app.replicator.permissions
-            state: app.init.currentState
+            doesntNeedPassword: app.init.currentState is 'fPermissions'
         }
 
-    doBack: ->
-        if app.init.currentState is 'fPermissions'
-            app.init.toState 'fLogin'
-        else
-            navigator.app.exitApp()
+    doBack: -> app.init.trigger 'backClicked'
 
     doNext: ->
         if app.init.currentState is 'fPermissions'

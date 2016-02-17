@@ -2,7 +2,7 @@ module.exports = class BaseView extends Backbone.View
 
     template: ->
 
-    initialize: ->
+    initialize: (@options) ->
 
     getRenderData: ->
         model: @model?.toJSON()
@@ -10,8 +10,19 @@ module.exports = class BaseView extends Backbone.View
     render: ->
         @beforeRender()
         @$el.html @template(@getRenderData())
+        @bindRefs() if @refs
+        @$el.prop 'className', @className() if typeof @className is 'function'
         @afterRender()
         @
+
+    bindRefs: ->
+        for ref, selector of @refs
+            @[ref] = @$ selector
+
+    setState: (key, value) ->
+        clearTimeout @dirtyTimeout
+        @[key] = value
+        @dirtyTimeout = setTimeout @render.bind(@), 1
 
     beforeRender: ->
 

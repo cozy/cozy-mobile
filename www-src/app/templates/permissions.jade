@@ -13,14 +13,17 @@
 
 
     .card.no-shadow.more-spacing
-        if state === 'fPermissions'
+        if doesntNeedPassword
             .button-bar
                 button#btn-back.button.button-dark.button-clear= t('back')
                 button#btn-save.button.button-balanced= t('next')
 
         else
             label
-                input#input-pass(type="password", placeholder="#{t('password placeholder')}", value="")
+                input#input-pass(
+                    type="password",
+                    placeholder="#{t('password placeholder')}",
+                    value="")
 
             .button-bar
                 button#btn-back.button.button-dark.button-clear= t('exit')
