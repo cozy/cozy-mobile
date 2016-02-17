@@ -76,7 +76,8 @@ module.exports = class ReplicatorConfig extends Backbone.Model
 
     getScheme: ->
         # Monkey patch for browser debugging
-        if window.isBrowserDebugging
+        isLocalhost = @get('cozyURL').indexOf('localhost') is 0
+        if window.isBrowserDebugging and isLocalhost
             return 'http'
         else
             return 'https'

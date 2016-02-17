@@ -1,6 +1,7 @@
 app = require './application'
 FolderView = require './views/folder'
-LoginView = require './views/login'
+LoginWizard = require './views/login'
+PermissionsWizard = require './views/permissions_wizard'
 PermissionsView = require './views/permissions'
 DeviceNamePickerView = require './views/device_name_picker'
 FirstSyncView = require './views/first_sync'
@@ -16,9 +17,9 @@ module.exports = class Router extends Backbone.Router
     routes:
         'folder/*path'                    : 'folder'
         'search/*query'                   : 'search'
-        'login'                           : 'login'
-        'permissions'                     : 'permissions'
-        'device-name-picker'              : 'deviceNamePicker'
+        'login/*step'                     : 'login_wizard'
+        'permissions/*step'               : 'permissions_wizard' # install
+        'permissions'                     : 'permissions' # after change
         'first-sync'                      : 'firstSync'
         'config'                          : 'config'
 
@@ -47,32 +48,32 @@ module.exports = class Router extends Backbone.Router
 
             $('#search-input').blur() # close keyboard
 
-    login: ->
-        app.layout.setTitle(t('setup') + ' 1/4')
+    login_wizard: (step) ->
+        app.layout.hideTitle()
         $('#btn-menu, #btn-back').hide()
-        @display new LoginView()
+        @display new LoginWizard {step: step, fsm: app.init}
 
-    permissions: ->
-        app.layout.setTitle(t('setup') + ' 2/4')
+    permissions_wizard: (step) ->
+        app.layout.hideTitle()
         $('#btn-menu, #btn-back').hide()
-        @display new PermissionsView()
-
-
-    deviceNamePicker: ->
-        app.layout.setTitle(t('setup') + ' 3/4')
-        $('#btn-menu, #btn-back').hide()
-        @display new DeviceNamePickerView()
+        @display new PermissionsWizard {step: step, fsm: app.init}
 
     firstSync: ->
         app.layout.setTitle t 'setup end'
         $('#btn-menu, #btn-back').hide()
         @display new FirstSyncView()
 
+    permissions: ->
+        app.layout.setTitle(t('setup') + ' 2/4')
+        $('#btn-menu, #btn-back').hide()
+        @display new PermissionsView()
+
     config: ->
         $('#btn-back').hide()
         title = if app.isFirstRun then (t('setup') + ' 4/4') else t 'config'
         app.layout.setTitle title
         @display new ConfigView()
+
 
     display: (view) ->
         app.layout.transitionTo view
