@@ -185,3 +185,15 @@ __chromeSafe = ->
                     , (err) -> onError err
                 , (err) -> onError err
             xhr.send(null)
+
+    window.device =
+        model: "Debug Browser"
+        platform: "Browser"
+        uuid: '2323-5343-2323-3232'
+        serial: '2323-5343-2323-3232'
+        version: '1.2'
+        manufacturer: 'Debug inc.'
+        isVirtual: false
+        cordova: '5.3'
+
+    $(window).on 'click', (e) -> $(e.target).trigger 'tap'
