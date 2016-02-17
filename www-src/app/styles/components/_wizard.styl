@@ -1,0 +1,133 @@
+// Errors
+// ----------------------------------------------------------------------------
+
+$urlBlue = #33A6FF
+$passwordGreen = #4DCEC5
+$filesPurple = #9169F2
+$contactsRed = #FD7461
+$calendarsGreen = #34D882
+$photosOrange = #FFAE5F
+$errorRed = #FD7461
+
+stepColorMixin(color, btnColor)
+    background-color color
+    color white
+    button
+        background-color btnColor
+        color color
+    #btn-nope
+        color btnColor
+        border 3px solid btnColor
+        background-color color
+
+    input::-webkit-input-placeholder
+        color color+60%
+
+.scroll
+    min-height 99%
+
+.scroll .wizard-step
+    position absolute
+    top 0%
+    height 100vh
+    width 100vw
+
+.fWizardWelcome
+    stepColorMixin white, $urlBlue
+.fWizardURL
+    stepColorMixin $urlBlue, white
+.fWizardPassword
+    stepColorMixin $passwordGreen, white
+.fWizardFiles
+    stepColorMixin $filesPurple, white
+.fWizardContacts
+    stepColorMixin $contactsRed, white
+.fWizardCalendars
+    stepColorMixin $calendarsGreen, white
+.fWizardPhotos
+    stepColorMixin $photosOrange, white
+.wizard-step.error
+    stepColorMixin $errorRed, white
+
+.wizard-step
+    display flex
+    flex-direction column
+    // justify-content space-between
+    align-item center
+    align-content stretch
+    overflow hidden
+    padding 1em
+
+    .button-block
+        flex 0 0 3em
+        margin 0px auto 0px auto
+        width 100%
+        display flex
+        flex-direction row
+        align-item stretch
+        justify-content space-between
+        button
+            text-transform uppercase
+            font 1.2em 'Source Sans Pro', Sans-serif
+            flex 1 1 auto
+            border 0px
+            border-radius .3em
+            text-align center
+            display block
+            margin 0px 0.2em 0px 0.2em
+
+
+    .big-icon-container
+        width 100%
+        flex 1 1 100vw
+        img
+            display block
+            width 80%
+            margin 10% auto 10% auto
+
+    p
+        font 1.2em 'Source Sans Pro', Sans-serif
+        flex 1 1 100vw
+        text-align center
+
+    h1
+        flex 0 0 2.5em
+        font 1.7em 'Source Sans Pro', Sans-serif
+        color grey-06
+        width 100%
+        text-align center
+
+    h2
+        font 1.9em 'Source Sans Pro', Sans-serif
+        text-align center
+        color white
+        flex 0 0 2.5em
+
+
+    #btn-back-fsm
+        flex 0 0 1.2em
+        width 1.2em
+        text-align left
+        background transparent
+        border 0px none
+        color white
+        font-size 3em
+
+    #btn-register
+        flex 0 0 2em
+        color white
+
+    label
+        flex 1 0 auto
+
+    input
+        font 1.8em 'Source Sans Pro', Sans-serif
+        background transparent
+        color white
+
+
+// notifications
+.bar.bar-calm
+    background-color grey-04
+    border-color grey-04
+    background-image none
