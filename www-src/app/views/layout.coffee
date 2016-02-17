@@ -120,9 +120,13 @@ module.exports = class Layout extends BaseView
         @$('#breadcrumbs').remove()
         @title.text text
         @title.show()
+        @$('#bar-header').show()
+        @$('#viewsPlaceholder').addClass('has-header')
 
     setBreadcrumbs: (path) ->
         @$('#breadcrumbs').remove()
+        @$('#bar-header').show()
+        @$('#viewsPlaceholder').addClass('has-header')
         @title.hide()
         @iconLogo.hide()
         breadcrumbsView = new BreadcrumbsView path: path

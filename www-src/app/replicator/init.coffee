@@ -8,6 +8,7 @@ log = require('../lib/persistent_log')
     date: true
     processusTag: "Init"
 
+
 ###*
  * Conductor of the init process.
  * It handle first start, migrations, normal start, service and config changes.
@@ -120,13 +121,19 @@ module.exports = class Init
         # Normal (n) states
         nPostConfigInit: enter: ['postConfigInit'], quitOnError: true
         nQuitSplashScreen: enter: ['quitSplashScreen'], quitOnError: true
+        nExit: enter: ['sQuit']
 
         #######################################
         # First start (f) states
         fQuitSplashScreen: enter: ['quitSplashScreen'], quitOnError: true # RUN
-        fLogin: enter: ['login']
-        fPermissions: enter: ['getPermissions']
-        fDeviceName: enter: ['setDeviceName'], leave: ['saveState']
+        fWizardWelcome  : enter: ['loginWizard']
+        fWizardURL      : enter: ['loginWizard']
+        fWizardPassword : enter: ['loginWizard']
+        fWizardFiles    : enter: ['permissionsWizard']
+        fWizardContacts : enter: ['permissionsWizard']
+        fWizardPhotos   : enter: ['permissionsWizard']
+        fWizardCalendars : enter: ['permissionsWizard']
+        fCreateDevice: enter: ['createDevice']
         fCheckPlatformVersion: enter: ['checkPlatformVersions']
         fConfig: enter: ['config']
         fFirstSyncView:
@@ -352,14 +359,25 @@ module.exports = class Init
 
         #######################################
         # First start
-        'fQuitSplashScreen': 'viewInitialized': 'fLogin'
-        'fLogin': 'validCredentials': 'fPermissions'
-        'fPermissions': 'getPermissions': 'fDeviceName'
-        'fDeviceName': 'deviceCreated': 'fCheckPlatformVersion'
-        'fCheckPlatformVersion': 'validPlatformVersions': 'fConfig'
-        'fConfig': 'configDone': 'fFirstSyncView'
-        'fFirstSyncView':
-            'firstSyncViewDisplayed': 'fLocalDesignDocuments'
+        'fQuitSplashScreen': 'viewInitialized': 'fWizardWelcome'
+        'fWizardWelcome': 'clickNext': 'fWizardURL'
+        'fWizardURL':
+            'clickBack': 'fWizardWelcome'
+            'clickNext': 'fWizardPassword'
+        'fWizardPassword':
+            'clickBack': 'fWizardURL'
+            'validCredentials': 'fWizardFiles'
+
+        'fWizardFiles'   : 'clickNext': 'fWizardContacts'
+        'fWizardContacts': 'clickNext': 'fWizardCalendars'
+        'fWizardCalendars': 'clickNext': 'fWizardPhotos'
+        'fWizardPhotos'  : 'clickNext': 'fFirstSyncView'
+        'fFirstSyncView': 'firstSyncViewDisplayed': 'fCreateDevice'
+        'fCreateDevice':
+            'deviceCreated': 'fCheckPlatformVersion'
+            'errorViewed': 'fConfig'
+        'fCheckPlatformVersion':
+            'validPlatformVersions': 'fLocalDesignDocuments'
             'errorViewed': 'fConfig'
         'fLocalDesignDocuments':
             'localDesignUpToDate': 'fRemoteRequest'
@@ -661,10 +679,29 @@ module.exports = class Init
 
 
     # First start
-    login: ->
-        app.router.navigate 'login', trigger: true
+    loginWizard: ->
+        app.loginConfig ?=
+            cozyURL: ''
+            password: ''
+            deviceName: "Android #{device.manufacturer} #{device.model}"
 
-    setDeviceName: -> app.router.navigate 'device-name-picker', trigger: true
+        app.router.navigate "login/#{@currentState}", trigger: true
+
+    permissionsWizard: ->
+        app.permissionsFromWizard ?= {}
+        app.router.navigate "permissions/#{@currentState}", trigger: true
+
+    createDevice: ->
+        deviceName = "Android #{device.manufacturer} #{device.model}"
+        app.loginConfig.deviceName = deviceName
+        app.loginConfig.lastInitState = @currentState
+        callback = @getCallbackTrigger 'deviceCreated'
+        app.replicator.config.save app.permissionsFromWizard, (err, config) =>
+            return @handleError err if err
+            app.replicator.registerRemote app.loginConfig, (err) =>
+                return @handleError err if err
+                app.loginConfig.password = '' # forget password
+                @trigger 'deviceCreated'
 
     config: ->
         return if @passUnlessInMigration 'configDone'
