@@ -7,14 +7,14 @@ log = require('../lib/persistent_log')
 module.exports = fs = {}
 
 
-getFileSystem = (callback) ->
+module.exports.getFileSystem = (callback) ->
     onSuccess = (dir) -> callback null, dir.filesystem
     onError = (err) -> callback err
     # flag for developpement in browser
     if window.isBrowserDebugging
         __chromeSafe()
         return initDebugFS onSuccess, onError
-
+    # The cache folder isnt indexed in media (ie .nomedia file isnt required)
     # TODO: stub when externalRootDirectory is null (has in emulators).
     # CacheDirectory is private to the app, so files won't open.
     uri = cordova.file.externalCacheDirectory or cordova.file.cacheDirectory
@@ -30,18 +30,12 @@ readable = (err) ->
     return new Error JSON.stringify err
 
 module.exports.initialize = (callback) ->
-    getFileSystem (err, filesystem) ->
+    fs.getFileSystem (err, filesystem) ->
         return callback readable err if err
         window.FileTransfer.fs = filesystem
         fs.getOrCreateSubFolder filesystem.root, DOWNLOADS_FOLDER, \
                 (err, downloads) ->
             return callback readable err if err
-
-            # prevent android from adding the download folders to the gallery
-            downloads.getFile '.nomedia', {create: true, exclusive: false},
-                -> log.info "NOMEDIA FILE CREATED"
-                -> log.info "NOMEDIA FILE NOT CREATED"
-
             fs.getChildren downloads, (err, children) ->
                 return callback readable err if err
                 callback null, downloads, children

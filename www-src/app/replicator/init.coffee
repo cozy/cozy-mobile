@@ -103,6 +103,7 @@ module.exports = class Init
         #######################################
         # Migration (m) states
         migrationInit: enter: ['initMigrationState'], quitOnError: true
+        mMoveCache: enter: ['migrationMoveCache']
         mLocalDesignDocuments:
             enter: ['upsertLocalDesignDocuments']
             quitOnError: true
@@ -214,6 +215,7 @@ module.exports = class Init
 
         # Service Migration (m) states
         smMigrationInit: enter: ['initMigrationState'], quitOnError: true
+        smMoveCache: enter: ['migrationMoveCache'], quitOnError: true
         smLocalDesignDocuments:
             enter: ['upsertLocalDesignDocuments']
             quitOnError: true
@@ -227,7 +229,6 @@ module.exports = class Init
         smUpdateVersion: enter: ['updateVersion'], quitOnError: true
         smPostConfigInit: enter: ['postConfigInit'], quitOnError: true
         smSync: enter: ['postCopyViewSync'], quitOnError: true
-
 
         #######################################
         # Config update states (c)
@@ -287,6 +288,7 @@ module.exports = class Init
         # TODO errors states on config ?
 
 
+
     transitions:
         # Help :
         # initial_state: event: end_state
@@ -329,7 +331,8 @@ module.exports = class Init
 
         #######################################
         # Migration
-        'migrationInit': 'migrationInited': 'mLocalDesignDocuments'
+        'migrationInit': 'migrationInited': 'mMoveCache'
+        'mMoveCache': 'cacheMoved': 'mLocalDesignDocuments'
         'mLocalDesignDocuments':
             'localDesignUpToDate': 'mCheckPlatformVersions'
         'mCheckPlatformVersions': 'validPlatformVersions': 'mQuitSplashScreen'
@@ -425,7 +428,8 @@ module.exports = class Init
 
         #######################################
         # Migration in service
-        'smMigrationInit': 'migrationInited': 'smLocalDesignDocuments'
+        'smMigrationInit': 'migrationInited': 'smMoveCache'
+        'smMoveCache': 'cacheMoved': 'smLocalDesignDocuments'
         'smLocalDesignDocuments':
             'localDesignUpToDate': 'smCheckPlatformVersions'
         'smCheckPlatformVersions': 'validPlatformVersions': 'smPermissions'
@@ -820,6 +824,7 @@ module.exports = class Init
                 for state in migration.states
                     @migrationStates[state] = true
 
+    ###########################################################################
 
     # Migrations
     # For each version update, list which optionnal states are requiered in
@@ -829,6 +834,8 @@ module.exports = class Init
     # - mConfig
     # - mRemoteRequest
     migrations:
+        '0.2.1': # Move cache root directory to external storage cache
+            states: [ 'mMoveCache']
         '0.2.0':
             # Filters: upper version of platform requiered.
             states: ['mLocalDesignDocuments', 'mCheckPlatformVersions', \
@@ -840,3 +847,52 @@ module.exports = class Init
         '0.1.15':
             # New routes, calendar sync.
             states: ['mCheckPlatformVersions', 'mPermissions', 'mRemoteRequest']
+
+    ###########################################################################
+    # Version specific migrations
+
+
+    # Move cache from old "/cozy-downloads" to external storage application
+    # Cache directory
+    migrationMoveCache: ->
+        return if @passUnlessInMigration 'cacheMoved'
+        return @trigger 'cacheMoved' if window.isBrowserDebugging
+
+        fs = require './filesystem'
+
+        getOldDownloadsDir = (callback) ->
+            uri = cordova.file.externalRootDirectory \
+                or cordova.file.cacheDirectory
+            window.resolveLocalFileSystemURL uri
+            , (res) =>
+                fs.getDirectory res.filesystem.root, 'cozy-downloads', callback
+
+            , callback
+
+        checkFolderDeleted = (callback) ->
+            getOldDownloadsDir (err, dir) =>
+                if err?.code is 1
+                    callback()
+                else
+                    log.info "cache migration not finished yet, check later."
+                    setTimeout ( -> checkFolderDeleted callback), 500
+
+        async.parallel
+            newFS: fs.getFileSystem
+            oldDownloads: getOldDownloadsDir
+        , (err, res) =>
+            if err
+                log.error err
+                @handleError new Error 'moving synced files to new directory'
+                # Continue on error : the user can fix it itself.
+                return @trigger 'cacheMoved'
+
+            # fs.moveTo doesn't look to call its callback in this situation !?
+            fs.moveTo res.oldDownloads, res.newFS.root, 'cozy-downloads'
+            , (err, folder) ->
+                log.warning "migrationMoveTo done ! ", err, folder
+
+            # Busy waiting for old dir deletion
+            checkFolderDeleted \
+                # Update cache info in replicator
+                app.replicator.initFileSystem @getCallbackTrigger 'cacheMoved'
