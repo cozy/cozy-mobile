@@ -21,7 +21,6 @@ module.exports = class ChangeDispatcher
     ###
     constructor: (config) ->
         @changeHandlers =
-            "folder": false
             "file": new ChangeFileHandler config
             "event": new ChangeEventHandler()
             "contact": new ChangeContactHandler()
@@ -37,8 +36,9 @@ module.exports = class ChangeDispatcher
     dispatch: (doc, callback = ->) ->
         log.info "dispatch #{doc.docType}"
 
-        if @isDispatched(doc) and @changeHandlers[doc.docType.toLowerCase()]
-            @changeHandlers[doc.docType.toLowerCase()]["dispatch"] doc, callback
+        docType = doc.docType.toLowerCase()
+        if @changeHandlers[docType]?
+            @changeHandlers[docType].dispatch doc, callback
         else
             callback new Error 'No dispatcher for this document'
 
