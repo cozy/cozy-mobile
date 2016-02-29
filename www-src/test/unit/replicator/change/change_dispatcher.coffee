@@ -49,8 +49,14 @@ module.exports = describe 'ChangeDispatcher Test', ->
 
             it 'throw error on unexpected document', (done) ->
                 changeDispatcher = new @ChangeDispatcher config
-                changeDispatcher.dispatch 'email', (err) ->
+                changeDispatcher.dispatch { docType: 'email' }, (err) ->
                     err.should.exist
+                    done()
+
+            it 'is case insentivie on docType', (done) ->
+                changeDispatcher = new @ChangeDispatcher config
+                changeDispatcher.dispatch { docType: 'File' }, (err) ->
+                    should.not.exist err
                     done()
 
     describe '[All errors]', ->

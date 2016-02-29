@@ -16,6 +16,24 @@ log = require('../lib/persistent_log')
  *
  * It structured as a finite state machine and event, trough this lib:
  * https://github.com/sebpiq/backbone.statemachine
+ *
+ * **A word about migrations**
+ * Migrations occurs on app upgrade, to adapt app and his environment to the
+ * requireemnts of the new version. It may be updating remote CouchDB views,
+ * local PouchDB views, permissions, new config, ...
+ * This class handle this with dedicated states (prefixed with 'm' - or 'sm'
+ * if migration can occurs from service).
+ *
+ * How to use it:
+ * If a migration is required add to 'migrations' property, a key with the
+ * version name, and as object, the liste of migrations states required by
+ * this new version.
+ *
+ * Init take care about getting only trough the necessary migrations states,
+ * for any migrations (as well as from 0.2.14 to 0.2.15 as
+ * from 0.1.3 to 0.2.15) - see initMigrations, passUnlessInMigration,
+ * migrations and migrationStates to see how it works.
+
 ###
 module.exports = class Init
 
@@ -82,10 +100,10 @@ module.exports = class Init
         # - a : application start.
         # - n : normal start
         # - f : first start
-        # - m : migration start
         # - s : service start
-        # - sm : migration in service start
         # - c : update config states
+        # - m : migration start
+        # - sm : migration in service start
 
         # Application
 
@@ -99,23 +117,6 @@ module.exports = class Init
         # Normal (n) states
         nPostConfigInit: enter: ['postConfigInit'], quitOnError: true
         nQuitSplashScreen: enter: ['quitSplashScreen'], quitOnError: true
-
-        #######################################
-        # Migration (m) states
-        migrationInit: enter: ['initMigrationState'], quitOnError: true
-        mLocalDesignDocuments:
-            enter: ['upsertLocalDesignDocuments']
-            quitOnError: true
-        mCheckPlatformVersions:
-            enter: ['checkPlatformVersions']
-            quitOnError: true
-        mQuitSplashScreen: enter: ['quitSplashScreen']
-        mPermissions: enter: ['getPermissions']
-        mConfig: enter: ['config']
-        mRemoteRequest: enter: ['putRemoteRequest']
-        mUpdateVersion: enter: ['updateVersion']
-        mPostConfigInit: enter: ['postConfigInit']
-        mSync: enter: ['postCopyViewSync']
 
         #######################################
         # First start (f) states
@@ -212,23 +213,6 @@ module.exports = class Init
         sSync2: enter: ['sSync'], quitOnError: true
         sQuit: enter: ['sQuit'], quitOnError: true
 
-        # Service Migration (m) states
-        smMigrationInit: enter: ['initMigrationState'], quitOnError: true
-        smLocalDesignDocuments:
-            enter: ['upsertLocalDesignDocuments']
-            quitOnError: true
-        smCheckPlatformVersions:
-            enter: ['checkPlatformVersions']
-            quitOnError: true
-        smQuitSplashScreen: enter: ['quitSplashScreen'], quitOnError: true
-        smPermissions: enter: ['getPermissions'], quitOnError: true
-        smConfig: enter: ['config'], quitOnError: true
-        smRemoteRequest: enter: ['putRemoteRequest'], quitOnError: true
-        smUpdateVersion: enter: ['updateVersion'], quitOnError: true
-        smPostConfigInit: enter: ['postConfigInit'], quitOnError: true
-        smSync: enter: ['postCopyViewSync'], quitOnError: true
-
-
         #######################################
         # Config update states (c)
         # activate sync-contacts (c1)
@@ -284,7 +268,41 @@ module.exports = class Init
             enter: ['updateIndex']
             display: 'setup end'
 
-        # TODO errors states on config ?
+        #######################################
+        # Migration (m) states
+        migrationInit: enter: ['initMigrationState'], quitOnError: true
+        mMoveCache: enter: ['migrationMoveCache']
+        mLocalDesignDocuments:
+            enter: ['upsertLocalDesignDocuments']
+            quitOnError: true
+        mCheckPlatformVersions:
+            enter: ['checkPlatformVersions']
+            quitOnError: true
+        mQuitSplashScreen: enter: ['quitSplashScreen']
+        mPermissions: enter: ['getPermissions']
+        mConfig: enter: ['config']
+        mRemoteRequest: enter: ['putRemoteRequest']
+        mUpdateVersion: enter: ['updateVersion']
+        mPostConfigInit: enter: ['postConfigInit']
+        mSync: enter: ['postCopyViewSync']
+
+        ###################
+        # Service Migration (m) states
+        smMigrationInit: enter: ['initMigrationState'], quitOnError: true
+        smMoveCache: enter: ['migrationMoveCache'], quitOnError: true
+        smLocalDesignDocuments:
+            enter: ['upsertLocalDesignDocuments']
+            quitOnError: true
+        smCheckPlatformVersions:
+            enter: ['checkPlatformVersions']
+            quitOnError: true
+        smQuitSplashScreen: enter: ['quitSplashScreen'], quitOnError: true
+        smPermissions: enter: ['getPermissions'], quitOnError: true
+        smConfig: enter: ['config'], quitOnError: true
+        smRemoteRequest: enter: ['putRemoteRequest'], quitOnError: true
+        smUpdateVersion: enter: ['updateVersion'], quitOnError: true
+        smPostConfigInit: enter: ['postConfigInit'], quitOnError: true
+        smSync: enter: ['postCopyViewSync'], quitOnError: true
 
 
     transitions:
@@ -326,20 +344,6 @@ module.exports = class Init
             'openFile': 'aViewingFile'
 
         'aViewingFile': 'resume': 'aRealtime'
-
-        #######################################
-        # Migration
-        'migrationInit': 'migrationInited': 'mLocalDesignDocuments'
-        'mLocalDesignDocuments':
-            'localDesignUpToDate': 'mCheckPlatformVersions'
-        'mCheckPlatformVersions': 'validPlatformVersions': 'mQuitSplashScreen'
-        'mQuitSplashScreen': 'viewInitialized': 'mPermissions'
-        'mPermissions': 'getPermissions': 'mConfig'
-        'mConfig': 'configDone': 'mRemoteRequest'
-        'mRemoteRequest': 'putRemoteRequest': 'mUpdateVersion'
-        'mUpdateVersion': 'versionUpToDate': 'mPostConfigInit'
-        'mPostConfigInit': 'initsDone': 'mSync'
-        'mSync': 'dbSynced': 'aLoadFilePage' # Regular start.
 
         #######################################
         # First start
@@ -424,19 +428,6 @@ module.exports = class Init
             'newVersion': 'smMigrationInit' # Migration
 
         #######################################
-        # Migration in service
-        'smMigrationInit': 'migrationInited': 'smLocalDesignDocuments'
-        'smLocalDesignDocuments':
-            'localDesignUpToDate': 'smCheckPlatformVersions'
-        'smCheckPlatformVersions': 'validPlatformVersions': 'smPermissions'
-        'smPermissions': 'getPermissions': 'smConfig'
-        'smConfig': 'configDone': 'smRemoteRequest'
-        'smRemoteRequest': 'putRemoteRequest': 'smUpdateVersion'
-        'smUpdateVersion': 'versionUpToDate': 'smPostConfigInit'
-        'smPostConfigInit': 'initsDone': 'smSync'
-        'smSync': 'dbSynced': 'sImport'
-
-        #######################################
         # Config update
         ###################
         'c1RemoteRequest':
@@ -500,6 +491,34 @@ module.exports = class Init
             'indexUpdated': 'aImport' #TODO : clean update headers
             'errorViewed': 'aRealtime'
 
+        #######################################
+        # Migration
+        'migrationInit': 'migrationInited': 'mMoveCache'
+        'mMoveCache': 'cacheMoved': 'mLocalDesignDocuments'
+        'mLocalDesignDocuments':
+            'localDesignUpToDate': 'mCheckPlatformVersions'
+        'mCheckPlatformVersions': 'validPlatformVersions': 'mQuitSplashScreen'
+        'mQuitSplashScreen': 'viewInitialized': 'mPermissions'
+        'mPermissions': 'getPermissions': 'mConfig'
+        'mConfig': 'configDone': 'mRemoteRequest'
+        'mRemoteRequest': 'putRemoteRequest': 'mUpdateVersion'
+        'mUpdateVersion': 'versionUpToDate': 'mPostConfigInit'
+        'mPostConfigInit': 'initsDone': 'mSync'
+        'mSync': 'dbSynced': 'aLoadFilePage' # Regular start.
+
+        ###################
+        # Migration in service
+        'smMigrationInit': 'migrationInited': 'smMoveCache'
+        'smMoveCache': 'cacheMoved': 'smLocalDesignDocuments'
+        'smLocalDesignDocuments':
+            'localDesignUpToDate': 'smCheckPlatformVersions'
+        'smCheckPlatformVersions': 'validPlatformVersions': 'smPermissions'
+        'smPermissions': 'getPermissions': 'smConfig'
+        'smConfig': 'configDone': 'smRemoteRequest'
+        'smRemoteRequest': 'putRemoteRequest': 'smUpdateVersion'
+        'smUpdateVersion': 'versionUpToDate': 'smPostConfigInit'
+        'smPostConfigInit': 'initsDone': 'smSync'
+        'smSync': 'dbSynced': 'sImport'
 
     # Enter state methods.
     setDeviceLocale: ->
@@ -590,10 +609,6 @@ module.exports = class Init
         app.router.once 'collectionfetched', => @trigger 'onFilePage'
 
 
-    # Migration
-    initMigrationState: ->
-        @initMigrations app.replicator.config.get 'appVersion'
-        @trigger 'migrationInited'
 
 
     upsertLocalDesignDocuments: ->
@@ -820,6 +835,7 @@ module.exports = class Init
                 for state in migration.states
                     @migrationStates[state] = true
 
+    ###########################################################################
 
     # Migrations
     # For each version update, list which optionnal states are requiered in
@@ -829,14 +845,63 @@ module.exports = class Init
     # - mConfig
     # - mRemoteRequest
     migrations:
+        '0.2.1': # Move cache root directory to external storage cache
+            states: [ 'mMoveCache']
         '0.2.0':
             # Filters: upper version of platform requiered.
             states: ['mLocalDesignDocuments', 'mCheckPlatformVersions', \
                      'mRemoteRequest', 'mSync']
-        '0.1.19': states: []
-        '0.1.18': states: []
-        '0.1.17': states: []
-        '0.1.16': states: []
         '0.1.15':
             # New routes, calendar sync.
             states: ['mCheckPlatformVersions', 'mPermissions', 'mRemoteRequest']
+
+
+    # Migration
+    initMigrationState: ->
+        @initMigrations app.replicator.config.get 'appVersion'
+        @trigger 'migrationInited'
+
+    # Move cache from old "/cozy-downloads" to external storage application
+    # Cache directory
+    migrationMoveCache: ->
+        return if @passUnlessInMigration 'cacheMoved'
+        return @trigger 'cacheMoved' if window.isBrowserDebugging
+
+        fs = require './filesystem'
+
+        getOldDownloadsDir = (callback) ->
+            uri = cordova.file.externalRootDirectory \
+                or cordova.file.cacheDirectory
+            window.resolveLocalFileSystemURL uri
+            , (res) ->
+                fs.getDirectory res.filesystem.root, 'cozy-downloads', callback
+
+            , callback
+
+        checkFolderDeleted = (callback) ->
+            getOldDownloadsDir (err, dir) ->
+                if err?.code is 1
+                    callback()
+                else
+                    log.info "cache migration not finished yet, check later."
+                    setTimeout ( -> checkFolderDeleted callback), 500
+
+        async.parallel
+            newFS: fs.getFileSystem
+            oldDownloads: getOldDownloadsDir
+        , (err, res) =>
+            if err
+                log.error err
+                @handleError new Error 'moving synced files to new directory'
+                # Continue on error : the user can fix it itself.
+                return @trigger 'cacheMoved'
+
+            # fs.moveTo doesn't look to call its callback in this situation !?
+            fs.moveTo res.oldDownloads, res.newFS.root, 'cozy-downloads'
+            , (err, folder) ->
+                log.warning "migrationMoveTo done ! ", err, folder
+
+            # Busy waiting for old dir deletion
+            checkFolderDeleted \
+                # Update cache info in replicator
+                app.replicator.initFileSystem @getCallbackTrigger 'cacheMoved'

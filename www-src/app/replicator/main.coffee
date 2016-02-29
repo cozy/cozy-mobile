@@ -112,7 +112,6 @@ module.exports = class Replicator extends Backbone.Model
                     error = t 'bad credentials, did you enter an email address'
                 else if err.message is "Unexpected token <"
                     error = t err.message
-                    error = error.replace '%url', url
                 else
                     # Unexpected error, just show it to the user.
                     log.error err
