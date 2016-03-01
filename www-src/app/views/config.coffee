@@ -39,11 +39,10 @@ module.exports = class ConfigView extends BaseView
     # format a object as a readable date string
     # return t('never') if undefined
     formatDate: (date) ->
-        unless date then return t 'never'
-        else
-            date = new Date(date) unless date instanceof Date
-            return date.toISOString().slice(0, 19).replace('T', ' ')
+        return t 'never' unless date
 
+        date = moment(date)
+        return date.format 'YYYY-MM-DD HH:mm:ss'
 
     # only happens after the first config (post install)
     configDone: ->
