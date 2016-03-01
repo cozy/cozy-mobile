@@ -115,8 +115,8 @@ module.exports = class Replicator extends Backbone.Model
                 # Unexpected error, just show it to the user.
                 log.error err
                 error = err.message
-                if ~error.indexOf('CORS request rejected')
-                    error = t 'connection failure'
+                if error.indexOf('CORS request rejected') isnt -1
+                    error = t 'connexion error'
             else if response?.status is 0
                 error = t 'connexion error'
             else if response?.statusCode isnt 200
