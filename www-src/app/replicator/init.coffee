@@ -8,6 +8,7 @@ log = require('../lib/persistent_log')
     date: true
     processusTag: "Init"
 
+
 ###*
  * Conductor of the init process.
  * It handle first start, migrations, normal start, service and config changes.
@@ -61,6 +62,10 @@ module.exports = class Init
             else if @states[leaveState]?.display?
                 @trigger 'noDisplay'
 
+    # activating contact or calendar sync requires to init them,
+    # trough init state machine
+    # @param needSync {calendars: true, contacts: false } type object, if
+    # it should be updated or not.
     updateConfig: (needInit) ->
         log.info 'updateConfig'
         # Do sync only while on Realtime : TODO: handles others Running states
@@ -76,7 +81,6 @@ module.exports = class Init
 
             else
                 @toState 'c4RemoteRequest'
-                # @trigger 'initDone'
 
         else if @currentState in ['fConfig', 'mConfig']
             @saveConfig()
@@ -117,13 +121,19 @@ module.exports = class Init
         # Normal (n) states
         nPostConfigInit: enter: ['postConfigInit'], quitOnError: true
         nQuitSplashScreen: enter: ['quitSplashScreen'], quitOnError: true
+        nExit: enter: ['sQuit']
 
         #######################################
         # First start (f) states
         fQuitSplashScreen: enter: ['quitSplashScreen'], quitOnError: true # RUN
-        fLogin: enter: ['login']
-        fPermissions: enter: ['getPermissions']
-        fDeviceName: enter: ['setDeviceName'], leave: ['saveState']
+        fWizardWelcome  : enter: ['loginWizard']
+        fWizardURL      : enter: ['loginWizard']
+        fWizardPassword : enter: ['loginWizard']
+        fWizardFiles    : enter: ['permissionsWizard']
+        fWizardContacts : enter: ['permissionsWizard']
+        fWizardPhotos   : enter: ['permissionsWizard']
+        fWizardCalendars : enter: ['permissionsWizard']
+        fCreateDevice: enter: ['createDevice']
         fCheckPlatformVersion: enter: ['checkPlatformVersions']
         fConfig: enter: ['config']
         fFirstSyncView:
@@ -347,14 +357,25 @@ module.exports = class Init
 
         #######################################
         # First start
-        'fQuitSplashScreen': 'viewInitialized': 'fLogin'
-        'fLogin': 'validCredentials': 'fPermissions'
-        'fPermissions': 'getPermissions': 'fDeviceName'
-        'fDeviceName': 'deviceCreated': 'fCheckPlatformVersion'
-        'fCheckPlatformVersion': 'validPlatformVersions': 'fConfig'
-        'fConfig': 'configDone': 'fFirstSyncView'
-        'fFirstSyncView':
-            'firstSyncViewDisplayed': 'fLocalDesignDocuments'
+        'fQuitSplashScreen': 'viewInitialized': 'fWizardWelcome'
+        'fWizardWelcome': 'clickNext': 'fWizardURL'
+        'fWizardURL':
+            'clickBack': 'fWizardWelcome'
+            'clickNext': 'fWizardPassword'
+        'fWizardPassword':
+            'clickBack': 'fWizardURL'
+            'validCredentials': 'fWizardFiles'
+
+        'fWizardFiles'   : 'clickNext': 'fWizardContacts'
+        'fWizardContacts': 'clickNext': 'fWizardCalendars'
+        'fWizardCalendars': 'clickNext': 'fWizardPhotos'
+        'fWizardPhotos'  : 'clickNext': 'fFirstSyncView'
+        'fFirstSyncView': 'firstSyncViewDisplayed': 'fCreateDevice'
+        'fCreateDevice':
+            'deviceCreated': 'fCheckPlatformVersion'
+            'errorViewed': 'fConfig'
+        'fCheckPlatformVersion':
+            'validPlatformVersions': 'fLocalDesignDocuments'
             'errorViewed': 'fConfig'
         'fLocalDesignDocuments':
             'localDesignUpToDate': 'fRemoteRequest'
@@ -536,7 +557,7 @@ module.exports = class Init
     initConfig: ->
         app.replicator.initConfig (err, config) =>
             return @handleError err if err
-            if config.remote
+            if config.remote and config.get('cozyURL')
                 # Check last state
                 # If state is "ready" -> newVersion ? newVersion : configured
                 # Else : go to this state (with preconditions checks ?)
@@ -657,10 +678,27 @@ module.exports = class Init
 
 
     # First start
-    login: ->
-        app.router.navigate 'login', trigger: true
+    loginWizard: ->
+        app.loginConfig ?=
+            cozyURL: ''
+            password: ''
+            deviceName: "Android #{device.manufacturer} #{device.model}"
 
-    setDeviceName: -> app.router.navigate 'device-name-picker', trigger: true
+        app.router.navigate "login/#{@currentState}", trigger: true
+
+    permissionsWizard: ->
+        app.permissionsFromWizard ?= {}
+        app.router.navigate "permissions/#{@currentState}", trigger: true
+
+    createDevice: ->
+        config = _.extend app.loginConfig, app.permissionsFromWizard,
+            deviceName: "Android-#{device.manufacturer}-#{device.model}"
+            lastInitState: @currentState
+
+        app.replicator.registerRemoteSafe config, (err) =>
+            return @handleError err if err
+            app.loginConfig.password = undefined # forget password
+            @trigger 'deviceCreated'
 
     config: ->
         return if @passUnlessInMigration 'configDone'
