@@ -4,8 +4,7 @@ if error
     div.error-msg= error
 
 label
-    input#input-url(
-        autofocus=true,
+    input.auto-focus#input-url(
         type="url",
         placeholder=t('url placeholder'),
         value=cozyURL)

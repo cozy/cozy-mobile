@@ -22,7 +22,7 @@ module.exports = class BaseView extends Backbone.View
     setState: (key, value) ->
         clearTimeout @dirtyTimeout
         @[key] = value
-        @dirtyTimeout = setTimeout @render.bind(@), 1
+        @dirtyTimeout = setTimeout (=> @render()), 1
 
     beforeRender: ->
 

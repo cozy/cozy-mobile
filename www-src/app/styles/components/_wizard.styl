@@ -23,14 +23,6 @@ stepColorMixin(color, btnColor)
     input::-webkit-input-placeholder
         color color+60%
 
-.scroll
-    min-height 99%
-
-.scroll .wizard-step
-    position absolute
-    top 0%
-    height 100vh
-    width 100vw
 
 .fWizardWelcome
     stepColorMixin white, $urlBlue
@@ -52,11 +44,11 @@ stepColorMixin(color, btnColor)
 .wizard-step
     display flex
     flex-direction column
-    // justify-content space-between
     align-item center
     align-content stretch
     overflow hidden
     padding 1em
+    max-height 100vh
 
     .button-block
         flex 0 0 3em
@@ -119,6 +111,7 @@ stepColorMixin(color, btnColor)
 
     label
         flex 1 0 auto
+        margin-bottom 1em
 
     input
         font 1.8em 'Source Sans Pro', Sans-serif
