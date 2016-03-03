@@ -103,7 +103,11 @@ module.exports = class Layout extends BaseView
 
     quitSplashScreen: ->
         $('body').empty().append @render().$el
-        $('body').css 'background-color', 'white'
+        @refreshBackgroundColor()
+
+    refreshBackgroundColor: ->
+        color = _.result @currentView, 'bodyBackgroundColor', 'white'
+        @container.css 'background-color', color
 
     setBackButton: (href, icon) =>
         @backButton.attr 'href', href
@@ -147,13 +151,9 @@ module.exports = class Layout extends BaseView
             type = 'none'
 
         if type is 'none' # no animation
-            @resetScroll()
             @currentView?.remove()
             @viewsBlock.append $next
-            @viewsPlaceholder
-            @ionicScroll.hintResize()
-            @currentView = view
-            @ionicScroll.scrollTo 0, 0, false, null
+            @afterTransition(view)
 
         else
 
@@ -173,16 +173,24 @@ module.exports = class Layout extends BaseView
                 'oTransitionEnd msTransitionEnd transitionend'
             # double one & once because there is multiple events type
             $next.one transitionend, _.once =>
-                @resetScroll()
                 @currentView.remove()
-                @currentView = view
-                @ionicScroll.hintResize()
-                @ionicScroll.scrollTo 0, 0, false, null
+                @afterTransition(view)
 
-    resetScroll: ->
+    afterTransition: (view) ->
+        @currentView = view
         ionic.trigger 'resetScrollView',
             target: @ionicScroll.__container
         , true
+        @ionicScroll.hintResize()
+        @ionicScroll.scrollTo 0, 0, false, null
+        @refreshBackgroundColor()
+        autofocusField = @currentView.$('.auto-focus')
+        if autofocusField.length
+            setTimeout (=> autofocusField.trigger 'click' ), 1
+            autofocusField.one 'click', -> autofocusField.focus()
+
+        if @currentView.$el.hasClass 'wizard-step'
+            setTimeout -> @currentView.$el.css 'height', ''
 
     showInitMessage: (message) =>
         log.debug 'showInitMessage'

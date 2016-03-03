@@ -15,8 +15,16 @@ module.exports = class LoginView extends BaseView
         'fWizardURL'      : require '../templates/wizard/url'
         'fWizardPassword' : require '../templates/wizard/password'
 
-    afterRender : -> @$('input').focus()
     template: (data) -> @templates[@options.step](data)
+    afterRender : ->
+        @$('input').focus()
+        app.layout.refreshBackgroundColor()
+
+    bodyBackgroundColor: -> @$el.css 'background-color'
+
+    remove: ->
+        $('body').css 'background-color', @prevBodyBgColor
+        super
 
     refs:
         inputURL      : '#input-url'

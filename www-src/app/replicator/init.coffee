@@ -559,7 +559,7 @@ module.exports = class Init
     initConfig: ->
         app.replicator.initConfig (err, config) =>
             return @handleError err if err
-            if config.remote
+            if config.remote and config.get('cozyURL')
                 # Check last state
                 # If state is "ready" -> newVersion ? newVersion : configured
                 # Else : go to this state (with preconditions checks ?)
@@ -692,16 +692,14 @@ module.exports = class Init
         app.router.navigate "permissions/#{@currentState}", trigger: true
 
     createDevice: ->
-        deviceName = "Android #{device.manufacturer} #{device.model}"
-        app.loginConfig.deviceName = deviceName
-        app.loginConfig.lastInitState = @currentState
-        callback = @getCallbackTrigger 'deviceCreated'
-        app.replicator.config.save app.permissionsFromWizard, (err, config) =>
+        config = _.extend app.loginConfig, app.permissionsFromWizard,
+            deviceName: "Android-#{device.manufacturer}-#{device.model}"
+            lastInitState: @currentState
+
+        app.replicator.registerRemoteSafe config, (err) =>
             return @handleError err if err
-            app.replicator.registerRemote app.loginConfig, (err) =>
-                return @handleError err if err
-                app.loginConfig.password = '' # forget password
-                @trigger 'deviceCreated'
+            app.loginConfig.password = undefined # forget password
+            @trigger 'deviceCreated'
 
     config: ->
         return if @passUnlessInMigration 'configDone'

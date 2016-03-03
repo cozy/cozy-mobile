@@ -135,6 +135,14 @@ module.exports = class Replicator extends Backbone.Model
         Notification: description: "notification permission description"
         Tag: description: "tag permission description"
 
+    registerRemoteSafe: (newConfig, callback, addition = 0)->
+        conf = _.clone newConfig
+        conf.deviceName += "-#{addition}" if addition > 0
+        @registerRemote conf, (err) =>
+            if err and err.message is 'device name already exist'
+                @registerRemoteSafe newConfig, callback, addition + 1
+            else
+                callback err
 
     registerRemote: (newConfig, callback) ->
         request.post
