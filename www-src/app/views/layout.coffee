@@ -19,6 +19,7 @@ module.exports = class Layout extends BaseView
         'tap #btn-back': 'onBackButtonClicked'
         'tap #btn-menu': 'onMenuButtonClicked'
         'tap #closeerror': 'onCloseErrorIndicator'
+        "click a[target='_system']": 'openInSystemBrowser'
 
     initialize: ->
         document.addEventListener "menubutton", @onMenuButtonClicked, false
@@ -102,20 +103,34 @@ module.exports = class Layout extends BaseView
 
     quitSplashScreen: ->
         $('body').empty().append @render().$el
-        $('body').css 'background-color', 'white'
+        @refreshBackgroundColor()
+
+    refreshBackgroundColor: ->
+        color = _.result @currentView, 'bodyBackgroundColor', 'white'
+        @container.css 'background-color', color
 
     setBackButton: (href, icon) =>
         @backButton.attr 'href', href
         @backButton.removeClass 'ion-home ion-ios7-arrow-back'
         @backButton.addClass 'ion-' + icon
 
+    hideTitle: ->
+        @$('#breadcrumbs').remove()
+        @title.hide()
+        @$('#bar-header').hide()
+        @$('#viewsPlaceholder').removeClass('has-header')
+
     setTitle: (text) =>
         @$('#breadcrumbs').remove()
         @title.text text
         @title.show()
+        @$('#bar-header').show()
+        @$('#viewsPlaceholder').addClass('has-header')
 
     setBreadcrumbs: (path) ->
         @$('#breadcrumbs').remove()
+        @$('#bar-header').show()
+        @$('#viewsPlaceholder').addClass('has-header')
         @title.hide()
         @iconLogo.hide()
         breadcrumbsView = new BreadcrumbsView path: path
@@ -138,9 +153,7 @@ module.exports = class Layout extends BaseView
         if type is 'none' # no animation
             @currentView?.remove()
             @viewsBlock.append $next
-            @ionicScroll.hintResize()
-            @currentView = view
-            @ionicScroll.scrollTo 0, 0, false, null
+            @afterTransition(view)
 
         else
 
@@ -161,8 +174,23 @@ module.exports = class Layout extends BaseView
             # double one & once because there is multiple events type
             $next.one transitionend, _.once =>
                 @currentView.remove()
-                @currentView = view
-                @ionicScroll.scrollTo 0, 0, false, null
+                @afterTransition(view)
+
+    afterTransition: (view) ->
+        @currentView = view
+        ionic.trigger 'resetScrollView',
+            target: @ionicScroll.__container
+        , true
+        @ionicScroll.hintResize()
+        @ionicScroll.scrollTo 0, 0, false, null
+        @refreshBackgroundColor()
+        autofocusField = @currentView.$('.auto-focus')
+        if autofocusField.length
+            setTimeout (=> autofocusField.trigger 'click' ), 1
+            autofocusField.one 'click', -> autofocusField.focus()
+
+        if @currentView.$el.hasClass 'wizard-step'
+            setTimeout -> @currentView.$el.css 'height', ''
 
     showInitMessage: (message) =>
         log.debug 'showInitMessage'
@@ -209,3 +237,8 @@ module.exports = class Layout extends BaseView
         else
             # navigator.app.backHistory()
             window.history.back()
+
+    openInSystemBrowser: (e) ->
+        window.open e.currentTarget.href, '_system', ''
+        e.preventDefault()
+        return false

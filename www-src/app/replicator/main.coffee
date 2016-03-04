@@ -107,22 +107,20 @@ module.exports = class Replicator extends Backbone.Model
                 username: 'owner'
                 password: config.password
         , (err, response, body) ->
-            if err
-                if config.cozyURL.indexOf('@') isnt -1
-                    error = t 'bad credentials, did you enter an email address'
-                else if err.message is "Unexpected token <"
-                    error = t err.message
-                else
-                    # Unexpected error, just show it to the user.
-                    log.error err
-                    return callback err.message
-
+            if err and config.cozyURL.indexOf('@') isnt -1
+                error = t 'bad credentials, did you enter an email address'
+            else if err and err.message is "Unexpected token <"
+                error = t err.message
+            else if err
+                # Unexpected error, just show it to the user.
+                log.error err
+                error = err.message
+                if error.indexOf('CORS request rejected') isnt -1
+                    error = t 'connexion error'
             else if response?.status is 0
                 error = t 'connexion error'
-
             else if response?.statusCode isnt 200
                 error = err?.message or body.error or body.message
-
             else
                 error = null
 
@@ -137,6 +135,14 @@ module.exports = class Replicator extends Backbone.Model
         Notification: description: "notification permission description"
         Tag: description: "tag permission description"
 
+    registerRemoteSafe: (newConfig, callback, addition = 0)->
+        conf = _.clone newConfig
+        conf.deviceName += "-#{addition}" if addition > 0
+        @registerRemote conf, (err) =>
+            if err and err.message is 'device name already exist'
+                @registerRemoteSafe newConfig, callback, addition + 1
+            else
+                callback err
 
     registerRemote: (newConfig, callback) ->
         request.post

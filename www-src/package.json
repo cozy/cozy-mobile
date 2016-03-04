@@ -10,7 +10,10 @@
     "build": "brunch build",
     "lint": "coffeelint -r app test *.coffee",
     "test": "mocha test/unit/*/* --reporter spec --compilers coffee:coffee-script/register --colors",
-    "start": "brunch watch --server"
+    "start": "brunch watch --server",
+    "device": "cordova run --device",
+    "buildapk": "npm run build && cordova build --release",
+    "release": "rm ../CozyFiles.apk && npm run buildapk && cd .. && cake release"
   },
   "cordovaPlatforms": [
     "android"
