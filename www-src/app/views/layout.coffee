@@ -190,7 +190,7 @@ module.exports = class Layout extends BaseView
             autofocusField.one 'click', -> autofocusField.focus()
 
         if @currentView.$el.hasClass 'wizard-step'
-            setTimeout -> @currentView.$el.css 'height', ''
+            setTimeout => @currentView.$el.css 'height', ''
 
     showInitMessage: (message) =>
         log.debug 'showInitMessage'
