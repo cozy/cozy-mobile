@@ -209,7 +209,7 @@ module.exports = class Init
         sPostConfigInit: enter: ['postConfigInit'], quitOnError: true
         sImport: enter: ['import'], quitOnError: true
         sSync: enter: ['sSync'], quitOnError: true
-        sBackup: enter: ['sBackup'], quitOnError: true
+        sBackup: enter: ['backup'], quitOnError: true
         sSync2: enter: ['sSync'], quitOnError: true
         sQuit: enter: ['sQuit'], quitOnError: true
 
@@ -332,7 +332,9 @@ module.exports = class Init
         'nQuitSplashScreen': 'viewInitialized': 'aLoadFilePage'
         'aLoadFilePage': 'onFilePage': 'aImport'
         'aImport': 'importDone': 'aBackup'
-        'aBackup': 'backupDone': 'aRealtime'
+        'aBackup':
+            'backupDone': 'aRealtime'
+            'errorViewed': 'aRealtime'
 
         #######################################
         # Running
@@ -570,9 +572,8 @@ module.exports = class Init
 
     backup: ->
         app.replicator.startRealtime()
-        app.replicator.backup {}, (err) =>
-            log.error err if err
-            @trigger 'backupDone'
+        app.replicator.backup {}, @getCallbackTrigger 'backupDone'
+
 
     onResume: ->
         # Don't import, backup, ... while service still running
@@ -779,9 +780,6 @@ module.exports = class Init
                     @trigger 'configured'
             else # In init.
                 return @handleError new Error "notConfigured: #{lastState}"
-    sBackup: ->
-        app.replicator.backup background: true
-        , @getCallbackTrigger 'backupDone'
 
     sSync: ->
         app.replicator.sync {}, @getCallbackTrigger 'syncDone'

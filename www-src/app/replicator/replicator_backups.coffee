@@ -48,11 +48,18 @@ module.exports =
             errors = []
             async.series [
                 (cb) =>
-                    @syncPictures (err) ->
+                    @syncPictures (err) =>
                         if err
                             log.error "in syncPictures: ", err
                             errors.push err
-                        cb()
+                            return cb()
+
+                        # Avoid saving while in a change config state.
+                        if app.init.currentState.indexOf('c') isnt 0
+                            @config.save { lastBackup: Date.now() }, cb
+
+                        else
+                            cb()
 
                 (cb) =>
                     DeviceStatus.checkReadyForSync (err, ready, msg) =>
