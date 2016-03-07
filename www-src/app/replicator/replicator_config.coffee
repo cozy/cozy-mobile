@@ -1,4 +1,4 @@
-APP_VERSION = "0.2.2"
+APP_VERSION = "1.0.0"
 PouchDB = require 'pouchdb'
 request = require '../lib/request'
 FilterManager = require './filter_manager'
