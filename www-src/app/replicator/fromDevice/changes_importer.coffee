@@ -1,16 +1,19 @@
 async = require 'async'
 ContactImporter = require './contact_importer'
 EventImporter = require './event_importer'
+PictureImporter = require './picture_importer'
 log = require('../../lib/persistent_log')
     prefix: "ChangesImporter"
     date: true
 
 module.exports = class ChangesImporter
 
-    constructor: (@config, @eventImporter, @contactImporter) ->
+    constructor: (@config, @eventImporter, @contactImporter, @pictureImporter) \
+            ->
         @config ?= app.replicator.config
         @eventImporter ?= new EventImporter()
         @contactImporter ?= new ContactImporter()
+        @pictureImporter ?= new PictureImporter()
 
 
     synchronize: (callback) ->
@@ -25,6 +28,11 @@ module.exports = class ChangesImporter
             (cb) =>
                 if @config.get('syncContacts')
                     @contactImporter.synchronize cb
+                else cb()
+
+            (cb) =>
+                if @config.get('syncImages')
+                    @pictureImporter.synchronize cb
                 else cb()
 
         ], callback
