@@ -4,11 +4,11 @@ async = require 'async'
 CozyToAndroidEvent = require "../transformer/cozy_to_android_event"
 AndroidCalendarHandler = require "../../lib/android_calendar_handler"
 log = require('../../lib/persistent_log')
-    prefix: "EventSynchronizer"
+    prefix: "EventImporter"
     date: true
 continueOnError = require('../../lib/utils').continueOnError log
 
-module.exports = class EventSynchronizer
+module.exports = class EventImporter
 
     constructor: (@db, @calendarSync) ->
         @db ?= app.replicator.config.db
