@@ -349,7 +349,9 @@ module.exports = class Init
         #######################################
         # Running
         'aPause': 'resume': 'aResume'
-        'aResume': 'ready': 'aImport'
+        'aResume':
+            'pause': 'aPause'
+            'ready': 'aImport'
 
         'aRealtime':
             'pause': 'aPause'
