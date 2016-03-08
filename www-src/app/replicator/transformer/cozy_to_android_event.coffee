@@ -190,7 +190,7 @@ module.exports = class CozyToAndroidEvent
             description: androidEvent.title
             details: androidEvent.description
             rrule: androidEvent.rrule
-            tags: [androidCalendar.name]
+            tags: [androidCalendar.calendar_displayName]
             attendees: attendees
             timezone: timezone
             alarms: alarms
