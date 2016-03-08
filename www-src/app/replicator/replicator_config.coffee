@@ -1,4 +1,4 @@
-APP_VERSION = "0.2.1"
+APP_VERSION = "1.0.0"
 PouchDB = require 'pouchdb'
 request = require '../lib/request'
 FilterManager = require './filter_manager'
@@ -76,7 +76,8 @@ module.exports = class ReplicatorConfig extends Backbone.Model
 
     getScheme: ->
         # Monkey patch for browser debugging
-        if window.isBrowserDebugging
+        isLocalhost = @get('cozyURL').indexOf('localhost') is 0
+        if window.isBrowserDebugging and isLocalhost
             return 'http'
         else
             return 'https'

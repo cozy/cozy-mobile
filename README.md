@@ -17,10 +17,24 @@ or compile it.
     npm install -g coffee-script
     cake install
 
-## Built with
+### Resource for cordova installation
+- [ubuntu todolist](http://askubuntu.com/questions/318246/complete-installation-guide-for-android-sdk-adt-bundle-on-ubuntu)
+- [cordova manual](https://cordova.apache.org/docs/en/latest/guide/platforms/android/index.html)
+- Necessary path
+```bash
+export ANDROID_HOME="/path/to/android-sdk-linux"
+export PATH="$PATH:$ANDROID_HOME/tools"
+export PATH="$PATH:$ANDROID_HOME/build-tools/23.0.2"
+export PATH="$PATH:$ANDROID_HOME/platform-tools"
+```
 
-    ./www-src/node_modules/.bin/cordova build --release
-    cake release
+## Build with
+```bash
+.$ cd www-src
+./www-src$ npm run build # build coffee into js in www-src
+./www-src$ npm run buildapk # build the apk using cordova
+./www-src$ npm run release # sign the apk, need ./keys
+```
 
 ## Hack
 
