@@ -59,7 +59,7 @@
     "cozy welcome no account": "Si vous n'avez pas encore d'instance Cozy, rendez-vous sur <a target='_system' href='http://cozy.io/fr/'>cozy.io</a> pour en savoir plus.",
     "url placeholder": "Votre adresse Cozy",
     "url help": "Renseignez votre adresse permettant de vous connecter à votre Cozy, par exemple coucou.cozycloud.cc",
-    "no account register": "Vous n'avez pas de Cozy ? Enregistrez vous gratuitement",
+    "no account register": "Vous n'avez pas de Cozy ? Enregistrez vous",
     "your own private cloud": "Votre propre cloud personnel",
     "sign in to your cozy": "Connectez-vous à votre Cozy",
     "password placeholder": "Votre mot de passe",
