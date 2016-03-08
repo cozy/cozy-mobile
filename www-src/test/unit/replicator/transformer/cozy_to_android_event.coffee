@@ -17,7 +17,7 @@ describe 'Unit tests', ->
 describe 'Convert Cozy event to Android', ->
     androidCalendar =
         _id: 58
-        name: 'calendar 1'
+        calendar_displayName: 'calendar 1'
 
     # calendarIds =
     #     "calendar 1": 58

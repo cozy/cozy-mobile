@@ -349,7 +349,9 @@ module.exports = class Init
         #######################################
         # Running
         'aPause': 'resume': 'aResume'
-        'aResume': 'ready': 'aImport'
+        'aResume':
+            'pause': 'aPause'
+            'ready': 'aImport'
 
         'aRealtime':
             'pause': 'aPause'
@@ -603,14 +605,17 @@ module.exports = class Init
 
             # If service still running, try again later
             if running
-                setTimeout (() => @onResume()), 10 * 1000
+                @timeout = setTimeout (() => @onResume()), 10 * 1000
                 log.info 'Service still running, backup later'
 
             else
                 @trigger 'ready'
 
     onPause: ->
+        log.info "onPause"
+
         @stopRealtime()
+        clearTimeout @timeout if @timeout
 
     startRealtime: ->
         app.replicator.startRealtime()

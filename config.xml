@@ -13,7 +13,7 @@
     <preference name="Orientation" value="portrait" />
     <preference name="android-minSdkVersion" value="14" />
     <preference name="AndroidLaunchMode" value="singleTask" />
-    <preference name="android-windowSoftInputMode" value="stateHidden|adjustResize" />
+    <preference name="android-windowSoftInputMode" value="stateHidden|adjustPan" />
 
     <content src="index.html"/>
     <platform name="android">

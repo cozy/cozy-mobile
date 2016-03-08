@@ -527,6 +527,8 @@ module.exports = class Replicator extends Backbone.Model
 
     # Stop replication.
     stopRealtime: =>
+        log.info "stopRealtime"
+
         @replicationLauncher?.stop()
         delete @replicationLauncher
 
