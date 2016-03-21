@@ -47,7 +47,8 @@
     "node-polyglot": "1.0.0 ",
     "pouchdb": "5.2.1",
     "semver": "5.1.0",
-    "underscore": "1.8.3"
+    "underscore": "1.8.3",
+    "validator": "5.1.0"
   },
   "devDependencies": {
     "brunch": "1.8.5",

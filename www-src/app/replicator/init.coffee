@@ -3,6 +3,7 @@ async = require 'async'
 ChangeDispatcher = require './change/change_dispatcher'
 ChangesImporter = require './fromDevice/changes_importer'
 AndroidAccount = require './fromDevice/android_account'
+validator = require 'validator'
 
 log = require('../lib/persistent_log')
     date: true
@@ -128,6 +129,7 @@ module.exports = class Init
         fQuitSplashScreen: enter: ['quitSplashScreen'], quitOnError: true # RUN
         fWizardWelcome  : enter: ['loginWizard']
         fWizardURL      : enter: ['loginWizard']
+        fCheckURL       : enter: ['checkURL']
         fWizardPassword : enter: ['loginWizard']
         fWizardFiles    : enter: ['permissionsWizard']
         fWizardContacts : enter: ['permissionsWizard']
@@ -365,7 +367,10 @@ module.exports = class Init
         'fWizardWelcome': 'clickNext': 'fWizardURL'
         'fWizardURL':
             'clickBack': 'fWizardWelcome'
-            'clickNext': 'fWizardPassword'
+            'clickNext': 'fCheckURL'
+        'fCheckURL':
+            'clickToPassword': 'fWizardPassword'
+            'error': 'fWizardURL'
         'fWizardPassword':
             'clickBack': 'fWizardURL'
             'validCredentials': 'fWizardFiles'
@@ -691,6 +696,14 @@ module.exports = class Init
             deviceName: "Android #{device.manufacturer} #{device.model}"
 
         app.router.navigate "login/#{@currentState}", trigger: true
+
+    checkURL: ->
+        options =
+            protocols: ['https']
+        if validator.isURL app.loginConfig.cozyURL, options
+            @trigger 'clickToPassword'
+        else
+            @trigger 'error', new Error t "Your Cozy URL is not valid."
 
     permissionsWizard: ->
         app.permissionsFromWizard ?= {}
