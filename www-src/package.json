@@ -2,6 +2,7 @@
   "name": "cozy-mobile",
   "description": "This is the native mobile client for Cozy.",
   "version": "0.1.3",
+  "license": "LGPL-3.0",
   "engines": {
     "node": "~0.10"
   },

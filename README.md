@@ -77,7 +77,7 @@ If you want to learn more about how to use this tool, I'll invite you to check
 
 ## License
 
-Cozy Mobile Client is developed by Cozy Cloud and distributed under the AGPL v3
+Cozy Mobile Client is developed by Cozy Cloud and distributed under the LGPL v3
 license.
 
 ## What is Cozy?
