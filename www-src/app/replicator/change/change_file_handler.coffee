@@ -38,7 +38,7 @@ module.exports = class ChangeFileHandler
             # Entry is false if this file isn't cached.
             return callback() unless entry
 
-            if entry.name isnt @_fileToEntryName(doc)
+            if entry.name isnt @_fileToEntryName doc
                 @_update doc, callback
 
             else
