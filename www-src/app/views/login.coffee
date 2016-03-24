@@ -42,7 +42,7 @@ module.exports = class LoginView extends BaseView
         'tap .wrong-url'         : -> @options.fsm.trigger 'clickBack'
 
     getRenderData: ->
-        cozyURL: app.loginConfig?.cozyURL or ''
+        cozyURL: app.loginConfig?.cozyProtocol + app.loginConfig?.cozyURL or ''
         password: app.loginConfig?.password or ''
         error: @error
         saving: @saving
@@ -66,5 +66,7 @@ module.exports = class LoginView extends BaseView
         @setState 'saving', true
         app.replicator.checkCredentials app.loginConfig, (error) =>
             @setState 'saving', false
-            if error? then @setState 'error', error
-            else app.init.trigger 'validCredentials'
+            if error
+                @setState 'error', error
+            else
+                app.init.trigger 'validCredentials'

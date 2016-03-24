@@ -691,6 +691,7 @@ module.exports = class Init
     # First start
     loginWizard: ->
         app.loginConfig ?=
+            cozyProtocol: ''
             cozyURL: ''
             password: ''
             deviceName: "Android #{device.manufacturer} #{device.model}"
@@ -698,9 +699,23 @@ module.exports = class Init
         app.router.navigate "login/#{@currentState}", trigger: true
 
     checkURL: ->
+        isLocalhost = app.loginConfig.cozyURL.indexOf('localhost') is 0
+        protocols = ['https']
+        if window.isBrowserDebugging and isLocalhost
+            protocols.push 'http'
+
         options =
-            protocols: ['https']
+            protocols: protocols
         if validator.isURL app.loginConfig.cozyURL, options
+            if app.loginConfig.cozyURL[0..7] is 'https://'
+                app.loginConfig.cozyProtocol = "https://"
+                app.loginConfig.cozyURL =
+                    app.loginConfig.cozyURL.replace 'https://', ''
+            else
+                app.loginConfig.cozyProtocol = "http://"
+                app.loginConfig.cozyURL =
+                    app.loginConfig.cozyURL.replace 'http://', ''
+
             @trigger 'clickToPassword'
         else
             @trigger 'error', new Error t "Your Cozy URL is not valid."
