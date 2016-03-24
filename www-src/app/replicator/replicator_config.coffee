@@ -74,16 +74,18 @@ module.exports = class ReplicatorConfig extends Backbone.Model
 
                 callback null, @
 
-    getScheme: ->
+    getScheme: (cozyUrl) ->
+        cozyUrl ?= @get('cozyURL')
+        return '' if cozyUrl[0..3] is 'http'
         # Monkey patch for browser debugging
-        isLocalhost = @get('cozyURL').indexOf('localhost') is 0
+        isLocalhost = cozyUrl.indexOf('localhost') is 0
         if window.isBrowserDebugging and isLocalhost
-            return 'http'
+            'http://'
         else
-            return 'https'
+            'https://'
 
     getCozyUrl: ->
-        "#{@getScheme()}://#{@get("deviceName")}:#{@get('devicePassword')}" +
+        "#{@getScheme()}#{@get("deviceName")}:#{@get('devicePassword')}" +
             "@#{@get('cozyURL')}"
 
     makeDSUrl: (path) ->
