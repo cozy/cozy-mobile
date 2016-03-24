@@ -71,14 +71,14 @@ module.exports = class ReplicationLauncher
                 log.info "replicate paused"
             @replication.on 'active', ->
                 log.info "replicate active"
-            @replication.on 'denied', (info) ->
-                log.info "replicate denied"
+            @replication.on 'denied', (err) ->
+                log.info "replicate denied", err
                 callback new Error "Replication denied"
             @replication.on 'complete', (info) ->
                 log.info "replicate complete"
                 callback()
             @replication.on 'error', (err) ->
-                log.error "replicate error"
+                log.error "replicate error", err
                 callback err
 
 
