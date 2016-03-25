@@ -29,22 +29,6 @@ module.exports =
         @init.trigger 'startApplication'
 
 
-    setDeviceLocale: (callback) ->
-        # Monkey patch for browser debugging
-        if window.isBrowserDebugging
-            window.navigator = window.navigator or {}
-            window.navigator.globalization =
-                window.navigator.globalization or {}
-            window.navigator.globalization.getPreferredLanguage = (cb) =>
-                cb value: @translation.DEFAULT_LANGUAGE
-
-        # Use the device's locale until we get the config document.
-        navigator.globalization.getPreferredLanguage (properties) =>
-            @translation.setLocale(properties)
-            window.t = @translation.getTranslate()
-            callback()
-
-
     postConfigInit: (callback) ->
         unless window.isBrowserDebugging # Patch for browser debugging
             @notificationManager = new Notifications()

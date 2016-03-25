@@ -552,7 +552,7 @@ module.exports = class Init
 
     # Enter state methods.
     setDeviceLocale: ->
-        app.setDeviceLocale @getCallbackTrigger 'deviceLocaleSetted'
+        app.translation.setDeviceLocale @getCallbackTrigger 'deviceLocaleSetted'
 
 
     initFileSystem: ->
