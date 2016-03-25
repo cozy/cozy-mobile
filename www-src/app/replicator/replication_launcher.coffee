@@ -67,8 +67,8 @@ module.exports = class ReplicationLauncher
                     , (err) ->
                         log.error err if err
 
-            @replication.on 'paused', ->
-                log.info "replicate paused"
+            @replication.on 'paused', (err) ->
+                log.info "replicate paused", err
             @replication.on 'active', ->
                 log.info "replicate active"
             @replication.on 'denied', (err) ->
