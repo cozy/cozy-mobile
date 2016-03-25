@@ -109,7 +109,6 @@ module.exports = class ReplicationLauncher
         if options.live
             replicationOptions.live = true
             replicationOptions.retry = true
-            replicationOptions.heartbeat = false
             replicationOptions.back_off_function = (delay) ->
                 log.info "back_off_function", delay
                 return 1000 if delay is 0
