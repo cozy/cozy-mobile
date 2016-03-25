@@ -8,7 +8,7 @@ global.XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest
 require 'backbone.statemachine'
 
 module.exports = describe 'Init Test', ->
-    Init = require '../../../app/replicator/init'
+    Init = require '../../../app/init'
 
     ['mTest1', 'mTest2', 'mTetst3',
      'smTest1', 'smTest2', 'smTetst3',

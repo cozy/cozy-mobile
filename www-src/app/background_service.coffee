@@ -5,7 +5,7 @@ Replicator    = require './replicator/main'
 Notifications = require './views/notifications'
 DeviceStatus  = require './lib/device_status'
 Translation   = require './lib/translation'
-Init          = require './replicator/init'
+Init          = require './init'
 
 
 log = require('./lib/persistent_log')

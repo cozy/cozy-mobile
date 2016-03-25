@@ -1,11 +1,11 @@
 semver = require 'semver'
 async = require 'async'
-ChangeDispatcher = require './change/change_dispatcher'
-ChangesImporter = require './fromDevice/changes_importer'
-AndroidAccount = require './fromDevice/android_account'
+ChangeDispatcher = require './replicator/change/change_dispatcher'
+ChangesImporter = require './replicator/fromDevice/changes_importer'
+AndroidAccount = require './replicator/fromDevice/android_account'
 validator = require 'validator'
 
-log = require('../lib/persistent_log')
+log = require('lib/persistent_log')
     date: true
     processusTag: "Init"
 
@@ -936,7 +936,7 @@ module.exports = class Init
         return if @passUnlessInMigration 'cacheMoved'
         return @trigger 'cacheMoved' if window.isBrowserDebugging
 
-        fs = require './filesystem'
+        fs = require './replicator/filesystem'
 
         getOldDownloadsDir = (callback) ->
             uri = cordova.file.externalRootDirectory \

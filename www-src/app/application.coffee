@@ -7,7 +7,7 @@ ServiceManager = require './models/service_manager'
 Notifications  = require './views/notifications'
 DeviceStatus   = require './lib/device_status'
 Translation    = require './lib/translation'
-Init           = require './replicator/init'
+Init           = require './init'
 
 log = require('./lib/persistent_log')
     prefix: "application"
