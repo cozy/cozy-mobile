@@ -4,4 +4,4 @@ languages:
    JavaScript: true
 
 exclude_paths:
-  - www-src/vendor
+  - src/vendor

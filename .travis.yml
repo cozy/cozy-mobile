@@ -14,6 +14,6 @@ install:
   - cake install
 
 script:
-  - cd www-src && npm run test && cd ..
-  - cd www-src && npm run lint && cd ..
-  - ./www-src/node_modules/.bin/cordova build android
+  - cd src && npm run test && cd ..
+  - cd src && npm run lint && cd ..
+  - ./src/node_modules/.bin/cordova build android

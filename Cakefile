@@ -1,10 +1,10 @@
 fs     = require 'fs'
 {exec} = require 'child_process'
-packageJson = require './www-src/package.json'
+packageJson = require './src/package.json'
 
 installDependencies = (done) ->
     console.log "install dependencies"
-    command = "cd www-src && npm install && cd .."
+    command = "cd src && npm install && cd .."
     exec command, (err, stdout, stderr) ->
         console.log stdout
         console.log stderr
@@ -12,10 +12,10 @@ installDependencies = (done) ->
 
 installPlatforms = (done) ->
     console.log "install cordova platforms"
-    async  = require './www-src/modules/async'
+    async  = require './src/modules/async'
     async.eachSeries packageJson.cordovaPlatforms, (platform, cb) ->
         console.log "attempt to add platform #{platform} ..."
-        command = './www-src/node_modules/.bin/cordova platform add ' + platform
+        command = './src/node_modules/.bin/cordova platform add ' + platform
         exec command, (err, stdout, stderr) ->
             console.log stdout
             console.log stderr
@@ -24,10 +24,10 @@ installPlatforms = (done) ->
 
 uninstallPlatforms = (done) ->
     console.log "uninstall cordova platforms"
-    async  = require './www-src/modules/async'
+    async  = require './src/modules/async'
     async.eachSeries packageJson.cordovaPlatforms, (platform, cb) ->
         console.log "attempt to remove platform #{platform} ..."
-        command = './www-src/node_modules/.bin/cordova platform remove ' + platform
+        command = './src/node_modules/.bin/cordova platform remove ' + platform
         exec command, (err, stdout, stderr) ->
             console.log stdout
             console.log stderr
@@ -36,11 +36,11 @@ uninstallPlatforms = (done) ->
 
 installPlugins = (done) ->
     console.log "install cordova plugins"
-    async  = require './www-src/modules/async'
+    async  = require './src/modules/async'
     async.eachSeries Object.keys(packageJson.cordovaPlugins), (plugin, cb) ->
         pluginName = packageJson.cordovaPlugins[plugin]
         console.log "installing plugin #{plugin} ..."
-        command = './www-src/node_modules/.bin/cordova plugin add ' + pluginName
+        command = './src/node_modules/.bin/cordova plugin add ' + pluginName
         exec command, (err, stdout, stderr) ->
             console.log stdout
             console.log stderr
@@ -49,10 +49,10 @@ installPlugins = (done) ->
 
 uninstallPlugins = (done) ->
     console.log "uninstall cordova plugins"
-    async  = require './www-src/modules/async'
+    async  = require './src/modules/async'
     async.eachSeries Object.keys(packageJson.cordovaPlugins).reverse(), (plugin, cb) ->
         console.log "uninstalling plugin #{plugin} ..."
-        command = './www-src/node_modules/.bin/cordova plugin rm ' + plugin
+        command = './src/node_modules/.bin/cordova plugin rm ' + plugin
         exec command, (err, stdout, stderr) ->
             console.log stdout
             console.log stderr
@@ -87,7 +87,7 @@ release = (done) ->
             return done err
 
 cordovaRun = (done) ->
-    command = "./www-src/node_modules/.bin/cordova run android"
+    command = "./src/node_modules/.bin/cordova run android"
     exec command, (err, stdout, stderr) ->
         console.log stdout
         console.log stderr
