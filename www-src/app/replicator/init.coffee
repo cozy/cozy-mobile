@@ -71,7 +71,7 @@ module.exports = class Init
         log.info 'updateConfig'
         # Do sync only while on Realtime : TODO: handles others Running states
         # waiting for them to end.
-        if @currentState in ['aRealtime', 'cUpdateIndex', 'aImport', 'aBackup']
+        if @currentState in ['aRealtime', 'cUpdateIndex', 'aImport']
             if needInit.calendars and needInit.contacts
                 @toState 'c3RemoteRequest'
             else if needInit.contacts
@@ -205,7 +205,6 @@ module.exports = class Init
         aImport:
             enter: ['import']
             display: 'syncing' # TODO: more accurate translate key
-        aBackup: enter: ['backup']
         aRealtime: enter: ['startRealtime']
         aResume: enter: ['onResume']
         aPause: enter: ['onPause']
@@ -221,7 +220,6 @@ module.exports = class Init
         sPostConfigInit: enter: ['postConfigInit'], quitOnError: true
         sImport: enter: ['import'], quitOnError: true
         sSync: enter: ['sSync'], quitOnError: true
-        sBackup: enter: ['backup'], quitOnError: true
         sSync2: enter: ['sSync'], quitOnError: true
         sQuit: enter: ['sQuit'], quitOnError: true
 
@@ -343,10 +341,7 @@ module.exports = class Init
         'nPostConfigInit': 'initsDone': 'nQuitSplashScreen'
         'nQuitSplashScreen': 'viewInitialized': 'aLoadFilePage'
         'aLoadFilePage': 'onFilePage': 'aImport'
-        'aImport': 'importDone': 'aBackup'
-        'aBackup':
-            'backupDone': 'aRealtime'
-            'errorViewed': 'aRealtime'
+        'aImport': 'importDone': 'aRealtime'
 
         #######################################
         # Running
@@ -450,8 +445,7 @@ module.exports = class Init
         'sInitDatabase': 'databaseReady': 'sInitConfig'
         'sPostConfigInit': 'initsDone': 'sImport'
         'sImport': 'importDone': 'sSync'
-        'sSync': 'syncDone': 'sBackup'
-        'sBackup': 'backupDone': 'sSync2'
+        'sSync': 'syncDone': 'sSync2'
         'sSync2': 'syncDone': 'sQuit'
         'sInitConfig':
             'configured': 'sPostConfigInit' # Normal start
@@ -597,10 +591,6 @@ module.exports = class Init
         changesImporter.synchronize (err) =>
             log.error err if err
             @trigger 'importDone'
-
-    backup: ->
-        app.replicator.startRealtime()
-        app.replicator.backup {}, @getCallbackTrigger 'backupDone'
 
 
     onResume: ->

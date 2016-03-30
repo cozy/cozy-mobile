@@ -26,9 +26,6 @@ module.exports = class Replicator extends Backbone.Model
     db: null
     config: null
 
-    # backup images functions are in replicator_backups
-    _.extend Replicator.prototype, require './replicator_backups'
-
     _.extend Replicator.prototype, require './replicator_migration'
 
     defaults: ->
@@ -298,8 +295,10 @@ module.exports = class Replicator extends Backbone.Model
 
     # update index for further speeds up.
     updateIndex: (callback) ->
+        log.info "updateIndex 1/2"
         # build pouch's map indexes
         @db.query DesignDocuments.FILES_AND_FOLDER, {}, =>
+            log.info "updateIndex 2/2"
             # build pouch's map indexes
             @db.query DesignDocuments.LOCAL_PATH, {}, -> callback()
 
@@ -531,26 +530,3 @@ module.exports = class Replicator extends Backbone.Model
 
         @replicationLauncher?.stop()
         delete @replicationLauncher
-
-    # Update cache files with outdated revisions. Called while backup<
-    syncCache:  (callback) ->
-        @set 'backup_step', 'files_sync'
-        @set 'backup_step_done', null
-
-        # TODO: Add optimizations on db.query : avoid include_docs on big list.
-        options =
-            keys: @cache.map (entry) -> return entry.name.split('-')[0]
-            include_docs: true
-
-        @db.query DesignDocuments.BY_BINARY_ID, options, (err, results) =>
-            return callback err if err
-
-            changeDispatcher = new ChangeDispatcher @config
-            processed = 0
-            @set 'backup_step', 'files_sync'
-            @set 'backup_step_total', results.rows.length
-            async.eachSeries results.rows, (row, cb) =>
-                @set 'backup_step_done', processed++
-                changeDispatcher.dispatch row.doc, cb
-            , callback
-
