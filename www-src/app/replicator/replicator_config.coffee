@@ -20,6 +20,7 @@ module.exports = class ReplicatorConfig extends Backbone.Model
         syncOnWifi: true
         cozyNotifications: false
         cozyURL: ''
+        cozyProtocol: ''
         deviceName: ''
 
     fetch: (callback) ->
@@ -74,15 +75,17 @@ module.exports = class ReplicatorConfig extends Backbone.Model
 
                 callback null, @
 
-    getScheme: (cozyUrl) ->
-        cozyUrl ?= @get('cozyURL')
-        return '' if cozyUrl[0..3] is 'http'
+    getScheme: ->
+        return @get "cozyProtocol" if @get "cozyProtocol"
+
         # Monkey patch for browser debugging
-        isLocalhost = cozyUrl.indexOf('localhost') is 0
+        isLocalhost = @get('cozyURL').indexOf('localhost') is 0
         if window.isBrowserDebugging and isLocalhost
-            'http://'
+            @set cozyProtocol: 'http://'
         else
-            'https://'
+            @set cozyProtocol: 'https://'
+
+        @get "cozyProtocol"
 
     getCozyUrl: ->
         "#{@getScheme()}#{@get("deviceName")}:#{@get('devicePassword')}" +
