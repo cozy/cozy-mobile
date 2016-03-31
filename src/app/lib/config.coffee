@@ -98,18 +98,17 @@ class Config
             err = new Error "This configuration key (#{key}) is invalid."
 
         if config[key] is undefined
-            err = new Error 'Configuration isn\'t loaded.'
+            err = new Error "Configuration isn't loaded."
 
         if err
             log.error err
             return
-        log.debug "#{key}=#{config[key]}"
 
         config[key]
 
 
     set: (key, value, callback = ->) ->
-        log.debug "set for key: #{key}=#{value}"
+        log.debug "set for key: #{key}"
 
         unless key of DEFAULT_CONFIG # verify valid key
             err = new Error "This configuration key (#{key}) is invalid."
