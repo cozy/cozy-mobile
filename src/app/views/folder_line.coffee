@@ -6,8 +6,6 @@ log = require('../lib/persistent_log')
 
 module.exports = class FolderLineView extends BaseView
 
-
-
     tagName: 'a'
     template: require '../templates/folder_line'
     events:
@@ -47,13 +45,13 @@ module.exports = class FolderLineView extends BaseView
         @downloading = false
         if err then alert err
 
-        incache = app.replicator.fileInFileSystem @model.attributes
-        version = app.replicator.fileVersion @model.attributes
+        incache = app.init.replicator.fileInFileSystem @model.attributes
+        version = app.init.replicator.fileVersion @model.attributes
 
         if incache? and incache isnt @model.get 'incache'
             @model.set {incache}
 
-        if version? and version isnt @model.get 'version'
+        if version? and version isnt @model.get 'appVersion'
             @model.set {version}
 
         @progresscontainer?.remove()
@@ -71,7 +69,8 @@ module.exports = class FolderLineView extends BaseView
                 log.error err
                 return alert t(err.message)
             @model.set incache: true
-            @model.set version: app.replicator.fileVersion @model.attributes
+            version = app.init.replicator.fileVersion @model.attributes
+            @model.set version: version
             callback(err, url)
 
     onClick: (event) =>
@@ -87,7 +86,7 @@ module.exports = class FolderLineView extends BaseView
 
         # else, the model is a file, we get its binary and open it
         @displayProgress()
-        app.replicator.getBinary @model.attributes, @updateProgress, \
+        app.init.replicator.getBinary @model.attributes, @updateProgress, \
           @getOnDownloadedCallback (err, url) ->
               # let android open the file
               app.init.trigger 'openFile'
@@ -105,10 +104,10 @@ module.exports = class FolderLineView extends BaseView
 
         @displayProgress()
         if @model.isFolder()
-            app.replicator.getBinaryFolder @model.attributes, @updateProgress,\
-                @getOnDownloadedCallback()
+            app.init.replicator.getBinaryFolder @model.attributes, \
+                @updateProgress, @getOnDownloadedCallback()
         else
-            app.replicator.getBinary @model.attributes, @updateProgress, \
+            app.init.replicator.getBinary @model.attributes, @updateProgress, \
                 @getOnDownloadedCallback()
 
     removeFromCache: =>
@@ -121,9 +120,9 @@ module.exports = class FolderLineView extends BaseView
             @model.set incache: false
 
         if @model.isFolder()
-            app.replicator.removeLocalFolder @model.attributes, onremoved
+            app.init.replicator.removeLocalFolder @model.attributes, onremoved
         else
-            app.replicator.removeLocal @model.attributes, onremoved
+            app.init.replicator.removeLocal @model.attributes, onremoved
 
     mimeClasses:
         'application/octet-stream'      : 'type-file'

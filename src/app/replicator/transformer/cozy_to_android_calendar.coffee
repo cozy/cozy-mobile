@@ -16,7 +16,7 @@ module.exports = class CozyToAndroidCalendar
      * @param {Object} androidCalendar - it's an android calendar (optional)
     ###
     transform: (cozyCalendar, account, androidCalendar = undefined) ->
-        log.info "transform"
+        log.debug "transform"
 
         return {
             _id: if androidCalendar then androidCalendar._id else undefined
@@ -40,7 +40,7 @@ module.exports = class CozyToAndroidCalendar
         }
 
     reverseTransform: (androidCalendar) ->
-        log.info "reverseTransform"
+        log.debug "reverseTransform"
 
         new Error "TODO"
 

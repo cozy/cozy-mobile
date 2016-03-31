@@ -3,11 +3,6 @@ BaseView = require '../lib/base_view'
 module.exports = class PermissionsWizard extends BaseView
 
     menuEnabled: false
-    className: ->
-        classes = ['wizard-step']
-        classes.push @options.step if @options?.step
-        classes.push 'error' if @error
-        return classes.join ' '
 
     templates:
         'fWizardFiles'     : require '../templates/wizard/files'
@@ -15,18 +10,27 @@ module.exports = class PermissionsWizard extends BaseView
         'fWizardCalendars' : require '../templates/wizard/calendars'
         'fWizardPhotos'    : require '../templates/wizard/photos'
 
-    template: (data) -> @templates[@options.step](data)
+    className: ->
+        classes = ['wizard-step']
+        classes.push @options.step if @options?.step
+        classes.push 'error' if @error
+        return classes.join ' '
+
+    template: (data) ->
+        @templates[@options.step](data)
 
     events: ->
         'tap #btn-yep': => @onResponse true
         'tap #btn-nope': => @onResponse false
 
     onResponse: (value) ->
-        permissions = app.permissionsFromWizard ?= {}
+        config = window.app.init.config
         switch @options.step
-            when 'fWizardContacts'  then permissions.syncContacts  = value
-            when 'fWizardCalendars' then permissions.syncCalendars = value
-            when 'fWizardPhotos'    then permissions.syncImages    = value
+            when 'fWizardContacts'  then config.set 'syncContacts',  value
+            when 'fWizardCalendars' then config.set 'syncCalendars', value
+            when 'fWizardPhotos'
+                config.set 'syncImages', value
+                config.set 'state', 'appConfigured'
             else # dont stock permission for Files, always true
 
         @options.fsm.trigger 'clickNext'

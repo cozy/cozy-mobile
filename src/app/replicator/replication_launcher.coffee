@@ -20,15 +20,13 @@ module.exports = class ReplicationLauncher
     ###*
      * Create a ReplicationLauncher.
      *
-     * @param {ReplicatorConfig} config - it's replication config.
      * @param {Router} router - it's app router.
     ###
-    constructor: (@config, @router) ->
-        @dbLocal = @config.db
-        @dbRemote = @config.remote
-        @filterName = @config.getReplicationFilter()
-        @changeDispatcher = new ChangeDispatcher @config
-        @conflictsHandler = new ConflictsHandler @config.db
+    constructor: (database, @router, @filterName) ->
+        @dbLocal = database.replicateDb
+        @dbRemote = database.remoteDb
+        @changeDispatcher = new ChangeDispatcher()
+        @conflictsHandler = new ConflictsHandler database.replicateDb
 
 
     ###*
@@ -41,10 +39,12 @@ module.exports = class ReplicationLauncher
      * @param {Function} callback [optionnal]
     ###
     start: (options, callback = ->) ->
-        log.info "start"
+        log.debug "start"
 
         unless @replication
-            @replication = @dbLocal.sync @dbRemote, @_getOptions options
+            replicateOptions = @_getOptions options
+            log.debug "replicateOptions:", replicateOptions
+            @replication = @dbLocal.sync @dbRemote, replicateOptions
             @replication.on 'change', (info) =>
                 log.info "replicate change"
 
@@ -109,6 +109,7 @@ module.exports = class ReplicationLauncher
         if options.live
             replicationOptions.live = true
             replicationOptions.retry = true
+            replicationOptions.heartbeat = false
             replicationOptions.back_off_function = (delay) ->
                 log.info "back_off_function", delay
                 return 1000 if delay is 0

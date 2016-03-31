@@ -8,7 +8,7 @@ ConfigView = require './views/config'
 FolderCollection = require './collections/files'
 
 log = require('./lib/persistent_log')
-    prefix: "replicator"
+    prefix: "router"
     date: true
 
 module.exports = class Router extends Backbone.Router

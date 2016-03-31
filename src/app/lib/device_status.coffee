@@ -45,7 +45,7 @@ module.exports.initialize = ->
 
     timeout = true
 
-    log.info "initialize device status."
+    log.debug "initialize device status."
     window.addEventListener 'batterystatus', onBatteryStatus
 
 
@@ -70,7 +70,8 @@ module.exports.checkReadyForSync = checkReadyForSync = (callback)->
         setTimeout () ->
             if timeout
                 # We reached timeout, and a batterystatus event hasn't fired yet
-                callbackWaiting new Error "No battery informations"
+                log.warn new Error "No battery informations"
+                callbackWaiting null, true
         , 4 * 1000
 
         return
@@ -84,10 +85,10 @@ module.exports.checkReadyForSync = checkReadyForSync = (callback)->
         unless (battery.level > 20 or battery.isPlugged)
             log.info "NOT ready on battery low."
             return callbackWaiting null, false, 'no battery'
-        if app.replicator.config.get('syncOnWifi') and \
+        if window.app.init.config.get('syncOnWifi') and \
                 (not (navigator.connection.type is Connection.WIFI))
             log.info "NOT ready on no wifi."
             return callbackWaiting null, false, 'no wifi'
 
-        log.info "ready to sync."
+        log.debug "ready to sync."
         callbackWaiting null, true

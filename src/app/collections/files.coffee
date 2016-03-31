@@ -23,7 +23,7 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
 
 
     search: (callback) ->
-        app.replicator.db.query 'FilesAndFolder', (err, all) =>
+        app.init.replicator.db.query 'FilesAndFolder', (err, all) =>
             results = all.rows.filter (row) =>
                 row.key[1].indexOf(@query) isnt -1
 
@@ -80,7 +80,7 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
                 endkey: if path then ['/' + path, {}] else ['', {}]
             view = DesignDocuments.FILES_AND_FOLDER
 
-        app.replicator.db.query view, params, callback
+        app.init.replicator.db.query view, params, callback
 
     # Fetch the docs for the next files.
     _fetchNextPageDocs: (callback) ->
@@ -90,18 +90,19 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
             keys: ids
             include_docs: true
 
-        app.replicator.db.allDocs params, callback
+        app.init.replicator.db.allDocs params, callback
 
     _rowsToModels: (results) ->
         return results.rows.map (row) ->
             doc = row.doc
             if doc.docType.toLowerCase() is 'file'
                 if doc.binary?.file?.id
-                    doc.incache = app.replicator.fileInFileSystem doc
-                    doc.version = app.replicator.fileVersion doc
+                    doc.incache = app.init.replicator.fileInFileSystem doc
+                    doc.version = app.init.replicator.fileVersion doc
 
             else if doc.docType.toLowerCase() is 'folder'
-                #TODO ASYNC! doc.incache = app.replicator.folderInFileSystem doc
+                # TODO ASYNC!
+                # doc.incache = app.init.replicator.folderInFileSystem doc
                 doc.incache = false
 
             return doc
@@ -148,7 +149,7 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
             @_fetch path, (err, items) ->
                 return cb new Error('cancelled') if @cancelled
                 FileAndFolderCollection.cache[path] = items unless err
-                app.replicator.folderInFileSystem path, (err, incache) ->
+                app.init.replicator.folderInFileSystem path, (err, incache) ->
                     return cb new Error('cancelled') if @cancelled
                     log.error err if err
                     folder.set 'incache', incache

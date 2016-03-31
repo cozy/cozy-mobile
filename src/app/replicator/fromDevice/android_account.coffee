@@ -11,7 +11,7 @@ module.exports = class AndroidAccount
         accountType: AndroidAccount.TYPE
 
     create: (callback) ->
-        log.info "create"
+        log.debug "create"
 
         navigator.contacts.createAccount AndroidAccount.TYPE
         , AndroidAccount.NAME, ->

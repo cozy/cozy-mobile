@@ -27,7 +27,7 @@ module.exports = class CozyToAndroidEvent
     REMINDERS_METHOD_2_COZY = _.invert REMINDERS_METHOD_2_ANDROID
 
     transform: (cozyEvent, androidCalendar, androidEvent = undefined) ->
-        log.info "transform"
+        log.debug "transform"
 
         allDay = if cozyEvent.start.length is 10 then 1 else 0 # 1 == allday
         rrule = undefined
@@ -115,7 +115,7 @@ module.exports = class CozyToAndroidEvent
         }
 
     reverseTransform: (androidEvent, androidCalendar, cozyEvent = undefined) ->
-        log.info "reverseTransform"
+        log.debug "reverseTransform"
 
         start = undefined
         end = undefined

@@ -9,7 +9,7 @@ module.exports = class ConflictsHandler
     constructor: (@db)->
 
     handleConflicts: (doc, callback) ->
-        log.info "handleConflicts"
+        log.debug "handleConflicts"
 
         # Get the doc with conflicts (and revs) infos from Pouch
         @db.get doc._id, { conflicts: true, open_revs: "all" }, (err, local) =>

@@ -30,13 +30,13 @@ module.exports = class ServiceManager extends Backbone.Model
         daemonActivated: false
 
     initialize: ->
-        config = app.replicator.config
+        config = app.init.config
         # Initialize plugin with current config values.
         @listenNewPictures config, config.get 'syncImages'
         @toggle config, true # force activate.
 
         # Listen to updates.
-        @listenTo app.replicator.config, "change:syncImages", @listenNewPictures
+        @listenTo config, "change:syncImages", @listenNewPictures
 
         @checkActivated()
 

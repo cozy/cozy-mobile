@@ -2,7 +2,6 @@ async = require 'async'
 DeviceStatus = require '../lib/device_status'
 DesignDocuments = require './design_documents'
 fs = require './filesystem'
-request = require '../lib/request'
 
 
 log = require('../lib/persistent_log')
@@ -56,7 +55,7 @@ module.exports =
 
                         # Avoid saving while in a change config state.
                         if app.init.currentState.indexOf('c') isnt 0
-                            @config.save { lastBackup: Date.now() }, cb
+                            @config.set 'lastBackup', Date.now(), cb
 
                         else
                             cb()
@@ -224,7 +223,7 @@ module.exports =
 
 
     createBinaryWFiltTransfert: (file, fileId, callback) ->
-        options = @config.makeDSUrl("/data/#{fileId}/binaries/")
+        options = @requestCozy.getDataSystemOption "/data/#{fileId}/binaries/"
         options.fileName = 'file'
         options.mimeType = file.type
         options.headers =
@@ -239,12 +238,11 @@ module.exports =
 
 
     createBinaryWFormData: (blob, fileId, callback) ->
-        options = @config.makeDSUrl("/data/#{fileId}/binaries/")
         data = new FormData()
         data.append 'file', blob, 'file'
         $.ajax
             type: 'POST'
-            url: options.url
+            url: @requestCozy.getDataSystemUrl "/data/#{fileId}/binaries/"
             headers:
                 'Authorization': 'Basic ' +
                             btoa(@config.get('deviceName') + ':' +
@@ -271,9 +269,12 @@ module.exports =
             size             : cordovaFile.size
             tags             : ['from-' + @config.get 'deviceName']
 
-        options = @config.makeDSUrl("/data/")
-        options.body = dbFile
-        request.post options, callback
+        options =
+            method: 'post'
+            type: 'data-system'
+            path: '/data'
+            body: dbFile
+        @requestCozy.request options, callback
 
 
     createPhoto: (localPath, callback) ->
@@ -313,9 +314,12 @@ module.exports =
                 creationDate     : new Date().toISOString()
                 tags             : []
 
-            options = @config.makeDSUrl("/data/")
-            options.body = folder
-            request.post options, (err, result, body) ->
+            options =
+                method: 'post'
+                type: 'data-system'
+                path: '/data'
+                body: folder
+            @requestCozy.request options, (err, result, body) ->
                 return callback err if err
                 # Wait to receive folder in local database
                 findFolder body._id, () ->
@@ -330,9 +334,13 @@ module.exports =
                 log.info "DEVICE FOLDER EXISTS"
                 return callback null, device
             else
-                options = @config.makeDSUrl '/request/folder/byfullpath/'
-                options.body = key: t('photos')
-                request.post options, (err, res, docs) ->
+                options =
+                    method: 'post'
+                    type: 'data-system'
+                    path: '/request/folder/byfullpath/'
+                    body:
+                        key: t('photos')
+                @requestCozy.request options, (err, res, docs) ->
                     return callback err if err
                     if docs?.length is 0
                         createNew()

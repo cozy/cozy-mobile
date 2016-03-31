@@ -8,7 +8,7 @@ module.exports = class File extends Backbone.Model
 
     initialize: ->
         @isDeviceFolder = @isFolder() and
-        @wholePath() is app.replicator.config.get('deviceName')
+        @wholePath() is window.app.init.config.get 'deviceName'
 
     isFolder: ->
         @get('docType')?.toLowerCase() is 'folder'

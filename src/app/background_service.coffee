@@ -1,12 +1,7 @@
 # intialize module which initialize global vars.
 require './lib/utils'
 
-Replicator    = require './replicator/main'
-Notifications = require './views/notifications'
-DeviceStatus  = require './lib/device_status'
-Translation   = require './lib/translation'
 Init          = require './init'
-
 
 log = require('./lib/persistent_log')
     prefix: "application"
@@ -23,36 +18,15 @@ log = require('./lib/persistent_log')
 module.exports = BackgroundService =
 
     initialize: ->
-        @replicator = new Replicator()
-        @translation = new Translation()
+        log.debug "initialize"
 
-        # Pre-init with english locale in service
-        @translation.setLocale value: 'en'
-        window.t = @translation.getTranslate()
-
-        @init = new Init()
+        @init = new Init @
         @init.startStateMachine()
         @init.trigger 'startService'
 
-    postConfigInit: (callback) ->
-        DeviceStatus.initialize()
-        if @replicator.config.get 'cozyNotifications'
-            # Activate notifications handling
-            @notificationManager = new Notifications()
-
-        conf = @replicator.config.attributes
-        # Display config to help remote debuging.
-        log.info "Service #{conf.appVersion}--\
-        sync_contacts:#{conf.syncContacts},\
-        sync_calendars:#{conf.syncCalendars},\
-        sync_images:#{conf.syncImages},\
-        sync_on_wifi:#{conf.syncOnWifi},\
-        cozy_notifications:#{conf.cozyNotifications}"
-
-        callback()
-
 
     startMainActivity: (err)->
+        log.debug "startMainActivity"
         log.error err
         # Start activity to initialize app
         # or update permissions
@@ -62,6 +36,8 @@ module.exports = BackgroundService =
             window.service.workDone()
 
     exit: (err) ->
+        log.debug "exit"
+
         log.error err if err
         # give some time to finish and close things.
         setTimeout ->
@@ -72,6 +48,8 @@ module.exports = BackgroundService =
 
 
     addDeviceListener: ->
+        log.debug "addDeviceListener"
+
         document.addEventListener 'deviceready', =>
             try
                 @initialize()
@@ -80,9 +58,9 @@ module.exports = BackgroundService =
                 log.error 'EXCEPTION SERVICE INITIALIZATION : ', error
 
             finally
-                # "Watchdog" : in all cases, kill service after 10'
+                # "Watchdog" : in all cases, kill service after 14'
                 setTimeout ->
                     # call this javabinding directly on object to avoid
                     # Error 'NPMethod called on non-NPObject'
                     window.service.workDone()
-                , 10 * 60 * 1000
+                , 14 * 60 * 1000

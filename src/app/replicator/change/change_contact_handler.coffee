@@ -15,7 +15,7 @@ module.exports = class ChangeContactHandler
 
 
     dispatch: (doc, callback) ->
-        log.info "dispatch"
+        log.debug "dispatch"
 
         @_getFromPhoneByCozyId doc._id, (err, androidContact) =>
             if androidContact?
@@ -33,13 +33,13 @@ module.exports = class ChangeContactHandler
 
 
     _create: (doc, callback) ->
-        log.info "_create"
+        log.debug "_create"
 
         @_update doc, undefined, callback
 
 
     _update: (doc, androidContact, callback) ->
-        log.info "_update"
+        log.debug "_update"
 
         try
             toSaveInPhone = @transformer.transform doc
@@ -61,7 +61,7 @@ module.exports = class ChangeContactHandler
 
 
     _delete: (doc, androidContact, callback) ->
-        log.info "_delete"
+        log.debug "_delete"
 
         # Use callerIsSyncAdapter flag to apply immediately in
         # android(no dirty flag cycle)
@@ -70,7 +70,7 @@ module.exports = class ChangeContactHandler
 
 
     _getFromPhoneByCozyId: (cozyId, cb) ->
-        log.info "_getFromPhoneByCozyId"
+        log.debug "_getFromPhoneByCozyId"
 
         navigator.contacts.find [navigator.contacts.fieldType.sourceId]
         , (contacts) ->

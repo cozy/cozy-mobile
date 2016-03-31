@@ -23,7 +23,7 @@ module.exports = class DesignDocuments
     constructor: (@cozyDB, @internalDB) ->
 
     createOrUpdateAllDesign: (callback) ->
-        log.info 'createOrUpdateAllDesign'
+        log.debug 'createOrUpdateAllDesign'
         async.series [
             (next) => @_createOrUpdate @cozyDB, \
                 DesignDocuments.NotificationsTemporaryDesignDoc, next

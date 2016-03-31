@@ -12,7 +12,7 @@ module.exports = class Notifications
         @initialize.apply @, arguments
 
     initialize: ->
-        config = app.replicator.config
+        config = app.init.replicator.config
         @listenTo config, 'change:cozyNotifications', @activate
 
         @activate config, config.get 'cozyNotifications'
@@ -20,20 +20,20 @@ module.exports = class Notifications
     # Activate/deactivate notification display.
     activate: (config, activate) =>
         if activate
-            @listenTo app.replicator, 'change:inSync', @onSync
+            @listenTo app.init.replicator, 'change:inSync', @onSync
             @onSync()
         else
-            @stopListening app.replicator, 'change:inSync'
+            @stopListening app.init.replicator, 'change:inSync'
 
     onSync: =>
-        inSync = app.replicator.get 'inSync'
+        inSync = app.init.replicator.get 'inSync'
 
         # Filter sync finished
         unless inSync
             @fetch()
 
     fetch: =>
-        app.replicator.db.query DesignDocuments.NOTIFICATIONS_TEMPORARY,
+        app.init.replicator.db.query DesignDocuments.NOTIFICATIONS_TEMPORARY,
             { include_docs: true }, (err, notifications) =>
                 notifications.rows.forEach (notification) =>
                     @showNotification notification.doc
@@ -44,7 +44,7 @@ module.exports = class Notifications
     # persistant notifications (ie updated in couchDB). But currently only
     # 'temporary' notifications are showed.
     markAsShown: (notification) ->
-        app.replicator.db.remove notification, (err) ->
+        app.init.replicator.db.remove notification, (err) ->
             if err
                 log.error "Error while removing notification.", err
 

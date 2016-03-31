@@ -15,12 +15,12 @@ continueOnError = require('../../lib/utils').continueOnError log
 module.exports = class ContactImporter
 
     constructor: (@db) ->
-        @db ?= app.replicator.config.db
+        @db ?= app.init.database.replicateDb
         @transformer = new CozyToAndroidContact()
 
     # Sync dirty (modified) phone contact to app's pouchDB.
     synchronize: (callback) ->
-        log.info "synchronize"
+        log.debug "synchronize"
 
         # Go through modified contacts (dirtys)
         # delete, update or create....

@@ -11,14 +11,14 @@ continueOnError = require('../../lib/utils').continueOnError log
 module.exports = class EventSynchronizer
 
     constructor: (@db, @calendarSync) ->
-        @db ?= app.replicator.config.db
+        @db ?= app.init.database.replicateDb
         @calendarSync ?= navigator.calendarsync
         @cozyToAndroidEvent = new CozyToAndroidEvent()
         @androidCalendarHandler = new AndroidCalendarHandler()
         @changeEventHandler = new ChangeEventHandler()
 
     synchronize: (callback) ->
-        log.info "synchronize"
+        log.debug "synchronize"
 
         @calendarSync.dirtyEvents AndroidAccount.ACCOUNT, \
                 (err, androidEvents) =>
@@ -30,7 +30,7 @@ module.exports = class EventSynchronizer
             , callback
 
     _change: (androidEvent, callback) ->
-        log.info "_change"
+        log.debug "_change"
 
         if androidEvent.deleted
             @_delete androidEvent, continueOnError callback
@@ -50,7 +50,7 @@ module.exports = class EventSynchronizer
     # @param phoneContact cordova contact format.
     # @param retry retry lighter update after a failed one.
     _create: (androidEvent, androidCalendar, callback) ->
-        log.info "_create"
+        log.debug "_create"
 
         cozyEvent = @cozyToAndroidEvent.reverseTransform androidEvent, \
                 androidCalendar
@@ -68,7 +68,7 @@ module.exports = class EventSynchronizer
     # @param androidEvent
     # @param retry retry lighter update after a failed one.
     _update: (androidEvent, androidCalendar, callback) ->
-        log.info "_update"
+        log.debug "_update"
 
         @db.get androidEvent._sync_id, (err, cozyEvent) =>
             return callback err if err
@@ -89,7 +89,7 @@ module.exports = class EventSynchronizer
     # Delete the specified contact in app's pouchdb.
     # @param phoneContact cordova contact format.
     _delete: (androidEvent, callback) ->
-        log.info "_delete"
+        log.debug "_delete"
 
         cozyEvent =
             docType: 'event'

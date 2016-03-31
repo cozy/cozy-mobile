@@ -1,4 +1,5 @@
 BaseView = require '../lib/base_view'
+Config = require '../lib/config'
 
 
 log = require('../lib/persistent_log')
@@ -25,21 +26,29 @@ module.exports = class ConfigView extends BaseView
         'change #cozyNotificationsCheck' : 'saveChanges'
 
     getRenderData: ->
-        log.info "getRenderData"
-        config = app.replicator.config.toJSON()
-        log.info "Current state: #{app.init.currentState}"
-        return _.extend {},
-            config,
-            lastSync: @formatDate config?.lastSync
-            lastBackup: @formatDate config?.lastBackup
-            initState: app.init.currentState
-            locale: app.locale
-            appVersion: app.replicator.config.appVersion()
+        log.debug "getRenderData"
+
+        config = window.app.init.config
+
+        cozyURL: config.get 'cozyURL'
+        syncContacts: config.get 'syncContacts'
+        syncCalendars: config.get 'syncCalendars'
+        syncImages: config.get 'syncImages'
+        syncOnWifi: config.get 'syncOnWifi'
+        cozyNotifications: config.get 'cozyNotifications'
+        deviceName: config.get 'deviceName'
+        lastSync: @formatDate config.get 'lastSync'
+        lastBackup: @formatDate config.get 'lastBackup'
+        initState: app.init.currentState
+        locale: app.locale
+        appVersion: config.get 'appVersion'
 
     # format a object as a readable date string
     # return t('never') if undefined
     formatDate: (date) ->
-        return t 'never' unless date
+        log.debug "formatDate #{date}"
+
+        return t 'never' unless date or date is ''
 
         date = moment(date)
         return date.format 'YYYY-MM-DD HH:mm:ss'
@@ -53,9 +62,9 @@ module.exports = class ConfigView extends BaseView
     redBtn: ->
         if confirm t 'confirm message'
             #@TODO delete device on remote ?
-            app.replicator.set 'inSync', true # run the spinner
-            app.replicator.set 'backup_step', 'destroying database'
-            app.replicator.destroyDB (err) ->
+            app.init.replicator.set 'inSync', true # run the spinner
+            app.init.replicator.set 'backup_step', 'destroying database'
+            app.init.replicator.destroyDB (err) ->
                 if err
                     log.error err
                     return alert err.message
@@ -69,12 +78,13 @@ module.exports = class ConfigView extends BaseView
     # confirm, launch initial replication, navigate to first sync UI.
     synchroBtn: ->
         if confirm t 'confirm message'
-            app.replicator.stopRealtime()
+            app.init.replicator.stopRealtime()
             app.init.toState 'fFirstSyncView'
 
 
     sendlogBtn: ->
-        subject = "Log from cozy-mobile v" + app.replicator.config.appVersion()
+        config = window.app.init.config
+        subject = "Log from cozy-mobile v#{config.get 'appVersion'}"
         body = """
             #{t('send log please describe problem')}
 
@@ -117,13 +127,26 @@ module.exports = class ConfigView extends BaseView
         # app.replicator.config.save
         @listenToOnce app.init, 'configSaved error', =>
             checkboxes.prop 'disabled', false
-            app.replicator.config.fetch (err) =>
-                @render()
+            @render()
 
-        app.init.updateConfig app.replicator.config.updateAndGetInitNeeds
+        app.init.updateConfig @_updateAndGetInitNeeds
             syncContacts: @$('#contactSyncCheck').is ':checked'
             syncCalendars: @$('#calendarSyncCheck').is ':checked'
             syncImages: @$('#imageSyncCheck').is ':checked'
             syncOnWifi: @$('#wifiSyncCheck').is ':checked'
             cozyNotifications: @$('#cozyNotificationsCheck').is ':checked'
 
+    _updateAndGetInitNeeds: (changes) ->
+        config = window.app.init.config
+        needInit =
+            cozyNotifications: changes.cozyNotifications and \
+                (changes.cozyNotifications isnt config.get 'cozyNotifications')
+            syncCalendars: changes.syncCalendars and \
+                (changes.syncCalendars isnt config.get 'syncCalendars')
+            syncContacts: changes.syncContacts and \
+                (changes.syncContacts isnt config.get 'syncContacts')
+
+        for key, value of changes
+            config.set key, value
+
+        return needInit

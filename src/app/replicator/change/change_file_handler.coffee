@@ -13,12 +13,10 @@ module.exports = class ChangeFileHandler
 
     ###*
      * Create a ChangeFileHandler.
-     *
-     * @param {ReplicatorConfig} config - it's replication config.
     ###
-    constructor: (@config) ->
-        @directoryEntry = app.replicator.downloads
-        @cache = app.replicator.cache
+    constructor: ->
+        @directoryEntry = app.init.replicator.downloads
+        @cache = app.init.replicator.cache
 
 
     ###*
@@ -27,7 +25,7 @@ module.exports = class ChangeFileHandler
      * @param {Object} doc - it's a pouchdb file document.
     ###
     dispatch: (doc, callback) ->
-        log.info "dispatch"
+        log.debug "dispatch"
 
         if doc._deleted
             @_delete doc, callback
@@ -50,7 +48,7 @@ module.exports = class ChangeFileHandler
      * @param {Object} doc - it's a pouchdb file document.
     ###
     _delete: (doc, callback) ->
-        log.info "_delete"
+        log.debug "_delete"
 
         # delete local file:
         # - get file directory
@@ -67,7 +65,7 @@ module.exports = class ChangeFileHandler
                 callback()
 
     _update: (doc, callback) ->
-        log.info "_update"
+        log.debug "_update"
 
         @_download doc, callback
 
@@ -78,7 +76,7 @@ module.exports = class ChangeFileHandler
      * @param {Object} doc - it's a pouchdb file document.
     ###
     _rename: (doc, entry, callback) ->
-        log.info "_rename"
+        log.debug "_rename"
 
         fs.getChildren entry, (err, children) =>
             return callback err if err
@@ -104,7 +102,7 @@ module.exports = class ChangeFileHandler
      * @param {Object} doc - it's a pouchdb file document.
     ###
     _download: (doc, callback) ->
-        log.info "_download"
+        log.debug "_download"
 
         # Don't update the binary if "no wifi"
         DeviceStatus.checkReadyForSync (err, ready, msg) =>
@@ -127,8 +125,9 @@ module.exports = class ChangeFileHandler
                         return callback null, entry.toURL() if entry
 
                         # getFile failed, let's download
-                        url = "/data/#{doc._id}/binaries/file"
-                        options = @config.makeDSUrl url
+                        requestCozy = window.app.init.requestCozy
+                        path = "/data/#{doc._id}/binaries/file"
+                        options = requestCozy.getDataSystemOption path
                         options.path = directory.toURL() + fileName
                         log.info "download binary of #{doc.name}"
                         fs.download options, null, (err, entry) =>

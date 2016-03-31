@@ -9,13 +9,13 @@ log = require('../../lib/persistent_log')
 module.exports = class ChangesImporter
 
     constructor: (@config, @eventSynchronizer, @contactImporter) ->
-        @config ?= app.replicator.config
+        @config ?= app.init.config
         @eventSynchronizer ?= new EventSynchronizer()
         @contactImporter ?= new ContactImporter()
 
 
     synchronize: (callback) ->
-        log.info "synchronize"
+        log.debug "synchronize"
 
         async.series [
             (cb) =>

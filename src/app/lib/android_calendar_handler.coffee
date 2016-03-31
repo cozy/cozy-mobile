@@ -2,7 +2,6 @@ AndroidAccount = require "../replicator/fromDevice/android_account"
 CozyToAndroidCalendar = require \
         "../replicator/transformer/cozy_to_android_calendar"
 DesignDocuments = require "../replicator/design_documents"
-request = require "./request"
 log = require("./persistent_log")
     prefix: "AndroidCalendarHandler"
     date: true
@@ -11,14 +10,13 @@ androidCalendarsCache = null
 
 module.exports = class AndroidCalendarHandler
 
-    constructor: (@db, @config, @calendarSync) ->
-        @db ?= app.replicator.db
-        @config ?= app.replicator.config
+    constructor: (@db, @calendarSync) ->
+        @db ?= window.app.init.database.replicateDb
         @cozyToAndroidCalendar = new CozyToAndroidCalendar()
         @calendarSync ?= navigator.calendarsync
 
     _getAll: (callback) ->
-        log.info "_getAll"
+        log.debug "_getAll"
 
         return callback null, androidCalendarsCache if androidCalendarsCache
 
@@ -30,7 +28,7 @@ module.exports = class AndroidCalendarHandler
             callback null, calendars
 
     _getByName: (calendarName, callback) ->
-        log.info "_getByName"
+        log.debug "_getByName"
 
         @_getAll (err, calendars) ->
             return callback err if err
@@ -42,7 +40,7 @@ module.exports = class AndroidCalendarHandler
             callback new Error "No calendar found with '#{calendarName}' name."
 
     getById: (calendarId, callback) ->
-        log.info "getById"
+        log.debug "getById"
 
         @_getAll (err, calendars) ->
             return callback err if err
@@ -54,7 +52,7 @@ module.exports = class AndroidCalendarHandler
             callback new Error "Calendar isn't find with id:#{calendarId}"
 
     getOrCreate: (calendarName, callback) ->
-        log.info "getOrCreate"
+        log.debug "getOrCreate"
 
         @_getByName calendarName, (err, calendar) =>
             if err
@@ -63,7 +61,7 @@ module.exports = class AndroidCalendarHandler
                 callback null, calendar
 
     _create: (calendarName, callback) ->
-        log.info "_create"
+        log.debug "_create"
 
         @_getCalendarFromCozy calendarName, (err, cozyCalendar) =>
             return callback err if err
@@ -82,7 +80,7 @@ module.exports = class AndroidCalendarHandler
                     callback err, calendar
 
     update: (androidCalendar, callback) ->
-        log.info "update"
+        log.debug "update"
 
         @calendarSync.updateCalendar androidCalendar, \
                 AndroidAccount.ACCOUNT, (err) ->
@@ -96,7 +94,7 @@ module.exports = class AndroidCalendarHandler
             callback null, true
 
     _delete: (androidCalendar, callback) ->
-        log.info "_delete"
+        log.debug "_delete"
 
         @calendarSync.deleteCalendar androidCalendar, \
                 AndroidAccount.ACCOUNT, (err, deletedCount) ->
@@ -110,7 +108,7 @@ module.exports = class AndroidCalendarHandler
             callback null, true
 
     deleteIfEmpty: (androidCalendar, callback) ->
-        log.info "deleteIfEmpty"
+        log.debug "deleteIfEmpty"
 
         @db.query DesignDocuments.CALENDARS
         ,
@@ -125,7 +123,7 @@ module.exports = class AndroidCalendarHandler
                 callback()
 
     deleteIfEmptyById: (androidCalendarId, callback) ->
-        log.info "deleteIfEmptyById"
+        log.debug "deleteIfEmptyById"
 
         @getById androidCalendarId, (err, androidCalendar) =>
             return callback err if err
@@ -136,12 +134,15 @@ module.exports = class AndroidCalendarHandler
 
 
     _getCalendarFromCozy: (calendarName, callback) ->
-        options = @config.makeDSUrl '/request/tag/byname/'
-        options.body =
-            include_docs: true
-            key: calendarName
-
-        request.post options, (err, res, body) ->
+        options =
+            method: 'post'
+            path: '/request/tag/byname/'
+            type: 'data-system'
+            body:
+                include_docs: true
+                key: calendarName
+        requestCozy = window.app.init.requestCozy
+        requestCozy.request options, (err, res, body) ->
             return callback err if err
             # No tag found, put a default color.
             calendar = body[0]?.doc or { name: name , color: '#2979FF' }

@@ -20,7 +20,7 @@ module.exports = class ChangeTagHandler
         @cozyToAndroidCalendar = new CozyToAndroidCalendar()
 
     dispatch: (cozyCalendar) ->
-        log.info "dispatch"
+        log.debug "dispatch"
 
         @androidCalendarHandler.getOrCreate cozyCalendar.name, \
                 (err, androidCalendar) =>

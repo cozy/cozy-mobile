@@ -26,20 +26,20 @@ module.exports = class Layout extends BaseView
         document.addEventListener "searchbutton", @onSearchButtonClicked, false
         document.addEventListener "backbutton", @onBackButtonClicked, false
 
-        @listenTo app.replicator, 'change:inSync change:inBackup', =>
+        @listenTo app.init.replicator, 'change:inSync change:inBackup', =>
 
-            inSync = app.replicator.get('inSync')
-            inBackup = app.replicator.get('inBackup')
+            inSync = app.init.replicator.get('inSync')
+            inBackup = app.init.replicator.get('inBackup')
             @spinner.toggle inSync or inBackup
 
         OpEvents = 'change:inBackup change:backup_step change:backup_step_done'
-        @listenTo app.replicator, OpEvents, _.debounce =>
-            step = app.replicator.get 'backup_step'
+        @listenTo app.init.replicator, OpEvents, _.debounce =>
+            step = app.init.replicator.get 'backup_step'
             if step and step not in ['pictures_scan']
                 text = t step
-                if app.replicator.get 'backup_step_done'
-                    text += ": #{app.replicator.get 'backup_step_done'}"
-                    text += "/#{app.replicator.get 'backup_step_total'}"
+                if app.init.replicator.get 'backup_step_done'
+                    text += ": #{app.init.replicator.get 'backup_step_done'}"
+                    text += "/#{app.init.replicator.get 'backup_step_total'}"
                 @backupIndicator.text(text).parent().slideDown()
                 @viewsPlaceholder.addClass 'has-subheader'
             else
@@ -186,7 +186,7 @@ module.exports = class Layout extends BaseView
         @refreshBackgroundColor()
         autofocusField = @currentView.$('.auto-focus')
         if autofocusField.length
-            setTimeout (=> autofocusField.trigger 'click' ), 1
+            setTimeout (-> autofocusField.trigger 'click' ), 1
             autofocusField.one 'click', -> autofocusField.focus()
 
         if @currentView.$el.hasClass 'wizard-step'
@@ -205,7 +205,8 @@ module.exports = class Layout extends BaseView
 
     showError: (error) =>
         log.debug 'showError'
-        @errorIndicator.text t error.message
+        msg = error.message or error.reason
+        @errorIndicator.text t msg
         @errorIndicator.parent().slideDown()
         @viewsPlaceholder.addClass 'has-subheader'
 

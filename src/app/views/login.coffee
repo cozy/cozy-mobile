@@ -1,40 +1,45 @@
 BaseView = require '../lib/base_view'
-cleanUrl = require '../lib/cleanurl'
 
 module.exports = class LoginView extends BaseView
 
     menuEnabled: false
-    className: ->
-        classes = ['wizard-step']
-        classes.push @options.step if @options?.step
-        classes.push 'error' if @error
-        return classes.join ' '
 
     templates:
         'fWizardWelcome'  : require '../templates/wizard/welcome'
         'fWizardURL'      : require '../templates/wizard/url'
         'fWizardPassword' : require '../templates/wizard/password'
 
-    template: (data) -> @templates[@options.step](data)
+    refs:
+        inputURL      : '#input-url'
+        inputPassword : '#input-password'
+        btnLogin      : '#btn-login'
+
+    className: ->
+        classes = ['wizard-step']
+        classes.push @options.step if @options?.step
+        classes.push 'error' if @error
+        return classes.join ' '
+
+    template: (data) ->
+        @templates[@options.step](data)
+
     afterRender : ->
         @$('input').focus()
         app.layout.refreshBackgroundColor()
 
-    bodyBackgroundColor: -> @$el.css 'background-color'
+    bodyBackgroundColor: ->
+        @$el.css 'background-color'
 
     remove: ->
         $('body').css 'background-color', @prevBodyBgColor
         super
 
-    refs:
-        inputURL      : '#input-url'
-        inputPassword : '#input-password'
-
     events: ->
         'blur #input-url'        : 'onURLBlur'
-        'change #input-url'      : 'onURLChange'
-        'change #input-password' : 'onPasswordChange'
-        'tap #btn-login'          : 'attemptLogin'
+        'blur #input-password'   : 'onPasswordBlur'
+        'change #input-url'      : -> @setState 'error', null
+        'change #input-password' : -> @setState 'error', null
+        'tap #btn-login'         : 'attemptLogin'
         'tap #btn-next'          : ->
             @onURLBlur()
             @options.fsm.trigger 'clickNext'
@@ -42,31 +47,45 @@ module.exports = class LoginView extends BaseView
         'tap .wrong-url'         : -> @options.fsm.trigger 'clickBack'
 
     getRenderData: ->
-        cozyURL: app.loginConfig?.cozyProtocol + app.loginConfig?.cozyURL or ''
-        password: app.loginConfig?.password or ''
+        @config = window.app.init.config
+        cozyURL: @config.get 'cozyURL'
+        password: ''
         error: @error
-        saving: @saving
-
-    onURLChange: ->
-        app.loginConfig.cozyURL = @inputURL.val()
-        @setState 'error', null
-
-    onPasswordChange: ->
-        app.loginConfig.password = @inputPassword.val()
-        @setState 'error', null
 
     onURLBlur: ->
         return unless @inputURL.val()
-        @inputURL.val cleanUrl @inputURL.val()
-        @onURLChange()
+        @inputURL.val @_cleanUrl @inputURL.val()
+        @config.setCozyUrl @inputURL.val()
+
+    onPasswordBlur: ->
+        @config.set 'devicePassword', @inputPassword.val()
+        @setState 'error', null
+
 
     attemptLogin: ->
-        return null if @saving
-        @onPasswordChange()
-        @setState 'saving', true
-        app.replicator.checkCredentials app.loginConfig, (error) =>
-            @setState 'saving', false
-            if error
+        @btnLogin.attr 'disabled', 'true'
+        url = @config.get 'cozyURL'
+        password = @inputPassword.val()
+        checkCredentials = window.app.init.replicator.checkCredentials
+        checkCredentials url, password, (err) =>
+            @btnLogin.removeAttr("disabled")
+            if err
                 @setState 'error', error
             else
                 app.init.trigger 'validCredentials'
+
+
+    _cleanUrl: (url) ->
+        # add .cozycloud.cc if the user only input name
+        if url.indexOf('.') is -1 and url.length > 0
+            url = url + ".cozycloud.cc"
+
+        # Add http on the hostname
+        if url[0..3] isnt 'http'
+            url = 'https://' + url
+
+        # remove trailing slash
+        if url[url.length-1] is '/'
+            url = url[..-2]
+
+        return url

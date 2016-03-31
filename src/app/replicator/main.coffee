@@ -1,15 +1,12 @@
 async = require 'async'
-PouchDB = require 'pouchdb'
 semver = require 'semver'
-request = require '../lib/request'
 fs = require './filesystem'
 DesignDocuments = require './design_documents'
 ReplicatorConfig = require './replicator_config'
 DeviceStatus = require '../lib/device_status'
 ChangeDispatcher = require './change/change_dispatcher'
-
-DBNAME = "cozy-files.db"
-DBPHOTOS = "cozy-photos.db"
+Db = require '../lib/database'
+FilterManager = require '../replicator/filter_manager'
 
 
 PLATFORM_VERSIONS =
@@ -17,7 +14,7 @@ PLATFORM_VERSIONS =
     'data-system': '>=2.1.8'
 
 log = require('../lib/persistent_log')
-    prefix: "replicator"
+    prefix: "replicator main"
     date: true
 
 #Replicator extends Model to watch/set inBackup, inSync
@@ -29,7 +26,7 @@ module.exports = class Replicator extends Backbone.Model
     # backup images functions are in replicator_backups
     _.extend Replicator.prototype, require './replicator_backups'
 
-    _.extend Replicator.prototype, require './replicator_migration'
+    _.extend Replicator.prototype, require '../migrations/replicator_migration'
 
     defaults: ->
         inSync: false
@@ -44,25 +41,9 @@ module.exports = class Replicator extends Backbone.Model
             callback()
 
 
-    initDB: (callback) ->
-        # Migrate to idb
-        dbOptions = adapter: 'idb', cache: false
-        new PouchDB DBNAME, dbOptions, (err, db) =>
-            if err
-                #keep sqlite db, no migration.
-                dbOptions = adapter: 'websql'
-                @db = new PouchDB DBNAME, dbOptions
-                @photosDB = new PouchDB DBPHOTOS, dbOptions
-                return @migrateConfig callback
-
-            @db = db
-            @photosDB = new PouchDB DBPHOTOS, dbOptions
-            @migrateDBs callback
-
-
-    initConfig: (callback) ->
-        @config = new ReplicatorConfig @db
-        @config.fetch callback
+    initConfig: (@config, @requestCozy, @database) ->
+        @db = @database.replicateDb
+        @photosDB = @database.localDb
 
 
     upsertLocalDesignDocuments: (callback) ->
@@ -70,11 +51,10 @@ module.exports = class Replicator extends Backbone.Model
         designDocs.createOrUpdateAllDesign callback
 
     checkPlatformVersions: (callback) ->
-        request.get
-            url: "#{@config.getScheme()}#{@config.get('cozyURL')}/versions"
-            auth: @config.get 'auth'
-            json: true
-        , (err, response, body) ->
+        options =
+            method: 'get'
+            url: "#{@config.get 'cozyURL'}/versions"
+        @requestCozy.request options, (err, response, body) ->
             return callback err if err # TODO i18n ?
 
             for item in body
@@ -90,26 +70,18 @@ module.exports = class Replicator extends Backbone.Model
             callback()
 
 
-    destroyDB: (callback) ->
-        @db.destroy (err) =>
-            return callback err if err
-            @photosDB.destroy (err) =>
-                return callback err if err
-                fs.rmrf @downloads, callback
-
-
     # pings the cozy to check the credentials without creating a device
-    checkCredentials: (config, callback) ->
-        url = "#{config.cozyProtocol}#{config.cozyURL}"
-        request.post
-            uri: "#{url}/login"
+    checkCredentials: (url, password, callback) ->
+        options =
+            method: 'post'
+            url: "#{url}/login"
             json:
                 username: 'owner'
-                password: config.password
-        , (err, response, body) ->
-            if err and config.cozyURL.indexOf('@') isnt -1
-                error = t 'bad credentials, did you enter an email address'
-            else if err and err.message is "Unexpected token <"
+                password: password
+            auth: false
+        # todo: replace by @requestCozy
+        window.app.init.requestCozy.request options, (err, response, body) ->
+            if err and err.message is "Unexpected token <"
                 error = t err.message
             else if err
                 # Unexpected error, just show it to the user.
@@ -126,35 +98,29 @@ module.exports = class Replicator extends Backbone.Model
 
             callback error
 
-    permissions:
-        File: description: "files permission description"
-        Folder: description: "folder permission description"
-        Binary: description: "binary permission description"
-        Contact: description: "contact permission description"
-        Event: description: "event permission description"
-        Notification: description: "notification permission description"
-        Tag: description: "tag permission description"
-
-    registerRemoteSafe: (newConfig, callback, addition = 0)->
-        conf = _.clone newConfig
-        conf.deviceName += "-#{addition}" if addition > 0
-        @registerRemote conf, (err) =>
+    registerRemoteSafe: (url, password, deviceName, callback, num = 0) ->
+        name = deviceName
+        name += "-#{num}" if num > 0
+        log.debug 'deviceName', name
+        @_registerRemote url, password, name, (err, body) =>
             if err and err.message is 'device name already exist'
-                @registerRemoteSafe newConfig, callback, addition + 1
+                console.info 'The above 400 is totally normal. Device name \
+                    already exist, we test another'
+                @registerRemoteSafe url, password, deviceName, callback, num + 1
             else
-                callback err
+                callback err, body
 
-    registerRemote: (newConfig, callback) ->
-        request.post
-            uri: "#{newConfig.cozyProtocol}#{newConfig.cozyURL}/device"
+    _registerRemote: (url, password, deviceName, callback) ->
+        options =
+            method: "post"
+            url: "#{url}/device"
             auth:
                 username: 'owner'
-                password: newConfig.password
+                password: password
             json:
-                login: newConfig.deviceName
-                permissions: @permissions
-
-        , (err, response, body) =>
+                login: deviceName
+                permissions: @config.get 'permissions'
+        @requestCozy.request options, (err, response, body) ->
             if err
                 callback err
             else if response.statusCode is 401 and response.reason
@@ -167,85 +133,94 @@ module.exports = class Replicator extends Backbone.Model
                 log.error "while registering device:  #{response.statusCode}"
                 callback new Error response.statusCode, response.reason
             else
-                _.extend newConfig,
-                    devicePassword: body.password
-                    deviceName: body.login
-                    devicePermissions:
-                        @config.serializePermissions body.permissions
-                    auth:
-                        username: body.login
-                        password: body.password
-
-                @config.save newConfig, callback
+                callback err, body
 
 
     updatePermissions: (password, callback) ->
-        request.put
-            uri: "#{@config.getCozyUrl()}/device/#{@config.get('deviceName')}"
+        options =
+            method: 'put'
+            url: "#{@config.getCozyUrl()}/device/#{@config.get('deviceName')}"
             auth:
                 username: 'owner'
                 password: password
             json:
                 login: @config.get 'deviceName'
                 permissions: @permissions
-        , (err, response, body) =>
+        @requestCozy.request options, (err, response, body) =>
             return callback err if err
-            log.debug body
 
-            @config.save
-                devicePassword: body.password
-                deviceName: body.login
-                devicePermissions: @config.serializePermissions body.permissions
-                auth:
-                    username: body.login
-                    password: body.password
-            , callback
+            @config.set 'permissions', body.permissions, callback
 
     putFilters: (callback) ->
         log.info "setReplicationFilter"
-        @config.getFilterManager().setFilter callback
+        @getFilterManager().setFilter callback
 
+    # todo: remove when cozy-device-sdk will be include
+    getFilterManager: ->
+        @filterManager ?= new FilterManager @config, @requestCozy, @db
+
+    getReplicationFilter: ->
+        log.debug "getReplicationFilter"
+        @getFilterManager().getFilterName()
 
     putRequests: (callback) ->
         requests = require './remote_requests'
 
         reqList = []
         for docType, reqs of requests
-            for reqName, body of reqs
-                reqList.push
-                    type: docType
-                    name: reqName
-                    # Copy/Past from cozydb, to avoid view multiplication
-                    # TODO: reduce is not supported yet
-                    body: map: """
-                function (doc) {
-                  if (doc.docType.toLowerCase() === "#{docType}") {
-                    filter = #{body.toString()};
-                    filter(doc);
-                  }
-                }
-            """
+            if docType is 'file' or docType is 'folder' or \
+                (docType is 'contact' and @config.get 'syncContacts') or \
+                (docType is 'contact' and @config.get 'syncContacts') or \
+                (docType is 'event' and @config.get 'syncCalendars') or \
+                (docType is 'notification' and @config.get 'cozyNotifications')\
+                    or (docType is 'tag' and @config.get 'syncCalendars')
+
+                for reqName, body of reqs
+
+                    reqList.push
+                        type: docType
+                        name: reqName
+                        # Copy/Past from cozydb, to avoid view multiplication
+                        # TODO: reduce is not supported yet
+                        body: map: """
+                    function (doc) {
+                      if (doc.docType.toLowerCase() === "#{docType}") {
+                        filter = #{body.toString()};
+                        filter(doc);
+                      }
+                    }
+                """
 
         async.eachSeries reqList, (req, cb) =>
-            options = @config.makeDSUrl "/request/#{req.type}/#{req.name}/"
-            options.body = req.body
-            request.put options, cb
+            options =
+                method: 'put'
+                type: 'data-system'
+                path: "/request/#{req.type}/#{req.name}/"
+                body: req.body
+            @requestCozy.request options, cb
         , callback
 
     takeCheckpoint: (callback) ->
-        url = '/_changes?descending=true&limit=1'
-        options = @config.makeReplicationUrl url
-        request.get options, (err, res, body) =>
+        options =
+            method: 'get'
+            type: 'replication'
+            path: '/_changes?descending=true&limit=1'
+        @requestCozy.request options, (err, res, body) ->
             return callback err if err
-            @config.save checkpointed: body.last_seq, callback
+            window.app.checkpointed = body.last_seq
+            callback()
 
 
     # Fetch all documents, with a previously put couchdb view.
-    _fetchAll: (options, callback) ->
-        requestOptions = @config.makeDSUrl "/request/#{options.docType}/all/"
-        requestOptions.body = include_docs: true, show_revs: true
-
-        request.post requestOptions, (err, res, rows) ->
+    _fetchAll: (doc, callback) ->
+        options =
+            method: 'post'
+            type: 'data-system'
+            path: "/request/#{doc.docType}/all/"
+            body:
+                include_docs: true
+                show_revs: true
+        @requestCozy.request options, (err, res, rows) ->
             if not err and res.statusCode isnt 200
                 err = new Error res.statusCode, res.reason
 
@@ -281,8 +256,11 @@ module.exports = class Replicator extends Backbone.Model
                 # 2.1 Fetch attachment if needed (typically contact docType)
                 if options.attachments is true and doc._attachments?
                 # TODO? needed : .picture?
-                    request.get @config.makeReplicationUrl( \
-                    "/#{doc._id}?attachments=true"), (err, res, body) ->
+                    requestOptions =
+                        method: 'get'
+                        type: 'replication'
+                        path: "/#{doc._id}?attachments=true"
+                    @requestCozy.request requestOptions, (err, res, body) ->
                         # Continue on error (we just miss the avatar in case
                         # of contacts)
                         unless err
@@ -298,10 +276,19 @@ module.exports = class Replicator extends Backbone.Model
 
     # update index for further speeds up.
     updateIndex: (callback) ->
+        log.debug "updateIndex"
+
+        count = 0
+        call = ->
+            count++
+            if count is 2
+                callback()
+
         # build pouch's map indexes
-        @db.query DesignDocuments.FILES_AND_FOLDER, {}, =>
-            # build pouch's map indexes
-            @db.query DesignDocuments.LOCAL_PATH, {}, -> callback()
+        @db.query DesignDocuments.FILES_AND_FOLDER, {}, call
+
+        # build pouch's map indexes
+        @db.query DesignDocuments.LOCAL_PATH, {}, call
 
 # END initialisations methods
 
@@ -359,6 +346,8 @@ module.exports = class Replicator extends Backbone.Model
     # @param model cozy File document
     # @param progressback progress callback.
     getBinary: (model, progressback, callback) ->
+        log.debug "getBinary"
+
         fs.getOrCreateSubFolder @downloads, @_fileToEntryName(model)
         , (err, binfolder) =>
             if err and err.code isnt FileError.PATH_EXISTS_ERR
@@ -371,7 +360,8 @@ module.exports = class Replicator extends Backbone.Model
                 return callback null, entry.toURL() if entry
 
                 # getFile failed, let's download
-                options = @config.makeDSUrl "/data/#{model._id}/binaries/file"
+                path = "/data/#{model._id}/binaries/file"
+                options = @requestCozy.getDataSystemOption path, true
                 options.path = binfolder.toURL() + fileName
                 log.info "download binary of #{model.name}"
                 fs.download options, progressback, (err, entry) =>
@@ -492,6 +482,9 @@ module.exports = class Replicator extends Backbone.Model
         @set 'inSync', true
         @_sync options, (err) =>
             @set 'inSync', false
+            # Skip first synchronisation
+            # todo: find better solution
+            callback() if err?.status is 404
             callback err
 
 
@@ -501,13 +494,14 @@ module.exports = class Replicator extends Backbone.Model
     #    * replication at each start
     #    * replication force by user
     _sync: (options, callback) ->
-        log.info "_sync"
+        log.debug "_sync"
         options.live = false
 
         @stopRealtime()
 
         ReplicationLauncher = require "./replication_launcher"
-        @replicationLauncher = new ReplicationLauncher @config, app.router
+        @replicationLauncher = new ReplicationLauncher @database, app.router, \
+            @getReplicationFilter()
         @replicationLauncher.start options, =>
             # clean @replicationLauncher when sync finished
             @stopRealtime()
@@ -522,7 +516,8 @@ module.exports = class Replicator extends Backbone.Model
         @stopRealtime() if @replicationLauncher
 
         ReplicationLauncher = require "./replication_launcher"
-        @replicationLauncher = new ReplicationLauncher @config, app.router
+        @replicationLauncher = new ReplicationLauncher @database, app.router, \
+            @getReplicationFilter()
         @replicationLauncher.start live: true
 
     # Stop replication.

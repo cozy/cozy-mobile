@@ -19,9 +19,9 @@ module.exports = class ChangeDispatcher
      *
      * @param {ReplicatorConfig} config - it's replication config.
     ###
-    constructor: (config) ->
+    constructor: ->
         @changeHandlers =
-            "file": new ChangeFileHandler config
+            "file": new ChangeFileHandler()
             "event": new ChangeEventHandler()
             "contact": new ChangeContactHandler()
             "tag": new ChangeTagHandler()
@@ -34,7 +34,7 @@ module.exports = class ChangeDispatcher
      * @param {Function} callback
     ###
     dispatch: (doc, callback = ->) ->
-        log.info "dispatch #{doc.docType}"
+        log.debug "dispatch #{doc.docType}"
 
         docType = doc.docType.toLowerCase()
         if @changeHandlers[docType]?
@@ -50,6 +50,6 @@ module.exports = class ChangeDispatcher
      * @return {Boolean}
     ###
     isDispatched: (doc) ->
-        log.info "isDispatched"
+        log.debug "isDispatched"
 
         return doc?.docType?.toLowerCase() of @changeHandlers

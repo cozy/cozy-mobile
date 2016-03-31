@@ -141,7 +141,6 @@ module.exports.download = (options, progressback, callback) ->
     ]
 
     {url, path, auth} = options
-    url = encodeURI url
 
     onSuccess = (entry) -> callback null, entry
     onError = (err) -> callback new Error errors[err.code]

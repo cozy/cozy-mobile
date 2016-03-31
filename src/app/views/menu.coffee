@@ -11,7 +11,6 @@ module.exports = class Menu extends BaseView
     template: require '../templates/menu'
     events:
         'click #close-menu': 'closeMenu'
-        # 'click #syncButton': 'test'
         'click #syncButton': 'backup'
         'click #btn-search': 'doSearch'
         'click a.item': 'closeMenu'
@@ -26,6 +25,7 @@ module.exports = class Menu extends BaseView
     backup: ->
         app.layout.closeMenu()
         app.init.launchBackup()
+        app.router.forceRefresh()
 
     doSearchIfEnter: (event) => @doSearch() if event.which is 13
     doSearch: ->

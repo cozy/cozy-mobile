@@ -15,7 +15,7 @@ module.exports = class PermissionsPickerView extends BaseView
 
     getRenderData: ->
         return {
-            permissions: app.replicator.permissions
+            permissions: app.init.replicator.permissions
             doesntNeedPassword: app.init.currentState is 'fPermissions'
         }
 
@@ -30,7 +30,7 @@ module.exports = class PermissionsPickerView extends BaseView
         unless pass
             return @displayError t 'all fields are required'
 
-        app.replicator.updatePermissions pass, (err) =>
+        app.init.replicator.updatePermissions pass, (err) =>
             if err
                 @displayError err
             else

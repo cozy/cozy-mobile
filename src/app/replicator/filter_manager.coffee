@@ -1,7 +1,6 @@
 log = require('../lib/persistent_log')
     prefix: "Filter Manager"
     date: true
-request = require '../lib/request'
 
 ###*
  * FilterManager allows to create a filter specific by device and
@@ -21,11 +20,8 @@ module.exports = class FilterManager
      * @param {PouchDB} db - the main PouchDB instance of the app.
     ###
     # constructor: (@cozyUrl, @auth, @deviceName, @db) ->
-    constructor: (@config) ->
-        @cozyUrl = @config.getCozyUrl()
-        @auth = @config.get 'auth'
+    constructor: (@config, @requestCozy, @db) ->
         @deviceName = @config.get 'deviceName'
-        @db = @config.db
 
     ###*
      * Create or update a filter for a specific configuration.
@@ -43,10 +39,8 @@ module.exports = class FilterManager
 
         log.info "setFilter syncContacts: #{syncContacts}, syncCalendars: " + \
                 "#{syncCalendars}, syncNotifs: #{syncNotifs}"
-        doc = @_getConfigFilter @config.attributes
 
-        options = @_getOptions()
-        options.body = doc
+        doc = @_getConfigFilter syncContacts, syncCalendars, syncNotifs
 
         # Add the filter in PouchDB
         filterId = @getFilterDocId()
@@ -56,13 +50,18 @@ module.exports = class FilterManager
             if existing?
                 doc._rev = existing._rev
 
-            @db.put doc, (err) ->
+            @db.put doc, (err) =>
                 return callback err if err
 
                 # Delete rev before sending to Cozy
                 delete doc._rev
                 # Add filter in Cozy
-                request.put options, (err, res, body) ->
+                options =
+                    method: 'put'
+                    type: 'data-system'
+                    path: '/filters/config'
+                    body: doc
+                @requestCozy.request options, (err, res, body) ->
                     if err or not (body?.success or body?._id)
                         err ?= body
                         return callback err
@@ -88,19 +87,9 @@ module.exports = class FilterManager
      * @return {String}
     ###
     getFilterName: ->
-        log.info "getFilterName"
+        log.debug "getFilterName"
 
         "#{@_getFilterDocName()}/config"
-
-    ###*
-     * Get options to create a request.
-     *
-     * @return {Object}
-    ###
-    _getOptions: ->
-        json: true
-        auth: @auth
-        url: "#{@cozyUrl}/ds-api/filters/config"
 
 
     ###*
@@ -112,17 +101,17 @@ module.exports = class FilterManager
      *
      * @return {Object}
     ###
-    _getConfigFilter: (options) ->
+    _getConfigFilter: (syncContacts, syncCalendars, syncNotifs) ->
         # First check for docType
         compare = "doc.docType && ("
         compare += "doc.docType.toLowerCase() === 'file'"
         compare += " || doc.docType.toLowerCase() === 'folder'"
-        if options.syncContacts
+        if syncContacts
             compare += " || doc.docType.toLowerCase() === 'contact'"
-        if options.syncCalendars
+        if syncCalendars
             compare += " || doc.docType.toLowerCase() === 'event'"
             compare += " || doc.docType.toLowerCase() === 'tag'"
-        if options.cozyNotifications
+        if syncNotifs
             compare += " || (doc.docType.toLowerCase() === 'notification'"
             compare += " && doc.type === 'temporary')"
 

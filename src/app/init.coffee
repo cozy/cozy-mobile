@@ -4,10 +4,18 @@ ChangeDispatcher = require './replicator/change/change_dispatcher'
 ChangesImporter = require './replicator/fromDevice/changes_importer'
 AndroidAccount = require './replicator/fromDevice/android_account'
 validator = require 'validator'
+ServiceManager = require './models/service_manager'
+Notifications  = require './views/notifications'
+DeviceStatus   = require './lib/device_status'
+Replicator = require './replicator/main'
+Translation = require './lib/translation'
+Config = require './lib/config'
+Database = require './lib/database'
+RequestCozy = require './lib/request_cozy'
 
 log = require('lib/persistent_log')
+    prefix: "Init"
     date: true
-    processusTag: "Init"
 
 
 ###*
@@ -42,20 +50,22 @@ module.exports = class Init
     _.extend Init.prototype, Backbone.Events
     _.extend Init.prototype, Backbone.StateMachine
 
-    # Override this function to use it as initialize.
-    startStateMachine: ->
-        @initialize()
-        Backbone.StateMachine.startStateMachine.apply @, arguments
+    constructor: (@app) ->
+        log.debug "constructor"
 
-
-    initialize: ->
         @migrationStates = {}
+        @translation = new Translation()
+        @database = new Database()
+        @config = new Config @database
+        @replicator = new Replicator()
+        @requestCozy = new RequestCozy @config
+        @replicator.initConfig @config, @requestCozy, @database
 
-        @listenTo @, 'transition', (leaveState, enterState) ->
+        @listenTo @, 'transition', (leaveState, enterState) =>
+
             log.info "Transition from state #{leaveState} \
                       to state #{enterState}"
 
-        @listenTo @, 'transition', (leaveState, enterState) =>
             if @states[enterState]?.display?
                 @trigger 'display', @states[enterState].display
 
@@ -63,38 +73,43 @@ module.exports = class Init
             else if @states[leaveState]?.display?
                 @trigger 'noDisplay'
 
+        return @
+
+
+    # Override this function to use it as initialize.
+    startStateMachine: ->
+        log.debug "startStateMachine"
+
+        Backbone.StateMachine.startStateMachine.apply @
+
     # activating contact or calendar sync requires to init them,
     # trough init state machine
     # @param needSync {calendars: true, contacts: false } type object, if
     # it should be updated or not.
     updateConfig: (needInit) ->
-        log.info 'updateConfig'
+        log.debug 'updateConfig'
         # Do sync only while on Realtime : TODO: handles others Running states
         # waiting for them to end.
-        if @currentState in ['aRealtime', 'cUpdateIndex', 'aImport', 'aBackup']
-            if needInit.calendars and needInit.contacts
+        if @currentState in ['nRealtime', 'cUpdateIndex', 'nImport', 'nBackup']
+            if needInit.syncCalendars and needInit.syncContacts
                 @toState 'c3RemoteRequest'
-            else if needInit.contacts
+            else if needInit.syncContacts
                 @toState 'c1RemoteRequest'
-            else if needInit.calendars
+            else if needInit.syncCalendars
                 @toState 'c2RemoteRequest'
-            #else unless _.isEmpty(needInit)
-
             else
                 @toState 'c4RemoteRequest'
-
-        else if @currentState in ['fConfig', 'mConfig']
-            @saveConfig()
         else
+            app.router.forceRefresh()
             @trigger 'error', new Error 'App is busy'
 
 
     launchBackup: ->
         log.debug 'backup'
 
-        if @currentState is 'aRealtime'
+        if @currentState is 'nRealtime'
             @stopRealtime()
-            @toState 'aImport'
+            @toState 'nImport'
 
         else
             @trigger 'error', new Error 'App is busy'
@@ -110,23 +125,27 @@ module.exports = class Init
         # - m : migration start
         # - sm : migration in service start
 
-        # Application
+        exit: enter: ['exit']
 
-        # First commons steps
+        ########################################
+        # Start application
+        aConfigLoad: enter: ['configLoad'], quitOnError: true
         aDeviceLocale: enter: ['setDeviceLocale'], quitOnError: true
         aInitFileSystem: enter: ['initFileSystem'], quitOnError: true
-        aInitDatabase: enter: ['initDatabase'], quitOnError: true
-        aInitConfig: enter: ['initConfig'], quitOnError: true
+        aQuitSplashScreen: enter: ['quitSplashScreen'], quitOnError: true # RUN
+        aApplicationState: enter: ['applicationState'], quitOnError: true
 
         #######################################
-        # Normal (n) states
-        nPostConfigInit: enter: ['postConfigInit'], quitOnError: true
-        nQuitSplashScreen: enter: ['quitSplashScreen'], quitOnError: true
-        nExit: enter: ['sQuit']
+        # Normal states
+        nLoadFilePage: enter: ['setListeners', 'loadFilePage']
+        nImport:
+            enter: ['import']
+            display: 'syncing' # TODO: more accurate translate key
+        nBackup: enter: ['backup']
+        nRealtime: enter: ['startRealtime']
 
         #######################################
         # First start (f) states
-        fQuitSplashScreen: enter: ['quitSplashScreen'], quitOnError: true # RUN
         fWizardWelcome  : enter: ['loginWizard']
         fWizardURL      : enter: ['loginWizard']
         fCheckURL       : enter: ['checkURL']
@@ -147,9 +166,6 @@ module.exports = class Init
         fRemoteRequest:
             enter: ['putRemoteRequest']
             display: 'message step 0' # TODO: more accurate translate key
-        fPostConfigInit:
-            enter: ['postConfigInit'] # RUN
-            display: 'message step 0' # TODO: more accurate translate key
         fSetVersion:
             enter: ['updateVersion']
             display: 'message step 0' # TODO: more accurate translate key
@@ -161,22 +177,22 @@ module.exports = class Init
             enter: ['initFiles']
             display: 'message step 0' # TODO: more accurate translate key
         fInitFolders:
-            enter: ['saveState', 'initFolders']
+            enter: ['initFolders']
             display: 'message step 1' # TODO: more accurate translate key
         fCreateAccount:
             enter: ['createAndroidAccount']
             display: 'message step 3' # TODO: more accurate translate key
         fInitContacts:
-            enter: ['saveState', 'initContacts']
+            enter: ['initContacts']
             display: 'message step 3' # TODO: more accurate translate key
         fInitCalendars:
-            enter: ['saveState', 'initCalendars']
+            enter: ['initCalendars']
             display: 'message step 4' # TODO: more accurate translate key
         fSync:
             enter: ['postCopyViewSync']
             display: 'message step 5' # TODO: more accurate translate key
         fUpdateIndex:
-            enter: ['saveState', 'updateIndex']
+            enter: ['updateIndex']
             display: 'message step 5' # TODO: more accurate translate key
 
         ###################
@@ -187,43 +203,33 @@ module.exports = class Init
         # 2 error after File sync
         f2QuitSplashScreen: enter: ['quitSplashScreen'], quitOnError: true
         f2FirstSyncView: enter: ['firstSyncView'] # RUN
-        f2PostConfigInit: enter: ['postConfigInit'] # RUN
 
         # 3 error after contacts sync
         f3QuitSplashScreen: enter: ['quitSplashScreen'], quitOnError: true
         f3FirstSyncView: enter: ['firstSyncView'] # RUN
-        f3PostConfigInit: enter: ['postConfigInit'] # RUN
 
         # 4 error after calendars sync
         f4QuitSplashScreen: enter: ['quitSplashScreen'], quitOnError: true
         f4FirstSyncView: enter: ['firstSyncView'] # RUN
-        f4PostConfigInit: enter: ['postConfigInit'] # RUN
 
 
         # Last commons steps
-        aLoadFilePage: enter: ['saveState', 'setListeners', 'loadFilePage']
-        aImport:
-            enter: ['import']
-            display: 'syncing' # TODO: more accurate translate key
-        aBackup: enter: ['backup']
-        aRealtime: enter: ['startRealtime']
         aResume: enter: ['onResume']
         aPause: enter: ['onPause']
         aViewingFile: enter: ['onPause']
 
         #######################################
         # Service
+        sCheckState: enter: ['sCheckState'], quitOnError: true
+        sConfigLoad: enter: ['configLoad'], quitOnError: true
         sDeviceLocale: enter: ['setDeviceLocale'], quitOnError: true
         sInitFileSystem: enter: ['initFileSystem'], quitOnError: true
-        sInitDatabase: enter: ['initDatabase'], quitOnError: true
         sInitConfig: enter: ['sInitConfig'], quitOnError: true
 
-        sPostConfigInit: enter: ['postConfigInit'], quitOnError: true
         sImport: enter: ['import'], quitOnError: true
         sSync: enter: ['sSync'], quitOnError: true
         sBackup: enter: ['backup'], quitOnError: true
         sSync2: enter: ['sSync'], quitOnError: true
-        sQuit: enter: ['sQuit'], quitOnError: true
 
         #######################################
         # Config update states (c)
@@ -273,9 +279,6 @@ module.exports = class Init
         cSync:
             enter: ['postCopyViewSync']
             display: 'setup end'
-        cSaveConfig:
-            enter: ['saveConfig']
-            display: 'setup end'
         cUpdateIndex:
             enter: ['updateIndex']
             display: 'setup end'
@@ -295,8 +298,10 @@ module.exports = class Init
         mConfig: enter: ['config']
         mRemoteRequest: enter: ['putRemoteRequest']
         mUpdateVersion: enter: ['updateVersion']
-        mPostConfigInit: enter: ['postConfigInit']
         mSync: enter: ['postCopyViewSync']
+        mNewConfig:
+            enter: ['newConfig']
+            quitOnError: true
 
         ###################
         # Service Migration (m) states
@@ -313,7 +318,6 @@ module.exports = class Init
         smConfig: enter: ['config'], quitOnError: true
         smRemoteRequest: enter: ['putRemoteRequest'], quitOnError: true
         smUpdateVersion: enter: ['updateVersion'], quitOnError: true
-        smPostConfigInit: enter: ['postConfigInit'], quitOnError: true
         smSync: enter: ['postCopyViewSync'], quitOnError: true
 
 
@@ -321,49 +325,56 @@ module.exports = class Init
         # Help :
         # initial_state: event: end_state
 
-        # Start application
         'init':
-            'startApplication': 'aDeviceLocale'
-            'startService': 'sDeviceLocale'
+            'startApplication': 'aConfigLoad'
+            'startService': 'sConfigLoad'
+
+        ########################################
+        # Start application
+        'aConfigLoad': 'loaded': 'aDeviceLocale'
         'aDeviceLocale': 'deviceLocaleSetted': 'aInitFileSystem'
-        'aInitFileSystem': 'fileSystemReady': 'aInitDatabase'
-        'aInitDatabase': 'databaseReady': 'aInitConfig'
-        'aInitConfig':
-            'configured': 'nPostConfigInit' # Normal start
-            'newVersion': 'migrationInit' # Migration
-            'notConfigured': 'fQuitSplashScreen' # First start
-            # First start error
-            'goTofDeviceName': 'f1QuitSplashScreen'
-            'goTofInitContacts': 'f2QuitSplashScreen'
-            'goTofInitCalendars': 'f3QuitSplashScreen'
-            'goTofUpdateIndex': 'f4QuitSplashScreen'
+        'aInitFileSystem': 'fileSystemReady': 'aQuitSplashScreen'
+        'aQuitSplashScreen': 'viewInitialized': 'aApplicationState'
+        'aApplicationState':
+            'default': 'fWizardWelcome'
+            'deviceCreated': 'fWizardFiles'
+            'appConfigured': 'fFirstSyncView'
+            'syncCompleted': 'nLoadFilePage'
 
         #######################################
-        # Normal start
-        'nPostConfigInit': 'initsDone': 'nQuitSplashScreen'
-        'nQuitSplashScreen': 'viewInitialized': 'aLoadFilePage'
-        'aLoadFilePage': 'onFilePage': 'aImport'
-        'aImport': 'importDone': 'aBackup'
-        'aBackup':
-            'backupDone': 'aRealtime'
-            'errorViewed': 'aRealtime'
+        # Start Service
+        'sConfigLoad': 'loaded': 'sCheckState'
+        'sCheckState':
+            'exit': 'exit'
+            'continue': 'sDeviceLocale'
+        'sDeviceLocale': 'deviceLocaleSetted': 'sInitFileSystem'
+        'sInitFileSystem': 'fileSystemReady': 'sImport'
+        'sImport': 'importDone': 'sSync'
+        'sSync': 'syncDone': 'sBackup'
+        'sBackup': 'backupDone': 'sSync2'
+        'sSync2': 'syncDone': 'exit'
+
+        #######################################
+        # Normal states
+        'nLoadFilePage': 'onFilePage': 'nImport'
+        'nImport': 'importDone': 'nBackup'
+        'nBackup':
+            'backupDone': 'nRealtime'
+            'errorViewed': 'nRealtime'
+        'nRealtime':
+            'pause': 'aPause'
+            'openFile': 'aViewingFile'
 
         #######################################
         # Running
         'aPause': 'resume': 'aResume'
         'aResume':
             'pause': 'aPause'
-            'ready': 'aImport'
-
-        'aRealtime':
-            'pause': 'aPause'
-            'openFile': 'aViewingFile'
-
-        'aViewingFile': 'resume': 'aRealtime'
+            'ready': 'nImport'
+        'aViewingFile': 'resume': 'nRealtime'
 
         #######################################
         # First start
-        'fQuitSplashScreen': 'viewInitialized': 'fWizardWelcome'
         'fWizardWelcome': 'clickNext': 'fWizardURL'
         'fWizardURL':
             'clickBack': 'fWizardWelcome'
@@ -373,16 +384,15 @@ module.exports = class Init
             'error': 'fWizardURL'
         'fWizardPassword':
             'clickBack': 'fWizardURL'
-            'validCredentials': 'fWizardFiles'
-
+            'validCredentials': 'fCreateDevice'
+        'fCreateDevice':
+            'deviceCreated': 'fWizardFiles'
+            'errorViewed': 'fConfig'
         'fWizardFiles'   : 'clickNext': 'fWizardContacts'
         'fWizardContacts': 'clickNext': 'fWizardCalendars'
         'fWizardCalendars': 'clickNext': 'fWizardPhotos'
         'fWizardPhotos'  : 'clickNext': 'fFirstSyncView'
-        'fFirstSyncView': 'firstSyncViewDisplayed': 'fCreateDevice'
-        'fCreateDevice':
-            'deviceCreated': 'fCheckPlatformVersion'
-            'errorViewed': 'fConfig'
+        'fFirstSyncView': 'firstSyncViewDisplayed': 'fCheckPlatformVersion'
         'fCheckPlatformVersion':
             'validPlatformVersions': 'fLocalDesignDocuments'
             'errorViewed': 'fConfig'
@@ -393,10 +403,7 @@ module.exports = class Init
             'putRemoteRequest':'fSetVersion'
             'errorViewed': 'fConfig'
         'fSetVersion':
-            'versionUpToDate': 'fPostConfigInit'
-            'errorViewed': 'fConfig'
-        'fPostConfigInit':
-            'initsDone': 'fTakeDBCheckpoint'
+            'versionUpToDate': 'fTakeDBCheckpoint'
             'errorViewed': 'fConfig'
         'fTakeDBCheckpoint':
             'checkPointed': 'fInitFiles'
@@ -420,8 +427,8 @@ module.exports = class Init
             'dbSynced': 'fUpdateIndex'
             'errorViewed': 'fSync'
         'fUpdateIndex':
-            'indexUpdated': 'aLoadFilePage'
-            'errorViewed': 'aLoadFilePage'
+            'indexUpdated': 'nLoadFilePage'
+            'errorViewed': 'nLoadFilePage'
 
 
         # First start error transitions
@@ -430,111 +437,90 @@ module.exports = class Init
 
         # 2 error after File sync
         'f2QuitSplashScreen': 'viewInitialized': 'f2FirstSyncView'
-        'f2FirstSyncView': 'firstSyncViewDisplayed': 'f2PostConfigInit'
-        'f2PostConfigInit': 'initsDone': 'fInitContacts'
+        'f2FirstSyncView': 'firstSyncViewDisplayed': 'fInitContacts'
 
         # 3 error after Contacts sync
         'f3QuitSplashScreen': 'viewInitialized': 'f3FirstSyncView'
-        'f3FirstSyncView': 'firstSyncViewDisplayed': 'f3PostConfigInit'
-        'f3PostConfigInit': 'initsDone': 'fInitCalendars'
+        'f3FirstSyncView': 'firstSyncViewDisplayed': 'fInitCalendars'
 
         # 4 error after Calendars sync
         'f4QuitSplashScreen': 'viewInitialized': 'f4FirstSyncView'
-        'f4FirstSyncView': 'firstSyncViewDisplayed': 'f4PostConfigInit'
-        'f4PostConfigInit': 'initsDone': 'fUpdateIndex'
-
-        #######################################
-        # Start Service
-        'sDeviceLocale': 'deviceLocaleSetted': 'sInitFileSystem'
-        'sInitFileSystem': 'fileSystemReady': 'sInitDatabase'
-        'sInitDatabase': 'databaseReady': 'sInitConfig'
-        'sPostConfigInit': 'initsDone': 'sImport'
-        'sImport': 'importDone': 'sSync'
-        'sSync': 'syncDone': 'sBackup'
-        'sBackup': 'backupDone': 'sSync2'
-        'sSync2': 'syncDone': 'sQuit'
-        'sInitConfig':
-            'configured': 'sPostConfigInit' # Normal start
-            'newVersion': 'smMigrationInit' # Migration
+        'f4FirstSyncView': 'firstSyncViewDisplayed': 'fUpdateIndex'
 
         #######################################
         # Config update
         ###################
         'c1RemoteRequest':
             'putRemoteRequest': 'c1TakeDBCheckpoint'
-            'errorViewed': 'aRealtime'
+            'errorViewed': 'nRealtime'
         'c1TakeDBCheckpoint':
             'checkPointed': 'c1CreateAccount'
-            'errorViewed': 'aRealtime'
+            'errorViewed': 'nRealtime'
         'c1CreateAccount':
             'androidAccountCreated': 'c1InitContacts'
-            'errorViewed': 'aRealtime'
+            'errorViewed': 'nRealtime'
         'c1InitContacts':
             'contactsInited': 'cSync'
-            'errorViewed': 'aRealtime'
+            'errorViewed': 'nRealtime'
 
 
         ###################
         'c2RemoteRequest':
             'putRemoteRequest': 'c2TakeDBCheckpoint'
-            'errorViewed': 'aRealtime'
+            'errorViewed': 'nRealtime'
         'c2TakeDBCheckpoint':
             'checkPointed': 'c2CreateAccount'
-            'errorViewed': 'aRealtime'
+            'errorViewed': 'nRealtime'
         'c2CreateAccount':
             'androidAccountCreated': 'c2InitCalendars'
-            'errorViewed': 'aRealtime'
+            'errorViewed': 'nRealtime'
         'c2InitCalendars':
             'calendarsInited': 'cSync'
-            'errorViewed': 'aRealtime'
+            'errorViewed': 'nRealtime'
 
         ###################
         'c3RemoteRequest':
             'putRemoteRequest': 'c3TakeDBCheckpoint'
-            'errorViewed': 'aRealtime'
+            'errorViewed': 'nRealtime'
         'c3TakeDBCheckpoint':
             'checkPointed': 'c3CreateAccount'
-            'errorViewed': 'aRealtime'
+            'errorViewed': 'nRealtime'
         'c3CreateAccount':
             'androidAccountCreated': 'c3InitContacts'
-            'errorViewed': 'aRealtime'
+            'errorViewed': 'nRealtime'
         'c3InitContacts':
             'contactsInited': 'c3InitCalendars'
-            'errorViewed': 'aRealtime'
+            'errorViewed': 'nRealtime'
         'c3InitCalendars':
             'calendarsInited': 'cSync'
-            'errorViewed': 'aRealtime'
+            'errorViewed': 'nRealtime'
 
         ###################
         'c4RemoteRequest':
-            'putRemoteRequest': 'cSaveConfig'
-            'errorViewed': 'aRealtime'
+            'putRemoteRequest': 'cUpdateIndex'
+            'errorViewed': 'nRealtime'
 
         ###################
         'cSync':
-            'dbSynced': 'cSaveConfig'
-            'errorViewed': 'aRealtime'
-        'cSaveConfig':
-            'configSaved': 'cUpdateIndex'
-            'errorViewed': 'aRealtime'
+            'dbSynced': 'cUpdateIndex'
+            'errorViewed': 'nRealtime'
         'cUpdateIndex':
-            'indexUpdated': 'aImport' #TODO : clean update headers
-            'errorViewed': 'aRealtime'
+            'indexUpdated': 'nImport' #TODO : clean update headers
+            'errorViewed': 'nRealtime'
 
         #######################################
         # Migration
-        'migrationInit': 'migrationInited': 'mMoveCache'
+        'migrationInit': 'migrationInited': 'mNewConfig'
+        'mNewConfig': 'configDone': 'mNewConfig'
         'mMoveCache': 'cacheMoved': 'mLocalDesignDocuments'
-        'mLocalDesignDocuments':
-            'localDesignUpToDate': 'mCheckPlatformVersions'
+        'mLocalDesignDocuments': 'localDesignUpToDate': 'mCheckPlatformVersions'
         'mCheckPlatformVersions': 'validPlatformVersions': 'mQuitSplashScreen'
         'mQuitSplashScreen': 'viewInitialized': 'mPermissions'
         'mPermissions': 'getPermissions': 'mConfig'
         'mConfig': 'configDone': 'mRemoteRequest'
         'mRemoteRequest': 'putRemoteRequest': 'mUpdateVersion'
-        'mUpdateVersion': 'versionUpToDate': 'mPostConfigInit'
-        'mPostConfigInit': 'initsDone': 'mSync'
-        'mSync': 'dbSynced': 'aLoadFilePage' # Regular start.
+        'mUpdateVersion': 'versionUpToDate': 'mSync'
+        'mSync': 'dbSynced': 'nLoadFilePage' # Regular start.
 
         ###################
         # Migration in service
@@ -546,51 +532,34 @@ module.exports = class Init
         'smPermissions': 'getPermissions': 'smConfig'
         'smConfig': 'configDone': 'smRemoteRequest'
         'smRemoteRequest': 'putRemoteRequest': 'smUpdateVersion'
-        'smUpdateVersion': 'versionUpToDate': 'smPostConfigInit'
-        'smPostConfigInit': 'initsDone': 'smSync'
+        'smUpdateVersion': 'versionUpToDate': 'smSync'
         'smSync': 'dbSynced': 'sImport'
 
     # Enter state methods.
+    sCheckState: ->
+        # todo: application is already launch?
+        if @config.get('state') is 'syncCompleted'
+            @trigger 'continue'
+        else
+            @trigger 'exit'
+
+    configLoad: ->
+        @config.load @getCallbackTrigger 'loaded'
+
     setDeviceLocale: ->
-        app.translation.setDeviceLocale @getCallbackTrigger 'deviceLocaleSetted'
+        DeviceStatus.initialize()
+        unless window.isBrowserDebugging # Patch for browser debugging
+            @notificationManager = new Notifications()
+            @serviceManager = new ServiceManager()
+        @translation.setDeviceLocale @getCallbackTrigger 'deviceLocaleSetted'
 
 
     initFileSystem: ->
-        app.replicator.initFileSystem @getCallbackTrigger 'fileSystemReady'
+        @replicator.initFileSystem @getCallbackTrigger 'fileSystemReady'
 
 
-    initDatabase: ->
-        app.replicator.initDB  @getCallbackTrigger 'databaseReady'
-
-
-    initConfig: ->
-        app.replicator.initConfig (err, config) =>
-            return @handleError err if err
-            if config.remote and config.get('cozyURL')
-                # Check last state
-                # If state is "ready" -> newVersion ? newVersion : configured
-                # Else : go to this state (with preconditions checks ?)
-                lastState = config.get('lastInitState') or 'aLoadFilePage'
-
-                # Watchdog
-                if lastState not in ['aLoadFilePage', 'fDeviceName',
-                'fInitContacts', 'fInitCalendars', 'fUpdateIndex']
-                    return @trigger 'goTofDeviceName'
-
-                if lastState is 'aLoadFilePage' # Previously in normal start.
-                    if config.isNewVersion()
-                        @trigger 'newVersion'
-                    else
-                        @trigger 'configured'
-                else # In init.
-                    @trigger "goTo#{lastState}"
-
-            else
-                @trigger 'notConfigured'
-
-    # Normal start
-    postConfigInit: ->
-        app.postConfigInit @getCallbackTrigger 'initsDone'
+    applicationState: ->
+        @trigger @config.get 'state'
 
     import: ->
         changesImporter = new ChangesImporter()
@@ -599,13 +568,12 @@ module.exports = class Init
             @trigger 'importDone'
 
     backup: ->
-        app.replicator.startRealtime()
-        app.replicator.backup {}, @getCallbackTrigger 'backupDone'
+        @replicator.backup {}, @getCallbackTrigger 'backupDone'
 
 
     onResume: ->
         # Don't import, backup, ... while service still running
-        app.serviceManager.isRunning (err, running) =>
+        @serviceManager.isRunning (err, running) =>
             return log.error err if err
 
             # If service still running, try again later
@@ -623,22 +591,23 @@ module.exports = class Init
         clearTimeout @timeout if @timeout
 
     startRealtime: ->
-        app.replicator.startRealtime()
+        @replicator.startRealtime()
 
     stopRealtime: ->
-        app.replicator.stopRealtime()
+        @replicator.stopRealtime()
 
     quitSplashScreen: ->
-        app.layout.quitSplashScreen()
+        @app.startLayout()
+        @app.layout.quitSplashScreen()
         Backbone.history.start()
         @trigger 'viewInitialized'
 
     setListeners: ->
-        app.setListeners()
+        @app.setListeners()
 
     loadFilePage: ->
-        app.router.navigate 'folder/', trigger: true
-        app.router.once 'collectionfetched', => @trigger 'onFilePage'
+        @app.router.navigate 'folder/', trigger: true
+        @app.router.once 'collectionfetched', => @trigger 'onFilePage'
 
 
 
@@ -646,20 +615,20 @@ module.exports = class Init
     upsertLocalDesignDocuments: ->
         return if @passUnlessInMigration 'localDesignUpToDate'
 
-        app.replicator.upsertLocalDesignDocuments \
+        @replicator.upsertLocalDesignDocuments \
             @getCallbackTrigger 'localDesignUpToDate'
 
 
     checkPlatformVersions: ->
         return if @passUnlessInMigration 'validPlatformVersions'
-        app.replicator.checkPlatformVersions (err, response) =>
+        @replicator.checkPlatformVersions (err, response) =>
             if err
-                if app.layout.currentView
+                if @app.layout.currentView
                     # currentView is device-name view
-                    return app.layout.currentView.displayError err.message
+                    return @app.layout.currentView.displayError err.message
                 else
                     alert err.message
-                    return app.exit()
+                    return @app.exit()
 
             @trigger 'validPlatformVersions'
 
@@ -667,102 +636,88 @@ module.exports = class Init
     getPermissions: ->
         return if @passUnlessInMigration 'getPermissions'
 
-        if app.replicator.config.hasPermissions(app.replicator.permissions)
+        if @config.hasPermissions()
             @trigger 'getPermissions'
         else if @currentState is 'smPermissions'
-            app.startMainActivity 'smPermissions'
+            @app.startMainActivity 'smPermissions'
         else
-            app.router.navigate 'permissions', trigger: true
+            @app.router.navigate 'permissions', trigger: true
 
 
     putRemoteRequest: ->
         return if @passUnlessInMigration 'putRemoteRequest'
 
-        app.replicator.putRequests (err) =>
+        @replicator.putRequests (err) =>
 
-            app.replicator.putFilters @getCallbackTrigger 'putRemoteRequest'
+            @replicator.putFilters @getCallbackTrigger 'putRemoteRequest'
 
 
     updateVersion: ->
-        app.replicator.config.updateVersion \
-            @getCallbackTrigger 'versionUpToDate'
+        @config.updateVersion @getCallbackTrigger 'versionUpToDate'
 
 
     # First start
     loginWizard: ->
-        app.loginConfig ?=
-            cozyProtocol: ''
-            cozyURL: ''
-            password: ''
-            deviceName: "Android #{device.manufacturer} #{device.model}"
-
-        app.router.navigate "login/#{@currentState}", trigger: true
+        @app.router.navigate "login/#{@currentState}", trigger: true
 
     checkURL: ->
-        isLocalhost = app.loginConfig.cozyURL.indexOf('localhost') is 0
+        url = @config.get 'cozyURL'
+        isLocalhost = url.indexOf('localhost') is 0
         protocols = ['https']
         if window.isBrowserDebugging and isLocalhost
             protocols.push 'http'
 
         options =
             protocols: protocols
-        if validator.isURL app.loginConfig.cozyURL, options
-            if app.loginConfig.cozyURL[0..7] is 'https://'
-                app.loginConfig.cozyProtocol = "https://"
-                app.loginConfig.cozyURL =
-                    app.loginConfig.cozyURL.replace 'https://', ''
-            else
-                app.loginConfig.cozyProtocol = "http://"
-                app.loginConfig.cozyURL =
-                    app.loginConfig.cozyURL.replace 'http://', ''
-
+        if validator.isURL url, options
             @trigger 'clickToPassword'
         else
             @trigger 'error', new Error t "Your Cozy URL is not valid."
 
     permissionsWizard: ->
-        app.permissionsFromWizard ?= {}
-        app.router.navigate "permissions/#{@currentState}", trigger: true
+        @app.router.navigate "permissions/#{@currentState}", trigger: true
+
 
     createDevice: ->
-        config = _.extend app.loginConfig, app.permissionsFromWizard,
-            deviceName: "Android-#{device.manufacturer}-#{device.model}"
-            lastInitState: @currentState
+        url = @config.get 'cozyURL'
+        password = @config.get 'devicePassword'
+        deviceName = @config.get 'deviceName'
 
-        app.replicator.registerRemoteSafe config, (err) =>
+        @replicator.registerRemoteSafe url, password, deviceName, (err, body) =>
             return @handleError err if err
-            app.loginConfig.password = undefined # forget password
+            @config.set 'state', 'deviceCreated'
+            @config.set 'deviceName', body.login
+            @config.set 'devicePassword', body.password
+            @config.set 'permissions', body.permissions
             @trigger 'deviceCreated'
 
     config: ->
         return if @passUnlessInMigration 'configDone'
         if @currentState is 'smConfig'
-            app.startMainActivity 'smConfig'
+            @app.startMainActivity 'smConfig'
         else
-            app.router.navigate 'config', trigger: true
+            @app.router.navigate 'config', trigger: true
 
-    updateCozyLocale: -> app.replicator.updateLocaleFromCozy \
+    updateCozyLocale: -> @replicator.updateLocaleFromCozy \
         @getCallbackTrigger 'cozyLocaleUpToDate'
 
     firstSyncView: ->
-        app.router.navigate 'first-sync', trigger: true
+        @app.router.navigate 'first-sync', trigger: true
         @trigger 'firstSyncViewDisplayed'
 
     takeDBCheckpoint: ->
-        app.replicator.takeCheckpoint \
-            @getCallbackTrigger 'checkPointed'
+        @replicator.takeCheckpoint @getCallbackTrigger 'checkPointed'
 
     initFiles: ->
-        app.replicator.copyView docType: 'file', \
-            @getCallbackTrigger 'filesInited'
+        @replicator.copyView docType: 'file', @getCallbackTrigger 'filesInited'
 
     initFolders: ->
-        app.replicator.copyView docType: 'folder', \
+        @replicator.copyView docType: 'folder', \
             @getCallbackTrigger 'foldersInited'
 
     createAndroidAccount: ->
-        if app.replicator.config.get('syncContacts') or \
-                app.replicator.config.get('syncCalendars')
+        if @config.get('syncContacts') or \
+                @config.get('syncCalendars')
             androidAccount = new AndroidAccount()
             androidAccount.create @getCallbackTrigger 'androidAccountCreated'
 
@@ -772,10 +727,10 @@ module.exports = class Init
     # 1. Copy view for contact
     # 2. dispatch inserted contacts to android through the change dispatcher
     initContacts: ->
-        if app.replicator.config.get('syncContacts')
+        if @config.get 'syncContacts'
             changeDispatcher = new ChangeDispatcher()
             # 1. Copy view for contact
-            app.replicator.copyView
+            @replicator.copyView
                 docType: 'contact'
                 attachments: true
             , (err, contacts) =>
@@ -792,10 +747,10 @@ module.exports = class Init
     # 1. Copy view for event
     # 2. dispatch inserted events to android through the change dispatcher
     initCalendars: ->
-        if app.replicator.config.get('syncCalendars')
+        if @config.get('syncCalendars')
             changeDispatcher = new ChangeDispatcher()
             # 1. Copy view for event
-            app.replicator.copyView docType: 'event', (err, events) =>
+            @replicator.copyView docType: 'event', (err, events) =>
                 return @handleError err if err
                 async.eachSeries events, (event, cb) ->
                     # 2. dispatch inserted events to android
@@ -809,32 +764,30 @@ module.exports = class Init
         return if @passUnlessInMigration 'dbSynced'
 
         # Get the local last seq :
-        app.replicator.db.changes
+        @replicator.db.changes
             descending: true
             limit: 1
         , (err, changes) =>
             localCheckpoint = changes.last_seq
 
-            app.replicator.sync
-                remoteCheckpoint: app.replicator.config.get('checkpointed')
+            @replicator.sync
+                remoteCheckpoint: window.app.checkpointed
                 localCheckpoint: localCheckpoint
             , (err) =>
                 return @handleError err if err
 
                 # Copy view is done. Unset this transition var.
-                app.replicator.config.unset 'checkpointed'
+                delete window.app.checkpointed
+                @config.set 'state', 'syncCompleted'
                 @trigger 'dbSynced'
 
 
     updateIndex: ->
-        app.replicator.updateIndex @getCallbackTrigger 'indexUpdated'
-
-    saveConfig: ->
-        app.replicator.config.save @getCallbackTrigger 'configSaved'
+        @replicator.updateIndex @getCallbackTrigger 'indexUpdated'
     ###########################################################################
     # Service
     sInitConfig: ->
-        app.replicator.initConfig (err, config) =>
+        @replicator.initConfig (err, config) =>
             return @handleError err if err
             return @handleError new Error('notConfigured') unless config.remote
 
@@ -842,10 +795,10 @@ module.exports = class Init
             # Check last state
             # If state is "ready" -> newVersion ? newVersion : configured
             # Else : go to this state (with preconditions checks ?)
-            lastState = config.get('lastInitState') or 'aLoadFilePage'
+            lastState = config.get('lastInitState') or 'nLoadFilePage'
 
-            if lastState is 'aLoadFilePage' # Previously in normal start.
-                if config.isNewVersion()
+            if lastState is 'nLoadFilePage' # Previously in normal start.
+                if @config.isNewVersion()
                     @trigger 'newVersion'
                 else
                     @trigger 'configured'
@@ -853,21 +806,18 @@ module.exports = class Init
                 return @handleError new Error "notConfigured: #{lastState}"
 
     sSync: ->
-        app.replicator.sync {}, @getCallbackTrigger 'syncDone'
+        @replicator.sync {}, @getCallbackTrigger 'syncDone'
 
-    sQuit: ->
-        app.exit()
+    exit: ->
+        @app.exit()
 
     ###########################################################################
     # Tools
-    saveState: ->
-        app.replicator.config.save lastInitState: @currentState
-        , (err, config) -> log.warn err if err
 
     # show the error to the user appropriately regarding to the current state
     handleError: (err) ->
         if @states[@currentState].quitOnError
-            app.exit err
+            @app.exit err
         else
             @trigger 'error', err
 
@@ -905,7 +855,6 @@ module.exports = class Init
                     @migrationStates[state] = true
 
     ###########################################################################
-
     # Migrations
     # For each version update, list which optionnal states are requiered in
     # - mLocalDesignDocuments
@@ -914,6 +863,8 @@ module.exports = class Init
     # - mConfig
     # - mRemoteRequest
     migrations:
+        '1.1.0':
+            states: ['mNewConfig']
         '0.2.1': # Move cache root directory to external storage cache
             states: [ 'mMoveCache']
         '0.2.0':
@@ -927,7 +878,7 @@ module.exports = class Init
 
     # Migration
     initMigrationState: ->
-        @initMigrations app.replicator.config.get 'appVersion'
+        @initMigrations @config.get 'appVersion'
         @trigger 'migrationInited'
 
     # Move cache from old "/cozy-downloads" to external storage application
@@ -973,4 +924,9 @@ module.exports = class Init
             # Busy waiting for old dir deletion
             checkFolderDeleted \
                 # Update cache info in replicator
-                app.replicator.initFileSystem @getCallbackTrigger 'cacheMoved'
+                @replicator.initFileSystem @getCallbackTrigger 'cacheMoved'
+
+    newConfig: ->
+        if @config.get 'lastSync'
+            @config.set 'state', 'syncCompleted', \
+                @getCallbackTrigger 'configDone'
