@@ -5,4 +5,4 @@ keys/cozy-play-store.keystore
 keys/cozy-play-store.password
 *.transifex.coffee
 www
-www-src/node_modules
+src/node_modules

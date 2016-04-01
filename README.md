@@ -30,22 +30,22 @@ export PATH="$PATH:$ANDROID_HOME/platform-tools"
 
 ## Build with
 ```bash
-.$ cd www-src
-./www-src$ npm run build # build coffee into js in www-src
-./www-src$ npm run buildapk # build the apk using cordova
-./www-src$ npm run release # sign the apk, need ./keys
+.$ cd src
+./src$ npm run build # build coffee into js in src
+./src$ npm run buildapk # build the apk using cordova
+./src$ npm run release # sign the apk, need ./keys
 ```
 
 ## Hack
 
-Make your changes in www-src, use brunch to compile in wwww
+Make your changes in src, use brunch to compile in wwww
 
-    cd www-src
+    cd src
     npm run start
 
 To run on device / emulator
 
-    ./www-src/node_modules/.bin/cordova run android
+    ./src/node_modules/.bin/cordova run android
 
 To run in browser,
 - start chrome with --disable-web-security --allow-file-access-from-files
