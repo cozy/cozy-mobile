@@ -3,6 +3,41 @@ log = require('../lib/persistent_log')
     date: true
 
 ###*
+ * Get configuration to create a filter
+ *
+ * @param {Boolean} syncContacts - if you want contact synchronization
+ * @param {Boolean} syncCalendars - if you want calendar synchronization
+ * @param {Boolean} syncNotifs - if you want notification synchronization
+ *
+ * @return {Object}
+###
+_getConfigFilter = (syncContacts, syncCalendars, syncNotifs) ->
+    # First check for docType
+    compare = "doc.docType && ("
+    compare += "doc.docType.toLowerCase() === 'file'"
+    compare += " || doc.docType.toLowerCase() === 'folder'"
+    if syncContacts
+        compare += " || doc.docType.toLowerCase() === 'contact'"
+    if syncCalendars
+        compare += " || doc.docType.toLowerCase() === 'event'"
+        compare += " || doc.docType.toLowerCase() === 'tag'"
+    if syncNotifs
+        compare += " || (doc.docType.toLowerCase() === 'notification'"
+        compare += " && doc.type === 'temporary')"
+
+    compare += ")"
+
+    # TODO ? add views attribute here, required by the DataSystem ?
+    filters:
+        config: "function (doc) { return #{compare}; }"
+
+_getFilterDocName = ->
+    log.debug "getFilterDocId"
+    "filter-#{deviceName}-config"
+
+deviceName = null
+
+###*
  * FilterManager allows to create a filter specific by device and
  * get this filter to replicate couchdb with it to reduce consumption data.
  *
@@ -21,7 +56,7 @@ module.exports = class FilterManager
     ###
     # constructor: (@cozyUrl, @auth, @deviceName, @db) ->
     constructor: (@config, @requestCozy, @db) ->
-        @deviceName = @config.get 'deviceName'
+        deviceName = @config.get 'deviceName'
 
     ###*
      * Create or update a filter for a specific configuration.
@@ -40,7 +75,7 @@ module.exports = class FilterManager
         log.info "setFilter syncContacts: #{syncContacts}, syncCalendars: " + \
                 "#{syncCalendars}, syncNotifs: #{syncNotifs}"
 
-        doc = @_getConfigFilter syncContacts, syncCalendars, syncNotifs
+        doc = _getConfigFilter syncContacts, syncCalendars, syncNotifs
 
         # Add the filter in PouchDB
         filterId = @getFilterDocId()
@@ -69,17 +104,13 @@ module.exports = class FilterManager
                     callback null, true
 
 
-    _getFilterDocName: ->
-        log.debug "getFilterDocId"
-        "filter-#{@deviceName}-config"
-
     ###*
      * Get the design docId of the filter this device.
      *
      * @return {String}
     ###
     getFilterDocId: ->
-        return "_design/#{@_getFilterDocName()}"
+        return "_design/#{_getFilterDocName()}"
 
     ###*
      * Get filter name for this device.
@@ -89,34 +120,4 @@ module.exports = class FilterManager
     getFilterName: ->
         log.debug "getFilterName"
 
-        "#{@_getFilterDocName()}/config"
-
-
-    ###*
-     * Get configuration to create a filter
-     *
-     * @param {Boolean} syncContacts - if you want contact synchronization
-     * @param {Boolean} syncCalendars - if you want calendar synchronization
-     * @param {Boolean} syncNotifs - if you want notification synchronization
-     *
-     * @return {Object}
-    ###
-    _getConfigFilter: (syncContacts, syncCalendars, syncNotifs) ->
-        # First check for docType
-        compare = "doc.docType && ("
-        compare += "doc.docType.toLowerCase() === 'file'"
-        compare += " || doc.docType.toLowerCase() === 'folder'"
-        if syncContacts
-            compare += " || doc.docType.toLowerCase() === 'contact'"
-        if syncCalendars
-            compare += " || doc.docType.toLowerCase() === 'event'"
-            compare += " || doc.docType.toLowerCase() === 'tag'"
-        if syncNotifs
-            compare += " || (doc.docType.toLowerCase() === 'notification'"
-            compare += " && doc.type === 'temporary')"
-
-        compare += ")"
-
-        # TODO ? add views attribute here, required by the DataSystem ?
-        filters:
-            config: "function (doc) { return #{compare}; }"
+        "#{_getFilterDocName()}/config"

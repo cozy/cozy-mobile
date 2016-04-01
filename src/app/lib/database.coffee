@@ -5,8 +5,8 @@ log = require("./persistent_log")
 
 class Database
 
-    @REPLICATE_DB: "cozy-files.db"
-    @LOCAL_DB: "cozy-photos.db"
+    @REPLICATE_DB: 'cozy-files.db'
+    @LOCAL_DB: 'cozy-photos.db'
 
     # Create databases
     #
@@ -30,10 +30,7 @@ class Database
     destroy: ->
         log.debug "destroy"
 
-        @replicateDb.destroy (err) ->
-            log.error "replicateDb Error: ", err if err
-
-        @localDb.destroy (err) ->
-            log.error "localDb Error: ", err if err
+        @replicateDb.destroy()
+        @localDb.destroy()
 
 module.exports = Database

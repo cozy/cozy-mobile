@@ -1,89 +1,65 @@
 should = require('chai').should()
-mockery = require 'mockery'
+FilterManager = require '../../../app/replicator/filter_manager'
 
 module.exports = describe 'FilterManager Test', ->
 
-    defaultId = 42
     deviceName = "my-device"
 
-    config =
-        attributes:
-            deviceName: deviceName
-            auth: null
-            syncContacts: true
-            syncCalendars: true
-            cozyNotifications: true
-
-        getCozyUrl: -> 'cozyUrl'
-        get: (key) -> @attributes[key]
-
-        db:
-            put: (doc, callback) -> callback null, doc
-            get: (id, callback) -> callback 'missing' # TODO: better PouchDB
-                                                      # mock
+    getConfig = (deviceName, syncContacts, syncCalendars, cozyNotifications) ->
+        deviceName: deviceName
+        syncContacts: syncContacts
+        syncCalendars: syncCalendars
+        cozyNotifications: cozyNotifications
+        get: (value) -> @[value]
+    getRequestCozy = (err, res, body) ->
+        err: err
+        res: res
+        body: body
+        request: (options, callback) -> callback err, res, body
+    getDb = (getErr, putErr, existing) ->
+        getErr: getErr
+        putErr: putErr
+        existing: existing
+        get: (filterId, callback) ->
+            callback getErr, existing
+        put: (doc, callback) ->
+            callback putErr
 
     before ->
-        mockery.enable
-            warnOnReplace: false
-            warnOnUnregistered: false
-            useCleanCache: true
-
-        requestMock =
-            put: (options, callback) ->
-                if options.auth == "err"
-                    callback "err", undefined, undefined
-                else if options.auth == "body_empty"
-                    callback undefined, undefined, {}
-                else if options.auth
-                    callback undefined, undefined, success: true
-                else
-                    callback undefined, undefined, undefined
-            get: (options, callback) ->
-                if options.auth == "err"
-                    callback "err", undefined, undefined
-                else if options.auth == "body_empty"
-                    callback undefined, undefined, {}
-                else if options.auth
-                    callback undefined, undefined, _id: defaultId
-                else
-                    callback undefined, undefined, undefined
-
-        mockery.registerMock '../lib/request', requestMock
-        @FilterManager = require '../../../app/replicator/filter_manager'
+        @config = getConfig deviceName, true, true, true
+        @requestCozy = getRequestCozy false, 2, success: true
+        @db = getDb null, null, true
+        @filterManager = new FilterManager @config, @requestCozy, @db
 
     after ->
-        mockery.deregisterAll()
-        delete @FilterManager
-        mockery.disable()
+        delete @filterManager
 
     describe '[When all is ok]', ->
 
+        it "getFilterName return the filter name", ->
+            name = @filterManager.getFilterName()
+            name.should.be.equal "filter-#{deviceName}-config/config"
+
         it "setFilter return true", (done) ->
-            config.attributes.auth = true
-            filterManager = new @FilterManager config
-            filterManager.setFilter (err, response) ->
+            @filterManager.setFilter (err, response) ->
                 response.should.be.equal true
                 done()
-
-        it "getFilterName return the filter name", ->
-            config.attributes.auth = true
-            filterManager = new @FilterManager config
-            name = filterManager.getFilterName()
-            name.should.be.equal "filter-#{deviceName}-config/config"
 
 
     describe '[All errors]', ->
 
-        it "When API have an error setFilter return err", (done) ->
-            config.attributes.auth = "err"
-            filterManager = new @FilterManager config
-            filterManager.setFilter (err, response) ->
+        it "When API have an requestCozy error setFilter return err", (done) ->
+            @requestCozy = getRequestCozy 'err', null, null
+            @filterManager = new FilterManager @config, @requestCozy, @db
+
+            @filterManager.setFilter (err, response) ->
                 err.should.not.to.be.null
                 done()
 
-        it "When API don't return _id setFilter return false", (done) ->
-            config.attributes.auth = 'body_empty'
-            filterManager = new @FilterManager config
-            filterManager.setFilter (err, response) ->
+        it "When API have an db error setFilter return err", (done) ->
+            @db = getDb null, 'err', true
+            @filterManager = new FilterManager @config, @requestCozy, @db
+
+            @filterManager.setFilter (err, response) ->
                 err.should.not.to.be.null
                 done()

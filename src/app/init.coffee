@@ -13,7 +13,7 @@ Config = require './lib/config'
 Database = require './lib/database'
 RequestCozy = require './lib/request_cozy'
 
-log = require('lib/persistent_log')
+log = require('./lib/persistent_log')
     prefix: "Init"
     date: true
 

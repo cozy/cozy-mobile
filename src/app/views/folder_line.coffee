@@ -51,7 +51,7 @@ module.exports = class FolderLineView extends BaseView
         if incache? and incache isnt @model.get 'incache'
             @model.set {incache}
 
-        if version? and version isnt @model.get 'appVersion'
+        if version? and version isnt @model.get 'version'
             @model.set {version}
 
         @progresscontainer?.remove()
