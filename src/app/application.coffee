@@ -52,4 +52,6 @@ module.exports =
     addDeviceListener: ->
         log.debug "addDeviceListener"
 
-        document.addEventListener 'deviceready', @initialize, false
+        document.addEventListener 'deviceready', =>
+            @initialize()
+        , false

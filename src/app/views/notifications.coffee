@@ -12,7 +12,7 @@ module.exports = class Notifications
         @initialize.apply @, arguments
 
     initialize: ->
-        config = app.init.replicator.config
+        config = app.init.config
         @listenTo config, 'change:cozyNotifications', @activate
 
         @activate config, config.get 'cozyNotifications'
