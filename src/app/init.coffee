@@ -133,7 +133,7 @@ module.exports = class Init
         aDeviceLocale: enter: ['setDeviceLocale'], quitOnError: true
         aInitFileSystem: enter: ['initFileSystem'], quitOnError: true
         aQuitSplashScreen: enter: ['quitSplashScreen'], quitOnError: true # RUN
-        aApplicationState: enter: ['applicationState'], quitOnError: true
+        aCheckState: enter: ['aCheckState'], quitOnError: true
 
         #######################################
         # Normal states
@@ -334,8 +334,9 @@ module.exports = class Init
         'aConfigLoad': 'loaded': 'aDeviceLocale'
         'aDeviceLocale': 'deviceLocaleSetted': 'aInitFileSystem'
         'aInitFileSystem': 'fileSystemReady': 'aQuitSplashScreen'
-        'aQuitSplashScreen': 'viewInitialized': 'aApplicationState'
-        'aApplicationState':
+        'aQuitSplashScreen': 'viewInitialized': 'aCheckState'
+        'aCheckState':
+            'migration': 'migrationInit'
             'default': 'fWizardWelcome'
             'deviceCreated': 'fWizardFiles'
             'appConfigured': 'fFirstSyncView'
@@ -345,6 +346,7 @@ module.exports = class Init
         # Start Service
         'sConfigLoad': 'loaded': 'sCheckState'
         'sCheckState':
+            'migration': 'smMigrationInit'
             'exit': 'exit'
             'continue': 'sDeviceLocale'
         'sDeviceLocale': 'deviceLocaleSetted': 'sInitFileSystem'
@@ -536,9 +538,18 @@ module.exports = class Init
         'smSync': 'dbSynced': 'sImport'
 
     # Enter state methods.
+
+    aCheckState: ->
+        if @config.isNewVersion()
+            @trigger 'migration'
+        else
+            @trigger @config.get 'state'
+
     sCheckState: ->
         # todo: application is already launch?
-        if @config.get('state') is 'syncCompleted'
+        if @config.isNewVersion()
+            @trigger 'migration'
+        else if @config.get('state') is 'syncCompleted'
             @trigger 'continue'
         else
             @trigger 'exit'
@@ -556,10 +567,6 @@ module.exports = class Init
 
     initFileSystem: ->
         @replicator.initFileSystem @getCallbackTrigger 'fileSystemReady'
-
-
-    applicationState: ->
-        @trigger @config.get 'state'
 
     import: ->
         changesImporter = new ChangesImporter()
