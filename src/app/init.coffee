@@ -224,7 +224,6 @@ module.exports = class Init
         sConfigLoad: enter: ['configLoad'], quitOnError: true
         sDeviceLocale: enter: ['setDeviceLocale'], quitOnError: true
         sInitFileSystem: enter: ['initFileSystem'], quitOnError: true
-        sInitConfig: enter: ['sInitConfig'], quitOnError: true
 
         sImport: enter: ['import'], quitOnError: true
         sSync: enter: ['sSync'], quitOnError: true
@@ -299,9 +298,6 @@ module.exports = class Init
         mRemoteRequest: enter: ['putRemoteRequest']
         mUpdateVersion: enter: ['updateVersion']
         mSync: enter: ['postCopyViewSync']
-        mNewConfig:
-            enter: ['newConfig']
-            quitOnError: true
 
         ###################
         # Service Migration (m) states
@@ -512,8 +508,7 @@ module.exports = class Init
 
         #######################################
         # Migration
-        'migrationInit': 'migrationInited': 'mNewConfig'
-        'mNewConfig': 'configDone': 'mNewConfig'
+        'migrationInit': 'migrationInited': 'mMoveCache'
         'mMoveCache': 'cacheMoved': 'mLocalDesignDocuments'
         'mLocalDesignDocuments': 'localDesignUpToDate': 'mCheckPlatformVersions'
         'mCheckPlatformVersions': 'validPlatformVersions': 'mQuitSplashScreen'
@@ -540,16 +535,11 @@ module.exports = class Init
     # Enter state methods.
 
     aCheckState: ->
-        if @config.isNewVersion()
-            @trigger 'migration'
-        else
-            @trigger @config.get 'state'
+        @trigger @config.get 'state'
 
     sCheckState: ->
         # todo: application is already launch?
-        if @config.isNewVersion()
-            @trigger 'migration'
-        else if @config.get('state') is 'syncCompleted'
+        if @config.get('state') is 'syncCompleted'
             @trigger 'continue'
         else
             @trigger 'exit'
@@ -695,7 +685,7 @@ module.exports = class Init
             @config.set 'state', 'deviceCreated'
             @config.set 'deviceName', body.login
             @config.set 'devicePassword', body.password
-            @config.set 'permissions', body.permissions
+            @config.set 'devicePermissions', body.permissions
             @trigger 'deviceCreated'
 
     config: ->
@@ -793,25 +783,6 @@ module.exports = class Init
         @replicator.updateIndex @getCallbackTrigger 'indexUpdated'
     ###########################################################################
     # Service
-    sInitConfig: ->
-        @replicator.initConfig (err, config) =>
-            return @handleError err if err
-            return @handleError new Error('notConfigured') unless config.remote
-
-
-            # Check last state
-            # If state is "ready" -> newVersion ? newVersion : configured
-            # Else : go to this state (with preconditions checks ?)
-            lastState = config.get('lastInitState') or 'nLoadFilePage'
-
-            if lastState is 'nLoadFilePage' # Previously in normal start.
-                if @config.isNewVersion()
-                    @trigger 'newVersion'
-                else
-                    @trigger 'configured'
-            else # In init.
-                return @handleError new Error "notConfigured: #{lastState}"
-
     sSync: ->
         @replicator.sync {}, @getCallbackTrigger 'syncDone'
 
@@ -870,8 +841,6 @@ module.exports = class Init
     # - mConfig
     # - mRemoteRequest
     migrations:
-        '1.1.0':
-            states: ['mNewConfig']
         '0.2.1': # Move cache root directory to external storage cache
             states: [ 'mMoveCache']
         '0.2.0':
@@ -932,8 +901,3 @@ module.exports = class Init
             checkFolderDeleted \
                 # Update cache info in replicator
                 @replicator.initFileSystem @getCallbackTrigger 'cacheMoved'
-
-    newConfig: ->
-        if @config.get 'lastSync'
-            @config.set 'state', 'syncCompleted', \
-                @getCallbackTrigger 'configDone'

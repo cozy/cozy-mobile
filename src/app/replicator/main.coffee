@@ -118,7 +118,7 @@ module.exports = class Replicator extends Backbone.Model
                 password: password
             json:
                 login: deviceName
-                permissions: @config.get 'permissions'
+                permissions: @config.get 'devicePermissions'
         @requestCozy.request options, (err, response, body) ->
             if err
                 callback err
@@ -144,11 +144,11 @@ module.exports = class Replicator extends Backbone.Model
                 password: password
             json:
                 login: @config.get 'deviceName'
-                permissions: @permissions
+                permissions: app.init.config.getDefaultPermissions()
         @requestCozy.request options, (err, response, body) =>
             return callback err if err
 
-            @config.set 'permissions', body.permissions, callback
+            @config.set 'devicePermissions', body.permissions, callback
 
     putFilters: (callback) ->
         log.info "setReplicationFilter"
