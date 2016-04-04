@@ -124,7 +124,6 @@ module.exports = class ConfigView extends BaseView
                         '#configDone, #calendarSyncCheck'
         checkboxes.prop 'disabled', true
 
-        # app.replicator.config.save
         @listenToOnce app.init, 'configSaved error', =>
             checkboxes.prop 'disabled', false
             @render()
