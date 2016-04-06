@@ -111,7 +111,7 @@ module.exports = class FilterManager
             type: 'data-system'
             path: '/filters/config'
         @requestCozy.request options, (err, res, body) =>
-            if body?.error is "not_found: deleted"
+            if res?.status is 404
                 console.info 'The above 404 is normal, we create the filter'
                 return @setFilter callback
             callback()
