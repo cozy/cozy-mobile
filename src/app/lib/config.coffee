@@ -173,11 +173,16 @@ class Config
     setCozyUrl: (url, callback = ->) ->
         log.debug 'setCozyUrl'
 
-        @set 'cozyURL', url
         if url[0..6] is 'http://'
             protocol = 'http://'
         else
             protocol = 'https://'
+
+        if url[0..3] isnt 'http'
+            url = protocol + url
+
+        @set 'cozyURL', url
+
         url = url.replace protocol, ''
         @set 'cozyHostname', url, (err) =>
             return callback err if err
