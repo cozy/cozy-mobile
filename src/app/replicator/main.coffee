@@ -6,6 +6,7 @@ DeviceStatus = require '../lib/device_status'
 ChangeDispatcher = require './change/change_dispatcher'
 Db = require '../lib/database'
 FilterManager = require '../replicator/filter_manager'
+ReplicationLauncher = require "./replication_launcher"
 
 
 PLATFORM_VERSIONS =
@@ -149,18 +150,6 @@ module.exports = class Replicator extends Backbone.Model
             return callback err if err
 
             @config.set 'devicePermissions', body.permissions, callback
-
-    putFilters: (callback) ->
-        log.info "setReplicationFilter"
-        @getFilterManager().setFilter callback
-
-    # todo: remove when cozy-device-sdk will be include
-    getFilterManager: ->
-        @filterManager ?= new FilterManager @config, @requestCozy, @db
-
-    getReplicationFilter: ->
-        log.debug "getReplicationFilter"
-        @getFilterManager().getFilterName()
 
     putRequests: (callback) ->
         requests = require './remote_requests'
@@ -473,51 +462,42 @@ module.exports = class Replicator extends Backbone.Model
             , callback
 
 
-    # wrapper around _sync to maintain the state of inSync
+    # wrapper around startRealtime to maintain the state of inSync
     sync: (options, callback) ->
         return callback null if @get 'inSync'
 
         log.info "start a sync"
         @set 'inSync', true
-        @_sync options, (err) =>
+        options.live = false
+        @startRealtime options, (err) =>
             @set 'inSync', false
             # Skip first synchronisation
             # todo: find better solution
-            callback() if err?.status is 404
+            if err?.status is 404
+                console.info 'The above 404 is not normal, but we retest the \
+                              synchronisation after.'
+                log.warn err
+                return callback()
             callback err
 
-
-    # One-shot replication
-    # Called for :
-    #    * first replication
-    #    * replication at each start
-    #    * replication force by user
-    _sync: (options, callback) ->
-        log.debug "_sync"
-        options.live = false
-
-        @stopRealtime()
-
-        ReplicationLauncher = require "./replication_launcher"
-        @replicationLauncher = new ReplicationLauncher @database, app.router, \
-            @getReplicationFilter()
-        @replicationLauncher.start options, =>
-            # clean @replicationLauncher when sync finished
-            @stopRealtime()
-            callback.apply @, arguments
 
     ###*
      * Start real time replication
     ###
-    startRealtime: =>
-        log.info "startRealtime"
+    startRealtime: (options = live: true, callback = ->) =>
+        log.info "startRealtime, #{options}"
 
         @stopRealtime() if @replicationLauncher
 
-        ReplicationLauncher = require "./replication_launcher"
-        @replicationLauncher = new ReplicationLauncher @database, app.router, \
-            @getReplicationFilter()
-        @replicationLauncher.start live: true
+        @filterManager ?= new FilterManager @config, @requestCozy, @db
+
+        @filterManager.filterRemoteExist =>
+            @replicationLauncher = new ReplicationLauncher @database, app.router, \
+                @filterManager.getFilterName()
+            @replicationLauncher.start options, =>
+                # clean @replicationLauncher when sync finished
+                @stopRealtime()
+                callback.apply @, arguments
 
     # Stop replication.
     stopRealtime: =>

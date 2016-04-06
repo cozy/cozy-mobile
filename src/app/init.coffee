@@ -645,8 +645,7 @@ module.exports = class Init
         return if @passUnlessInMigration 'putRemoteRequest'
 
         @replicator.putRequests (err) =>
-
-            @replicator.putFilters @getCallbackTrigger 'putRemoteRequest'
+            @trigger 'putRemoteRequest'
 
 
     updateVersion: ->

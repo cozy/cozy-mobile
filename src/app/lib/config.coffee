@@ -124,8 +124,6 @@ class Config
 
 
     get: (key) ->
-        log.debug "get for key: #{key}"
-
         err = null
         unless key of DEFAULT_CONFIG # verify valid key
             err = new Error "This configuration key (#{key}) is invalid."

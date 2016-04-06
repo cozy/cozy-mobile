@@ -103,6 +103,18 @@ module.exports = class FilterManager
 
                     callback null, true
 
+    filterRemoteExist: (callback = ->) ->
+        log.debug "filterRemoteExist"
+
+        options =
+            method: 'get'
+            type: 'data-system'
+            path: '/filters/config'
+        @requestCozy.request options, (err, res, body) =>
+            if body?.error is "not_found: deleted"
+                console.info 'The above 404 is normal, we create the filter'
+                return @setFilter callback
+            callback()
 
     ###*
      * Get the design docId of the filter this device.
