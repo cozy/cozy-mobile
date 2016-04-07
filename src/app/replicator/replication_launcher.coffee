@@ -79,8 +79,6 @@ module.exports = class ReplicationLauncher
                 callback()
             @replication.on 'error', (err) ->
                 log.warn "replicate error", err
-                if err.status is 404 and options.remoteCheckpoint
-                    return callback()
                 callback err
 
 

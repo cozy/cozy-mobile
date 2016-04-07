@@ -471,13 +471,19 @@ module.exports = class Replicator extends Backbone.Model
         options.live = false
         @startRealtime options, (err) =>
             @set 'inSync', false
-            # Skip first synchronisation
-            # todo: find better solution
             if err?.status is 404
-                console.info 'The above 404 is not normal, but we retest the \
-                              synchronisation after.'
-                log.warn err
-                return callback()
+                console.info 'The above 404 is not normal, but we retest with \
+                              smallest checkpoint.'
+
+                @checkpointLoop = 0 unless @checkpointLoop
+                @checkpointLoop++
+
+                unless @checkpointLoop > 10
+                    options.remoteCheckpoint--
+                    return @sync options, callback
+                else
+                    callback()
+
             callback err
 
 
@@ -485,7 +491,7 @@ module.exports = class Replicator extends Backbone.Model
      * Start real time replication
     ###
     startRealtime: (options = live: true, callback = ->) =>
-        log.info "startRealtime, #{options}"
+        log.info "startRealtime, #{JSON.stringify options}"
 
         @stopRealtime() if @replicationLauncher
 
