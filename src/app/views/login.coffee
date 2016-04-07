@@ -37,8 +37,8 @@ module.exports = class LoginView extends BaseView
     events: ->
         'blur #input-url'        : 'onURLBlur'
         'blur #input-password'   : 'onPasswordBlur'
-        'change #input-url'      : -> @setState 'error', null
-        'change #input-password' : -> @setState 'error', null
+        'change #input-url'      : -> @setState 'error', null if @error
+        'change #input-password' : -> @setState 'error', null if @error
         'tap #btn-login'         : 'attemptLogin'
         'tap #btn-next'          : ->
             @onURLBlur()
@@ -48,8 +48,9 @@ module.exports = class LoginView extends BaseView
 
     getRenderData: ->
         @config = window.app.init.config
+        password = if @inputPassword then @inputPassword.val() else ''
         cozyURL: @config.get 'cozyURL'
-        password: ''
+        password: password
         error: @error
 
     onURLBlur: ->
@@ -58,8 +59,7 @@ module.exports = class LoginView extends BaseView
         @config.setCozyUrl @inputURL.val()
 
     onPasswordBlur: ->
-        @config.set 'devicePassword', @inputPassword.val()
-        @setState 'error', null
+        @setState 'error', null if @error
 
 
     attemptLogin: ->
@@ -70,8 +70,9 @@ module.exports = class LoginView extends BaseView
         checkCredentials url, password, (err) =>
             @btnLogin.removeAttr("disabled")
             if err
-                @setState 'error', error
+                @setState 'error', err
             else
+                @config.set 'devicePassword', @inputPassword.val()
                 app.init.trigger 'validCredentials'
 
 
