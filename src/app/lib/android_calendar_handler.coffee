@@ -118,6 +118,8 @@ module.exports = class AndroidCalendarHandler
             return callback err if err
 
             if res.rows.length is 0 and res.total_rows is 0
+                log.info "Delete android calendar: '#{androidCalendar.name}'"
+                log.debug res
                 @_delete androidCalendar, callback
             else
                 callback()
