@@ -110,7 +110,8 @@ module.exports = class ChangeFileHandler
 
             if ready
                 name = @_fileToEntryName doc
-                fs.getOrCreateSubFolder @downloads, name, (err, directory) =>
+                fs.getOrCreateSubFolder @directoryEntry, name, \
+                        (err, directory) =>
                     if err and err.code isnt FileError.PATH_EXISTS_ERR
                         return callback err
 

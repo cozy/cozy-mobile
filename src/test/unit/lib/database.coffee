@@ -25,7 +25,6 @@ module.exports = describe 'Database Service Test', ->
             database.localDb.should.be.an.Object
 
         it 'must not have remote database', ->
-            console.log database.remoteDb
             (database.remoteDb is undefined).should.be.true
 
         it 'must have remote database after init it', ->

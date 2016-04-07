@@ -12,6 +12,7 @@ Translation = require './lib/translation'
 Config = require './lib/config'
 Database = require './lib/database'
 RequestCozy = require './lib/request_cozy'
+FilterManager = require './replicator/filter_manager'
 
 log = require('./lib/persistent_log')
     prefix: "Init"
@@ -133,7 +134,7 @@ module.exports = class Init
         aDeviceLocale: enter: ['setDeviceLocale'], quitOnError: true
         aInitFileSystem: enter: ['initFileSystem'], quitOnError: true
         aQuitSplashScreen: enter: ['quitSplashScreen'], quitOnError: true # RUN
-        aApplicationState: enter: ['applicationState'], quitOnError: true
+        aCheckState: enter: ['aCheckState'], quitOnError: true
 
         #######################################
         # Normal states
@@ -224,7 +225,6 @@ module.exports = class Init
         sConfigLoad: enter: ['configLoad'], quitOnError: true
         sDeviceLocale: enter: ['setDeviceLocale'], quitOnError: true
         sInitFileSystem: enter: ['initFileSystem'], quitOnError: true
-        sInitConfig: enter: ['sInitConfig'], quitOnError: true
 
         sImport: enter: ['import'], quitOnError: true
         sSync: enter: ['sSync'], quitOnError: true
@@ -299,9 +299,6 @@ module.exports = class Init
         mRemoteRequest: enter: ['putRemoteRequest']
         mUpdateVersion: enter: ['updateVersion']
         mSync: enter: ['postCopyViewSync']
-        mNewConfig:
-            enter: ['newConfig']
-            quitOnError: true
 
         ###################
         # Service Migration (m) states
@@ -334,8 +331,9 @@ module.exports = class Init
         'aConfigLoad': 'loaded': 'aDeviceLocale'
         'aDeviceLocale': 'deviceLocaleSetted': 'aInitFileSystem'
         'aInitFileSystem': 'fileSystemReady': 'aQuitSplashScreen'
-        'aQuitSplashScreen': 'viewInitialized': 'aApplicationState'
-        'aApplicationState':
+        'aQuitSplashScreen': 'viewInitialized': 'aCheckState'
+        'aCheckState':
+            'migration': 'migrationInit'
             'default': 'fWizardWelcome'
             'deviceCreated': 'fWizardFiles'
             'appConfigured': 'fFirstSyncView'
@@ -345,6 +343,7 @@ module.exports = class Init
         # Start Service
         'sConfigLoad': 'loaded': 'sCheckState'
         'sCheckState':
+            'migration': 'smMigrationInit'
             'exit': 'exit'
             'continue': 'sDeviceLocale'
         'sDeviceLocale': 'deviceLocaleSetted': 'sInitFileSystem'
@@ -510,8 +509,7 @@ module.exports = class Init
 
         #######################################
         # Migration
-        'migrationInit': 'migrationInited': 'mNewConfig'
-        'mNewConfig': 'configDone': 'mNewConfig'
+        'migrationInit': 'migrationInited': 'mMoveCache'
         'mMoveCache': 'cacheMoved': 'mLocalDesignDocuments'
         'mLocalDesignDocuments': 'localDesignUpToDate': 'mCheckPlatformVersions'
         'mCheckPlatformVersions': 'validPlatformVersions': 'mQuitSplashScreen'
@@ -536,6 +534,10 @@ module.exports = class Init
         'smSync': 'dbSynced': 'sImport'
 
     # Enter state methods.
+
+    aCheckState: ->
+        @trigger @config.get 'state'
+
     sCheckState: ->
         # todo: application is already launch?
         if @config.get('state') is 'syncCompleted'
@@ -556,10 +558,6 @@ module.exports = class Init
 
     initFileSystem: ->
         @replicator.initFileSystem @getCallbackTrigger 'fileSystemReady'
-
-
-    applicationState: ->
-        @trigger @config.get 'state'
 
     import: ->
         changesImporter = new ChangesImporter()
@@ -648,8 +646,7 @@ module.exports = class Init
         return if @passUnlessInMigration 'putRemoteRequest'
 
         @replicator.putRequests (err) =>
-
-            @replicator.putFilters @getCallbackTrigger 'putRemoteRequest'
+            @trigger 'putRemoteRequest'
 
 
     updateVersion: ->
@@ -688,7 +685,7 @@ module.exports = class Init
             @config.set 'state', 'deviceCreated'
             @config.set 'deviceName', body.login
             @config.set 'devicePassword', body.password
-            @config.set 'permissions', body.permissions
+            @config.set 'devicePermissions', body.permissions
             @trigger 'deviceCreated'
 
     config: ->
@@ -703,7 +700,10 @@ module.exports = class Init
 
     firstSyncView: ->
         @app.router.navigate 'first-sync', trigger: true
-        @trigger 'firstSyncViewDisplayed'
+        db = @database.replicateDb
+        filterManager = new FilterManager @config, @requestCozy, db
+        filterManager.setFilter =>
+            @trigger 'firstSyncViewDisplayed'
 
     takeDBCheckpoint: ->
         @replicator.takeCheckpoint @getCallbackTrigger 'checkPointed'
@@ -786,25 +786,6 @@ module.exports = class Init
         @replicator.updateIndex @getCallbackTrigger 'indexUpdated'
     ###########################################################################
     # Service
-    sInitConfig: ->
-        @replicator.initConfig (err, config) =>
-            return @handleError err if err
-            return @handleError new Error('notConfigured') unless config.remote
-
-
-            # Check last state
-            # If state is "ready" -> newVersion ? newVersion : configured
-            # Else : go to this state (with preconditions checks ?)
-            lastState = config.get('lastInitState') or 'nLoadFilePage'
-
-            if lastState is 'nLoadFilePage' # Previously in normal start.
-                if @config.isNewVersion()
-                    @trigger 'newVersion'
-                else
-                    @trigger 'configured'
-            else # In init.
-                return @handleError new Error "notConfigured: #{lastState}"
-
     sSync: ->
         @replicator.sync {}, @getCallbackTrigger 'syncDone'
 
@@ -863,8 +844,6 @@ module.exports = class Init
     # - mConfig
     # - mRemoteRequest
     migrations:
-        '1.1.0':
-            states: ['mNewConfig']
         '0.2.1': # Move cache root directory to external storage cache
             states: [ 'mMoveCache']
         '0.2.0':
@@ -925,8 +904,3 @@ module.exports = class Init
             checkFolderDeleted \
                 # Update cache info in replicator
                 @replicator.initFileSystem @getCallbackTrigger 'cacheMoved'
-
-    newConfig: ->
-        if @config.get 'lastSync'
-            @config.set 'state', 'syncCompleted', \
-                @getCallbackTrigger 'configDone'

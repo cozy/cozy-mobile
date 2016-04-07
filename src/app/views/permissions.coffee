@@ -15,7 +15,7 @@ module.exports = class PermissionsPickerView extends BaseView
 
     getRenderData: ->
         return {
-            permissions: app.init.replicator.permissions
+            permissions: app.init.config.getDefaultPermissions()
             doesntNeedPassword: app.init.currentState is 'fPermissions'
         }
 

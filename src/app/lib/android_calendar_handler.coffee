@@ -117,7 +117,7 @@ module.exports = class AndroidCalendarHandler
         , (err, res) =>
             return callback err if err
 
-            if res.rows.length is 0
+            if res.rows.length is 0 and res.total_rows is 0
                 @_delete androidCalendar, callback
             else
                 callback()

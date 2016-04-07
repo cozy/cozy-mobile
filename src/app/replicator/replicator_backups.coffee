@@ -48,7 +48,7 @@ module.exports =
             async.series [
                 (cb) =>
                     @syncPictures (err) =>
-                        if err
+                        if err and err.message isnt "no images in DCIM"
                             log.error "in syncPictures: ", err
                             errors.push err
                             return cb()

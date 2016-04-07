@@ -1,3 +1,4 @@
+semver = require 'semver'
 log = require("./persistent_log")
     prefix: "Config"
     date: true
@@ -33,7 +34,7 @@ DEFAULT_CONFIG =
 
     deviceName: ''
     devicePassword: ''
-    permissions: PERMISSIONS
+    devicePermissions: PERMISSIONS
 
     lastSync: ''
     lastBackup: ''
@@ -62,6 +63,30 @@ setConfig = (db, callback) ->
 serializePermissions = (permissions) ->
     Object.keys(permissions).sort()
 
+
+migrateOldConfiguration = (db, callback) ->
+    newConfig = {}
+    db.get DEFAULT_CONFIG._id, (err, doc) ->
+        return callback err if err
+
+        # remove auth
+        # remove lastInitState
+        # add state
+        for key of DEFAULT_CONFIG
+            if doc[key] isnt undefined
+                newConfig[key] = doc[key]
+            else
+                newConfig[key] = DEFAULT_CONFIG[key]
+
+        newConfig.appVersion = APP_VERSION
+        newConfig._rev = doc._rev
+        if doc.lastBackup > 0 or doc.lastSync > 0
+            newConfig.state = 'syncCompleted'
+
+        config = newConfig
+        db.put newConfig, callback
+
+
 # Public
 
 
@@ -73,8 +98,16 @@ class Config
     load: (callback) ->
         log.debug "load"
 
-        getConfig @database.localDb, (err, doc) =>
+        getConfig @database.replicateDb, (err, doc) =>
             if doc
+
+                if semver.gt APP_VERSION, doc.appVersion
+                    db = @database.replicateDb
+                    return migrateOldConfiguration db, (err) =>
+                        return callback err if err
+                        @setCozyUrl @get('cozyURL'), =>
+                            @load callback
+
                 config = doc
 
                 log.info "Start v#{APP_VERSION} -- \
@@ -85,14 +118,12 @@ class Config
 
             config = DEFAULT_CONFIG
             config.deviceName = "Android-#{device.manufacturer}-#{device.model}"
-            setConfig @database.localDb, (err) =>
+            setConfig @database.replicateDb, (err) =>
                 # todo: error ?
                 @load callback
 
 
     get: (key) ->
-        log.debug "get for key: #{key}"
-
         err = null
         unless key of DEFAULT_CONFIG # verify valid key
             err = new Error "This configuration key (#{key}) is invalid."
@@ -114,11 +145,11 @@ class Config
             err = new Error "This configuration key (#{key}) is invalid."
             return log.error err
 
-        value = serializePermissions value if key is 'permissions'
+        value = serializePermissions value if key is 'devicePermissions'
 
         if config[key] isnt value
             config[key] = value
-            setConfig @database.localDb, callback
+            setConfig @database.replicateDb, callback
         else
             callback()
 
@@ -137,17 +168,19 @@ class Config
 
         cozyUrl += @get 'cozyHostname'
 
-    setCozyUrl: (url) ->
+    setCozyUrl: (url, callback = ->) ->
         log.debug 'setCozyUrl'
 
-        @set 'cozyURL', url
-        if url[0..7] is 'https://'
-            protocol = 'https://'
-        else
-            protocol = 'http://'
-        url = url.replace protocol, ''
-        @set 'cozyHostname', url
-        @set 'cozyProtocol', protocol
+        protocol = if url[0..6] is 'http://' then 'http://' else 'https://'
+        url = protocol + url unless url[0..3] is 'http'
+
+        @set 'cozyURL', url, (err) =>
+            return callback err if err
+            hostname = url.replace protocol, ''
+            @set 'cozyHostname', hostname, (err) =>
+                return callback err if err
+                @set 'cozyProtocol', protocol, callback
+
 
 
     # version
@@ -164,9 +197,13 @@ class Config
 
     # permission
 
+    getDefault: -> DEFAULT_CONFIG
+
+    getDefaultPermissions: -> PERMISSIONS
+
     hasPermissions: ->
         _.isEqual \
-            serializePermissions(@get('permissions')),
+            serializePermissions(@get('devicePermissions')),
             serializePermissions(PERMISSIONS)
 
 module.exports = Config
