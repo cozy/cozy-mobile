@@ -5,7 +5,7 @@ DesignDocuments = require './design_documents'
 DeviceStatus = require '../lib/device_status'
 ChangeDispatcher = require './change/change_dispatcher'
 Db = require '../lib/database'
-FilterManager = require '../replicator/filter_manager'
+FilterManager = require './filter_manager'
 ReplicationLauncher = require "./replication_launcher"
 
 

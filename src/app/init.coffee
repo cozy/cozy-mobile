@@ -12,6 +12,7 @@ Translation = require './lib/translation'
 Config = require './lib/config'
 Database = require './lib/database'
 RequestCozy = require './lib/request_cozy'
+FilterManager = require './replicator/filter_manager'
 
 log = require('./lib/persistent_log')
     prefix: "Init"
@@ -699,7 +700,10 @@ module.exports = class Init
 
     firstSyncView: ->
         @app.router.navigate 'first-sync', trigger: true
-        @trigger 'firstSyncViewDisplayed'
+        db = @database.replicateDb
+        filterManager = new FilterManager @config, @requestCozy, db
+        filterManager.setFilter =>
+            @trigger 'firstSyncViewDisplayed'
 
     takeDBCheckpoint: ->
         @replicator.takeCheckpoint @getCallbackTrigger 'checkPointed'

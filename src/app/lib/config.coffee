@@ -66,7 +66,7 @@ serializePermissions = (permissions) ->
 
 migrateOldConfiguration = (db, callback) ->
     newConfig = {}
-    db.get DEFAULT_CONFIG._id, (err, doc) =>
+    db.get DEFAULT_CONFIG._id, (err, doc) ->
         return callback err if err
 
         # remove auth
