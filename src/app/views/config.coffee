@@ -48,7 +48,7 @@ module.exports = class ConfigView extends BaseView
     formatDate: (date) ->
         log.debug "formatDate #{date}"
 
-        return t 'never' unless date or date is ''
+        return t 'never' unless date or date isnt ''
 
         date = moment(date)
         return date.format 'YYYY-MM-DD HH:mm:ss'
