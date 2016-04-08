@@ -75,6 +75,10 @@ If you want to learn more about how to use this tool, I'll invite you to check
 
     tx pull
 
+### export
+
+    tx push -s
+
 ## License
 
 Cozy Mobile Client is developed by Cozy Cloud and distributed under the LGPL v3
