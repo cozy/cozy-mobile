@@ -30,12 +30,14 @@ module.exports =
 
         document.addEventListener "resume", =>
             log.info "RESUME EVENT"
-            @init.trigger 'resume'
+            @init.config.set 'appState', 'launch', =>
+                @init.trigger 'resume'
         , false
 
         document.addEventListener "pause", =>
             log.info "PAUSE EVENT"
-            @init.trigger 'pause'
+            @init.config.set 'appState', 'pause', =>
+                @init.trigger 'pause'
         , false
 
 

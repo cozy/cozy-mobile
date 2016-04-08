@@ -20,6 +20,10 @@ DEFAULT_CONFIG =
     #  - deviceCreated
     #  - appConfigured
     state: 'default'
+    # appState :
+    #  - launch
+    #  - pause
+    appState: 'launch'
     appVersion: APP_VERSION
 
     syncContacts: true

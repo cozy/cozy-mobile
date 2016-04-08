@@ -499,7 +499,7 @@ module.exports = class Replicator extends Backbone.Model
 
         @filterManager.filterRemoteExist =>
             @replicationLauncher = new ReplicationLauncher @database, \
-                app.router, @filterManager.getFilterName()
+                app.router, @filterManager.getFilterName(), @config
             @replicationLauncher.start options, =>
                 # clean @replicationLauncher when sync finished
                 @stopRealtime()

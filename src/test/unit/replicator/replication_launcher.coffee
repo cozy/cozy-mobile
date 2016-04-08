@@ -19,6 +19,7 @@ module.exports = describe 'ReplicationLauncher Test', ->
             sync: (remoteDB, options) -> eventHandlersMock
         dbRemote:
             sync: (remoteDB, options) -> eventHandlersMock
+    config = get: -> 'launch'
     router = {}
     filterName = "filterName"
 
@@ -61,7 +62,8 @@ module.exports = describe 'ReplicationLauncher Test', ->
     describe '[When all is ok]', ->
         describe 'initialize replication', ->
             it 'create a sync replication', (done) ->
-                launcher = new @ReplicationLauncher database, router, filterName
+                launcher = new @ReplicationLauncher database, router, \
+                    filterName, config
                 launcher.start {}
                 done()
 
@@ -74,7 +76,8 @@ module.exports = describe 'ReplicationLauncher Test', ->
                     dbRemote:
                         sync: (remoteDB, options) -> eventHandlersMock
 
-                launcher = new @ReplicationLauncher database, router, filterName
+                launcher = new @ReplicationLauncher database, router, \
+                    filterName, config
                 launcher.start {}
                 done()
 
@@ -88,7 +91,8 @@ module.exports = describe 'ReplicationLauncher Test', ->
                     dbRemote:
                         sync: (remoteDB, options) -> eventHandlersMock
 
-                launcher = new @ReplicationLauncher database, router, filterName
+                launcher = new @ReplicationLauncher database, router, \
+                    filterName, config
                 launcher.start {}
                 done()
 
@@ -104,7 +108,8 @@ module.exports = describe 'ReplicationLauncher Test', ->
                     dbRemote:
                         sync: (remoteDB, options) -> eventHandlersMock
 
-                launcher = new @ReplicationLauncher database, router, filterName
+                launcher = new @ReplicationLauncher database, router, \
+                    filterName, config
                 launcher.start
                 done()
 
@@ -119,7 +124,8 @@ module.exports = describe 'ReplicationLauncher Test', ->
                     dbRemote:
                         sync: (remoteDB, options) -> eventHandlersMock
 
-                launcher = new @ReplicationLauncher database, router, filterName
+                launcher = new @ReplicationLauncher database, router, \
+                    filterName, config
                 launcher.start localCheckpoint: localCheckpoint
                 done()
 
@@ -133,7 +139,8 @@ module.exports = describe 'ReplicationLauncher Test', ->
                     dbRemote:
                         sync: (remoteDB, options) -> eventHandlersMock
 
-                launcher = new @ReplicationLauncher database, router, filterName
+                launcher = new @ReplicationLauncher database, router, \
+                    filterName, config
                 launcher.start {}
                 done()
 
@@ -148,7 +155,8 @@ module.exports = describe 'ReplicationLauncher Test', ->
                     dbRemote:
                         sync: (remoteDB, options) -> eventHandlersMock
 
-                launcher = new @ReplicationLauncher database, router, filterName
+                launcher = new @ReplicationLauncher database, router, \
+                    filterName, config
                 launcher.start remoteCheckpoint: remoteCheckpoint
                 done()
 
@@ -161,13 +169,15 @@ module.exports = describe 'ReplicationLauncher Test', ->
                     dbRemote:
                         sync: (remoteDB, options) -> eventHandlersMock
 
-                launcher = new @ReplicationLauncher database, router, filterName
+                launcher = new @ReplicationLauncher database, router, \
+                    filterName, config
                 launcher.start {}
                 done()
 
             # event handlers
             it 'call callback on complete event', (done) ->
-                launcher = new @ReplicationLauncher database, router, filterName
+                launcher = new @ReplicationLauncher database, router, \
+                    filterName, config
                 launcher.start {}, ->
                     should.exist 'here'
                     done()
@@ -177,7 +187,8 @@ module.exports = describe 'ReplicationLauncher Test', ->
 
             it 'do nothing on paused event', (done) ->
                 it 'call callback on complete event', (done) ->
-                launcher = new @ReplicationLauncher database, router, filterName
+                launcher = new @ReplicationLauncher database, router, \
+                filterName, config
                 launcher.start {}, ->
                     should.not.exist 'here'
                     done()
@@ -186,7 +197,8 @@ module.exports = describe 'ReplicationLauncher Test', ->
                 done()
 
             it 'do nothing on active event', (done) ->
-                launcher = new @ReplicationLauncher database, router, filterName
+                launcher = new @ReplicationLauncher database, router, \
+                    filterName, config
                 launcher.start {}, ->
                     should.not.exist 'here'
                     done()
@@ -195,7 +207,8 @@ module.exports = describe 'ReplicationLauncher Test', ->
                 done()
 
             it 'handle mutiples changes event', (done) ->
-                launcher = new @ReplicationLauncher database, router, filterName
+                launcher = new @ReplicationLauncher database, router, \
+                    filterName, config
                 launcher.start {}, ->
                     should.not.exist 'here'
                     done()
@@ -210,7 +223,8 @@ module.exports = describe 'ReplicationLauncher Test', ->
                 done()
 
             it 'do nothing on push change event', (done) ->
-                launcher = new @ReplicationLauncher database, router, filterName
+                launcher = new @ReplicationLauncher database, router, \
+                    filterName, config
                 launcher.start {}, ->
                     should.not.exist 'here'
                     done()
@@ -220,7 +234,8 @@ module.exports = describe 'ReplicationLauncher Test', ->
 
         describe 'handle pull changes event', ->
             it 'check conflicts', (done) ->
-                launcher = new @ReplicationLauncher database, router, filterName
+                launcher = new @ReplicationLauncher database, router, \
+                    filterName, config
                 launcher.start {}
 
                 callEvent 'change',
@@ -238,7 +253,8 @@ module.exports = describe 'ReplicationLauncher Test', ->
                         should.exist 'here'
                         done()
 
-                launcher = new @ReplicationLauncher database, router, filterName
+                launcher = new @ReplicationLauncher database, router, \
+                    filterName, config
                 launcher.start {}
                 callEvent 'change',
                     direction: 'push'
@@ -251,7 +267,8 @@ module.exports = describe 'ReplicationLauncher Test', ->
                         should.exist 'here'
                         done()
 
-                launcher = new @ReplicationLauncher database, router, filterName
+                launcher = new @ReplicationLauncher database, router, \
+                    filterName, config
                 launcher.start {}
                 callEvent 'change',
                     direction: 'push'
@@ -260,7 +277,8 @@ module.exports = describe 'ReplicationLauncher Test', ->
 
             it 'dispatch wanted docs', (done) ->
                 dispatched =
-                launcher = new @ReplicationLauncher database, router, filterName
+                launcher = new @ReplicationLauncher database, router, \
+                    filterName, config
                 launcher.start {}
 
                 callEvent 'change',
@@ -274,7 +292,8 @@ module.exports = describe 'ReplicationLauncher Test', ->
                 done()
 
             it "don't dispatch unwanted docs", (done) ->
-                launcher = new @ReplicationLauncher database, router, filterName
+                launcher = new @ReplicationLauncher database, router, \
+                    filterName, config
                 launcher.start {}
 
                 callEvent 'change',
@@ -289,7 +308,8 @@ module.exports = describe 'ReplicationLauncher Test', ->
 
     describe '[All errors]', ->
         it 'callback on denied event', (done) ->
-            launcher = new @ReplicationLauncher database, router, filterName
+            launcher = new @ReplicationLauncher database, router, \
+                filterName, config
             launcher.start {}, (err) ->
                 should.exist err
                 done()
@@ -298,7 +318,8 @@ module.exports = describe 'ReplicationLauncher Test', ->
             # test will timeout if broken
 
         it 'callback on error event', (done) ->
-            launcher = new @ReplicationLauncher database, router, filterName
+            launcher = new @ReplicationLauncher database, router, \
+                filterName, config
             launcher.start {}, (err) ->
                 should.exist err
                 done()

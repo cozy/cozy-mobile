@@ -22,7 +22,7 @@ module.exports = class ReplicationLauncher
      *
      * @param {Router} router - it's app router.
     ###
-    constructor: (database, @router, @filterName) ->
+    constructor: (database, @router, @filterName, @config) ->
         @dbLocal = database.replicateDb
         @dbRemote = database.remoteDb
         @changeDispatcher = new ChangeDispatcher()
@@ -41,7 +41,7 @@ module.exports = class ReplicationLauncher
     start: (options, callback = ->) ->
         log.debug "start"
 
-        unless @replication
+        if !@replication and @config.get('appState') is 'launch'
             replicateOptions = @_getOptions options
             log.debug "replicateOptions:", replicateOptions
             @replication = @dbLocal.sync @dbRemote, replicateOptions
