@@ -1,6 +1,6 @@
 .list
 
-    .item.item-divider= t('phone2cozy title')
+    .item.item-divider= t('synchronisation title')
 
     .item.checkbox
         input#contactSyncCheck(type="checkbox", checked=syncContacts)
@@ -11,6 +11,13 @@
         label(for='calendarSyncCheck')= t('calendars sync label')
 
     .item.checkbox
+        input#cozyNotificationsCheck(type="checkbox", checked=cozyNotifications)
+        label(for='cozyNotificationsCheck')= t('cozy notifications sync label')
+
+
+    .item.item-divider= t('backup title')
+
+    .item.checkbox
         input#imageSyncCheck(type="checkbox", checked=syncImages)
         label(for='imageSyncCheck')= t('images sync label')
 
@@ -18,22 +25,19 @@
         input#wifiSyncCheck(type="checkbox", checked=syncOnWifi)
         label(for='wifiSyncCheck')= t('wifi sync label')
 
-    .item.checkbox
-        input#cozyNotificationsCheck(type="checkbox", checked=cozyNotifications)
-        label(for='cozyNotificationsCheck')= t('cozy notifications sync label')
-
     if initState === 'fConfig' || initState === 'mConfig'
         .item
             button#configDone.button.button-block.button-balanced= t('next')
 
     else
+
+        .item.item-divider= t('about')
+
         #doBackup.item.item-icon
             .icon-backup
             span.text
                 = t('last backup')
                 | &nbsp;#{lastBackup}.
-
-        .item.item-divider= t('about')
 
         .item= t('synchronized with') + " " + cozyURL
         .item= t('device name') + ' : ' + deviceName

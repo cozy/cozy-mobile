@@ -686,6 +686,8 @@ module.exports = class Init
             @config.set 'deviceName', body.login
             @config.set 'devicePassword', body.password
             @config.set 'devicePermissions', body.permissions
+            @database.setRemoteDatabase @config.getCozyUrl()
+
             @trigger 'deviceCreated'
 
     config: ->

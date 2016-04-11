@@ -86,6 +86,7 @@ module.exports.checkReadyForSync = checkReadyForSync = (callback)->
             log.info "NOT ready on battery low."
             return callbackWaiting null, false, 'no battery'
         if window.app.init.config.get('syncOnWifi') and \
+                window.app.init.config.get('syncImages') and \
                 (not (navigator.connection.type is Connection.WIFI))
             log.info "NOT ready on no wifi."
             return callbackWaiting null, false, 'no wifi'

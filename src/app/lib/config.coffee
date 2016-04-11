@@ -20,6 +20,10 @@ DEFAULT_CONFIG =
     #  - deviceCreated
     #  - appConfigured
     state: 'default'
+    # appState :
+    #  - launch
+    #  - pause
+    appState: 'launch'
     appVersion: APP_VERSION
 
     syncContacts: true
@@ -113,7 +117,7 @@ class Config
                 log.info "Start v#{APP_VERSION} -- \
                           config: #{JSON.stringify config}"
 
-                @database.setRemoteDatabase @getCozyUrl()
+                @database.setRemoteDatabase @getCozyUrl() if @getCozyUrl()
                 return callback err, true
 
             config = DEFAULT_CONFIG

@@ -177,6 +177,8 @@ module.exports = class FolderLineView extends BaseView
         'audio/x-mpeg3'                 : 'type-audio'
         'audio/wav'                     : 'type-audio'
         'audio/x-wav'                   : 'type-audio'
+        'audio/mp4'                     : 'type-audio'
+        'audio/ogg'                     : 'type-audio'
         'video/avi'                     : 'type-video'
         'video/mpeg'                    : 'type-video'
         'video/mp4'                     : 'type-video'
