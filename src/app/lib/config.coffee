@@ -23,6 +23,7 @@ DEFAULT_CONFIG =
     # appState :
     #  - launch
     #  - pause
+    #  - service
     appState: 'launch'
     appVersion: APP_VERSION
 

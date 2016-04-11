@@ -20,6 +20,7 @@ module.exports = BackgroundService =
     initialize: ->
         log.debug "initialize"
 
+        @name = 'SERVICE'
         @init = new Init @
         @init.startStateMachine()
         @init.trigger 'startService'

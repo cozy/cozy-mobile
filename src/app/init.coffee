@@ -546,7 +546,10 @@ module.exports = class Init
             @trigger 'exit'
 
     configLoad: ->
-        @config.load @getCallbackTrigger 'loaded'
+        @config.load =>
+            state = if app.name is 'APP' then 'launch' else 'service'
+            @config.set 'appState', state, =>
+                @trigger 'loaded'
 
     setDeviceLocale: ->
         DeviceStatus.initialize()

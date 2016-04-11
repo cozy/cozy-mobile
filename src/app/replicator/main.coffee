@@ -464,7 +464,7 @@ module.exports = class Replicator extends Backbone.Model
 
     # wrapper around startRealtime to maintain the state of inSync
     sync: (options, callback) ->
-        return callback null if @get 'inSync'
+        return callback() if @get 'inSync'
 
         log.info "start a sync"
         @set 'inSync', true

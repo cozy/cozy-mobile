@@ -14,6 +14,7 @@ module.exports =
     initialize: ->
         log.debug "initialize"
 
+        @name = 'APP'
         @init = new Init @
         @init.startStateMachine()
         @init.trigger 'startApplication'
