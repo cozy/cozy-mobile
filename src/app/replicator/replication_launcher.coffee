@@ -41,7 +41,7 @@ module.exports = class ReplicationLauncher
     start: (options, callback = ->) ->
         log.debug "start"
 
-        if !@replication and @config.get('appState') is 'launch'
+        if not @replication and @config.get('appState') is 'launch'
             replicateOptions = @_getOptions options
             log.debug "replicateOptions:", replicateOptions
             @replication = @dbLocal.sync @dbRemote, replicateOptions

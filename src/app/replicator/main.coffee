@@ -473,16 +473,16 @@ module.exports = class Replicator extends Backbone.Model
             @set 'inSync', false
             if err?.status is 404
                 console.info 'The above 404 is not normal, but we retest with \
-                              smallest checkpoint.'
+                              smallest pouch last_seq (remoteCheckpoint).'
 
-                @checkpointLoop = 0 unless @checkpointLoop
+                @checkpointLoop ?= 0
                 @checkpointLoop++
 
-                unless @checkpointLoop > 10
+                if @checkpointLoop > 10
+                    return callback()
+                else
                     options.remoteCheckpoint--
                     return @sync options, callback
-                else
-                    callback()
 
             callback err
 

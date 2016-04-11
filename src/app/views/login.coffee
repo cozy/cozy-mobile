@@ -48,9 +48,8 @@ module.exports = class LoginView extends BaseView
 
     getRenderData: ->
         @config = window.app.init.config
-        password = if @inputPassword then @inputPassword.val() else ''
         cozyURL: @config.get 'cozyURL'
-        password: password
+        password: @inputPassword?.val() or ''
         error: @error
 
     onURLBlur: ->
