@@ -28,7 +28,7 @@ module.exports = BackgroundService =
 
     startMainActivity: (err)->
         log.debug "startMainActivity"
-        log.error err
+        log.error err?
         # Start activity to initialize app
         # or update permissions
         JSBackgroundService.startMainActivity (err)->

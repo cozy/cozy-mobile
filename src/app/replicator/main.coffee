@@ -286,6 +286,7 @@ module.exports = class Replicator extends Backbone.Model
     # specified file.
     # @param file a cozy file document.
     _fileToEntryName: (file) ->
+        # todo : fix bug when file not have binary
         return file.binary.file.id + '-' + file.binary.file.rev
 
     # Check if any version of the file is present in cache.

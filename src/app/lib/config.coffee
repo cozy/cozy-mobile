@@ -100,6 +100,8 @@ class Config
     constructor: (@database) ->
         log.debug "constructor"
 
+        _.extend @, Backbone.Events
+
     load: (callback) ->
         log.debug "load"
 
