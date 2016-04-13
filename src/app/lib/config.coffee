@@ -157,6 +157,8 @@ class Config
         if config[key] isnt value
             config[key] = value
             setConfig @database.replicateDb, callback
+
+            @trigger("change:#{key}", @, value);
         else
             callback()
 
