@@ -101,7 +101,7 @@ module.exports = class Init
             else
                 @toState 'c4RemoteRequest'
         else
-            app.router.forceRefresh()
+            @app.router.forceRefresh()
             @trigger 'error', new Error 'App is busy'
 
 
@@ -547,7 +547,7 @@ module.exports = class Init
 
     configLoad: ->
         @config.load =>
-            state = if app.name is 'APP' then 'launch' else 'service'
+            state = if @app.name is 'APP' then 'launch' else 'service'
             @config.set 'appState', state, =>
                 @trigger 'loaded'
 
