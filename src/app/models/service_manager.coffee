@@ -56,6 +56,8 @@ module.exports = class ServiceManager extends Backbone.Model
                 log.error err
                 isRepeating = false
 
+            log.debug "isRepeating=#{isRepeating}"
+
             @set 'daemonActivated', isRepeating
 
 
@@ -82,7 +84,7 @@ module.exports = class ServiceManager extends Backbone.Model
             @deactivate()
 
     listenNewPictures: (config, listen) ->
-        log.debug "listenNewPictures"
+        log.debug "listenNewPictures: listen=#{listen}"
 
         window.JSBackgroundService.listenNewPictures listen, (err) ->
             log.error err if err
