@@ -555,7 +555,11 @@ module.exports = class Init
         DeviceStatus.initialize()
         unless window.isBrowserDebugging # Patch for browser debugging
             @notificationManager = new Notifications()
-            @serviceManager = new ServiceManager()
+
+            # The ServiceManager is a flag for the background plugin to know if
+            # it's the service or the application, see https://git.io/vVjJO
+            @serviceManager = new ServiceManager() if @app.name isnt 'SERVICE'
+
         @translation.setDeviceLocale @getCallbackTrigger 'deviceLocaleSetted'
 
 

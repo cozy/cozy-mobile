@@ -65,7 +65,7 @@ module.exports = describe 'ReplicationLauncher Test', ->
             it 'create a sync replication', (done) ->
                 launcher = new @ReplicationLauncher database, router, \
                     filterName, config
-                launcher.start options, =>
+                launcher.start options, ->
                     done()
 
                 callEvent 'complete', {}
