@@ -124,7 +124,7 @@ module.exports = class ConfigView extends BaseView
                         '#configDone, #calendarSyncCheck'
         checkboxes.prop 'disabled', true
 
-        @listenToOnce app.init, 'configSaved error', =>
+        @listenToOnce app.init, 'importDone error', =>
             checkboxes.prop 'disabled', false
             @render()
 

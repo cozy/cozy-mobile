@@ -93,6 +93,8 @@ module.exports =
     # 6.2 create Ninary document in Cozy
     # 6.3 add to PhotoDB
     syncPictures: (callback) ->
+        log.debug "syncPictures"
+
         return callback null unless @config.get 'syncImages'
 
         log.info "sync pictures"
@@ -179,7 +181,8 @@ module.exports =
                     log.info "UPLOADING #{path}"
                     @uploadPicture path, device, (err) ->
                         if err
-                            log.error "ERROR #{path} #{err}"
+                            log.error "ERROR #{path}"
+                            log.error err
                             err.message = err.message + ' - ' + path
                             errors.push err
 
@@ -201,6 +204,8 @@ module.exports =
 
 
     uploadPicture: (path, device, callback) ->
+        log.debug "uploadPicture"
+
         fs.getFileFromPath path, (err, file) =>
             return callback err if err
             @createFile file, path, device, (err, res, body) =>
@@ -211,6 +216,8 @@ module.exports =
 
 
     createBinary: (file, fileId, callback) ->
+        log.debug "createBinary"
+
         # Standard Blob isn't available on android prior to 4.3 ,
         # and FormData doesn't work on 4.0 , so we use FileTransfert plugin.
         if device.version? and device.version < '4.3'
@@ -223,6 +230,8 @@ module.exports =
 
 
     createBinaryWFiltTransfert: (file, fileId, callback) ->
+        log.debug "createBinaryWFiltTransfert"
+
         options = @requestCozy.getDataSystemOption "/data/#{fileId}/binaries/"
         options.fileName = 'file'
         options.mimeType = file.type
@@ -238,6 +247,8 @@ module.exports =
 
 
     createBinaryWFormData: (blob, fileId, callback) ->
+        log.debug "createBinaryWFormData"
+
         data = new FormData()
         data.append 'file', blob, 'file'
         $.ajax
@@ -257,6 +268,8 @@ module.exports =
 
 
     createFile: (cordovaFile, localPath, device, callback) ->
+        log.debug "createFile"
+
         dbFile =
             docType          : 'File'
             localPath        : localPath
@@ -278,6 +291,8 @@ module.exports =
 
 
     createPhoto: (localPath, callback) ->
+        log.debug "createPhoto"
+
         dbPhoto =
             docType : 'Photo'
             localId: localPath
@@ -285,6 +300,8 @@ module.exports =
 
 
     fileClassFromMime: (type) ->
+        log.debug "fileClassFromMime"
+
         switch type.split('/')[0]
             when 'image' then "image"
             when 'audio' then "music"
@@ -294,6 +311,8 @@ module.exports =
 
 
     ensureDeviceFolder: (callback) ->
+        log.debug "ensureDeviceFolder"
+
         findFolder = (id, cb) =>
             @db.get id, (err, res) ->
                 if not err?

@@ -41,45 +41,49 @@ module.exports = class ReplicationLauncher
     start: (options, callback = ->) ->
         log.debug "start"
 
-        if not @replication and @config.get('appState') is 'launch'
-            replicateOptions = @_getOptions options
-            log.debug "replicateOptions:", replicateOptions
-            @replication = @dbLocal.sync @dbRemote, replicateOptions
-            @replication.on 'change', (info) =>
-                log.info "replicate change"
+        state = @config.get('appState')
+        err = new Error "Replication is already launched." if @replication
+        err = new Error "Application is paused." if state is 'pause'
 
-                if info.direction is 'pull'
-                    # Changes are not trully serialized here, because change
-                    # event don't wait for the callback
-                    async.eachSeries info.change.docs, (doc, next) =>
-                        @conflictsHandler.handleConflicts doc, (err, doc) =>
-                            log.error err if err
+        return callback err if err
 
-                            if @router and doc?.docType?.toLowerCase() in \
-                                    ['file', 'folder']
-                                @router.forceRefresh()
+        replicateOptions = @_getOptions options
+        log.debug "replicateOptions:", replicateOptions
+        @replication = @dbLocal.sync @dbRemote, replicateOptions
+        @replication.on 'change', (info) =>
+            log.info "replicate change"
 
-                            if @changeDispatcher.isDispatched doc
-                                @changeDispatcher.dispatch doc, next
-                            else
-                                log.info 'No dispatcher for ', doc?.docType
-                                next()
-                    , (err) ->
+            if info.direction is 'pull'
+                # Changes are not trully serialized here, because change
+                # event don't wait for the callback
+                async.eachSeries info.change.docs, (doc, next) =>
+                    @conflictsHandler.handleConflicts doc, (err, doc) =>
                         log.error err if err
 
-            @replication.on 'paused', (err) ->
-                log.info "replicate paused", err
-            @replication.on 'active', ->
-                log.info "replicate active"
-            @replication.on 'denied', (err) ->
-                log.info "replicate denied", err
-                callback new Error "Replication denied"
-            @replication.on 'complete', (info) ->
-                log.info "replicate complete"
-                callback()
-            @replication.on 'error', (err) ->
-                log.warn "replicate error", err
-                callback err
+                        if @router and doc?.docType?.toLowerCase() in \
+                                ['file', 'folder']
+                            @router.forceRefresh()
+
+                        if @changeDispatcher.isDispatched doc
+                            @changeDispatcher.dispatch doc, next
+                        else
+                            log.info 'No dispatcher for ', doc?.docType
+                            next()
+                , (err) ->
+                    log.error err if err
+
+        @replication.on 'paused', (err) ->
+            log.info "replicate paused", err
+        @replication.on 'active', ->
+            log.info "replicate active"
+        @replication.on 'denied', (err) ->
+            log.warn "replicate denied", err
+        @replication.on 'complete', (info) ->
+            log.info "replicate complete"
+            callback()
+        @replication.on 'error', (err) ->
+            log.warn "replicate error", err
+            callback err
 
 
     ###*

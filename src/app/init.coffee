@@ -101,7 +101,7 @@ module.exports = class Init
             else
                 @toState 'c4RemoteRequest'
         else
-            app.router.forceRefresh()
+            @app.router.forceRefresh()
             @trigger 'error', new Error 'App is busy'
 
 
@@ -546,13 +546,20 @@ module.exports = class Init
             @trigger 'exit'
 
     configLoad: ->
-        @config.load @getCallbackTrigger 'loaded'
+        @config.load =>
+            state = if @app.name is 'APP' then 'launch' else 'service'
+            @config.set 'appState', state, =>
+                @trigger 'loaded'
 
     setDeviceLocale: ->
         DeviceStatus.initialize()
         unless window.isBrowserDebugging # Patch for browser debugging
             @notificationManager = new Notifications()
-            @serviceManager = new ServiceManager()
+
+            # The ServiceManager is a flag for the background plugin to know if
+            # it's the service or the application, see https://git.io/vVjJO
+            @serviceManager = new ServiceManager() unless @app.name is 'SERVICE'
+
         @translation.setDeviceLocale @getCallbackTrigger 'deviceLocaleSetted'
 
 

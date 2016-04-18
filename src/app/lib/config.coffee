@@ -23,6 +23,7 @@ DEFAULT_CONFIG =
     # appState :
     #  - launch
     #  - pause
+    #  - service
     appState: 'launch'
     appVersion: APP_VERSION
 
@@ -99,6 +100,8 @@ class Config
     constructor: (@database) ->
         log.debug "constructor"
 
+        _.extend @, Backbone.Events
+
     load: (callback) ->
         log.debug "load"
 
@@ -154,6 +157,8 @@ class Config
         if config[key] isnt value
             config[key] = value
             setConfig @database.replicateDb, callback
+
+            @trigger "change:#{key}", @, value
         else
             callback()
 

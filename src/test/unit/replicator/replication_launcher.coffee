@@ -21,6 +21,7 @@ module.exports = describe 'ReplicationLauncher Test', ->
             sync: (remoteDB, options) -> eventHandlersMock
     config = get: -> 'launch'
     router = {}
+    options = live: false
     filterName = "filterName"
 
     before ->
@@ -64,8 +65,10 @@ module.exports = describe 'ReplicationLauncher Test', ->
             it 'create a sync replication', (done) ->
                 launcher = new @ReplicationLauncher database, router, \
                     filterName, config
-                launcher.start {}
-                done()
+                launcher.start options, ->
+                    done()
+
+                callEvent 'complete', {}
 
             it 'transmit the filter name', (done) ->
                 database =
@@ -78,8 +81,10 @@ module.exports = describe 'ReplicationLauncher Test', ->
 
                 launcher = new @ReplicationLauncher database, router, \
                     filterName, config
-                launcher.start {}
-                done()
+                launcher.start options, ->
+                    done()
+
+                callEvent 'complete', {}
 
             it 'set default options', (done) ->
                 database =
@@ -93,8 +98,10 @@ module.exports = describe 'ReplicationLauncher Test', ->
 
                 launcher = new @ReplicationLauncher database, router, \
                     filterName, config
-                launcher.start {}
-                done()
+                launcher.start options, ->
+                    done()
+
+                callEvent 'complete', {}
 
             it 'use expected live options', (done) ->
                 database =
@@ -102,16 +109,20 @@ module.exports = describe 'ReplicationLauncher Test', ->
                         sync: (dbRemote, options) ->
                             options.live.should.be.true
                             options.retry.should.be.true
-                            options.heatbeat.should.be.false
+                            options.heartbeat.should.be.false
                             options.back_off_function.should.be.a 'function'
                             return eventHandlersMock
                     dbRemote:
                         sync: (remoteDB, options) -> eventHandlersMock
 
+                optionsWithLive =
+                    live: true
                 launcher = new @ReplicationLauncher database, router, \
                     filterName, config
-                launcher.start
-                done()
+                launcher.start optionsWithLive, ->
+                    done()
+
+                callEvent 'complete', {}
 
             it 'transmit the local checkpoint', (done) ->
                 localCheckpoint = 120
@@ -126,8 +137,13 @@ module.exports = describe 'ReplicationLauncher Test', ->
 
                 launcher = new @ReplicationLauncher database, router, \
                     filterName, config
-                launcher.start localCheckpoint: localCheckpoint
-                done()
+                optionsWithCheckpoint =
+                    live: false
+                    localCheckpoint: localCheckpoint
+                launcher.start optionsWithCheckpoint, ->
+                    done()
+
+                callEvent 'complete', {}
 
 
             it 'omit the local checkpoint', (done) ->
@@ -141,8 +157,10 @@ module.exports = describe 'ReplicationLauncher Test', ->
 
                 launcher = new @ReplicationLauncher database, router, \
                     filterName, config
-                launcher.start {}
-                done()
+                launcher.start options, ->
+                    done()
+
+                callEvent 'complete', {}
 
             it 'transmit the remote checkpoint', (done) ->
                 remoteCheckpoint = 120120
@@ -157,8 +175,13 @@ module.exports = describe 'ReplicationLauncher Test', ->
 
                 launcher = new @ReplicationLauncher database, router, \
                     filterName, config
-                launcher.start remoteCheckpoint: remoteCheckpoint
-                done()
+                optionsWithCheckpoint =
+                    live: false
+                    remoteCheckpoint: remoteCheckpoint
+                launcher.start optionsWithCheckpoint, ->
+                    done()
+
+                callEvent 'complete', {}
 
             it 'ommit the remote checkpoint', (done) ->
                 database =
@@ -171,8 +194,10 @@ module.exports = describe 'ReplicationLauncher Test', ->
 
                 launcher = new @ReplicationLauncher database, router, \
                     filterName, config
-                launcher.start {}
-                done()
+                launcher.start {}, ->
+                    done()
+
+                callEvent 'complete', {}
 
             # event handlers
             it 'call callback on complete event', (done) ->
@@ -276,7 +301,6 @@ module.exports = describe 'ReplicationLauncher Test', ->
                 done()
 
             it 'dispatch wanted docs', (done) ->
-                dispatched =
                 launcher = new @ReplicationLauncher database, router, \
                     filterName, config
                 launcher.start {}
@@ -307,15 +331,6 @@ module.exports = describe 'ReplicationLauncher Test', ->
 
 
     describe '[All errors]', ->
-        it 'callback on denied event', (done) ->
-            launcher = new @ReplicationLauncher database, router, \
-                filterName, config
-            launcher.start {}, (err) ->
-                should.exist err
-                done()
-
-            callEvent 'denied', {}
-            # test will timeout if broken
 
         it 'callback on error event', (done) ->
             launcher = new @ReplicationLauncher database, router, \

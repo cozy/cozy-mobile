@@ -30,6 +30,8 @@ module.exports = class ServiceManager extends Backbone.Model
         daemonActivated: false
 
     initialize: ->
+        log.debug "initialize"
+
         config = app.init.config
         # Initialize plugin with current config values.
         @listenNewPictures config, config.get 'syncImages'
@@ -42,36 +44,52 @@ module.exports = class ServiceManager extends Backbone.Model
 
 
     isActivated: ->
+        log.debug "isActivated"
+
         return @get 'daemonActivated'
 
     checkActivated: ->
+        log.debug "checkActivated"
+
         window.JSBackgroundService.isRepeating (err, isRepeating) =>
             if err
                 log.error err
                 isRepeating = false
 
+            log.debug "isRepeating=#{isRepeating}"
+
             @set 'daemonActivated', isRepeating
 
 
     activate: (repeatingPeriod) ->
+        log.debug "activate: repeatingPeriod=#{repeatingPeriod}"
+
         window.JSBackgroundService.setRepeating repeatingPeriod, (err) =>
-            if err then return console.log err
+            return log.error err if err
             @checkActivated()
 
     deactivate: ->
+        log.debug "deactivate"
+
         window.JSBackgroundService.cancelRepeating (err) =>
-            if err then return console.log err
+            return log.error err if err
             @checkActivated()
 
     toggle: (config, activate) ->
+        log.debug "toggle: activate=#{activate}"
+
         if activate
-            @activate()
+            @activate repeatingPeriod
         else
             @deactivate()
 
     listenNewPictures: (config, listen) ->
+        log.debug "listenNewPictures: listen=#{listen}"
+
         window.JSBackgroundService.listenNewPictures listen, (err) ->
-            if err then return console.log err
+            log.error err if err
 
     isRunning: (callback) ->
+        log.debug "isRunning"
+
         window.JSBackgroundService.isRunning callback

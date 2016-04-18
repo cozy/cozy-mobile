@@ -286,6 +286,7 @@ module.exports = class Replicator extends Backbone.Model
     # specified file.
     # @param file a cozy file document.
     _fileToEntryName: (file) ->
+        # todo : fix bug when file not have binary
         return file.binary.file.id + '-' + file.binary.file.rev
 
     # Check if any version of the file is present in cache.
@@ -464,7 +465,7 @@ module.exports = class Replicator extends Backbone.Model
 
     # wrapper around startRealtime to maintain the state of inSync
     sync: (options, callback) ->
-        return callback null if @get 'inSync'
+        return callback() if @get 'inSync'
 
         log.info "start a sync"
         @set 'inSync', true
@@ -500,8 +501,8 @@ module.exports = class Replicator extends Backbone.Model
         @filterManager.filterRemoteExist =>
             @replicationLauncher = new ReplicationLauncher @database, \
                 app.router, @filterManager.getFilterName(), @config
-            @replicationLauncher.start options, =>
-                # clean @replicationLauncher when sync finished
+            @replicationLauncher.start options, (err) =>
+                log.warn err if err
                 @stopRealtime()
                 callback.apply @, arguments
 

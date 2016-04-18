@@ -20,6 +20,7 @@ module.exports = BackgroundService =
     initialize: ->
         log.debug "initialize"
 
+        @name = 'SERVICE'
         @init = new Init @
         @init.startStateMachine()
         @init.trigger 'startService'
@@ -27,7 +28,8 @@ module.exports = BackgroundService =
 
     startMainActivity: (err)->
         log.debug "startMainActivity"
-        log.error err
+
+        log.error err if err
         # Start activity to initialize app
         # or update permissions
         JSBackgroundService.startMainActivity (err)->
