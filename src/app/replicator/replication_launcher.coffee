@@ -41,13 +41,11 @@ module.exports = class ReplicationLauncher
     start: (options, callback = ->) ->
         log.debug "start"
 
-        if @replication
-            log.debug "Replication is already launched."
-            callback()
+        state = @config.get('appState')
+        err = new Error "Replication is already launched." if @replication
+        err = new Error "Application is paused." if state is 'pause'
 
-        if @config.get('appState') is 'pause'
-            log.debug "Application is paused."
-            callback()
+        return callback err if err
 
         replicateOptions = @_getOptions options
         log.debug "replicateOptions:", replicateOptions
