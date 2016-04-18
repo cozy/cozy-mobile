@@ -558,7 +558,7 @@ module.exports = class Init
 
             # The ServiceManager is a flag for the background plugin to know if
             # it's the service or the application, see https://git.io/vVjJO
-            @serviceManager = new ServiceManager() if @app.name isnt 'SERVICE'
+            @serviceManager = new ServiceManager() unless @app.name is 'SERVICE'
 
         @translation.setDeviceLocale @getCallbackTrigger 'deviceLocaleSetted'
 
