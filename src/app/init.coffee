@@ -92,14 +92,17 @@ module.exports = class Init
         # Do sync only while on Realtime : TODO: handles others Running states
         # waiting for them to end.
         if @currentState in ['nRealtime', 'cUpdateIndex', 'nImport', 'nBackup']
-            if needInit.syncCalendars and needInit.syncContacts
-                @toState 'c3RemoteRequest'
-            else if needInit.syncContacts
-                @toState 'c1RemoteRequest'
-            else if needInit.syncCalendars
-                @toState 'c2RemoteRequest'
-            else
-                @toState 'c4RemoteRequest'
+            db = @database.replicateDb
+            filterManager = new FilterManager @config, @requestCozy, db
+            filterManager.setFilter =>
+                if needInit.syncCalendars and needInit.syncContacts
+                    @toState 'c3RemoteRequest'
+                else if needInit.syncContacts
+                    @toState 'c1RemoteRequest'
+                else if needInit.syncCalendars
+                    @toState 'c2RemoteRequest'
+                else
+                    @toState 'c4RemoteRequest'
         else
             @app.router.forceRefresh()
             @trigger 'error', new Error 'App is busy'
