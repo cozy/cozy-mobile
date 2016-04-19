@@ -36,7 +36,13 @@ module.exports = class CozyToAndroidEvent
         eventTimezone = 'UTC'
 
         if cozyEvent.rrule? and cozyEvent.rrule isnt ''
-            rrule = cozyEvent.rrule
+            rules = cozyEvent.rrule.split ';'
+            rruless = []
+            for rule in rules
+                if rule[0..6] isnt 'DTSTART' and rule[0..4] isnt 'DTEND'
+                    rruless.push rule
+            rrule = rruless.join ';'
+            log.debug "rrule: #{rrule}"
             # Europe/Paris is a stub for buggy docs.
             eventTimezone = cozyEvent.timezone or 'Europe/Paris' unless allDay
             duration = moment(cozyEvent.end).diff cozyEvent.start
