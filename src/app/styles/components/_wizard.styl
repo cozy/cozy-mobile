@@ -108,9 +108,17 @@ stepColorMixin(color, btnColor)
         width 1.2em
         text-align left
         background transparent
-        border 0px none
+        border 0 none
         color white
         font-size 3em
+
+    #btn-back
+        text-align left
+        background transparent
+        color white
+        font-size 1em
+        border 0 none
+        padding 0
 
     #btn-register
         flex 0 0 2em
@@ -119,11 +127,15 @@ stepColorMixin(color, btnColor)
     label
         flex 1 0 auto
         margin-bottom 1em
+        font-size 1em
 
     input
         font 1.8em 'Source Sans Pro', Sans-serif
         background transparent
         color white
+
+        &.cloned-text-input
+            display none
 
 
 // notifications

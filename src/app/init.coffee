@@ -3,7 +3,6 @@ async = require 'async'
 ChangeDispatcher = require './replicator/change/change_dispatcher'
 ChangesImporter = require './replicator/fromDevice/changes_importer'
 AndroidAccount = require './replicator/fromDevice/android_account'
-validator = require 'validator'
 ServiceManager = require './models/service_manager'
 Notifications  = require './views/notifications'
 DeviceStatus   = require './lib/device_status'
@@ -152,7 +151,6 @@ module.exports = class Init
         # First start (f) states
         fWizardWelcome  : enter: ['loginWizard']
         fWizardURL      : enter: ['loginWizard']
-        fCheckURL       : enter: ['checkURL']
         fWizardPassword : enter: ['loginWizard']
         fWizardFiles    : enter: ['permissionsWizard']
         fWizardContacts : enter: ['permissionsWizard']
@@ -382,10 +380,7 @@ module.exports = class Init
             'clickNext': 'fWizardURL'
         'fWizardURL':
             'clickBack': 'fWizardWelcome'
-            'clickNext': 'fCheckURL'
-        'fCheckURL':
-            'clickToPassword': 'fWizardPassword'
-            'error': 'fWizardURL'
+            'clickNext': 'fWizardPassword'
         'fWizardPassword':
             'clickBack': 'fWizardURL'
             'validCredentials': 'fCreateDevice'
@@ -674,20 +669,6 @@ module.exports = class Init
     # First start
     loginWizard: ->
         @app.router.navigate "login/#{@currentState}", trigger: true
-
-    checkURL: ->
-        url = @config.get 'cozyURL'
-        isLocalhost = url.indexOf('localhost') is 0
-        protocols = ['https']
-        if window.isBrowserDebugging and isLocalhost
-            protocols.push 'http'
-
-        options =
-            protocols: protocols
-        if validator.isURL url, options
-            @trigger 'clickToPassword'
-        else
-            @trigger 'error', new Error t "Your Cozy URL is not valid."
 
     permissionsWizard: ->
         @app.router.navigate "permissions/#{@currentState}", trigger: true
