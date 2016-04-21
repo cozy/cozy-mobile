@@ -809,6 +809,7 @@ module.exports = class Init
 
     # show the error to the user appropriately regarding to the current state
     handleError: (err) ->
+        log.warn err
         if @states[@currentState].quitOnError
             @app.exit err
         else

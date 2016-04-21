@@ -1,4 +1,5 @@
 BaseView = require '../lib/base_view'
+logSender = require '../lib/log_sender'
 
 log = require('../lib/persistent_log')
     prefix: "FirstSyncView"
@@ -9,13 +10,21 @@ module.exports = class FirstSyncView extends BaseView
     className: 'list'
     template: require '../templates/first_sync'
 
+
+    getRenderData: ->
+        logButton: @showLogButton or false
+
+
     events: ->
-        'tap #btn-end': 'end'
+        'tap #send-log': -> logSender.send()
+        'tap #btn-end' : 'end'
+
 
     initialize: ->
         # Hide layout message bar
         app.layout.hideInitMessage()
         app.layout.stopListening app.init, 'display'
+        app.layout.stopListening app.init, 'error'
 
         # Put it back as living this page.
         @listenTo app.init, 'transition', (leaveState, enterState) ->
@@ -25,7 +34,13 @@ module.exports = class FirstSyncView extends BaseView
 
 
         @listenTo app.init, 'display', @onChange
+        @listenTo app.init, 'error', @displayLogButton
 
 
     onChange: (message) ->
         @$('#finishSync .progress').text t message
+
+
+    displayLogButton: ->
+        @showLogButton = true
+        @setState 'showLogButton', @showLogButton

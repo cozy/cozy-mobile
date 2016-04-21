@@ -3,3 +3,7 @@
         .progress.item.item-text-wrap= t('message step 0')
     .card.no-shadow.more-spacing
         button#btn-end.button.button-block.button-balanced= t('waiting...')
+
+    if logButton
+        .card.no-shadow.more-spacing
+            button.button.button-block.button-grey#send-log= t('send log')

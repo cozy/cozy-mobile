@@ -1,6 +1,6 @@
 BaseView = require '../lib/base_view'
 Config = require '../lib/config'
-
+logSender = require '../lib/log_sender'
 
 log = require('../lib/persistent_log')
     prefix: "config view"
@@ -8,7 +8,6 @@ log = require('../lib/persistent_log')
 
 module.exports = class ConfigView extends BaseView
 
-    @SUPPORT_MAIL: 'log-mobile@cozycloud.cc'
     template: require '../templates/config'
 
     menuEnabled: true
@@ -17,7 +16,7 @@ module.exports = class ConfigView extends BaseView
         'tap #configDone': 'configDone'
         'tap #redbtn': 'redBtn'
         'tap #synchrobtn': 'synchroBtn'
-        'tap #sendlogbtn': 'sendlogBtn'
+        'tap #sendlogbtn': -> logSender.send()
 
         'change #contactSyncCheck': 'saveChanges'
         'change #calendarSyncCheck': 'saveChanges'
@@ -80,33 +79,6 @@ module.exports = class ConfigView extends BaseView
         if confirm t 'confirm message'
             app.init.replicator.stopRealtime()
             app.init.toState 'fFirstSyncView'
-
-
-    sendlogBtn: ->
-        config = window.app.init.config
-        subject = "Log from cozy-mobile v#{config.get 'appVersion'}"
-        body = """
-            #{t('send log please describe problem')}
-
-
-            ########################
-            # #{t('send log trace begin')}
-            ##
-
-            #{log.getTraces().join('\n')}
-
-            ##
-            # #{t('send log trace end')}
-            ########################
-
-
-            #{t('send log please describe problem')}
-
-            """
-
-        query = "subject=#{encodeURI(subject)}&body=#{encodeURI(body)}"
-
-        window.open "mailto:#{ConfigView.SUPPORT_MAIL}?" + query, "_system"
 
 
     # save config changes in local pouchdb
