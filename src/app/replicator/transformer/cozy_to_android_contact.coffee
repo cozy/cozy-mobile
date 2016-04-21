@@ -22,8 +22,17 @@ _n2ContactName = (n) ->
     validParts = parts.filter (part) -> part? and part isnt ''
     formatted = validParts.join ' '
 
-    return new ContactName formatted, familyName, givenName, \
+    contactName = new ContactName formatted, familyName, givenName, \
         middle, prefix, suffix
+
+    contactName.formatted ?= ""
+    contactName.familyName ?= ""
+    contactName.givenName ?= ""
+    contactName.middleName ?= ""
+    contactName.honorificPrefix ?= ""
+    contactName.honorificSuffix ?= ""
+
+    return contactName
 
 
 # Build cordova's ContactOrganization list from a cozy contact.
@@ -39,15 +48,15 @@ _cozyContact2ContactOrganizations = (contact) ->
 
 # Initialize a url's ContactFields list with url field of cozy contact.
 _cozyContact2URLs = (contact) ->
-    if contact.url and
-        # Avoid duplication of url in datapoints.
-        not contact.datapoints.some((dp) ->
-            dp.type is "url" and dp.value is contact.url)
-        return [
-            new ContactField 'other', contact.url, false
-        ]
-    else
-        return []
+    callback = (dp) ->
+        dp.type is "url" and dp.value is contact.url
+
+    contactFields = []
+    # Avoid duplication of url in datapoints.
+    if contact.url and not contact.datapoints.some callback
+        contactFields.push new ContactField 'other', contact.url, false
+
+    return contactFields
 
 
 # Build categories list with cozy's tags.
