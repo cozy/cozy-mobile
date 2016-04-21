@@ -130,9 +130,8 @@ module.exports = class CozyToAndroidContact
                 when 'RELATION'
                     addContactField 'relations', datapoint
 
-    # Do the actual cordova contact build, without to much plugin dependency,
-    # for testing
-    _cozy2CordovaOptions: (cozyContact) ->
+
+    transform: (cozyContact) ->
         # Build cordova contact.
         cordovaContact =
             # vCard FullName = display name
@@ -162,10 +161,6 @@ module.exports = class CozyToAndroidContact
             cordovaContact.displayName = "--"
 
         return cordovaContact
-
-
-    transform: (cozyContact) ->
-        @_cozy2CordovaOptions cozyContact
 
 ################################################################################
 # Convert a cordova contact to cozy contact (asynchronous).
