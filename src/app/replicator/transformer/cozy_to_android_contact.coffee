@@ -165,7 +165,7 @@ module.exports = class CozyToAndroidContact
 
 
     transform: (cozyContact) ->
-        navigator.contacts.create @_cozy2CordovaOptions cozyContact
+        @_cozy2CordovaOptions cozyContact
 
 ################################################################################
 # Convert a cordova contact to cozy contact (asynchronous).

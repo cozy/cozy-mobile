@@ -43,6 +43,7 @@ module.exports = class ChangeContactHandler
 
         try
             toSaveInPhone = @transformer.transform doc
+            toSaveInPhone = navigator.contacts.create toSaveInPhone
         catch err
             return callback err if err
 
