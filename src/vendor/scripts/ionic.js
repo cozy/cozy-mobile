@@ -6352,7 +6352,7 @@ ionic.scroll = {
         onEndDrag: function(e) {},
       }, opts);
 
-      ionic.onGesture('drag', ionic.proxy(this._onDrag, this), this.el);
+      //ionic.onGesture('drag', ionic.proxy(this._onDrag, this), this.el);
       ionic.onGesture('release', ionic.proxy(this._onEndDrag, this), this.el);
     },
     _onDrag: function(e) {
