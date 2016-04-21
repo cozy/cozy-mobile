@@ -7,6 +7,7 @@ log = require('../lib/persistent_log')
 
 module.exports = class FirstSyncView extends BaseView
 
+    btnBackEnabled: false
     className: 'list'
     template: require '../templates/first_sync'
 
@@ -44,3 +45,8 @@ module.exports = class FirstSyncView extends BaseView
     displayLogButton: ->
         @showLogButton = true
         @setState 'showLogButton', @showLogButton
+
+
+    onBackButtonClicked: (event) =>
+        if window.confirm t "confirm exit message"
+            navigator.app.exitApp()

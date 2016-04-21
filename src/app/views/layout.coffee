@@ -15,11 +15,13 @@ module.exports = class Layout extends BaseView
 
     template: require '../templates/layout'
 
+
     events: ->
         'tap #btn-back': 'onBackButtonClicked'
         'tap #btn-menu': 'onMenuButtonClicked'
         'tap #closeerror': 'onCloseErrorIndicator'
         "click a[target='_system']": 'openInSystemBrowser'
+
 
     initialize: ->
         document.addEventListener "menubutton", @onMenuButtonClicked, false
@@ -95,24 +97,30 @@ module.exports = class Layout extends BaseView
         @ionicScroll.scrollTo 1, 0, true, null
         @ionicScroll.scrollTo 0, 0, true, null
 
+
     isMenuOpen: =>
         return @controller.isOpenLeft()
 
+
     closeMenu: =>
         @controller.toggleLeft false
+
 
     quitSplashScreen: ->
         $('body').empty().append @render().$el
         @refreshBackgroundColor()
 
+
     refreshBackgroundColor: ->
         color = _.result @currentView, 'bodyBackgroundColor', 'white'
         @container.css 'background-color', color
+
 
     setBackButton: (href, icon) =>
         @backButton.attr 'href', href
         @backButton.removeClass 'ion-home ion-ios7-arrow-back'
         @backButton.addClass 'ion-' + icon
+
 
     hideTitle: ->
         @$('#breadcrumbs').remove()
@@ -120,12 +128,14 @@ module.exports = class Layout extends BaseView
         @$('#bar-header').hide()
         @$('#viewsPlaceholder').removeClass('has-header')
 
+
     setTitle: (text) =>
         @$('#breadcrumbs').remove()
         @title.text text
         @title.show()
         @$('#bar-header').show()
         @$('#viewsPlaceholder').addClass('has-header')
+
 
     setBreadcrumbs: (path) ->
         @$('#breadcrumbs').remove()
@@ -136,6 +146,7 @@ module.exports = class Layout extends BaseView
         breadcrumbsView = new BreadcrumbsView path: path
         @title.after breadcrumbsView.render().$el
         # breadcrumbsView.scrollLeft()
+
 
     transitionTo: (view) ->
         @closeMenu()
@@ -176,6 +187,7 @@ module.exports = class Layout extends BaseView
                 @currentView.remove()
                 @afterTransition(view)
 
+
     afterTransition: (view) ->
         @currentView = view
         ionic.trigger 'resetScrollView',
@@ -190,7 +202,8 @@ module.exports = class Layout extends BaseView
             autofocusField.one 'click', -> autofocusField.focus()
 
         if @currentView.$el.hasClass 'wizard-step'
-            setTimeout => @currentView.$el.css 'height', ''
+            @currentView.$el.css 'height', ''
+
 
     showInitMessage: (message) =>
         log.debug 'showInitMessage'
@@ -198,10 +211,12 @@ module.exports = class Layout extends BaseView
         @initIndicator.parent().slideDown()
         @viewsPlaceholder.addClass 'has-subheader'
 
+
     hideInitMessage: =>
         log.debug 'hideInitMessage'
         @initIndicator.parent().slideUp()
         @viewsPlaceholder.removeClass 'has-subheader'
+
 
     showError: (error) =>
         log.debug 'showError'
@@ -210,34 +225,40 @@ module.exports = class Layout extends BaseView
         @errorIndicator.parent().slideDown()
         @viewsPlaceholder.addClass 'has-subheader'
 
+
     onCloseErrorIndicator: =>
         log.debug 'onCloseErrorIndicator'
         @errorIndicator.parent().slideUp()
         @viewsPlaceholder.removeClass 'has-subheader'
         app.init.trigger 'errorViewed'
 
+
     onMenuButtonClicked: =>
         @menu.reset()
         @controller.toggleLeft()
+
 
     onSearchButtonClicked: =>
         @onMenuButtonClicked()
         @$('#search-input').focus()
 
+
     onBackButtonClicked: (event) =>
+        if @currentView.btnBackEnabled? and @currentView.btnBackEnabled is false
+            @currentView.onBackButtonClicked event
+
         # close menu first
-        if @isMenuOpen()
+        else if @isMenuOpen()
             @closeMenu()
 
-        # @TODO: we could go further in history, but history.back() has
-        # strange behaviour near first screen
+        # app exit
         else if location.href.indexOf('#folder/') is (location.href.length - 8)
             if window.confirm t "confirm exit message"
                 navigator.app.exitApp()
 
         else
-            # navigator.app.backHistory()
             window.history.back()
+
 
     openInSystemBrowser: (e) ->
         window.open e.currentTarget.href, '_system', ''

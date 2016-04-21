@@ -377,7 +377,9 @@ module.exports = class Init
 
         #######################################
         # First start
-        'fWizardWelcome': 'clickNext': 'fWizardURL'
+        'fWizardWelcome':
+            'clickBack': 'exit'
+            'clickNext': 'fWizardURL'
         'fWizardURL':
             'clickBack': 'fWizardWelcome'
             'clickNext': 'fCheckURL'
@@ -391,9 +393,15 @@ module.exports = class Init
             'deviceCreated': 'fWizardFiles'
             'errorViewed': 'fConfig'
         'fWizardFiles'   : 'clickNext': 'fWizardContacts'
-        'fWizardContacts': 'clickNext': 'fWizardCalendars'
-        'fWizardCalendars': 'clickNext': 'fWizardPhotos'
-        'fWizardPhotos'  : 'clickNext': 'fFirstSyncView'
+        'fWizardContacts':
+            'clickBack': 'fWizardFiles'
+            'clickNext': 'fWizardCalendars'
+        'fWizardCalendars':
+            'clickBack': 'fWizardContacts'
+            'clickNext': 'fWizardPhotos'
+        'fWizardPhotos'  :
+            'clickBack': 'fWizardCalendars'
+            'clickNext': 'fFirstSyncView'
         'fFirstSyncView': 'firstSyncViewDisplayed': 'fCheckPlatformVersion'
         'fCheckPlatformVersion':
             'validPlatformVersions': 'fLocalDesignDocuments'
