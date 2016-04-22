@@ -16,14 +16,12 @@ _n2ContactName = (n) ->
     return undefined unless n?
 
     parts =  n.split ';'
-    [familyName, givenName, middle, prefix, suffix] = parts
 
     # Cf cozy-vCard.nToFN :
     validParts = parts.filter (part) -> part? and part isnt ''
     formatted = validParts.join ' '
 
-    contactName = new ContactName formatted, familyName, givenName, \
-        middle, prefix, suffix
+    contactName = new ContactName formatted, parts...
 
     contactName.formatted ?= ""
     contactName.familyName ?= ""
@@ -105,8 +103,7 @@ _adr2ContactAddress = (datapoint) ->
 # with
 _dataPoints2Cordova = (cozyContact, cordovaContact) ->
     addContactField = (cordovaField, datapoint) ->
-        unless cordovaContact[cordovaField]
-            cordovaContact[cordovaField] = []
+        cordovaContact[cordovaField] ?= []
 
         field = new ContactField datapoint.type, datapoint.value
         cordovaContact[cordovaField].push field
@@ -120,8 +117,7 @@ _dataPoints2Cordova = (cozyContact, cordovaContact) ->
             when 'EMAIL'
                 addContactField 'emails', datapoint
             when 'ADR'
-                unless cordovaContact.addresses
-                    cordovaContact.addresses = []
+                cordovaContact.addresses ?= []
                 cordovaContact.addresses.push @_adr2ContactAddress datapoint
 
             when 'CHAT'
