@@ -3,6 +3,7 @@ BaseView = require '../lib/base_view'
 module.exports = class LoginView extends BaseView
 
     menuEnabled: false
+    btnBackEnabled: false
 
     templates:
         'fWizardWelcome'  : require '../templates/wizard/welcome'
@@ -13,6 +14,12 @@ module.exports = class LoginView extends BaseView
         inputURL      : '#input-url'
         inputPassword : '#input-password'
         btnLogin      : '#btn-login'
+
+
+    remove: ->
+        $('body').css 'background-color', @prevBodyBgColor
+        super
+
 
     className: ->
         classes = ['wizard-step']
@@ -30,9 +37,6 @@ module.exports = class LoginView extends BaseView
     bodyBackgroundColor: ->
         @$el.css 'background-color'
 
-    remove: ->
-        $('body').css 'background-color', @prevBodyBgColor
-        super
 
     events: ->
         'blur #input-url'        : 'onURLBlur'

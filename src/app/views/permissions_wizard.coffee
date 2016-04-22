@@ -3,6 +3,7 @@ BaseView = require '../lib/base_view'
 module.exports = class PermissionsWizard extends BaseView
 
     menuEnabled: false
+    btnBackEnabled: false
 
     templates:
         'fWizardFiles'     : require '../templates/wizard/files'
@@ -34,3 +35,11 @@ module.exports = class PermissionsWizard extends BaseView
             else # dont stock permission for Files, always true
 
         @options.fsm.trigger 'clickNext'
+
+
+    onBackButtonClicked: (event) =>
+        if @options.step is 'fWizardFiles'
+            if window.confirm t "confirm exit message"
+                navigator.app.exitApp()
+        else
+            @options.fsm.trigger 'clickBack'
