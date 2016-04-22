@@ -1,6 +1,6 @@
 platforms
 plugins
-CozyFiles.apk
+Cozy*.apk
 keys/cozy-play-store.keystore
 keys/cozy-play-store.password
 *.transifex.coffee
