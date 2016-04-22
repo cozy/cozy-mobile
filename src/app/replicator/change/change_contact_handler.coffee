@@ -11,7 +11,7 @@ continueOnError = require('../../lib/utils').continueOnError log
 module.exports = class ChangeContactHandler
 
     constructor: ->
-        @transformer = new CozyToAndroidContact()
+        @cozyToAndroidContact = new CozyToAndroidContact()
 
 
     dispatch: (doc, callback) ->
@@ -42,7 +42,8 @@ module.exports = class ChangeContactHandler
         log.debug "_update"
 
         try
-            toSaveInPhone = @transformer.transform doc
+            toSaveInPhone = @cozyToAndroidContact.transform doc
+            toSaveInPhone = navigator.contacts.create toSaveInPhone
         catch err
             return callback err if err
 
