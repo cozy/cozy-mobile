@@ -1,16 +1,23 @@
-if error
-    div.error-msg= error
+br
+br
+br
 
 label
     input.auto-focus#input-url(
         type="url",
         placeholder=t('url placeholder'),
         value=cozyURL)
-    = t('url help')
+    if error
+        = t(error)
+    else
+        = t('url help')
 
-a#btn-register(target="_system",
-    href="https://cozy.io/en/try-it/")
+br
+
+a#btn-register(target="_system", href="https://cozy.io/en/try-it/")
     = t('no account register')
 
+br
+
 .button-block
-    button#btn-next.button= t('next')
+    button#btn-url.button= t('next')
