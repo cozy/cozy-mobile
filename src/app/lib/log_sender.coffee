@@ -14,6 +14,7 @@ module.exports =
 
 
                 ########################
+                # #{device.platform}: #{device.version}
                 # #{t('send log trace begin')}
                 ##
 
