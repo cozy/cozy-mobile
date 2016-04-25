@@ -79,7 +79,6 @@ module.exports = class Replicator extends Backbone.Model
                 username: 'owner'
                 password: password
             auth: false
-        # todo: replace by @requestCozy
         window.app.init.requestCozy.request options, (err, response, body) ->
             if err and err.message is "Unexpected token <"
                 error = t err.message

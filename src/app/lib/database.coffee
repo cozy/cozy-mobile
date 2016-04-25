@@ -19,6 +19,9 @@ class Database
     constructor: (options = adapter: 'idb') ->
         log.debug 'constructor', options
 
+        if device?.platform is "Android" and parseInt(device.version, 10) < 4.2
+            options.adapter = 'websql'
+
         @replicateDb = new PouchDB Database.REPLICATE_DB, options
         @localDb = new PouchDB Database.LOCAL_DB, options
 

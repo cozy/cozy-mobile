@@ -47,6 +47,6 @@ module.exports = class FirstSyncView extends BaseView
         @setState 'showLogButton', @showLogButton
 
 
-    onBackButtonClicked: (event) =>
+    onBackButtonClicked: (event) ->
         if window.confirm t "confirm exit message"
             navigator.app.exitApp()
