@@ -22,7 +22,7 @@
   "cordovaPlugins": {
     "cordova-plugin-whitelist": "cordova-plugin-whitelist@1.0.0",
     "cordova-plugin-device": "cordova-plugin-device@1.0.1",
-    "cordova-plugin-globalization": "cordova-plugin-globalization@1.0.1",
+    "cordova-plugin-globalization": "https://github.com/StyrLabs/cordova-plugin-globalization.git",
     "cordova-plugin-inappbrowser": "cordova-plugin-inappbrowser@1.0.1",
     "cordova-plugin-file": "cordova-plugin-file@4.1.1",
     "cordova-plugin-file-transfer": "cordova-plugin-file-transfer@1.5.0",

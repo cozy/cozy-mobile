@@ -8,6 +8,7 @@ CozyToAndroidEvent = require \
 
 
 c2A = new CozyToAndroidEvent()
+timezone = 'Europe/Paris'
 describe 'Unit tests', ->
 
     describe 'android2Duration', ->
@@ -28,7 +29,7 @@ describe 'Convert Cozy event to Android', ->
         cozyEvent = require '../../../fixtures/event_punctual_cozy.json'
         androidEvent = require '../../../fixtures/event_punctual_android.json'
 
-        obtained = c2A.transform cozyEvent, androidCalendar
+        obtained = c2A.transform cozyEvent, androidCalendar, timezone
         it "calendar_id", ->
             obtained.calendar_id.should.eql androidEvent.calendar_id
         it "title", ->
@@ -129,7 +130,7 @@ describe 'Convert Cozy event to Android', ->
         cozyEvent = require '../../../fixtures/event_recurring_cozy.json'
         androidEvent = require '../../../fixtures/event_recurring_android.json'
 
-        obtained = c2A.transform cozyEvent, androidCalendar
+        obtained = c2A.transform cozyEvent, androidCalendar, timezone
         it "calendar_id", ->
             obtained.calendar_id.should.eql androidEvent.calendar_id
         it "title", ->
@@ -205,7 +206,7 @@ describe 'Convert Cozy event to Android', ->
         androidEvent = require '../../../fixtures/' +
             'event_recurringallday_android.json'
 
-        obtained = c2A.transform cozyEvent, androidCalendar
+        obtained = c2A.transform cozyEvent, androidCalendar, timezone
         it "calendar_id", ->
             obtained.calendar_id.should.eql androidEvent.calendar_id
         it "title", ->
