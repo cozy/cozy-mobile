@@ -12,10 +12,14 @@ log = require('../../lib/persistent_log')
 ###
 module.exports = class ChangeEventHandler
 
-    constructor: (@calendarSync) ->
+    constructor: (@calendarSync, @timezone) ->
         @androidCalendarHandler = new AndroidCalendarHandler()
         @cozyToAndroidEvent = new CozyToAndroidEvent()
         @calendarSync ?= navigator.calendarsync
+        unless @timezone
+            successCB = (date) => @timezone = date.timezone
+            errorCB = -> log.warn "Error getting timezone"
+            navigator.globalization.getDatePattern successCB, errorCB
 
     dispatch: (cozyEvent, callback) ->
         log.debug "dispatch"
@@ -39,7 +43,8 @@ module.exports = class ChangeEventHandler
         @androidCalendarHandler.getOrCreate calendarName, (err, calendar) =>
             return callback err if err
 
-            androidEvent = @cozyToAndroidEvent.transform cozyEvent, calendar
+            androidEvent = @cozyToAndroidEvent.transform cozyEvent, calendar, \
+                @timezone
             @calendarSync.addEvent androidEvent, \
                     AndroidAccount.ACCOUNT, callback
 
@@ -58,7 +63,7 @@ module.exports = class ChangeEventHandler
                     log.error err if err
 
             androidEvent = @cozyToAndroidEvent.transform cozyEvent, calendar, \
-                    androidEvent
+                    @timezone, androidEvent
             @calendarSync.updateEvent androidEvent, \
                     AndroidAccount.ACCOUNT, callback
 

@@ -26,7 +26,7 @@ module.exports = class CozyToAndroidEvent
 
     REMINDERS_METHOD_2_COZY = _.invert REMINDERS_METHOD_2_ANDROID
 
-    transform: (cozyEvent, androidCalendar, androidEvent = undefined) ->
+    transform: (cozyEvent, androidCalendar, androidTimezone, androidEvent) ->
         log.debug "transform"
 
         allDay = if cozyEvent.start.length is 10 then 1 else 0 # 1 == allday
@@ -54,6 +54,7 @@ module.exports = class CozyToAndroidEvent
         else # Punctual, datetime are in UTC timezone.
             dtstart = parseInt moment.tz(cozyEvent.start, 'UTC').format 'x'
             dtend = parseInt moment.tz(cozyEvent.end, 'UTC').format 'x'
+            eventTimezone = androidTimezone
 
         # attendees
 
