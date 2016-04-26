@@ -22,8 +22,7 @@ _getConfigFilter = (syncContacts, syncCalendars, syncNotifs) ->
         compare += " || doc.docType.toLowerCase() === 'event'"
         compare += " || doc.docType.toLowerCase() === 'tag'"
     if syncNotifs
-        compare += " || (doc.docType.toLowerCase() === 'notification'"
-        compare += " && doc.type === 'temporary')"
+        compare += " || doc.docType.toLowerCase() === 'notification'"
 
     compare += ")"
 
