@@ -1,6 +1,6 @@
 async = require 'async'
 
-EventSynchronizer = require "./event_synchronizer"
+EventImporter = require "./event_importer"
 ContactImporter = require './contact_importer'
 log = require('../../lib/persistent_log')
     prefix: "ChangesImporter"
@@ -8,9 +8,9 @@ log = require('../../lib/persistent_log')
 
 module.exports = class ChangesImporter
 
-    constructor: (@config, @eventSynchronizer, @contactImporter) ->
+    constructor: (@config, @eventImporter, @contactImporter) ->
         @config ?= app.init.config
-        @eventSynchronizer ?= new EventSynchronizer()
+        @eventImporter ?= new EventImporter()
         @contactImporter ?= new ContactImporter()
 
 
@@ -20,7 +20,7 @@ module.exports = class ChangesImporter
         async.series [
             (cb) =>
                 if @config.get('syncCalendars')
-                    @eventSynchronizer.synchronize cb
+                    @eventImporter.synchronize cb
                 else cb()
 
             (cb) =>
