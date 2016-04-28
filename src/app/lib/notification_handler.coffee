@@ -80,7 +80,7 @@ module.exports = class NotificationHandler
                 title: title
                 text: cozyNotif.text
                 data: { _id: cozyNotif._id }
-            @cordovaPlugin.schedule cordovaNotif, (res) =>
+            @cordovaPlugin.schedule cordovaNotif, (res) ->
                 log.warn res unless res is 'OK'
                 callback()
 
