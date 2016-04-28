@@ -2,6 +2,7 @@ ChangeFileHandler = require "./change_file_handler"
 ChangeEventHandler = require "./change_event_handler"
 ChangeContactHandler = require "./change_contact_handler"
 ChangeTagHandler = require "./change_tag_handler"
+ChangeNotificationHandler = require "./change_notification_handler"
 log = require('../../lib/persistent_log')
     prefix: "ChangeDispatcher"
     date: true
@@ -25,6 +26,7 @@ module.exports = class ChangeDispatcher
             "event": new ChangeEventHandler()
             "contact": new ChangeContactHandler()
             "tag": new ChangeTagHandler()
+            "notification": new ChangeNotificationHandler()
 
 
     ###*

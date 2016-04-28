@@ -18,6 +18,7 @@ module.exports = describe 'ChangeDispatcher Test', ->
         mockery.registerMock './change_event_handler', changeHandlerMock
         mockery.registerMock './change_contact_handler', changeHandlerMock
         mockery.registerMock './change_tag_handler', changeHandlerMock
+        mockery.registerMock './change_notification_handler', changeHandlerMock
         @ChangeDispatcher = require \
             '../../../../app/replicator/change/change_dispatcher'
 
