@@ -13,7 +13,7 @@ module.exports = describe 'DesignDocuments Test', ->
         designDocs.createOrUpdateAllDesign (error, responses) ->
             async.series [
                 (next) -> cozyDB.allDocs {}, (error, response) ->
-                    response.total_rows.should.be.equal 8
+                    response.total_rows.should.be.equal 7
                     next()
                 (next) -> internalDB.allDocs {}, (error, response) ->
                     response.total_rows.should.be.equal 1
