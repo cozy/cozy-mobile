@@ -67,7 +67,7 @@ module.exports = class ReplicationLauncher
                         if @changeDispatcher.isDispatched doc
                             @changeDispatcher.dispatch doc, next
                         else
-                            log.info 'No dispatcher for ', doc?.docType
+                            log.warn 'No dispatcher for', doc?.docType
                             next()
                 , (err) ->
                     log.error err if err
