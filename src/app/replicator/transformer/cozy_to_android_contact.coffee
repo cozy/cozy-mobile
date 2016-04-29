@@ -118,7 +118,7 @@ _dataPoints2Cordova = (cozyContact, cordovaContact) ->
                 addContactField 'emails', datapoint
             when 'ADR'
                 cordovaContact.addresses ?= []
-                cordovaContact.addresses.push @_adr2ContactAddress datapoint
+                cordovaContact.addresses.push _adr2ContactAddress datapoint
 
             when 'CHAT'
                 addContactField 'ims', datapoint
