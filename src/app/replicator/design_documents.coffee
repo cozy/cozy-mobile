@@ -11,7 +11,6 @@ module.exports = class DesignDocuments
     @PICTURES: 'Pictures'
     @PHOTOS_BY_LOCAL_ID: 'PhotosByLocalId'
     @BY_BINARY_ID: 'ByBinaryId'
-    @NOTIFICATIONS_TEMPORARY: 'NotificationsTemporary'
     @LOCAL_PATH: 'LocalPath'
     @CONTACTS: 'Contacts'
     @CALENDARS: 'Calendars'
@@ -25,8 +24,6 @@ module.exports = class DesignDocuments
     createOrUpdateAllDesign: (callback) ->
         log.debug 'createOrUpdateAllDesign'
         async.series [
-            (next) => @_createOrUpdate @cozyDB, \
-                DesignDocuments.NotificationsTemporaryDesignDoc, next
             (next) => @_createOrUpdate @cozyDB, \
                 DesignDocuments.FilesAndFolderDesignDoc, next
             (next) => @_createOrUpdate @cozyDB, \
@@ -103,17 +100,6 @@ module.exports = class DesignDocuments
                     if doc.lastModification?
                         if doc.docType?.toLowerCase() is 'file'
                             emit [doc.path, doc.lastModification]
-
-
-    @NotificationsTemporaryDesignDoc:
-        _id: "_design/#{@NOTIFICATIONS_TEMPORARY}"
-        version: 1
-        views:
-            "#{@NOTIFICATIONS_TEMPORARY}":
-                map: Object.toString.apply (doc) ->
-                    if doc.docType?.toLowerCase() is 'notification' and \
-                            doc.type is 'temporary'
-                        emit doc._id
 
 
     @LocalPathDesignDoc:

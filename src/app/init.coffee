@@ -4,7 +4,6 @@ ChangeDispatcher = require './replicator/change/change_dispatcher'
 ChangesImporter = require './replicator/fromDevice/changes_importer'
 AndroidAccount = require './replicator/fromDevice/android_account'
 ServiceManager = require './models/service_manager'
-Notifications  = require './views/notifications'
 DeviceStatus   = require './lib/device_status'
 Replicator = require './replicator/main'
 Translation = require './lib/translation'
@@ -560,8 +559,6 @@ module.exports = class Init
     setDeviceLocale: ->
         DeviceStatus.initialize()
         unless window.isBrowserDebugging # Patch for browser debugging
-            @notificationManager = new Notifications()
-
             # The ServiceManager is a flag for the background plugin to know if
             # it's the service or the application, see https://git.io/vVjJO
             @serviceManager = new ServiceManager() unless @app.name is 'SERVICE'
