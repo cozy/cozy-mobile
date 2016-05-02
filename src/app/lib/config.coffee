@@ -18,6 +18,7 @@ DEFAULT_CONFIG =
     #  - default
     #  - deviceCreated
     #  - appConfigured
+    #  - syncCompleted
     state: 'default'
     # appState :
     #  - launch
