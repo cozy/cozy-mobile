@@ -1,4 +1,7 @@
 semver = require 'semver'
+log = require('../lib/persistent_log')
+    prefix: "CheckPlatformVersions"
+    date: true
 
 
 PLATFORM_VERSIONS =
@@ -9,6 +12,8 @@ PLATFORM_VERSIONS =
 module.exports =
 
     checkPlatformVersions: (callback) ->
+        log.debug 'checkPlatformVersions'
+
         config = app.init.config
         requestCozy = app.init.requestCozy
         options =

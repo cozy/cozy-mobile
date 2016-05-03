@@ -1,7 +1,7 @@
 async = require 'async'
 semver = require 'semver'
 log = require('../lib/persistent_log')
-    prefix: "Filter Manager"
+    prefix: "Migration"
     date: true
 
 

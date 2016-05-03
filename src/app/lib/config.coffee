@@ -103,6 +103,7 @@ class Config
                 @database.setRemoteDatabase @getCozyUrl() if @getCozyUrl()
                 return callback err, true
 
+            log.info 'Initialize app configuration'
             config = DEFAULT_CONFIG
             config.deviceName = "Android-#{device.manufacturer}-#{device.model}"
             setConfig @database.replicateDb, (err) =>
