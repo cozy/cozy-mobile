@@ -1,6 +1,6 @@
 module.exports = (options) -> new Logger options
 
-LOG_SIZE = 500
+LOG_SIZE = 1000
 
 colors =
      blue: ['\x1B[34m', '\x1B[39m']
