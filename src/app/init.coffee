@@ -2,11 +2,13 @@ async = require 'async'
 AndroidAccount = require './replicator/fromDevice/android_account'
 ChangeDispatcher = require './replicator/change/change_dispatcher'
 ChangesImporter = require './replicator/fromDevice/changes_importer'
+CheckPlatformVersions = require './migrations/check_platform_versions'
 Config = require './lib/config'
 Database = require './lib/database'
 DesignDocuments = require './replicator/design_documents'
 DeviceStatus   = require './lib/device_status'
 FilterManager = require './replicator/filter_manager'
+PutRemoteRequest = require('./migrations/put_remote_request')
 Replicator = require './replicator/main'
 RequestCozy = require './lib/request_cozy'
 ServiceManager = require './models/service_manager'
@@ -551,7 +553,7 @@ module.exports = class Init
 
 
     putRemoteRequest: ->
-        require('./migrations/put_remote_request').putRequests (err) =>
+        PutRemoteRequest.putRequests (err) =>
             @trigger 'putRemoteRequest'
 
 
@@ -678,8 +680,7 @@ module.exports = class Init
 
 
     checkPlatformVersions: ->
-        require('./migrations/check_platform_versions').checkPlatformVersions \
-                (err, response) =>
+        CheckPlatformVersions.checkPlatformVersions (err, response) =>
             if err
                 if @app.layout.currentView
                     # currentView is device-name view

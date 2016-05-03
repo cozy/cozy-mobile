@@ -20,7 +20,7 @@ module.exports =
     migrate: (oldVersion, callback) ->
         log.debug 'migrate'
 
-        migrationsSorted = migrations.sort()
+        migrationsSorted = migrations.sort (a, b) -> semver.compare a, b
         config = app.init.config
 
         async.eachSeries migrationsSorted, (version, cb) ->
