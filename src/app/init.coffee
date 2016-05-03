@@ -1,16 +1,18 @@
-semver = require 'semver'
 async = require 'async'
+AndroidAccount = require './replicator/fromDevice/android_account'
 ChangeDispatcher = require './replicator/change/change_dispatcher'
 ChangesImporter = require './replicator/fromDevice/changes_importer'
-AndroidAccount = require './replicator/fromDevice/android_account'
-ServiceManager = require './models/service_manager'
-DeviceStatus   = require './lib/device_status'
-Replicator = require './replicator/main'
-Translation = require './lib/translation'
+CheckPlatformVersions = require './migrations/check_platform_versions'
 Config = require './lib/config'
 Database = require './lib/database'
-RequestCozy = require './lib/request_cozy'
+DesignDocuments = require './replicator/design_documents'
+DeviceStatus   = require './lib/device_status'
 FilterManager = require './replicator/filter_manager'
+PutRemoteRequest = require('./migrations/put_remote_request')
+Replicator = require './replicator/main'
+RequestCozy = require './lib/request_cozy'
+ServiceManager = require './models/service_manager'
+Translation = require './lib/translation'
 
 log = require('./lib/persistent_log')
     prefix: "Init"
@@ -19,30 +21,12 @@ log = require('./lib/persistent_log')
 
 ###*
  * Conductor of the init process.
- * It handle first start, migrations, normal start, service and config changes.
+ * It handle first start, normal start, service and config changes.
  * It organize an explicit the different steps (such as put filters in remote
  * cozy, copy view to init a replication on a doctype, ...).
  *
  * It structured as a finite state machine and event, trough this lib:
  * https://github.com/sebpiq/backbone.statemachine
- *
- * **A word about migrations**
- * Migrations occurs on app upgrade, to adapt app and his environment to the
- * requireemnts of the new version. It may be updating remote CouchDB views,
- * local PouchDB views, permissions, new config, ...
- * This class handle this with dedicated states (prefixed with 'm' - or 'sm'
- * if migration can occurs from service).
- *
- * How to use it:
- * If a migration is required add to 'migrations' property, a key with the
- * version name, and as object, the liste of migrations states required by
- * this new version.
- *
- * Init take care about getting only trough the necessary migrations states,
- * for any migrations (as well as from 0.2.14 to 0.2.15 as
- * from 0.1.3 to 0.2.15) - see initMigrations, passUnlessInMigration,
- * migrations and migrationStates to see how it works.
-
 ###
 module.exports = class Init
 
@@ -52,7 +36,6 @@ module.exports = class Init
     constructor: (@app) ->
         log.debug "constructor"
 
-        @migrationStates = {}
         @translation = new Translation()
         @database = new Database()
         @config = new Config @database
@@ -80,6 +63,7 @@ module.exports = class Init
         log.debug "startStateMachine"
 
         Backbone.StateMachine.startStateMachine.apply @
+
 
     # activating contact or calendar sync requires to init them,
     # trough init state machine
@@ -124,8 +108,6 @@ module.exports = class Init
         # - f : first start
         # - s : service start
         # - c : update config states
-        # - m : migration start
-        # - sm : migration in service start
 
         exit: enter: ['exit']
 
@@ -166,9 +148,6 @@ module.exports = class Init
             display: 'message step 0' # TODO: more accurate translate key
         fRemoteRequest:
             enter: ['putRemoteRequest']
-            display: 'message step 0' # TODO: more accurate translate key
-        fSetVersion:
-            enter: ['updateVersion']
             display: 'message step 0' # TODO: more accurate translate key
 
         fTakeDBCheckpoint:
@@ -283,40 +262,6 @@ module.exports = class Init
             enter: ['updateIndex']
             display: 'setup end'
 
-        #######################################
-        # Migration (m) states
-        migrationInit: enter: ['initMigrationState'], quitOnError: true
-        mMoveCache: enter: ['migrationMoveCache']
-        mLocalDesignDocuments:
-            enter: ['upsertLocalDesignDocuments']
-            quitOnError: true
-        mCheckPlatformVersions:
-            enter: ['checkPlatformVersions']
-            quitOnError: true
-        mQuitSplashScreen: enter: ['quitSplashScreen']
-        mPermissions: enter: ['getPermissions']
-        mConfig: enter: ['config']
-        mRemoteRequest: enter: ['putRemoteRequest']
-        mUpdateVersion: enter: ['updateVersion']
-        mSync: enter: ['postCopyViewSync']
-
-        ###################
-        # Service Migration (m) states
-        smMigrationInit: enter: ['initMigrationState'], quitOnError: true
-        smMoveCache: enter: ['migrationMoveCache'], quitOnError: true
-        smLocalDesignDocuments:
-            enter: ['upsertLocalDesignDocuments']
-            quitOnError: true
-        smCheckPlatformVersions:
-            enter: ['checkPlatformVersions']
-            quitOnError: true
-        smQuitSplashScreen: enter: ['quitSplashScreen'], quitOnError: true
-        smPermissions: enter: ['getPermissions'], quitOnError: true
-        smConfig: enter: ['config'], quitOnError: true
-        smRemoteRequest: enter: ['putRemoteRequest'], quitOnError: true
-        smUpdateVersion: enter: ['updateVersion'], quitOnError: true
-        smSync: enter: ['postCopyViewSync'], quitOnError: true
-
 
     transitions:
         # Help :
@@ -333,7 +278,6 @@ module.exports = class Init
         'aInitFileSystem': 'fileSystemReady': 'aQuitSplashScreen'
         'aQuitSplashScreen': 'viewInitialized': 'aCheckState'
         'aCheckState':
-            'migration': 'migrationInit'
             'default': 'fWizardWelcome'
             'deviceCreated': 'fWizardFiles'
             'appConfigured': 'fFirstSyncView'
@@ -343,7 +287,6 @@ module.exports = class Init
         # Start Service
         'sConfigLoad': 'loaded': 'sCheckState'
         'sCheckState':
-            'migration': 'smMigrationInit'
             'exit': 'exit'
             'continue': 'sDeviceLocale'
         'sDeviceLocale': 'deviceLocaleSetted': 'sInitFileSystem'
@@ -404,10 +347,7 @@ module.exports = class Init
             'localDesignUpToDate': 'fRemoteRequest'
             'errorViewed': 'fConfig'
         'fRemoteRequest':
-            'putRemoteRequest':'fSetVersion'
-            'errorViewed': 'fConfig'
-        'fSetVersion':
-            'versionUpToDate': 'fTakeDBCheckpoint'
+            'putRemoteRequest':'fTakeDBCheckpoint'
             'errorViewed': 'fConfig'
         'fTakeDBCheckpoint':
             'checkPointed': 'fInitFiles'
@@ -512,36 +452,13 @@ module.exports = class Init
             'indexUpdated': 'nImport' #TODO : clean update headers
             'errorViewed': 'nRealtime'
 
-        #######################################
-        # Migration
-        'migrationInit': 'migrationInited': 'mMoveCache'
-        'mMoveCache': 'cacheMoved': 'mLocalDesignDocuments'
-        'mLocalDesignDocuments': 'localDesignUpToDate': 'mCheckPlatformVersions'
-        'mCheckPlatformVersions': 'validPlatformVersions': 'mQuitSplashScreen'
-        'mQuitSplashScreen': 'viewInitialized': 'mPermissions'
-        'mPermissions': 'getPermissions': 'mConfig'
-        'mConfig': 'configDone': 'mRemoteRequest'
-        'mRemoteRequest': 'putRemoteRequest': 'mUpdateVersion'
-        'mUpdateVersion': 'versionUpToDate': 'mSync'
-        'mSync': 'dbSynced': 'nLoadFilePage' # Regular start.
-
-        ###################
-        # Migration in service
-        'smMigrationInit': 'migrationInited': 'smMoveCache'
-        'smMoveCache': 'cacheMoved': 'smLocalDesignDocuments'
-        'smLocalDesignDocuments':
-            'localDesignUpToDate': 'smCheckPlatformVersions'
-        'smCheckPlatformVersions': 'validPlatformVersions': 'smPermissions'
-        'smPermissions': 'getPermissions': 'smConfig'
-        'smConfig': 'configDone': 'smRemoteRequest'
-        'smRemoteRequest': 'putRemoteRequest': 'smUpdateVersion'
-        'smUpdateVersion': 'versionUpToDate': 'smSync'
-        'smSync': 'dbSynced': 'sImport'
 
     # Enter state methods.
 
+
     aCheckState: ->
         @trigger @config.get 'state'
+
 
     sCheckState: ->
         # todo: application is already launch?
@@ -550,11 +467,13 @@ module.exports = class Init
         else
             @trigger 'exit'
 
+
     configLoad: ->
         @config.load =>
             state = if @app.name is 'APP' then 'launch' else 'service'
             @config.set 'appState', state, =>
                 @trigger 'loaded'
+
 
     setDeviceLocale: ->
         DeviceStatus.initialize()
@@ -569,11 +488,13 @@ module.exports = class Init
     initFileSystem: ->
         @replicator.initFileSystem @getCallbackTrigger 'fileSystemReady'
 
+
     import: ->
         changesImporter = new ChangesImporter()
         changesImporter.synchronize (err) =>
             log.error err if err
             @trigger 'importDone'
+
 
     backup: ->
         @replicator.backup {}, @getCallbackTrigger 'backupDone'
@@ -592,17 +513,21 @@ module.exports = class Init
             else
                 @trigger 'ready'
 
+
     onPause: ->
         log.info "onPause"
 
         @stopRealtime()
         clearTimeout @timeout if @timeout
 
+
     startRealtime: ->
         @replicator.startRealtime()
 
+
     stopRealtime: ->
         @replicator.stopRealtime()
+
 
     quitSplashScreen: ->
         @app.startLayout()
@@ -610,62 +535,34 @@ module.exports = class Init
         Backbone.history.start()
         @trigger 'viewInitialized'
 
+
     setListeners: ->
         @app.setListeners()
+
 
     loadFilePage: ->
         @app.router.navigate 'folder/', trigger: true
         @app.router.once 'collectionfetched', => @trigger 'onFilePage'
 
 
-
-
     upsertLocalDesignDocuments: ->
-        return if @passUnlessInMigration 'localDesignUpToDate'
-
-        @replicator.upsertLocalDesignDocuments \
-            @getCallbackTrigger 'localDesignUpToDate'
-
-
-    checkPlatformVersions: ->
-        return if @passUnlessInMigration 'validPlatformVersions'
-        @replicator.checkPlatformVersions (err, response) =>
-            if err
-                if @app.layout.currentView
-                    # currentView is device-name view
-                    return @app.layout.currentView.displayError err.message
-                else
-                    alert err.message
-                    return @app.exit()
-
-            @trigger 'validPlatformVersions'
-
-
-    getPermissions: ->
-        return if @passUnlessInMigration 'getPermissions'
-
-        if @config.hasPermissions()
-            @trigger 'getPermissions'
-        else if @currentState is 'smPermissions'
-            @app.startMainActivity 'smPermissions'
-        else
-            @app.router.navigate 'permissions', trigger: true
+        designDocs =
+            new DesignDocuments @database.replicateDb, @database.localDb
+        designDocs.createOrUpdateAllDesign =>
+            @trigger 'localDesignUpToDate'
 
 
     putRemoteRequest: ->
-        return if @passUnlessInMigration 'putRemoteRequest'
-
-        @replicator.putRequests (err) =>
+        PutRemoteRequest.putRequests (err) =>
             @trigger 'putRemoteRequest'
 
 
-    updateVersion: ->
-        @config.updateVersion @getCallbackTrigger 'versionUpToDate'
-
-
     # First start
+
+
     loginWizard: ->
         @app.router.navigate "login/#{@currentState}", trigger: true
+
 
     permissionsWizard: ->
         @app.router.navigate "permissions/#{@currentState}", trigger: true
@@ -686,8 +583,8 @@ module.exports = class Init
 
             @trigger 'deviceCreated'
 
+
     config: ->
-        return if @passUnlessInMigration 'configDone'
         if @currentState is 'smConfig'
             @app.startMainActivity 'smConfig'
         else
@@ -759,8 +656,6 @@ module.exports = class Init
 
 
     postCopyViewSync: ->
-        return if @passUnlessInMigration 'dbSynced'
-
         # Get the local last seq :
         @replicator.db.changes
             descending: true
@@ -782,16 +677,35 @@ module.exports = class Init
 
     updateIndex: ->
         @replicator.updateIndex @getCallbackTrigger 'indexUpdated'
+
+
+    checkPlatformVersions: ->
+        CheckPlatformVersions.checkPlatformVersions (err, response) =>
+            if err
+                if @app.layout.currentView
+                    # currentView is device-name view
+                    return @app.layout.currentView.displayError err.message
+                else
+                    alert err.message
+                    return @app.exit()
+
+            @trigger 'validPlatformVersions'
+
+
+
     ###########################################################################
     # Service
     sSync: ->
         @replicator.sync {}, @getCallbackTrigger 'syncDone'
 
+
     exit: ->
         @app.exit()
 
+
     ###########################################################################
     # Tools
+
 
     # show the error to the user appropriately regarding to the current state
     handleError: (err) ->
@@ -800,6 +714,7 @@ module.exports = class Init
             @app.exit err
         else
             @trigger 'error', err
+
 
     # Provide a callback,
     # - which appropriately regarding to the state show the error to the user
@@ -810,96 +725,3 @@ module.exports = class Init
                 @handleError err
             else
                 @trigger eventName
-
-
-    passUnlessInMigration: (event) ->
-        state = @currentState
-
-        # Convert service states.
-        if state.indexOf('s') is 0
-            state = state.slice 1
-
-        if state.indexOf('m') is 0 and state not of @migrationStates
-            log.info "Skip state #{state} during migration so fire #{event}."
-            @trigger event
-            return true
-        else
-            return false
-
-
-    initMigrations: (oldVersion) ->
-        oldVersion ?= '0.0.0'
-        for version, migration of @migrations
-            if semver.gt(version, oldVersion)
-                for state in migration.states
-                    @migrationStates[state] = true
-
-    ###########################################################################
-    # Migrations
-    # For each version update, list which optionnal states are requiered in
-    # - mLocalDesignDocuments
-    # - mCheckPlatformVersions
-    # - mPermissions
-    # - mConfig
-    # - mRemoteRequest
-    migrations:
-        '0.2.1': # Move cache root directory to external storage cache
-            states: [ 'mMoveCache']
-        '0.2.0':
-            # Filters: upper version of platform requiered.
-            states: ['mLocalDesignDocuments', 'mCheckPlatformVersions', \
-                     'mRemoteRequest', 'mSync']
-        '0.1.15':
-            # New routes, calendar sync.
-            states: ['mCheckPlatformVersions', 'mPermissions', 'mRemoteRequest']
-
-
-    # Migration
-    initMigrationState: ->
-        @initMigrations @config.get 'appVersion'
-        @trigger 'migrationInited'
-
-    # Move cache from old "/cozy-downloads" to external storage application
-    # Cache directory
-    migrationMoveCache: ->
-        return if @passUnlessInMigration 'cacheMoved'
-        return @trigger 'cacheMoved' if window.isBrowserDebugging
-
-        fs = require './replicator/filesystem'
-
-        getOldDownloadsDir = (callback) ->
-            uri = cordova.file.externalRootDirectory \
-                or cordova.file.cacheDirectory
-            window.resolveLocalFileSystemURL uri
-            , (res) ->
-                fs.getDirectory res.filesystem.root, 'cozy-downloads', callback
-
-            , callback
-
-        checkFolderDeleted = (callback) ->
-            getOldDownloadsDir (err, dir) ->
-                if err?.code is 1
-                    callback()
-                else
-                    log.info "cache migration not finished yet, check later."
-                    setTimeout ( -> checkFolderDeleted callback), 500
-
-        async.parallel
-            newFS: fs.getFileSystem
-            oldDownloads: getOldDownloadsDir
-        , (err, res) =>
-            if err
-                log.error err
-                @handleError new Error 'moving synced files to new directory'
-                # Continue on error : the user can fix it itself.
-                return @trigger 'cacheMoved'
-
-            # fs.moveTo doesn't look to call its callback in this situation !?
-            fs.moveTo res.oldDownloads, res.newFS.root, 'cozy-downloads'
-            , (err, folder) ->
-                log.warning "migrationMoveTo done ! ", err, folder
-
-            # Busy waiting for old dir deletion
-            checkFolderDeleted \
-                # Update cache info in replicator
-                @replicator.initFileSystem @getCallbackTrigger 'cacheMoved'

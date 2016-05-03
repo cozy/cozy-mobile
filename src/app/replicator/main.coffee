@@ -1,21 +1,16 @@
 async = require 'async'
-semver = require 'semver'
-fs = require './filesystem'
-DesignDocuments = require './design_documents'
-DeviceStatus = require '../lib/device_status'
 ChangeDispatcher = require './change/change_dispatcher'
 Db = require '../lib/database'
+DesignDocuments = require './design_documents'
+DeviceStatus = require '../lib/device_status'
 FilterManager = require './filter_manager'
+fs = require './filesystem'
 ReplicationLauncher = require "./replication_launcher"
-
-
-PLATFORM_VERSIONS =
-    'proxy': '>=2.1.11'
-    'data-system': '>=2.1.8'
 
 log = require('../lib/persistent_log')
     prefix: "replicator main"
     date: true
+
 
 #Replicator extends Model to watch/set inBackup, inSync
 module.exports = class Replicator extends Backbone.Model
@@ -44,30 +39,6 @@ module.exports = class Replicator extends Backbone.Model
     initConfig: (@config, @requestCozy, @database) ->
         @db = @database.replicateDb
         @photosDB = @database.localDb
-
-
-    upsertLocalDesignDocuments: (callback) ->
-        designDocs = new DesignDocuments @db, @photosDB
-        designDocs.createOrUpdateAllDesign callback
-
-    checkPlatformVersions: (callback) ->
-        options =
-            method: 'get'
-            url: "#{@config.get 'cozyURL'}/versions"
-        @requestCozy.request options, (err, response, body) ->
-            return callback err if err # TODO i18n ?
-
-            for item in body
-                [s, app, version] = item.match /([^:]+): ([\d\.]+)/
-                if app of PLATFORM_VERSIONS
-                    unless semver.satisfies(version, PLATFORM_VERSIONS[app])
-                        msg = t 'error need min %version for %app'
-                        msg = msg.replace '%app', app
-                        msg = msg.replace '%version', PLATFORM_VERSIONS[app]
-                        return callback new Error msg
-
-            # Everything fine
-            callback()
 
 
     # pings the cozy to check the credentials without creating a device
@@ -150,42 +121,6 @@ module.exports = class Replicator extends Backbone.Model
 
             @config.set 'devicePermissions', body.permissions, callback
 
-    putRequests: (callback) ->
-        requests = require './remote_requests'
-
-        reqList = []
-        for docType, reqs of requests
-            if docType is 'file' or docType is 'folder' or \
-                (docType is 'contact' and @config.get 'syncContacts') or \
-                (docType is 'contact' and @config.get 'syncContacts') or \
-                (docType is 'event' and @config.get 'syncCalendars') or \
-                (docType is 'notification' and @config.get 'cozyNotifications')\
-                    or (docType is 'tag' and @config.get 'syncCalendars')
-
-                for reqName, body of reqs
-
-                    reqList.push
-                        type: docType
-                        name: reqName
-                        # Copy/Past from cozydb, to avoid view multiplication
-                        # TODO: reduce is not supported yet
-                        body: map: """
-                    function (doc) {
-                      if (doc.docType.toLowerCase() === "#{docType}") {
-                        filter = #{body.toString()};
-                        filter(doc);
-                      }
-                    }
-                """
-
-        async.eachSeries reqList, (req, cb) =>
-            options =
-                method: 'put'
-                type: 'data-system'
-                path: "/request/#{req.type}/#{req.name}/"
-                body: req.body
-            @requestCozy.request options, cb
-        , callback
 
     takeCheckpoint: (callback) ->
         options =

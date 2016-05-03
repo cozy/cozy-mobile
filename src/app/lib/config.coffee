@@ -1,9 +1,8 @@
-semver = require 'semver'
 log = require("./persistent_log")
     prefix: "Config"
     date: true
 
-APP_VERSION = "1.1.4"
+APP_VERSION = "1.2.0"
 DOC_ID = '_local/appconfig'
 PERMISSIONS =
     File: description: "files permission description"
@@ -19,6 +18,7 @@ DEFAULT_CONFIG =
     #  - default
     #  - deviceCreated
     #  - appConfigured
+    #  - syncCompleted
     state: 'default'
     # appState :
     #  - launch
@@ -49,8 +49,10 @@ DEFAULT_CONFIG =
 
 config = {}
 
+
 getConfig = (db, callback) ->
     db.get DOC_ID, callback
+
 
 setConfig = (db, callback) ->
     getConfig db, (err, doc) ->
@@ -65,31 +67,9 @@ setConfig = (db, callback) ->
 
             callback null, true
 
+
 serializePermissions = (permissions) ->
     Object.keys(permissions).sort()
-
-
-migrateOldConfiguration = (db, callback) ->
-    newConfig = {}
-    db.get DEFAULT_CONFIG._id, (err, doc) ->
-        return callback err if err
-
-        # remove auth
-        # remove lastInitState
-        # add state
-        for key of DEFAULT_CONFIG
-            if doc[key] isnt undefined
-                newConfig[key] = doc[key]
-            else
-                newConfig[key] = DEFAULT_CONFIG[key]
-
-        newConfig.appVersion = APP_VERSION
-        newConfig._rev = doc._rev
-        if doc.lastBackup > 0 or doc.lastSync > 0
-            newConfig.state = 'syncCompleted'
-
-        config = newConfig
-        db.put newConfig, callback
 
 
 # Public
@@ -97,10 +77,12 @@ migrateOldConfiguration = (db, callback) ->
 
 class Config
 
+
     constructor: (@database) ->
         log.debug "constructor"
 
         _.extend @, Backbone.Events
+
 
     load: (callback) ->
         log.debug "load"
@@ -108,14 +90,12 @@ class Config
         getConfig @database.replicateDb, (err, doc) =>
             if doc
 
-                if semver.gt APP_VERSION, doc.appVersion
-                    db = @database.replicateDb
-                    return migrateOldConfiguration db, (err) =>
-                        return callback err if err
-                        @setCozyUrl @get('cozyURL'), =>
-                            @load callback
-
                 config = doc
+
+                if @isNewVersion()
+                    migration = require '../migrations/migration'
+                    return migration.migrate doc.appVersion, =>
+                        @load callback
 
                 log.info "Start v#{APP_VERSION} -- \
                           config: #{JSON.stringify config}"
@@ -123,11 +103,16 @@ class Config
                 @database.setRemoteDatabase @getCozyUrl() if @getCozyUrl()
                 return callback err, true
 
+            log.info 'Initialize app configuration'
             config = DEFAULT_CONFIG
             config.deviceName = "Android-#{device.manufacturer}-#{device.model}"
             setConfig @database.replicateDb, (err) =>
                 # todo: error ?
                 @load callback
+
+
+    setConfigValue: (newConfig) ->
+        config = newConfig
 
 
     get: (key) ->
@@ -165,6 +150,7 @@ class Config
 
     # cozy url
 
+
     getCozyUrl: ->
         log.debug 'getCozyUrl'
 
@@ -176,6 +162,7 @@ class Config
             cozyUrl += "#{deviceName}:#{devicePassword}@"
 
         cozyUrl += @get 'cozyHostname'
+
 
     setCozyUrl: (url, callback = ->) ->
         log.debug 'setCozyUrl'
@@ -194,25 +181,33 @@ class Config
 
     # version
 
+
     isNewVersion: ->
         log.debug 'isNewVersion'
+
         APP_VERSION isnt @get 'appVersion'
+
 
     updateVersion: (callback) ->
         log.debug 'updateVersion'
+
         if @isNewVersion() then @set 'appVersion', APP_VERSION, callback
         else callback()
 
 
     # permission
 
+
     getDefault: -> DEFAULT_CONFIG
 
+
     getDefaultPermissions: -> PERMISSIONS
+
 
     hasPermissions: ->
         _.isEqual \
             serializePermissions(@get('devicePermissions')),
             serializePermissions(PERMISSIONS)
+
 
 module.exports = Config
