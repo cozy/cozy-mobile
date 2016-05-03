@@ -14,7 +14,6 @@ module.exports = class ConfigView extends BaseView
 
     events: ->
         'tap #configDone': 'configDone'
-        'tap #redbtn': 'redBtn'
         'tap #synchrobtn': 'synchroBtn'
         'tap #sendlogbtn': -> logSender.send()
 
@@ -55,23 +54,6 @@ module.exports = class ConfigView extends BaseView
     # only happens after the first config (post install)
     configDone: ->
         app.init.trigger 'configDone'
-
-
-    # confirm, destroy the DB, force refresh the page (show login form)
-    redBtn: ->
-        if confirm t 'confirm message'
-            #@TODO delete device on remote ?
-            app.init.replicator.set 'inSync', true # run the spinner
-            app.init.replicator.set 'backup_step', 'destroying database'
-            app.init.replicator.destroyDB (err) ->
-                if err
-                    log.error err
-                    return alert err.message
-                $('#redbtn').text t 'done'
-
-                # DeviceStatus has to be stopped to restart properly.
-                require('../lib/device_status').shutdown()
-                window.location.reload true
 
 
     # confirm, launch initial replication, navigate to first sync UI.
