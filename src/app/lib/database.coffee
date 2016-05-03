@@ -16,11 +16,11 @@ class Database
     #
     # To test:
     #   options = db: require 'memdown'
-    constructor: (options = adapter: 'idb') ->
+    constructor: (options = adapter: 'idb', cache: false) ->
         log.debug 'constructor', options
 
         if device?.platform is "Android" and parseInt(device.version, 10) < 4.2
-            options.adapter = 'websql'
+            options = adapter: 'websql'
 
         @replicateDb = new PouchDB Database.REPLICATE_DB, options
         @localDb = new PouchDB Database.LOCAL_DB, options
