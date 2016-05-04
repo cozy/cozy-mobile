@@ -3,7 +3,7 @@ Database = require '../../../app/lib/database'
 
 options = db: require 'memdown'
 url = 'cozyUrlForTest'
-device = {}
+global.device = {}
 
 module.exports = describe 'Database Service Test', ->
 
