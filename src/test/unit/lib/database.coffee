@@ -3,6 +3,7 @@ Database = require '../../../app/lib/database'
 
 options = db: require 'memdown'
 url = 'cozyUrlForTest'
+device = {}
 
 module.exports = describe 'Database Service Test', ->
 
@@ -16,7 +17,7 @@ module.exports = describe 'Database Service Test', ->
 
     describe 'Create databases', ->
 
-        database = new Database options
+        database = new Database options, device
 
         it 'must have replicate database', ->
             database.replicateDb.should.be.an.Object
