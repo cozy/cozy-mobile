@@ -3,6 +3,7 @@ ChangeDispatcher = require './change/change_dispatcher'
 Db = require '../lib/database'
 DesignDocuments = require './design_documents'
 DeviceStatus = require '../lib/device_status'
+fileCacheHandler = require '../lib/file_cache_handler'
 FilterManager = require './filter_manager'
 fs = require './filesystem'
 ReplicationLauncher = require "./replication_launcher"
@@ -218,13 +219,6 @@ module.exports = class Replicator extends Backbone.Model
 
 # BEGIN Cache methods
 
-    # Return the conventionnal name of the in filesystem folder for the
-    # specified file.
-    # @param file a cozy file document.
-    _fileToEntryName: (file) ->
-        # todo : fix bug when file not have binary
-        return file.binary.file.id + '-' + file.binary.file.rev
-
     # Check if any version of the file is present in cache.
     # @param file a cozy file document.
     # @return true if any version of the file is present
@@ -238,8 +232,8 @@ module.exports = class Replicator extends Backbone.Model
     # @return true if the file with the expected version is present
     fileVersion: (file) =>
         if file.docType.toLowerCase() is 'file'
-            @cache.some (entry) =>
-                entry.name is @_fileToEntryName file
+            @cache.some (entry) ->
+                entry.name is fileCacheHandler.getFolderName file
 
     # Check if the all the subtree of the specified path is in cache.
     # @param path the path to the subtree to check
@@ -273,8 +267,8 @@ module.exports = class Replicator extends Backbone.Model
     getBinary: (model, progressback, callback) ->
         log.debug "getBinary"
 
-        fs.getOrCreateSubFolder @downloads, @_fileToEntryName(model)
-        , (err, binfolder) =>
+        folderName = fileCacheHandler.getFolderName model
+        fs.getOrCreateSubFolder @downloads, folderName, (err, binfolder) =>
             if err and err.code isnt FileError.PATH_EXISTS_ERR
                 return callback err
             unless model.name
@@ -317,7 +311,7 @@ module.exports = class Replicator extends Backbone.Model
     _removeAllLocal: (file, callback) ->
         async.eachSeries @cache, (entry, cb) =>
             if entry.name.indexOf(file.binary.file.id) isnt -1 and \
-                    entry.name isnt @_fileToEntryName(file)
+                    entry.name isnt fileCacheHandler.getFolderName(file)
                 fs.getDirectory @downloads, entry.name, (err, binfolder) =>
                     return cb err if err
                     fs.rmrf binfolder, (err) =>
@@ -383,10 +377,11 @@ module.exports = class Replicator extends Backbone.Model
     removeLocal: (file, callback) ->
         log.info "remove #{file.name} from cache."
 
-        fs.getDirectory @downloads, @_fileToEntryName(file), (err, binfolder) =>
+        folderName = fileCacheHandler.getFolderName file
+        fs.getDirectory @downloads, folderName, (err, binfolder) =>
             return callback err if err
             fs.rmrf binfolder, (err) =>
-                @_removeFromCacheList @_fileToEntryName(file)
+                @_removeFromCacheList folderName
                 callback err
 
 

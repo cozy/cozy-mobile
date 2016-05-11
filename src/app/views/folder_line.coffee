@@ -1,4 +1,5 @@
 BaseView = require '../lib/base_view'
+fileCacheHandler = require '../lib/file_cache_handler'
 
 log = require('../lib/persistent_log')
     prefix: "FolderLineView"

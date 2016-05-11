@@ -1,4 +1,5 @@
 DeviceStatus = require '../../lib/device_status'
+fileCacheHandler = require '../../lib/file_cache_handler'
 fs = require '../filesystem'
 log = require('../../lib/persistent_log')
     prefix: "ChangeFileHandler"
@@ -36,7 +37,7 @@ module.exports = class ChangeFileHandler
             # Entry is false if this file isn't cached.
             return callback() unless entry
 
-            if entry.name isnt @_fileToEntryName doc
+            if entry.name isnt fileCacheHandler.getFolderName doc
                 @_update doc, callback
 
             else
@@ -53,7 +54,8 @@ module.exports = class ChangeFileHandler
         # delete local file:
         # - get file directory
         # - delete this directory
-        fs.getDirectory @directoryEntry, @_fileToEntryName(doc), (err, dir) =>
+        folderName = fileCacheHandler.getFolderName doc
+        fs.getDirectory @directoryEntry, folderName, (err, dir) =>
             # file isn't present, everything allright
             return callback() if err and err.code and err.code is 1
 
@@ -61,7 +63,7 @@ module.exports = class ChangeFileHandler
             log.info "delete binary of #{doc.name}"
             fs.rmrf dir, (err) =>
                 return callback err if err
-                @_removeFromCacheList @_fileToEntryName doc
+                @_removeFromCacheList folderName
                 callback()
 
     _update: (doc, callback) ->
@@ -109,7 +111,7 @@ module.exports = class ChangeFileHandler
             return callback err if err
 
             if ready
-                name = @_fileToEntryName doc
+                name = fileCacheHandler.getFolderName doc
                 fs.getOrCreateSubFolder @directoryEntry, name, \
                         (err, directory) =>
                     if err and err.code isnt FileError.PATH_EXISTS_ERR
@@ -160,18 +162,6 @@ module.exports = class ChangeFileHandler
 
 
     ###*
-     * Return the conventional name of the in filesystem folder for the
-     * specified file.
-     *
-     * @param {Object} doc - it's a pouchdb file document
-     *
-     * @return {String} - conventional name of the in filesystem folder.
-    ###
-    _fileToEntryName: (doc) ->
-        return doc.binary.file.id + '-' + doc.binary.file.rev
-
-
-    ###*
      * Remove specified entry from @cache.
      *
      * @param {String} entryName - an entry name of the @cache to remove.
@@ -191,7 +181,7 @@ module.exports = class ChangeFileHandler
     _removeAllLocal: (doc) ->
         async.eachSeries @cache, (entry, cb) =>
             if entry.name.indexOf(doc.binary.file.id) isnt -1 and \
-                    entry.name isnt @_fileToEntryName(doc)
+                    entry.name isnt fileCacheHandler.getFolderName(doc)
                 fs.getDirectory @downloads, entry.name, (err, directory) =>
                     return cb err if err
                     fs.rmrf directory, (err) =>
