@@ -268,20 +268,20 @@ module.exports = class Replicator extends Backbone.Model
         log.debug "getBinary"
 
         folderName = fileCacheHandler.getFolderName model
-        fs.getOrCreateSubFolder @downloads, folderName, (err, binfolder) =>
+        fs.getOrCreateSubFolder @downloads, folderName, (err, binaryFolder) =>
             if err and err.code isnt FileError.PATH_EXISTS_ERR
                 return callback err
             unless model.name
                 return callback new Error 'no model name :' +
                         JSON.stringify(model)
             fileName = encodeURIComponent model.name
-            fs.getFile binfolder, fileName, (err, entry) =>
+            fs.getFile binaryFolder, fileName, (err, entry) =>
                 return callback null, entry.toURL() if entry
 
                 # getFile failed, let's download
                 path = "/data/#{model._id}/binaries/file"
                 options = @requestCozy.getDataSystemOption path, true
-                options.path = binfolder.toURL() + fileName
+                options.path = binaryFolder.toURL() + fileName
                 log.info "download binary of #{model.name}"
                 fs.download options, progressback, (err, entry) =>
                     # TODO : Is it reachable code ? http://git.io/v08Ap
@@ -297,11 +297,11 @@ module.exports = class Replicator extends Backbone.Model
                         return callback err
                     else if err
                         # failed to download
-                        fs.delete binfolder, (delerr) ->
+                        fs.delete binaryFolder, (delerr) ->
                             #@TODO handle delerr
                             callback err
                     else
-                        @cache.push binfolder
+                        @cache.push binaryFolder
                         callback null, entry.toURL()
                         @_removeAllLocal model, ->
 
