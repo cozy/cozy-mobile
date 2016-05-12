@@ -45,6 +45,7 @@ module.exports = class CozyToAndroidCalendar
         new Error "TODO"
 
     _color2Android: (color) ->
+        color = '#2979FF' if color is undefined
         if color[0] is '#'
             return parseInt color.replace(/[^0-9A-Fa-f]/g, ''), 16
         else if color[0] is 'r'
