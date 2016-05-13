@@ -14,7 +14,8 @@
     "start": "brunch watch --server",
     "device": "cordova run --device",
     "buildapk": "npm run build && cordova build --release",
-    "release": "rm ../CozyFiles.apk -f && npm run buildapk && cd .. && cake release"
+    "release": "rm ../CozyFiles.apk -f && npm run buildapk && cd .. && cake release",
+    "postrelease": "PACKAGE_VERSION=$(node -p -e \"require('./package.json').version\"); mv -f ../CozyFiles.apk ../CozyMobile_$PACKAGE_VERSION.apk; md5sum ../CozyMobile_$PACKAGE_VERSION.apk; sha1sum ../CozyMobile_$PACKAGE_VERSION.apk"
   },
   "cordovaPlatforms": [
     "android"
