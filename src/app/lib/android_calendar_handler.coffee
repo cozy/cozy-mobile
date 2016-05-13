@@ -147,5 +147,5 @@ module.exports = class AndroidCalendarHandler
         requestCozy.request options, (err, res, body) ->
             return callback err if err
             # No tag found, put a default color.
-            calendar = body[0]?.doc or { name: name , color: '#2979FF' }
+            calendar = body[0]?.doc or { name: calendarName , color: '#2979FF' }
             callback null, calendar
