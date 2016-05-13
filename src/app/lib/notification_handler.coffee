@@ -93,3 +93,9 @@ module.exports = class NotificationHandler
 
             @deleteOnDatabase cordovaNotif, (err) ->
                 log.error err if err
+
+        @cordovaPlugin.on 'clear', (cordovaNotif) =>
+            log.debug 'clear'
+
+            @deleteOnDatabase cordovaNotif, (err) ->
+                log.error err if err
