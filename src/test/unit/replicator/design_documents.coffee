@@ -16,7 +16,7 @@ module.exports = describe 'DesignDocuments Test', ->
                     response.total_rows.should.be.equal 7
                     next()
                 (next) -> internalDB.allDocs {}, (error, response) ->
-                    response.total_rows.should.be.equal 1
+                    response.total_rows.should.be.equal 2
                     next()
             ], done
 

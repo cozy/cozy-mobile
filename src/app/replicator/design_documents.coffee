@@ -8,6 +8,7 @@ module.exports = class DesignDocuments
     # Design names
     @PATH_TO_BINARY: 'PathToBinary'
     @FILES_AND_FOLDER: 'FilesAndFolder'
+    @FILES_AND_FOLDER_CACHE: 'FileAndFolderCache'
     @PICTURES: 'Pictures'
     @PHOTOS_BY_LOCAL_ID: 'PhotosByLocalId'
     @BY_BINARY_ID: 'ByBinaryId'
@@ -40,6 +41,8 @@ module.exports = class DesignDocuments
                 DesignDocuments.CalendarsDesignDoc, next
             (next) => @_createOrUpdate @internalDB, \
                 DesignDocuments.PhotosByLocalIdDesignDoc, next
+            (next) => @_createOrUpdate @internalDB, \
+                DesignDocuments.FilesAndFolderCacheDesignDoc, next
         ], callback
 
     _createOrUpdate: (db, design, callback) ->
@@ -79,6 +82,17 @@ module.exports = class DesignDocuments
                             emit [doc.path, '2_' + doc.name.toLowerCase()]
                         if doc.docType?.toLowerCase() is 'folder'
                             emit [doc.path, '1_' + doc.name.toLowerCase()]
+
+
+    @FilesAndFolderCacheDesignDoc:
+        _id: "_design/#{@FILES_AND_FOLDER_CACHE}"
+        version: 1
+        views:
+            "#{@FILES_AND_FOLDER_CACHE}":
+                map: Object.toString.apply (doc) ->
+                    if doc.docType?.toLowerCase() is 'cache'
+                        info = version: doc.binary_rev, name: doc.fileName
+                        emit doc.binary_id, info
 
 
     @ByBinaryIdDesignDoc:
