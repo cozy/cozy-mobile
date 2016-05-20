@@ -97,8 +97,10 @@ class Config
                     return migration.migrate doc.appVersion, =>
                         @load callback
 
+                configClone = JSON.parse JSON.stringify bob
+                configClone.devicePassword = '********************'
                 log.info "Start v#{APP_VERSION} -- \
-                          config: #{JSON.stringify config}"
+                          config: #{JSON.stringify configClone}"
 
                 @database.setRemoteDatabase @getCozyUrl() if @getCozyUrl()
                 return callback err, true
