@@ -97,7 +97,7 @@ class Config
                     return migration.migrate doc.appVersion, =>
                         @load callback
 
-                configClone = JSON.parse JSON.stringify bob
+                configClone = JSON.parse JSON.stringify config
                 configClone.devicePassword = '********************'
                 log.info "Start v#{APP_VERSION} -- \
                           config: #{JSON.stringify configClone}"
