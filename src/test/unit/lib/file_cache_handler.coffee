@@ -17,7 +17,7 @@ requestCozy = {}
 module.exports = describe 'FileCacheHandler Test', ->
 
 
-    before ->
+    before =>
         mockery.enable
             warnOnReplace: false
             warnOnUnregistered: false
@@ -135,7 +135,7 @@ module.exports = describe 'FileCacheHandler Test', ->
                     # after test if exist
                     should.not.exist err
                     should.exist @fileCacheHandler.cache[cozyFile._id]
-                    db.get cozyFile._id, (err, doc) =>
+                    db.get cozyFile._id, (err, doc) ->
                         should.not.exist err
                         should.exist doc
                         done()
@@ -160,6 +160,6 @@ module.exports = describe 'FileCacheHandler Test', ->
 
 
         it 'must not return an error when doc not exist', (done) ->
-            @fileCacheHandler.removeInCache cozyFile, (err) =>
+            @fileCacheHandler.removeInCache cozyFile, (err) ->
                 should.not.exist err
                 done()
