@@ -37,10 +37,9 @@ module.exports = class Replicator extends Backbone.Model
             callback()
 
 
-    initConfig: (@config, @requestCozy, @database) ->
+    initConfig: (@config, @requestCozy, @database, @fileCacheHandler) ->
         @db = @database.replicateDb
         @photosDB = @database.localDb
-        @fileCacheHandler = new FileCacheHandler @photosDB, @requestCozy
 
 
     # pings the cozy to check the credentials without creating a device
@@ -353,20 +352,5 @@ module.exports = class Replicator extends Backbone.Model
         @set 'backup_step', 'files_sync'
         @set 'backup_step_done', null
 
-        # TODO: Add optimizations on db.query : avoid include_docs on big list.
-        options =
-            keys: @cache.map (entry) -> return entry.name.split('-')[0]
-            include_docs: true
-
-        @db.query DesignDocuments.BY_BINARY_ID, options, (err, results) =>
-            return callback err if err
-
-            changeDispatcher = new ChangeDispatcher @config
-            processed = 0
-            @set 'backup_step', 'files_sync'
-            @set 'backup_step_total', results.rows.length
-            async.eachSeries results.rows, (row, cb) =>
-                @set 'backup_step_done', processed++
-                changeDispatcher.dispatch row.doc, cb
-            , callback
+        @fileCacheHandler.downloadUnsynchronizedFiles callback
 

@@ -107,5 +107,4 @@ module.exports = class ChangeFileHandler
                 progressback = ->
                 @fileCacheHandler.getBinary doc, progressback, callback
             else
-                log.info msg
-                callback()
+                @fileCacheHandler.saveInCache doc, false, callback

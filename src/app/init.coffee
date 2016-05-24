@@ -42,8 +42,8 @@ module.exports = class Init
         @config = new Config @database
         @replicator = new Replicator()
         @requestCozy = new RequestCozy @config
-        @replicator.initConfig @config, @requestCozy, @database
-        @fileCacheHandler = new FileCacheHandler @database.localDb, @requestCozy
+        @fileCacheHandler = new FileCacheHandler @database.localDb, \
+                @database.replicateDb, @requestCozy
 
         @listenTo @, 'transition', (leaveState, enterState) =>
 
@@ -58,6 +58,13 @@ module.exports = class Init
                 @trigger 'noDisplay'
 
         return @
+
+
+    initConfig: (callback) ->
+        @fileCacheHandler.load =>
+            @replicator.initConfig @config, @requestCozy, @database, \
+                    @fileCacheHandler
+            callback()
 
 
     # Override this function to use it as initialize.

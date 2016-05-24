@@ -16,8 +16,9 @@ module.exports =
 
         @name = 'APP'
         @init = new Init @
-        @init.startStateMachine()
-        @init.trigger 'startApplication'
+        @init.initConfig =>
+            @init.startStateMachine()
+            @init.trigger 'startApplication'
 
     startLayout: ->
         log.debug "startLayout"

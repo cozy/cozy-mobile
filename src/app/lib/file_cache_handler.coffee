@@ -12,13 +12,13 @@ instance = null
 module.exports = class FileCacheHandler
 
 
-    constructor: (@db, @requestCozy) ->
+    constructor: (@localDb, @replicateDb, @requestCozy) ->
         return instance if instance
         instance = @
-        @cache = []
-        @db ?= app.init.database.localDb
+        @cache = {}
+        @localDb ?= app.init.database.localDb
+        @replicateDb ?= app.init.database.replicateDb
         @requestCozy ?= app.init.requestCozy
-        @load ->
         fs.initialize (err, downloads) =>
             return log.error err if err
             @downloads = downloads
@@ -27,7 +27,7 @@ module.exports = class FileCacheHandler
     load: (callback) ->
         log.debug 'load'
 
-        @db.query DesignDocuments.FILES_AND_FOLDER_CACHE, (err, results) =>
+        @localDb.query DesignDocuments.FILES_AND_FOLDER_CACHE, (err, results) =>
             if results?.rows
                 for cozyFile in results.rows
                     @cache[cozyFile.id] = cozyFile.value
@@ -61,7 +61,15 @@ module.exports = class FileCacheHandler
     isSameBinary: (cozyFile) ->
         log.debug 'isSameBinary'
 
-        @cache[@getFolderName cozyFile]?.version is cozyFile.binary?.file?.rev
+        @cache[@getFolderName cozyFile]?.downloaded is \
+                cozyFile.binary?.file?.rev
+
+
+    isDownloaded: (cozyFile) ->
+        log.debug 'isDownloaded'
+
+        cacheFile = @cache[@getFolderName cozyFile]
+        cacheFile isnt undefined and cacheFile.downloaded isnt false
 
 
     isSameName: (cozyFile) ->
@@ -70,7 +78,7 @@ module.exports = class FileCacheHandler
         @cache[@getFolderName cozyFile]?.name is @getFileName cozyFile
 
 
-    saveInCache: (cozyFile, callback) ->
+    saveInCache: (cozyFile, downloaded, callback) ->
         log.debug 'saveInCache'
 
         folderName = @getFolderName cozyFile
@@ -82,15 +90,35 @@ module.exports = class FileCacheHandler
             fileName: fileName
             binary_id: cozyFile.binary?.file?.id
             binary_rev: cozyFile.binary?.file?.rev
+            downloaded: if downloaded then cozyFile.binary?.file?.rev else false
 
         @cache[folderName] =
             version: downloadFile.binary_rev
             name: fileName
+            downloaded: downloadFile.downloaded
 
-        @db.get folderName, (err, doc) =>
-            downloadFile._rev = doc._rev unless err
+        @localDb.get folderName, (err, doc) =>
+            unless err
+                # this cozyFile exist on cache
+                downloadFile._rev = doc._rev
+                unless downloaded
+                    downloadFile.downloaded = doc.downloaded
+                    @cache[folderName].downloaded = doc.downloaded
 
-            @db.put downloadFile, callback
+            @localDb.put downloadFile, callback
+
+
+    downloadUnsynchronizedFiles: (callback) ->
+        log.debug 'downloadUnsynchronizedFiles'
+
+        progressback = ->
+        async.forEachOfSeries @cache, (cacheFile, id, cb) =>
+            return cb() if cacheFile.downloaded is cacheFile.version
+            @replicateDb.get id, (err, cozyFile) =>
+                return cb err if err
+                @downloadBinary cozyFile, progressback, cb
+        , (err) ->
+            callback err
 
 
     removeInCache: (cozyFile, callback) ->
@@ -99,10 +127,22 @@ module.exports = class FileCacheHandler
         folderName = @getFolderName cozyFile
         delete @cache[folderName]
 
-        @db.get folderName, (err, doc) =>
+        @localDb.get folderName, (err, doc) =>
             return callback() if err and err.status is 404
             return callback err if err
-            @db.remove doc, callback
+            @localDb.remove doc, callback
+
+
+    getBinaryUrl: (cozyFile, callback) ->
+        folderName = @getFolderName cozyFile
+        fs.getOrCreateSubFolder @downloads, folderName, (err, binaryFolder) =>
+            if err and err.code isnt FileError.PATH_EXISTS_ERR
+                return callback err
+            fileName = @getFileName cozyFile
+            fs.getFile binaryFolder, fileName, (err, entry) ->
+                # file already exist
+                return callback null, entry.toURL() if entry
+                return callback err
 
 
     # Download the binary of the specified file in cache.
@@ -110,71 +150,53 @@ module.exports = class FileCacheHandler
     # @param progressback progress callback.
     # TODO: refactoring name to downloadBinary
     getBinary: (cozyFile, progressback, callback) ->
-        log.debug "getBinary"
+        log.debug 'getBinary'
+
+        getUrl = =>
+            @getBinaryUrl cozyFile, (err, url) =>
+                return callback null, url if url
+                @cache[@getFolderName cozyFile].downloaded = false
+                @getBinary cozyFile, progressback, callback
+
+        return getUrl() if @isSameBinary cozyFile
+
+        @downloadBinary cozyFile, progressback, (err, url) =>
+            return callback null, url if url
+            return getUrl() if @isDownloaded cozyFile
+
+            callback err
+
+
+    downloadBinary: (cozyFile, progressback, callback) ->
+        log.debug 'downloadBinary'
 
         folderName = @getFolderName cozyFile
-        return callback folderName unless typeof folderName is 'string'
-        fileName = @getFileName cozyFile
-        return callback fileName unless typeof fileName is 'string'
-
         fs.getOrCreateSubFolder @downloads, folderName, (err, binaryFolder) =>
-            if err and err.code? isnt FileError.PATH_EXISTS_ERR
+            if err and err.code isnt FileError.PATH_EXISTS_ERR
                 return callback err
-            fs.getFile binaryFolder, fileName, (err, entry) =>
-                # file already exist
-                if entry and @isSameBinary cozyFile
-                    return callback null, entry.toURL()
 
-                # getFile failed, let's download
-                path = "/data/#{cozyFile._id}/binaries/file"
-                options = @requestCozy.getDataSystemOption path, true
-                options.path = binaryFolder.toURL() + fileName
-                log.info "download binary of #{fileName}"
-                fs.download options, progressback, (err, entry) =>
-                    # TODO : Is it reachable code ? http://git.io/v08Ap
-                    # TODO changing the message ! ?
-                    errMessage = "This file isnt available offline"
-                    if err?.message? and err.message is errMessage and \
-                            @isCached cozyFile
-                        for entry in @cache
-                            if entry.name.indexOf(folderName) isnt -1
-                                path = entry.toURL() + fileName
-                                return callback null, path
-
-                        return callback err
-                    else if err
-                        # failed to download
-                        fs.delete binaryFolder, (delerr) ->
-                            log.error delerr if delerr
-                            callback err
-                    else
-                        @saveInCache cozyFile, (err) =>
+            fileName = @getFileName cozyFile
+            path = "/data/#{cozyFile._id}/binaries/file"
+            androidPath = binaryFolder.toURL() + fileName
+            options = @requestCozy.getDataSystemOption path, true
+            options.path = androidPath + '_download'
+            fs.download options, progressback, (err, entry) =>
+                if entry
+                    fs.moveTo entry, binaryFolder, fileName, (err, entry) =>
+                        return callback err if err
+                        log.info "Binary #{fileName} is downloaded."
+                        @saveInCache cozyFile, true, (err) ->
                             log.error err if err
 
                             callback null, entry.toURL()
-                            @_removeAllLocal cozyFile, ->
+                else
+                    callback err
 
 
     getBinaryDirectory: (folderName, callback) ->
         log.debug "getBinaryDirectory"
 
         fs.getOrCreateSubFolder @downloads, folderName, callback
-
-
-    # Remove all versions in saved locally of the specified file-id, except the
-    # specified rev.
-    _removeAllLocal: (file, callback) ->
-        async.eachSeries @cache, (entry, cb) =>
-            if entry.name.indexOf(file.binary.file.id) isnt -1 and \
-                    entry.name isnt @getFolderName(file)
-                fs.getDirectory @downloads, entry.name, (err, binfolder) =>
-                    return cb err if err
-                    fs.rmrf binfolder, (err) =>
-                        log.error err if err
-                        @removeInCache entry, cb
-            else
-                cb()
-        , callback
 
 
 

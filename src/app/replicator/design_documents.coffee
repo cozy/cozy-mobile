@@ -91,7 +91,10 @@ module.exports = class DesignDocuments
             "#{@FILES_AND_FOLDER_CACHE}":
                 map: Object.toString.apply (doc) ->
                     if doc.docType?.toLowerCase() is 'cache'
-                        info = version: doc.binary_rev, name: doc.fileName
+                        info =
+                            version: doc.binary_rev
+                            name: doc.fileName
+                            downloaded: doc.downloaded
                         emit doc.binary_id, info
 
 
