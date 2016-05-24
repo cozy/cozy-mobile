@@ -8,6 +8,7 @@ Database = require './lib/database'
 DesignDocuments = require './replicator/design_documents'
 DeviceStatus   = require './lib/device_status'
 FilterManager = require './replicator/filter_manager'
+FileCacheHandler = require './lib/file_cache_handler'
 PutRemoteRequest = require('./migrations/put_remote_request')
 Replicator = require './replicator/main'
 RequestCozy = require './lib/request_cozy'
@@ -41,7 +42,8 @@ module.exports = class Init
         @config = new Config @database
         @replicator = new Replicator()
         @requestCozy = new RequestCozy @config
-        @replicator.initConfig @config, @requestCozy, @database
+        @fileCacheHandler = new FileCacheHandler @database.localDb, \
+                @database.replicateDb, @requestCozy
 
         @listenTo @, 'transition', (leaveState, enterState) =>
 
@@ -56,6 +58,13 @@ module.exports = class Init
                 @trigger 'noDisplay'
 
         return @
+
+
+    initConfig: (callback) ->
+        @fileCacheHandler.load =>
+            @replicator.initConfig @config, @requestCozy, @database, \
+                    @fileCacheHandler
+            callback()
 
 
     # Override this function to use it as initialize.
@@ -597,7 +606,8 @@ module.exports = class Init
         @app.router.navigate 'first-sync', trigger: true
         db = @database.replicateDb
         filterManager = new FilterManager @config, @requestCozy, db
-        filterManager.setFilter =>
+        filterManager.setFilter (err) =>
+            return @handleError err if err
             @trigger 'firstSyncViewDisplayed'
 
     takeDBCheckpoint: ->
@@ -684,7 +694,7 @@ module.exports = class Init
             if err
                 if @app.layout.currentView
                     # currentView is device-name view
-                    return @app.layout.currentView.displayError err.message
+                    return @handleError err
                 else
                     alert err.message
                     return @app.exit()

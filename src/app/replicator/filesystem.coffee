@@ -54,7 +54,7 @@ module.exports.getFile = (parent, name, callback) ->
 module.exports.moveTo = (entry, directory, name, callback) ->
     onSuccess = (entry) -> callback null, entry
     onError = (err) -> callback err
-    entry.moveTo directory, name, null, onSuccess, onError
+    entry.moveTo directory, name, onSuccess, onError
 
 
 module.exports.getDirectory = (parent, name, callback) ->

@@ -3,6 +3,7 @@ ChangeDispatcher = require './change/change_dispatcher'
 Db = require '../lib/database'
 DesignDocuments = require './design_documents'
 DeviceStatus = require '../lib/device_status'
+FileCacheHandler = require '../lib/file_cache_handler'
 FilterManager = require './filter_manager'
 fs = require './filesystem'
 ReplicationLauncher = require "./replication_launcher"
@@ -36,7 +37,7 @@ module.exports = class Replicator extends Backbone.Model
             callback()
 
 
-    initConfig: (@config, @requestCozy, @database) ->
+    initConfig: (@config, @requestCozy, @database, @fileCacheHandler) ->
         @db = @database.replicateDb
         @photosDB = @database.localDb
 
@@ -218,28 +219,7 @@ module.exports = class Replicator extends Backbone.Model
 
 # BEGIN Cache methods
 
-    # Return the conventionnal name of the in filesystem folder for the
-    # specified file.
-    # @param file a cozy file document.
-    _fileToEntryName: (file) ->
-        # todo : fix bug when file not have binary
-        return file.binary.file.id + '-' + file.binary.file.rev
 
-    # Check if any version of the file is present in cache.
-    # @param file a cozy file document.
-    # @return true if any version of the file is present
-    fileInFileSystem: (file) =>
-        if file.docType.toLowerCase() is 'file'
-            return @cache.some (entry) ->
-                entry.name.indexOf(file.binary.file.id) isnt -1
-
-    # Check if the file, with the specified version, is present in file system
-    # @param file a cozy file document.
-    # @return true if the file with the expected version is present
-    fileVersion: (file) =>
-        if file.docType.toLowerCase() is 'file'
-            @cache.some (entry) =>
-                entry.name is @_fileToEntryName file
 
     # Check if the all the subtree of the specified path is in cache.
     # @param path the path to the subtree to check
@@ -256,76 +236,6 @@ module.exports = class Replicator extends Backbone.Model
             return callback null, null if results.rows.length is 0
             callback null, _.every results.rows, (row) ->
                 row.value in fsCacheFolder
-
-
-    # Remove specified entry from @cache.
-    # @param entry an entry of the @cache to remove.
-    _removeFromCacheList: (entryName) ->
-        for currentEntry, index in @cache when currentEntry.name is entryName
-            @cache.splice index, 1
-            break
-
-
-
-    # Download the binary of the specified file in cache.
-    # @param model cozy File document
-    # @param progressback progress callback.
-    getBinary: (model, progressback, callback) ->
-        log.debug "getBinary"
-
-        fs.getOrCreateSubFolder @downloads, @_fileToEntryName(model)
-        , (err, binfolder) =>
-            if err and err.code isnt FileError.PATH_EXISTS_ERR
-                return callback err
-            unless model.name
-                return callback new Error 'no model name :' +
-                        JSON.stringify(model)
-            fileName = encodeURIComponent model.name
-            fs.getFile binfolder, fileName, (err, entry) =>
-                return callback null, entry.toURL() if entry
-
-                # getFile failed, let's download
-                path = "/data/#{model._id}/binaries/file"
-                options = @requestCozy.getDataSystemOption path, true
-                options.path = binfolder.toURL() + fileName
-                log.info "download binary of #{model.name}"
-                fs.download options, progressback, (err, entry) =>
-                    # TODO : Is it reachable code ? http://git.io/v08Ap
-                    # TODO changing the message ! ?
-                    if err?.message? and
-                    err.message is "This file isnt available offline" and
-                    @fileInFileSystem model
-                        for entry in cache
-                            if entry.name.indexOf(binary_id) isnt -1
-                                path = entry.toURL() + fileName
-                                return callback null
-
-                        return callback err
-                    else if err
-                        # failed to download
-                        fs.delete binfolder, (delerr) ->
-                            #@TODO handle delerr
-                            callback err
-                    else
-                        @cache.push binfolder
-                        callback null, entry.toURL()
-                        @_removeAllLocal model, ->
-
-
-    # Remove all versions in saved locally of the specified file-id, except the
-    # specified rev.
-    _removeAllLocal: (file, callback) ->
-        async.eachSeries @cache, (entry, cb) =>
-            if entry.name.indexOf(file.binary.file.id) isnt -1 and \
-                    entry.name isnt @_fileToEntryName(file)
-                fs.getDirectory @downloads, entry.name, (err, binfolder) =>
-                    return cb err if err
-                    fs.rmrf binfolder, (err) =>
-                        @_removeFromCacheList entry.name
-                        cb()
-            else
-                cb()
-        , callback
 
 
     # Download recursively all files in the specified folder.
@@ -356,7 +266,7 @@ module.exports = class Replicator extends Backbone.Model
 
                     async.eachLimit files, 5, (file, cb) =>
                         pb = reportProgress.bind null, file._id
-                        @getBinary file, pb, cb
+                        @fileCacheHandler.getBinary file, pb, cb
                     , callback
 
 
@@ -378,24 +288,12 @@ module.exports = class Replicator extends Backbone.Model
             callback null, files
 
 
-    # Remove from cache specified file.
-    # @param file a cozy file document.
-    removeLocal: (file, callback) ->
-        log.info "remove #{file.name} from cache."
-
-        fs.getDirectory @downloads, @_fileToEntryName(file), (err, binfolder) =>
-            return callback err if err
-            fs.rmrf binfolder, (err) =>
-                @_removeFromCacheList @_fileToEntryName(file)
-                callback err
-
-
     removeLocalFolder: (folder, callback) ->
         @_getDbFilesOfFolder folder, (err, files) =>
             return callback err if err
 
             async.eachSeries files, (file, cb) =>
-                @removeLocal file, cb
+                @fileCacheHandler.removeLocal file, cb
             , callback
 
 
@@ -454,20 +352,5 @@ module.exports = class Replicator extends Backbone.Model
         @set 'backup_step', 'files_sync'
         @set 'backup_step_done', null
 
-        # TODO: Add optimizations on db.query : avoid include_docs on big list.
-        options =
-            keys: @cache.map (entry) -> return entry.name.split('-')[0]
-            include_docs: true
-
-        @db.query DesignDocuments.BY_BINARY_ID, options, (err, results) =>
-            return callback err if err
-
-            changeDispatcher = new ChangeDispatcher @config
-            processed = 0
-            @set 'backup_step', 'files_sync'
-            @set 'backup_step_total', results.rows.length
-            async.eachSeries results.rows, (row, cb) =>
-                @set 'backup_step_done', processed++
-                changeDispatcher.dispatch row.doc, cb
-            , callback
+        @fileCacheHandler.downloadUnsynchronizedFiles callback
 

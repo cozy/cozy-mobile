@@ -22,8 +22,9 @@ module.exports = BackgroundService =
 
         @name = 'SERVICE'
         @init = new Init @
-        @init.startStateMachine()
-        @init.trigger 'startService'
+        @init.initConfig =>
+            @init.startStateMachine()
+            @init.trigger 'startService'
 
 
     startMainActivity: (err)->

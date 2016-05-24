@@ -1,6 +1,7 @@
 async = require 'async'
 File = require '../models/file'
 DesignDocuments = require '../replicator/design_documents'
+FileCacheHandler = require '../lib/file_cache_handler'
 
 PAGE_LENGTH = 20
 
@@ -16,6 +17,7 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
     initialize: (models, options) ->
         @path = options.path
         @query = options.query
+        @fileCacheHandler = new FileCacheHandler()
         @notloaded = true
 
 
@@ -93,12 +95,11 @@ module.exports = class FileAndFolderCollection extends Backbone.Collection
         app.init.replicator.db.allDocs params, callback
 
     _rowsToModels: (results) ->
-        return results.rows.map (row) ->
+        return results.rows.map (row) =>
             doc = row.doc
             if doc.docType.toLowerCase() is 'file'
-                if doc.binary?.file?.id
-                    doc.incache = app.init.replicator.fileInFileSystem doc
-                    doc.version = app.init.replicator.fileVersion doc
+                doc.incache = @fileCacheHandler.isCached doc
+                doc.version = @fileCacheHandler.isSameBinary doc
 
             else if doc.docType.toLowerCase() is 'folder'
                 # TODO ASYNC!
