@@ -233,7 +233,7 @@ module.exports = class Replicator extends Backbone.Model
 
         @db.query DesignDocuments.PATH_TO_BINARY, options, (err, results) ->
             return callback err if err
-            return callback null, null if results.rows.length is 0
+            return callback() if results.rows.length is 0
             callback null, _.every results.rows, (row) ->
                 row.value in fsCacheFolder
 
