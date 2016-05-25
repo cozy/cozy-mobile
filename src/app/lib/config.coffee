@@ -109,7 +109,7 @@ class Config
             config = DEFAULT_CONFIG
             config.deviceName = "Android-#{device.manufacturer}-#{device.model}"
             setConfig @database.replicateDb, (err) =>
-                # todo: error ?
+                log.error err if err
                 @load callback
 
 
