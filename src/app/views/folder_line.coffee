@@ -1,4 +1,5 @@
 BaseView = require '../lib/base_view'
+FileCacheHandler = require '../lib/file_cache_handler'
 
 log = require('../lib/persistent_log')
     prefix: "FolderLineView"
@@ -15,7 +16,8 @@ module.exports = class FolderLineView extends BaseView
 
     className: 'item item-icon-left item-icon-right item-complex'
 
-    initialize: =>
+    initialize: ->
+        @fileCacheHandler = new FileCacheHandler()
         @listenTo @model, 'change', @render
 
     getRenderData: ->
@@ -41,12 +43,12 @@ module.exports = class FolderLineView extends BaseView
 
         @progresscontainer.appendTo @$el
 
-    hideProgress: (err, incache) =>
+    hideProgress: (err) =>
         @downloading = false
-        if err then alert err
+        if err then alert JSON.stringify err
 
-        incache = app.init.replicator.fileInFileSystem @model.attributes
-        version = app.init.replicator.fileVersion @model.attributes
+        incache = @fileCacheHandler.isCached @model.attributes
+        version = @fileCacheHandler.isSameBinary @model.attributes
 
         if incache? and incache isnt @model.get 'incache'
             @model.set {incache}
@@ -68,9 +70,9 @@ module.exports = class FolderLineView extends BaseView
             if err
                 log.error err
                 return alert t(err.message)
-            @model.set incache: true
-            version = app.init.replicator.fileVersion @model.attributes
-            @model.set version: version
+
+            @model.set incache: @fileCacheHandler.isCached @model.attributes
+            @model.set version: @fileCacheHandler.isSameBinary @model.attributes
             callback(err, url)
 
     onClick: (event) =>
@@ -86,28 +88,28 @@ module.exports = class FolderLineView extends BaseView
 
         # else, the model is a file, we get its binary and open it
         @displayProgress()
-        app.init.replicator.getBinary @model.attributes, @updateProgress, \
-          @getOnDownloadedCallback (err, url) ->
-              # let android open the file
-              app.init.trigger 'openFile'
-              # app.backFromOpen = true
-              ExternalFileUtil.openWith url, '', undefined,
+        @fileCacheHandler.getBinary @model.attributes, @updateProgress, \
+                @getOnDownloadedCallback (err, url) ->
+            # let android open the file
+            app.init.trigger 'openFile'
+            # app.backFromOpen = true
+            ExternalFileUtil.openWith url, '', undefined,
                 (success) -> , # do nothing
                 (err) ->
                     if 0 is err?.indexOf 'No Activity found'
                         err = t 'no activity found'
-                    alert err.message
                     log.error err
+                    alert err.message
 
     addToCache: =>
         return true if @downloading
 
         @displayProgress()
         if @model.isFolder()
-            app.init.replicator.getBinaryFolder @model.attributes, \
+            @fileCacheHandler.getBinaryFolder @model.attributes, \
                 @updateProgress, @getOnDownloadedCallback()
         else
-            app.init.replicator.getBinary @model.attributes, @updateProgress, \
+            @fileCacheHandler.getBinary @model.attributes, @updateProgress, \
                 @getOnDownloadedCallback()
 
     removeFromCache: =>
@@ -116,13 +118,13 @@ module.exports = class FolderLineView extends BaseView
         @displayProgress()
         onremoved = (err) =>
             @hideProgress()
-            return alert err if err
+            return alert JSON.stringify err if err
             @model.set incache: false
 
         if @model.isFolder()
             app.init.replicator.removeLocalFolder @model.attributes, onremoved
         else
-            app.init.replicator.removeLocal @model.attributes, onremoved
+            @fileCacheHandler.removeLocal @model.attributes, onremoved
 
     mimeClasses:
         'application/octet-stream'      : 'type-file'

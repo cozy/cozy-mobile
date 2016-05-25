@@ -4,16 +4,20 @@ language: android
 
 sudo: false
 
+env:
+  - TRAVIS_NODE_VERSION="4"
+
 android:
   components:
     - android-22
     - build-tools-22.0.1
 
 install:
+  - nvm install $TRAVIS_NODE_VERSION
   - npm install -g coffee-script
   - cake install
 
 script:
-  - cd src && npm run test && cd ..
   - cd src && npm run lint && cd ..
+  - cd src && npm run test && cd ..
   - ./src/node_modules/.bin/cordova build android
