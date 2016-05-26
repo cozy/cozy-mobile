@@ -1,6 +1,6 @@
 {
     "app name": "Cozy mobile",
-    "App is buzy": "同期処理中",
+    "App is busy": "同期処理中",
     "cozy url": "Cozy のドメイン",
     "cozy password": "Cozy のパスワード",
     "device name": "デバイス名",
@@ -24,6 +24,7 @@
     "synchro warning": "最初からレプリケーションを起動します。しばらく時間がかかる場合があります。",
     "reset warning": "お使いの電話からすべてのCozy で生成されたデータを消去します。",
     "support": "サポート",
+    "toast_migration": "During migration it may take some time.",
     "send log": "ログを送信",
     "send log info": "私たちが品質と安定性を改善するために、アプリケーションログをメールで送信します。",
     "send log please describe problem": "問題を説明してください:",

@@ -1,6 +1,6 @@
 {
     "app name": "Cozy 모바일",
-    "App is buzy": "Synchronization in progress",
+    "App is busy": "Synchronization in progress",
     "cozy url": "Cozy 도메인",
     "cozy password": "Cozy 비밀번호",
     "device name": "장치명",
@@ -24,6 +24,7 @@
     "synchro warning": "처음부터 동기화 시작. 잠시 기다려 주세요.",
     "reset warning": "휴대폰의 모든 Cozy에 의해 생성된 모든 데이터를 삭제 합니다.",
     "support": "지원",
+    "toast_migration": "During migration it may take some time.",
     "send log": "로그 보내기",
     "send log info": "앱 로그를 관리자에게 보내세요. 클라우드 성능 향상에 도움이 될 것입니다.",
     "send log please describe problem": "오류 내용을 기록해 주세요:",
