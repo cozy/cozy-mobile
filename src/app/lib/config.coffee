@@ -94,7 +94,7 @@ class Config
                 config = doc
 
                 if @isNewVersion()
-                    app.init.upsertLocalDesignDocuments =>
+                    return app.init.upsertLocalDesignDocuments =>
                         migration = require '../migrations/migration'
                         return migration.migrate doc.appVersion, =>
                             @load callback
