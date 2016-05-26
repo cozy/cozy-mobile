@@ -93,9 +93,10 @@ class Config
                 config = doc
 
                 if @isNewVersion()
-                    migration = require '../migrations/migration'
-                    return migration.migrate doc.appVersion, =>
-                        @load callback
+                    app.init.upsertLocalDesignDocuments =>
+                        migration = require '../migrations/migration'
+                        return migration.migrate doc.appVersion, =>
+                            @load callback
 
                 configClone = JSON.parse JSON.stringify config
                 configClone.devicePassword = '********************'

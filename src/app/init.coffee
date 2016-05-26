@@ -556,11 +556,13 @@ module.exports = class Init
         @app.router.once 'collectionfetched', => @trigger 'onFilePage'
 
 
-    upsertLocalDesignDocuments: ->
+    upsertLocalDesignDocuments: (callback) ->
         designDocs =
             new DesignDocuments @database.replicateDb, @database.localDb
-        designDocs.createOrUpdateAllDesign =>
+        unless callback
+            callback = =>
             @trigger 'localDesignUpToDate'
+        designDocs.createOrUpdateAllDesign callback
 
 
     putRemoteRequest: ->
