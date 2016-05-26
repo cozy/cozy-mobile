@@ -81,6 +81,7 @@ class Config
     constructor: (@database) ->
         log.debug "constructor"
 
+        @loaded = false
         _.extend @, Backbone.Events
 
 
@@ -104,6 +105,7 @@ class Config
                           config: #{JSON.stringify configClone}"
 
                 @database.setRemoteDatabase @getCozyUrl() if @getCozyUrl()
+                @loaded = true
                 return callback err, true
 
             log.info 'Initialize app configuration'
