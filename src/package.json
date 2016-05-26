@@ -22,6 +22,7 @@
     "android"
   ],
   "cordovaPlugins": {
+    "cordova-plugin-x-toast": "cordova-plugin-x-toast@2.5.1",
     "cordova-plugin-whitelist": "cordova-plugin-whitelist@1.0.0",
     "cordova-plugin-device": "cordova-plugin-device@1.0.1",
     "cordova-plugin-globalization": "https://github.com/StyrLabs/cordova-plugin-globalization.git",

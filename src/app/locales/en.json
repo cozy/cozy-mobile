@@ -24,6 +24,7 @@
     "synchro warning": "Launch a replication from the beginning. It may take a while.",
     "reset warning": "Erase all Cozy-generated data on your phone.",
     "support": "Support",
+    "toast_migration": "Migration in progress",
     "send log": "Send Log",
     "send log info": "Send an email with application log to help us improve its quality and stability.",
     "send log please describe problem": "Please describe the problem:",

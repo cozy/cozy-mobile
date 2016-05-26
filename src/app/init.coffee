@@ -277,13 +277,13 @@ module.exports = class Init
         # initial_state: event: end_state
 
         'init':
-            'startApplication': 'aConfigLoad'
+            'startApplication': 'aDeviceLocale'
             'startService': 'sConfigLoad'
 
         ########################################
         # Start application
-        'aConfigLoad': 'loaded': 'aDeviceLocale'
-        'aDeviceLocale': 'deviceLocaleSetted': 'aInitFileSystem'
+        'aDeviceLocale': 'deviceLocaleSetted': 'aConfigLoad'
+        'aConfigLoad': 'loaded': 'aInitFileSystem'
         'aInitFileSystem': 'fileSystemReady': 'aQuitSplashScreen'
         'aQuitSplashScreen': 'viewInitialized': 'aCheckState'
         'aCheckState':
@@ -481,15 +481,17 @@ module.exports = class Init
         @config.load =>
             state = if @app.name is 'APP' then 'launch' else 'service'
             @config.set 'appState', state, =>
+                unless window.isBrowserDebugging # Patch for browser debugging
+                    # The ServiceManager is a flag for the background plugin to
+                    # know if it's the service or the application,
+                    # see https://git.io/vVjJO
+                    unless @app.name is 'SERVICE'
+                        @serviceManager = new ServiceManager()
                 @trigger 'loaded'
 
 
     setDeviceLocale: ->
         DeviceStatus.initialize()
-        unless window.isBrowserDebugging # Patch for browser debugging
-            # The ServiceManager is a flag for the background plugin to know if
-            # it's the service or the application, see https://git.io/vVjJO
-            @serviceManager = new ServiceManager() unless @app.name is 'SERVICE'
 
         @translation.setDeviceLocale @getCallbackTrigger 'deviceLocaleSetted'
 

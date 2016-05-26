@@ -35,4 +35,7 @@
 
     <access origin="*"/>
     <allow-intent href="mailto:*" />
+    <feature name="Toast">
+        <param name="android-package" value="nl.xservices.plugins.Toast" />
+    </feature>
 </widget>

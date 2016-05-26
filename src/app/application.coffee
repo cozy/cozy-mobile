@@ -1,5 +1,6 @@
 # intialize module which initialize global vars.
 require './lib/utils'
+toast = require './lib/toast'
 
 LayoutView     = require './views/layout'
 Init           = require './init'
@@ -32,12 +33,15 @@ module.exports =
 
         document.addEventListener "resume", =>
             log.info "RESUME EVENT"
+            @state = 'resume'
             @init.config.set 'appState', 'launch', =>
                 @init.trigger 'resume'
         , false
 
         document.addEventListener "pause", =>
             log.info "PAUSE EVENT"
+            toast.hide()
+            @state = 'pause'
             @init.config.set 'appState', 'pause', =>
                 @init.trigger 'pause'
         , false

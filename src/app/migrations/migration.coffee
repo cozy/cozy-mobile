@@ -1,4 +1,5 @@
 async = require 'async'
+toast = require '../lib/toast'
 semver = require 'semver'
 log = require('../lib/persistent_log')
     prefix: "Migration"
@@ -27,6 +28,7 @@ module.exports =
         async.eachSeries migrationsSorted, (version, cb) ->
             if semver.gt(version, oldVersion)
                 log.debug "migration #{version}"
+                toast.info "toast_migration", 18000
 
                 migration = require "./#{version}"
                 migration.migrate (err) ->
@@ -35,4 +37,5 @@ module.exports =
             else
                 cb()
         , ->
+            toast.hide()
             config.updateVersion callback
