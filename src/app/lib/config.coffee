@@ -2,7 +2,7 @@ log = require("./persistent_log")
     prefix: "Config"
     date: true
 
-APP_VERSION = "1.2.9"
+APP_VERSION = "1.3.0"
 DOC_ID = '_local/appconfig'
 PERMISSIONS =
     File: description: "files permission description"
@@ -81,6 +81,7 @@ class Config
     constructor: (@database) ->
         log.debug "constructor"
 
+        @loaded = false
         _.extend @, Backbone.Events
 
 
@@ -93,9 +94,10 @@ class Config
                 config = doc
 
                 if @isNewVersion()
-                    migration = require '../migrations/migration'
-                    return migration.migrate doc.appVersion, =>
-                        @load callback
+                    return app.init.upsertLocalDesignDocuments =>
+                        migration = require '../migrations/migration'
+                        return migration.migrate doc.appVersion, =>
+                            @load callback
 
                 configClone = JSON.parse JSON.stringify config
                 configClone.devicePassword = '********************'
@@ -103,6 +105,7 @@ class Config
                           config: #{JSON.stringify configClone}"
 
                 @database.setRemoteDatabase @getCozyUrl() if @getCozyUrl()
+                @loaded = true
                 return callback err, true
 
             log.info 'Initialize app configuration'

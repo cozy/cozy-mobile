@@ -1,6 +1,6 @@
 {
     "app name": "Cozy mobile",
-    "App is buzy": "Synchronisation en cours",
+    "App is busy": "Synchronisation en cours",
     "cozy url": "Adresse Cozy",
     "cozy password": "Mot de passe",
     "device name": "Nom de l'appareil",
@@ -24,6 +24,7 @@
     "synchro warning": "Relancer une synchronisation depuis le début. Cela peut prendre du temps.",
     "reset warning": "Supprime les données de votre terminal, et lance la synchronisation comme au premier démarrage.",
     "support": "Support",
+    "toast_migration": "Migration en cours cela peut prendre un peu de temps.",
     "send log": "Envoyer Journal",
     "send log info": "Envoyer un email avec le journal de l'application afin de nous aider à améliorer sa qualité et sa fiabilité.",
     "send log please describe problem": "Décrivez le problème que vous rencontrez s'il vous plait :",
