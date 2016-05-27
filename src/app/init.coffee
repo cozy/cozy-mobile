@@ -14,6 +14,7 @@ Replicator = require './replicator/main'
 RequestCozy = require './lib/request_cozy'
 ServiceManager = require './models/service_manager'
 Translation = require './lib/translation'
+Connection = require './lib/connection'
 
 log = require('./lib/persistent_log')
     prefix: "Init"
@@ -37,6 +38,7 @@ module.exports = class Init
     constructor: (@app) ->
         log.debug "constructor"
 
+        @connection = new Connection()
         @translation = new Translation()
         @database = new Database()
         @config = new Config @database

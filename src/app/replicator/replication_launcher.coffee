@@ -1,6 +1,7 @@
 async = require "async"
 ChangeDispatcher = require "./change/change_dispatcher"
 ConflictsHandler = require './change/conflicts_handler'
+Connection = require '../lib/connection'
 
 log = require('../lib/persistent_log')
     prefix: "ReplicationLauncher"
@@ -27,6 +28,7 @@ module.exports = class ReplicationLauncher
         @dbRemote = database.remoteDb
         @changeDispatcher = new ChangeDispatcher()
         @conflictsHandler = new ConflictsHandler database.replicateDb
+        @connection = new Connection()
 
 
     ###*
@@ -44,6 +46,7 @@ module.exports = class ReplicationLauncher
         state = @config.get('appState')
         err = new Error "Replication is already launched." if @replication
         err = new Error "Application is paused." if state is 'pause'
+        err = new Error "No network connection" if not @connection.isConnected()
 
         return callback err if err
 
