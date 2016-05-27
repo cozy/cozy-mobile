@@ -562,7 +562,7 @@ module.exports = class Init
         designDocs =
             new DesignDocuments @database.replicateDb, @database.localDb
         unless callback
-            callback = =>
+            callback = ->
             @trigger 'localDesignUpToDate'
         designDocs.createOrUpdateAllDesign callback
 
