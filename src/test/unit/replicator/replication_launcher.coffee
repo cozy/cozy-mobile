@@ -50,8 +50,12 @@ module.exports = describe 'ReplicationLauncher Test', ->
                     should.exist 'here'
                     callback doc
 
+        connectionHandlerMock = () ->
+            isConnected: -> true
+
         mockery.registerMock './change/change_dispatcher', changeDispatcherMock
         mockery.registerMock './change/conflicts_handler', conflictsHandlerMock
+        mockery.registerMock '../lib/connection_handler', connectionHandlerMock
         @ReplicationLauncher = require \
             '../../../app/replicator/replication_launcher'
 
