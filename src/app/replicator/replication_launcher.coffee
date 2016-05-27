@@ -1,7 +1,7 @@
 async = require "async"
 ChangeDispatcher = require "./change/change_dispatcher"
 ConflictsHandler = require './change/conflicts_handler'
-Connection = require '../lib/connection'
+ConnectionHandler = require '../lib/connection_handler'
 
 log = require('../lib/persistent_log')
     prefix: "ReplicationLauncher"
@@ -28,7 +28,7 @@ module.exports = class ReplicationLauncher
         @dbRemote = database.remoteDb
         @changeDispatcher = new ChangeDispatcher()
         @conflictsHandler = new ConflictsHandler database.replicateDb
-        @connection = new Connection()
+        @connection = new ConnectionHandler()
 
 
     ###*

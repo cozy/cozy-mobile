@@ -1,18 +1,19 @@
 log = require('./persistent_log')
-    prefix: 'Connection'
+    prefix: 'ConnectionHandler'
     date: true
 
 
 instance = null
 
 
-module.exports = class Connection
+module.exports = class ConnectionHandler
 
 
     constructor:  ->
         return instance if instance
         instance = @
         @connected = navigator.connection.type isnt Connection.NONE
+        log.debug @connected
         document.addEventListener 'offline', @_offline, false
         document.addEventListener 'online', @_online, false
 
@@ -32,6 +33,6 @@ module.exports = class Connection
 
 
     isConnected: ->
-        log.debug 'isConnected'
+        log.debug "isConnected: #{@connected}"
 
         @connected
