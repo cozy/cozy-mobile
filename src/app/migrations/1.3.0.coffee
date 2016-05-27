@@ -22,7 +22,7 @@ module.exports =
                     cozyFile = cozyFiles[id]
                     @_moveFile folder, cozyFile, (err) =>
                         return cb err if err
-                        @fileCacheHandler.saveInCache cozyFile, true, =>
+                        @fileCacheHandler.saveInCache cozyFile, true, ->
                             fs.rmrf folder, cb
                 , callback
 
@@ -41,7 +41,7 @@ module.exports =
 
         db = app.init.database.replicateDb
         options = include_docs: true
-        db.query DesignDocuments.PATH_TO_BINARY, options, (err, results) =>
+        db.query DesignDocuments.PATH_TO_BINARY, options, (err, results) ->
             return callback err if err
             return callback() if results.rows.length is 0
 

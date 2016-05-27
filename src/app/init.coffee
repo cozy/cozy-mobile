@@ -14,6 +14,7 @@ Replicator = require './replicator/main'
 RequestCozy = require './lib/request_cozy'
 ServiceManager = require './models/service_manager'
 Translation = require './lib/translation'
+ConnectionHandler = require './lib/connection_handler'
 
 log = require('./lib/persistent_log')
     prefix: "Init"
@@ -37,6 +38,7 @@ module.exports = class Init
     constructor: (@app) ->
         log.debug "constructor"
 
+        @connection = new ConnectionHandler()
         @translation = new Translation()
         @database = new Database()
         @config = new Config @database
@@ -560,7 +562,7 @@ module.exports = class Init
         designDocs =
             new DesignDocuments @database.replicateDb, @database.localDb
         unless callback
-            callback = =>
+            callback = ->
             @trigger 'localDesignUpToDate'
         designDocs.createOrUpdateAllDesign callback
 

@@ -86,7 +86,7 @@ module.exports.checkReadyForSync = checkReadyForSync = (callback)->
             log.info "NOT ready on battery low."
             return callbackWaiting null, false, 'no battery'
         unless window.app.init.config.loaded
-            cb = =>
+            cb = ->
                 checkReadyForSync callback
             return setTimeout cb, 1000
         if window.app.init.config.get('syncOnWifi') and \

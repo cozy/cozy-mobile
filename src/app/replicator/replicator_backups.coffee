@@ -2,6 +2,7 @@ async = require 'async'
 DeviceStatus = require '../lib/device_status'
 DesignDocuments = require './design_documents'
 fs = require './filesystem'
+toast = require '../lib/toast'
 
 
 log = require('../lib/persistent_log')
@@ -40,7 +41,10 @@ module.exports =
         DeviceStatus.checkReadyForSync (err, ready, msg) =>
             log.info "SYNC STATUS", err, ready, msg
             return callback err if err
-            return callback new Error(msg) unless ready
+            unless ready
+                log.warn msg
+                toast.info msg
+                return callback()
             log.info "WE ARE READY FOR SYNC"
 
             # async series with non blocking errors
