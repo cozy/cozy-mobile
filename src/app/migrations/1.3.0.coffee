@@ -2,6 +2,9 @@ async = require 'async'
 DesignDocuments = require '../replicator/design_documents'
 fs = require '../replicator/filesystem'
 FileCacheHandler = require '../lib/file_cache_handler'
+log = require('../lib/persistent_log')
+    prefix: "migration 1.3.0"
+    date: true
 
 
 module.exports =
