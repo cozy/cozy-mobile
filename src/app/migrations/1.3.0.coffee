@@ -21,9 +21,20 @@ module.exports =
                     id = folder.name.split('-')[0]
                     cozyFile = cozyFiles[id]
                     @_moveFile folder, cozyFile, (err) =>
-                        return cb err if err
-                        @fileCacheHandler.saveInCache cozyFile, true, ->
-                            fs.rmrf folder, cb
+                        if err
+                            log.warn 'Error move file in new folder.'
+                            log.warn err, cozyFile, folder
+                            return cb()
+                        @fileCacheHandler.saveInCache cozyFile, true, (err) ->
+                            if err
+                                log.warn 'Error save in new cache.'
+                                log.warn err, cozyFile, folder
+                                return cb()
+                            fs.rmrf folder, (err) ->
+                                if err
+                                    log.warn 'Error remove old folder.'
+                                    log.warn err, cozyFile, folder
+                                cb()
                 , callback
 
 
