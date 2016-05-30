@@ -25,6 +25,7 @@ module.exports =
                     cozyFile = cozyFiles[id]
                     @_moveFile folder, cozyFile, (err) =>
                         if err
+                            fs.rmrf folder, ->
                             log.warn 'Error move file in new folder.'
                             log.warn err, cozyFile, folder
                             return cb()
@@ -32,7 +33,6 @@ module.exports =
                             if err
                                 log.warn 'Error save in new cache.'
                                 log.warn err, cozyFile, folder
-                                return cb()
                             fs.rmrf folder, (err) ->
                                 if err
                                     log.warn 'Error remove old folder.'
