@@ -2,7 +2,7 @@ log = require("./persistent_log")
     prefix: "Config"
     date: true
 
-APP_VERSION = "1.3.1"
+APP_VERSION = "1.3.2"
 DOC_ID = '_local/appconfig'
 PERMISSIONS =
     File: description: "files permission description"
