@@ -15,6 +15,7 @@ RequestCozy = require './lib/request_cozy'
 ServiceManager = require './models/service_manager'
 Translation = require './lib/translation'
 ConnectionHandler = require './lib/connection_handler'
+toast = require './lib/toast'
 
 log = require('./lib/persistent_log')
     prefix: "Init"
@@ -340,45 +341,57 @@ module.exports = class Init
         'fCreateDevice':
             'deviceCreated': 'fWizardFiles'
             'errorViewed': 'fConfig'
-        'fWizardFiles'   : 'clickNext': 'fWizardContacts'
+        'fWizardFiles':
+            'clickNext': 'fWizardContacts'
         'fWizardContacts':
             'clickBack': 'fWizardFiles'
             'clickNext': 'fWizardCalendars'
         'fWizardCalendars':
             'clickBack': 'fWizardContacts'
             'clickNext': 'fWizardPhotos'
-        'fWizardPhotos'  :
+        'fWizardPhotos':
             'clickBack': 'fWizardCalendars'
             'clickNext': 'fFirstSyncView'
-        'fFirstSyncView': 'firstSyncViewDisplayed': 'fCheckPlatformVersion'
+        'fFirstSyncView':
+            'restart': 'fFirstSyncView'
+            'firstSyncViewDisplayed': 'fCheckPlatformVersion'
         'fCheckPlatformVersion':
+            'restart': 'fCheckPlatformVersion'
             'validPlatformVersions': 'fLocalDesignDocuments'
             'errorViewed': 'fConfig'
         'fLocalDesignDocuments':
             'localDesignUpToDate': 'fRemoteRequest'
             'errorViewed': 'fConfig'
         'fRemoteRequest':
+            'restart': 'fRemoteRequest'
             'putRemoteRequest':'fTakeDBCheckpoint'
             'errorViewed': 'fConfig'
         'fTakeDBCheckpoint':
+            'restart': 'fTakeDBCheckpoint'
             'checkPointed': 'fInitFiles'
             'errorViewed': 'fConfig'
         'fInitFiles':
+            'restart': 'fInitFiles'
             'filesInited': 'fInitFolders'
             'errorViewed': 'fInitFiles'
         'fInitFolders':
+            'restart': 'fInitFolders'
             'foldersInited': 'fCreateAccount'
             'errorViewed': 'fInitFolders'
         'fCreateAccount':
+            'restart': 'fCreateAccount'
             'androidAccountCreated': 'fInitContacts'
             'errorViewed': 'fCreateAccount'
         'fInitContacts':
+            'restart': 'fInitContacts'
             'contactsInited': 'fInitCalendars'
             'errorViewed': 'fInitContacts'
         'fInitCalendars':
+            'restart': 'fInitCalendars'
             'calendarsInited': 'fSync'
             'errorViewed': 'fInitCalendars'
         'fSync':
+            'restart': 'fSync'
             'dbSynced': 'fUpdateIndex'
             'errorViewed': 'fSync'
         'fUpdateIndex':
@@ -569,6 +582,9 @@ module.exports = class Init
 
     putRemoteRequest: ->
         PutRemoteRequest.putRequests (err) =>
+            if err
+                log.error err
+                toast.error err
             @trigger 'putRemoteRequest'
 
 
@@ -610,8 +626,9 @@ module.exports = class Init
 
     firstSyncView: ->
         @app.router.navigate 'first-sync', trigger: true
-        db = @database.replicateDb
-        filterManager = new FilterManager @config, @requestCozy, db
+        replicateDB = @database.replicateDb
+        filterManager = new FilterManager @config, @requestCozy, replicateDB
+        return @handleError 'error_connection' unless @connection.isConnected()
         filterManager.setFilter (err) =>
             return @handleError err if err
             @trigger 'firstSyncViewDisplayed'
@@ -729,7 +746,10 @@ module.exports = class Init
         if @states[@currentState].quitOnError
             @app.exit err
         else
-            @trigger 'error', err
+            if err is 'error_connection' or err?.cors is 'rejected'
+                app.layout.showError err
+            else
+                @trigger 'error', err
 
 
     # Provide a callback,

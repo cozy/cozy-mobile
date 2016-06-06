@@ -51,6 +51,8 @@ module.exports = class Layout extends BaseView
 
 
     afterRender: ->
+        log.debug 'afterRender'
+
         @menu = new Menu()
         @menu.render()
         @$el.append @menu.$el
@@ -220,7 +222,7 @@ module.exports = class Layout extends BaseView
 
     showError: (error) =>
         log.debug 'showError'
-        msg = error.message or error.reason
+        msg = error.message or error.reason or error
         @errorIndicator.text t msg
         @errorIndicator.parent().slideDown()
         @viewsPlaceholder.addClass 'has-subheader'

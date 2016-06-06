@@ -1,17 +1,20 @@
 async = require 'async'
+log = require('../lib/persistent_log')
+    prefix: "putRemoteRequest"
+    date: true
 
 
 module.exports =
 
 
-    putRequests: (callback) ->
+    putRequests: (callback, reqError = [], retry = 0) ->
         requests = require '../replicator/remote_requests'
         config = app.init.config
         requestCozy = app.init.requestCozy
         cozyNotifications = config.get 'cozyNotifications'
 
         reqList = []
-        for docType, reqs of requests
+        for docType, reqs of requests when reqError.length is 0
             if docType is 'file' or docType is 'folder' or \
                     (docType is 'contact' and config.get 'syncContacts') or \
                     (docType is 'contact' and config.get 'syncContacts') or \
@@ -35,11 +38,30 @@ module.exports =
                         }
                     """
 
+        if reqError.length > 0
+            reqList = reqError
+            reqError = []
+
         async.eachSeries reqList, (req, cb) ->
             options =
                 method: 'put'
                 type: 'data-system'
                 path: "/request/#{req.type}/#{req.name}/"
                 body: req.body
-            requestCozy.request options, cb
-        , callback
+            requestCozy.request options, (err) =>
+                if err
+                    log.warn "download failed with #{req.type}."
+                    reqError.push req
+                cb()
+        , =>
+            if reqError.length > 0 and retry < 3
+                log.debug 'retry'
+                return @putRequests callback, reqError, retry++
+            else if reqError.length is 1
+                callback reqError[0]
+            else if reqError.length > 0
+                for error in reqError
+                    log.error error
+                callback new Error 'error_multiple_import'
+            else
+                callback()
