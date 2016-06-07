@@ -664,7 +664,11 @@ module.exports = class Init
             , (err, contacts) =>
                 return @handleError err if err
 
+                total = contacts.length
+                count = 1
+                msg = 'saving_in_device'
                 async.eachSeries contacts, (contact, cb) ->
+                    app.layout.currentView.changeCounter count++, total, msg
                     # 2. dispatch inserted contacts to android
                     changeDispatcher.dispatch contact, cb
                 , @getCallbackTrigger 'contactsInited'
@@ -680,7 +684,12 @@ module.exports = class Init
             # 1. Copy view for event
             @replicator.copyView docType: 'event', (err, events) =>
                 return @handleError err if err
+
+                total = events.length
+                count = 1
+                msg = 'saving_in_device'
                 async.eachSeries events, (event, cb) ->
+                    app.layout.currentView.changeCounter count++, total, msg
                     # 2. dispatch inserted events to android
                     changeDispatcher.dispatch event, cb
                 , @getCallbackTrigger 'calendarsInited'

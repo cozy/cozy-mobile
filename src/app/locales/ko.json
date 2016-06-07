@@ -30,6 +30,8 @@
     "send log please describe problem": "오류 내용을 기록해 주세요:",
     "send log trace begin": "로그 추적:변경하지 마세요.",
     "send log trace end": "로그의 마지막",
+    "saving_in_app": "Saving in the application",
+    "saving_in_device": "Saving in the device",
     "pull to sync": "동기화 가져오기",
     "syncing": "동기화 중",
     "contacts_sync": "연락처 동기화 중",

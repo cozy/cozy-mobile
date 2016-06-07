@@ -37,9 +37,20 @@ module.exports = class FirstSyncView extends BaseView
         @listenTo app.init, 'display', @onChange
         @listenTo app.init, 'error', @displayLogButton
 
+        @displayField = @$('#finishSync .progress')
+
 
     onChange: (message) ->
         @$('#finishSync .progress').text t message
+
+
+    changeCounter: (state, total, msg = '') ->
+        unless msg is ''
+            msg = t(msg) + '<br>'
+        if state is total
+            @$('#finishSync .counter').text ''
+        else
+            @$('#finishSync .counter').html "#{msg}(#{state}/#{total})"
 
 
     displayLogButton: ->

@@ -30,6 +30,8 @@
     "send log please describe problem": "Пожалуйста, опишите проблему:",
     "send log trace begin": "Журнал: пожалуйста не трогайте (или скажите нам, что трогали)",
     "send log trace end": "конец журнала",
+    "saving_in_app": "Saving in the application",
+    "saving_in_device": "Saving in the device",
     "pull to sync": "Потяните для обновления",
     "syncing": "Синхронизирую",
     "contacts_sync": "Синхронизирую контакты",
