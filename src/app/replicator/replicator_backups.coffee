@@ -31,10 +31,10 @@ module.exports =
                 @set 'backup_step', null
                 @set 'backup_step_done', null
                 @set 'inBackup', false
-                callback err
-                # TODO : save lastBackup date in config.
         catch e
             log.error "Error in backup: ", e
+
+        callback()
 
 
     _backup: (callback) ->
