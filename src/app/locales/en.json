@@ -30,6 +30,8 @@
     "send log please describe problem": "Please describe the problem:",
     "send log trace begin": "Log Trace: please don't touch (or tell us what)",
     "send log trace end": "END of Log Trace.",
+    "saving_in_app": "Saving in the application",
+    "saving_in_device": "Saving in the device",
     "pull to sync": "Pull to sync",
     "syncing": "Syncing",
     "contacts_sync": "Syncing contacts",

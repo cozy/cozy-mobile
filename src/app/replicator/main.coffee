@@ -174,8 +174,12 @@ module.exports = class Replicator extends Backbone.Model
         , (err, rows) =>
             return callback null unless rows?.length isnt 0
 
+            total = rows.length
+            count = 1
+            msg = 'saving_in_app'
             # 2. Put in PouchDB
             async.mapSeries rows, (row, cb) =>
+                app.layout.currentView.changeCounter count++, total, msg
                 doc = row.doc
 
                 # 2.1 Fetch attachment if needed (typically contact docType)
