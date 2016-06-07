@@ -30,6 +30,8 @@
     "send log please describe problem": "Décrivez le problème que vous rencontrez s'il vous plait :",
     "send log trace begin": "Journal de l'application : ne le modifiez pas s'il vous plait (ou alors dites-nous ce que vous modifiez)",
     "send log trace end": "FIN du journal.",
+    "saving_in_app": "Sauvegarde dans l'application",
+    "saving_in_device": "Sauvegarde dans l'appareil",
     "pull to sync": "Tirer pour synchroniser",
     "syncing": "En cours de synchronisation",
     "contacts_sync": "Synchronisation des contacts",
