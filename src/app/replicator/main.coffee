@@ -62,7 +62,7 @@ module.exports = class Replicator extends Backbone.Model
                     error = t 'connexion error'
             else if response?.status is 0
                 error = t 'connexion error'
-            else if body?.error is "Invalid OTP code."
+            else if body?.error is "error otp invalid code"
                 error = null
             else if response?.statusCode isnt 200
                 error = err?.message or body.error or body.message

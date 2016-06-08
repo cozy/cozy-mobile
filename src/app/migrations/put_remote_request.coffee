@@ -62,6 +62,8 @@ module.exports =
             else if reqError.length > 0
                 for error in reqError
                     log.error error
-                callback new Error 'error_multiple_import'
+                error = new Error 'error_multiple_import'
+                error.errors = reqError
+                callback error
             else
                 callback()
