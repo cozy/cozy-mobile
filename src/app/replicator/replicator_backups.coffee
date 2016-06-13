@@ -94,7 +94,7 @@ module.exports =
     # 5.3 - add to upload list
     # 6. Upload image list
     # 6.1 create File document in Cozy
-    # 6.2 create Ninary document in Cozy
+    # 6.2 create Binary document in Cozy
     # 6.3 add to PhotoDB
     syncPictures: (callback) ->
         log.debug "syncPictures"

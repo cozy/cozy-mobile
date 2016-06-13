@@ -51,7 +51,7 @@ module.exports = class DesignDocuments
                 callback null, {}
             else
                 if existing
-                    log.info "Update: #{design._id} FROM #{existing.version}" \
+                    log.info "Update: #{design._id} FROM #{existing.version} " \
                             + "TO #{design.version}"
                     design._rev = existing._rev
                 else
