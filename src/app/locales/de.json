@@ -8,6 +8,8 @@
     "files": "Dateien",
     "config": "Einstellungen",
     "never": "Nie",
+    "pictures_upload": "Upload pictures in progress",
+    "pictures_scan": "Search new pictures",
     "synchronisation title": "Synchronization",
     "backup title": "Media backup",
     "contacts sync label": "Sync Kontakte",

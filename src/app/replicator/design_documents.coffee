@@ -51,7 +51,7 @@ module.exports = class DesignDocuments
                 callback null, {}
             else
                 if existing
-                    log.info "Update: #{design._id} FROM #{existing.version}" \
+                    log.info "Update: #{design._id} FROM #{existing.version} " \
                             + "TO #{design.version}"
                     design._rev = existing._rev
                 else
@@ -150,9 +150,13 @@ module.exports = class DesignDocuments
 
     @PhotosByLocalIdDesignDoc:
         _id: "_design/#{@PHOTOS_BY_LOCAL_ID}"
-        version: 1
+        version: 2
         views:
             "#{@PHOTOS_BY_LOCAL_ID}":
                 map: Object.toString.apply (doc) ->
                     if doc.docType?.toLowerCase() is 'photo'
-                        emit doc.localId
+                        info =
+                            binaryId: doc.binaryId
+                            fileId: doc.fileId
+                            binaryExist: doc.binaryExist
+                        emit doc.localId, info

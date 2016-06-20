@@ -48,7 +48,7 @@ module.exports =
                 type: 'data-system'
                 path: "/request/#{req.type}/#{req.name}/"
                 body: req.body
-            requestCozy.request options, (err) =>
+            requestCozy.request options, (err) ->
                 if err
                     log.warn "download failed with #{req.type}."
                     reqError.push req
@@ -62,6 +62,8 @@ module.exports =
             else if reqError.length > 0
                 for error in reqError
                     log.error error
-                callback new Error 'error_multiple_import'
+                error = new Error 'error_multiple_import'
+                error.errors = reqError
+                callback error
             else
                 callback()

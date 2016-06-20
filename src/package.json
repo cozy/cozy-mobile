@@ -1,7 +1,7 @@
 {
   "name": "cozy-mobile",
   "description": "This is the native mobile client for Cozy.",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "license": "LGPL-3.0",
   "engines": {
     "node": "~0.10"
@@ -47,6 +47,7 @@
     "moment": "2.13.0",
     "moment-timezone": "0.5.4",
     "node-polyglot": "2.0.0",
+    "path-browser": "2.2.1",
     "pouchdb": "5.3.2",
     "semver": "5.1.0",
     "underscore": "1.8.3",

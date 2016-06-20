@@ -117,8 +117,7 @@ module.exports = class FileCacheHandler
             @replicateDb.get id, (err, cozyFile) =>
                 return cb err if err
                 @downloadBinary cozyFile, progressback, cb
-        , (err) ->
-            callback err
+        , callback
 
 
     removeInCache: (cozyFile, callback) ->
