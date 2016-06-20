@@ -8,6 +8,8 @@
     "files": "Fichiers",
     "config": "Configuration",
     "never": "Jamais",
+    "pictures_upload": "Envoi des photos en cours",
+    "pictures_scan": "Cherche les nouvelles photos",
     "synchronisation title": "Synchronisation",
     "backup title": "Sauvegarde des médias",
     "contacts sync label": "Synchronisation des contacts",

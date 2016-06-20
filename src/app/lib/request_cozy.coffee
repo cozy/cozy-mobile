@@ -1,5 +1,7 @@
 request = require './request'
-
+log = require('./persistent_log')
+    prefix: "RequestCozy"
+    date: true
 
 # private
 
@@ -47,7 +49,18 @@ class RequestCozy
                 username: @config.get 'deviceName'
                 password: @config.get 'devicePassword'
 
-        eval(method)(options, callback)
+        if options.retry
+            cb = (err) =>
+                if err
+                    log.debug 'retry'
+                    options.retry--
+                    @request options, callback
+                else
+                    callback.apply @, arguments
+        else
+            cb = callback
+
+        eval(method)(options, cb)
 
     getDataSystemUrl: (path, withUrlAuth) ->
         if withUrlAuth

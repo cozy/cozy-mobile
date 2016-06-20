@@ -637,11 +637,16 @@ module.exports = class Init
         @replicator.takeCheckpoint @getCallbackTrigger 'checkPointed'
 
     initFiles: ->
-        @replicator.copyView docType: 'file', @getCallbackTrigger 'filesInited'
+        options =
+            docType: 'file'
+            retry: 3
+        @replicator.copyView options, @getCallbackTrigger 'filesInited'
 
     initFolders: ->
-        @replicator.copyView docType: 'folder', \
-            @getCallbackTrigger 'foldersInited'
+        options =
+            docType: 'folder'
+            retry: 3
+        @replicator.copyView options, @getCallbackTrigger 'foldersInited'
 
     createAndroidAccount: ->
         if @config.get('syncContacts') or \
@@ -658,10 +663,11 @@ module.exports = class Init
         if @config.get 'syncContacts'
             changeDispatcher = new ChangeDispatcher()
             # 1. Copy view for contact
-            @replicator.copyView
+            options =
                 docType: 'contact'
                 attachments: true
-            , (err, contacts) =>
+                retry: 3
+            @replicator.copyView options, (err, contacts) =>
                 return @handleError err if err
 
                 total = contacts.length
@@ -682,7 +688,10 @@ module.exports = class Init
         if @config.get('syncCalendars')
             changeDispatcher = new ChangeDispatcher()
             # 1. Copy view for event
-            @replicator.copyView docType: 'event', (err, events) =>
+            options =
+                docType: 'event'
+                retry: 3
+            @replicator.copyView options, (err, events) =>
                 return @handleError err if err
 
                 total = events.length

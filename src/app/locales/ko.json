@@ -8,6 +8,8 @@
     "files": "파일",
     "config": "설정",
     "never": "사용안함",
+    "pictures_upload": "Upload pictures in progress",
+    "pictures_scan": "Search new pictures",
     "synchronisation title": "Synchronization",
     "backup title": "Media backup",
     "contacts sync label": "연락처 동기화",

@@ -145,6 +145,7 @@ module.exports = class Replicator extends Backbone.Model
             body:
                 include_docs: true
                 show_revs: true
+            retry: doc.retry
         @requestCozy.request options, (err, res, rows) ->
             if not err and res.statusCode isnt 200
                 err = new Error res.statusCode, res.reason
@@ -172,6 +173,7 @@ module.exports = class Replicator extends Backbone.Model
 
         async.retry retryOptions, ((cb) => @_fetchAll options, cb)
         , (err, rows) =>
+            return callback err if err
             return callback null unless rows?.length isnt 0
 
             total = rows.length
@@ -354,7 +356,9 @@ module.exports = class Replicator extends Backbone.Model
     # Update cache files with outdated revisions. Called while backup<
     syncCache:  (callback) ->
         @set 'backup_step', 'files_sync'
+        @set 'backup_step_total', null
         @set 'backup_step_done', null
 
-        @fileCacheHandler.downloadUnsynchronizedFiles callback
-
+        DeviceStatus.checkReadyForSync (err, ready, msg) =>
+            return callback() unless ready
+            @fileCacheHandler.downloadUnsynchronizedFiles callback

@@ -37,9 +37,9 @@ module.exports = class Layout extends BaseView
         OpEvents = 'change:inBackup change:backup_step change:backup_step_done'
         @listenTo app.init.replicator, OpEvents, _.debounce =>
             step = app.init.replicator.get 'backup_step'
-            if step and step not in ['pictures_scan']
+            if step
                 text = t step
-                if app.init.replicator.get 'backup_step_done'
+                if app.init.replicator.get 'backup_step_total'
                     text += ": #{app.init.replicator.get 'backup_step_done'}"
                     text += "/#{app.init.replicator.get 'backup_step_total'}"
                 @backupIndicator.text(text).parent().slideDown()
