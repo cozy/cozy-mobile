@@ -195,6 +195,7 @@ module.exports = class Replicator extends Backbone.Model
                         method: 'get'
                         type: 'replication'
                         path: "/#{doc._id}?attachments=true"
+                        retry: 3
                     @requestCozy.request requestOptions, (err, res, body) ->
                         # Continue on error (we just miss the avatar in case
                         # of contacts)
