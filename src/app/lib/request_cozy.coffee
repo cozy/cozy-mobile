@@ -27,6 +27,8 @@ class RequestCozy
     constructor: (@config) ->
 
     request: (options, callback) ->
+        optionsCopy = JSON.parse(JSON.stringify(options))
+        delete options.retry
         options.json = true unless options.json
 
         method = options.method
@@ -49,12 +51,12 @@ class RequestCozy
                 username: @config.get 'deviceName'
                 password: @config.get 'devicePassword'
 
-        if options.retry
+        if optionsCopy.retry
             cb = (err) =>
                 if err
                     log.debug 'retry'
-                    options.retry--
-                    @request options, callback
+                    optionsCopy.retry--
+                    @request optionsCopy, callback
                 else
                     callback.apply @, arguments
         else

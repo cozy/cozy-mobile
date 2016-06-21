@@ -47,6 +47,7 @@ module.exports = class Replicator extends Backbone.Model
         options =
             method: 'post'
             url: "#{url}/login"
+            retry: 3
             json:
                 username: 'owner'
                 password: password
@@ -87,6 +88,7 @@ module.exports = class Replicator extends Backbone.Model
         options =
             method: "post"
             url: "#{url}/device"
+            retry: 3
             auth:
                 username: 'owner'
                 password: password
@@ -113,6 +115,7 @@ module.exports = class Replicator extends Backbone.Model
         options =
             method: 'put'
             url: "#{@config.getCozyUrl()}/device/#{@config.get('deviceName')}"
+            retry: 3
             auth:
                 username: 'owner'
                 password: password
@@ -127,6 +130,7 @@ module.exports = class Replicator extends Backbone.Model
 
     takeCheckpoint: (callback) ->
         options =
+            retry: 3
             method: 'get'
             type: 'replication'
             path: '/_changes?descending=true&limit=1'

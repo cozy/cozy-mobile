@@ -95,6 +95,7 @@ module.exports = class FilterManager
                     type: 'data-system'
                     path: '/filters/config'
                     body: doc
+                    retry: 3
                 @requestCozy.request options, (err, res, body) ->
                     if err or not (body?.success or body?._id)
                         err ?= body
@@ -109,6 +110,7 @@ module.exports = class FilterManager
             method: 'get'
             type: 'data-system'
             path: '/filters/config'
+            retry: 3
         @requestCozy.request options, (err, res, body) =>
             if res?.status is 404
                 console.info 'The above 404 is normal, we create the filter'

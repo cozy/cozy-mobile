@@ -288,6 +288,7 @@ module.exports = class PictureHandler
                     method: 'post'
                     type: 'data-system'
                     path: '/request/folder/byfullpath/'
+                    retry: 3
                     body:
                         key: t 'photos'
 

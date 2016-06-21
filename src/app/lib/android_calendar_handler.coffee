@@ -140,6 +140,7 @@ module.exports = class AndroidCalendarHandler
             method: 'post'
             path: '/request/tag/byname/'
             type: 'data-system'
+            retry: 3
             body:
                 include_docs: true
                 key: calendarName

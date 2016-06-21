@@ -32,6 +32,7 @@ module.exports = class MediaUploader
             method: 'get'
             type: 'data-system'
             path: "/data/exist/#{binaryId}"
+            retry: 3
 
         @requestCozy.request options, (err, res, body) ->
             return callback err if err
@@ -133,6 +134,7 @@ module.exports = class MediaUploader
             type: 'data-system'
             path: '/data'
             body: doc
+            retry: 3
 
         @requestCozy.request options, (err, result, body) ->
             return callback err if err
