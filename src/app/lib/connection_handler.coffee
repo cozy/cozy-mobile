@@ -49,3 +49,7 @@ module.exports = class ConnectionHandler
         log.debug "isConnected: #{@connected}"
 
         @connected
+
+
+    isWifi: ->
+        @connected and navigator.connection.type is Connection.WIFI

@@ -1,6 +1,7 @@
 PictureHandler = require './picture_handler'
 fs = require '../../replicator/filesystem'
 DeviceStatus = require '../device_status'
+ConnectionHandler = require '../connection_handler'
 log = require('../persistent_log')
     prefix: 'MediaUploader'
     date: true
@@ -19,12 +20,16 @@ module.exports = class MediaUploader
         @pictureHandler ?= new PictureHandler @
         @config ?= app.init.config
         @requestCozy ?= app.init.requestCozy
+        @connectionHandler = new ConnectionHandler()
 
 
     upload: (callback) ->
         log.debug 'upload'
 
-        @pictureHandler.upload callback
+        if @_isUploadable()
+            @pictureHandler.upload callback
+        else
+            callback()
 
 
     checkBinary: (binaryId, callback) ->
@@ -41,6 +46,8 @@ module.exports = class MediaUploader
 
     uploadBinary: (file, fileId, callback) ->
         log.debug "uploadBinary"
+
+        return callback() unless @_isUploadable()
 
         DeviceStatus.checkReadyForSync (err, ready, msg) =>
             return callback() unless ready
@@ -144,3 +151,8 @@ module.exports = class MediaUploader
                 return callback new Error "Status code is not 201."
 
             callback null, body._id
+
+
+    _isUploadable: ->
+        return false unless @config.get 'syncImages'
+        @connectionHandler.isWifi() or not @config.get 'syncOnWifi'
