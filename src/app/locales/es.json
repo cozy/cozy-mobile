@@ -112,6 +112,7 @@
     "cozy need patch": "Cozy necesita un correctivo",
     "wrong password": "Contraseña incorrecta",
     "device name already exist": "Ese nombre de periférico ya existe",
+    "Relaunch the synchronization": "Relaunch the synchronization",
     "An error happened (UNKNOWN)": "Un error ha ocurrido",
     "An error happened (NOT FOUND)": "Un error ha ocurrido (no identificado)",
     "An error happened (INVALID URL)": "Un error ha ocurrido (url inválida)",
