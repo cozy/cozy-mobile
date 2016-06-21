@@ -62,9 +62,13 @@ module.exports = class PictureHandler
                         (cb) => @_uploadCozyBinary pictureCache, cb
                         (cb) => @_checkCozyBinary pictureCache, cb
                     ], (err) =>
+                        log.warn err if err
                         @_setQueue --@queue
-                        cb err
-                , callback
+                        cb()
+                , (err) =>
+                    log.warn err if err
+                    @_setQueue 0
+                    callback()
 
 
     _checkCozyBinary: (pictureCache, callback) ->
