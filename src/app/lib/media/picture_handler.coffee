@@ -128,7 +128,7 @@ module.exports = class PictureHandler
                 callback null, pictureCache
 
         fileName = path.parse(pictureCache.key).base.toLowerCase()
-        if fileName in cozyFiles
+        if cozyFiles[fileName] isnt undefined
             setFileId cozyFiles[fileName].id
         else
             @_createFile pictureCache.key, (err, fileId) ->
@@ -288,6 +288,7 @@ module.exports = class PictureHandler
                     method: 'post'
                     type: 'data-system'
                     path: '/request/folder/byfullpath/'
+                    retry: 3
                     body:
                         key: t 'photos'
 

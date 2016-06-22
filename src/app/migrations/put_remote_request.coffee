@@ -48,6 +48,7 @@ module.exports =
                 type: 'data-system'
                 path: "/request/#{req.type}/#{req.name}/"
                 body: req.body
+                retry: 3
             requestCozy.request options, (err) ->
                 if err
                     log.warn "download failed with #{req.type}."

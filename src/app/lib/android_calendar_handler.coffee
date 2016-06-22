@@ -27,8 +27,8 @@ module.exports = class AndroidCalendarHandler
             androidCalendarsCache = calendars
             callback null, calendars
 
-    _getByName: (calendarName, callback) ->
-        log.debug "_getByName"
+    getByName: (calendarName, callback) ->
+        log.debug "getByName"
 
         @_getAll (err, calendars) ->
             return callback err if err
@@ -54,7 +54,7 @@ module.exports = class AndroidCalendarHandler
     getOrCreate: (calendarName, callback) ->
         log.debug "getOrCreate"
 
-        @_getByName calendarName, (err, calendar) =>
+        @getByName calendarName, (err, calendar) =>
             if err
                 @_create calendarName, callback
             else
@@ -140,6 +140,7 @@ module.exports = class AndroidCalendarHandler
             method: 'post'
             path: '/request/tag/byname/'
             type: 'data-system'
+            retry: 3
             body:
                 include_docs: true
                 key: calendarName

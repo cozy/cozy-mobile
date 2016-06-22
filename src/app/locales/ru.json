@@ -112,6 +112,7 @@
     "cozy need patch": "Cozy нужен патч",
     "wrong password": "Неправильный пароль",
     "device name already exist": "Устройство с таким именем уже существует",
+    "Relaunch the synchronization": "Relaunch the synchronization",
     "An error happened (UNKNOWN)": "Произошла ошибка",
     "An error happened (NOT FOUND)": "Произошла ошибка (не найдено).",
     "An error happened (INVALID URL)": "Произошла ошибка (неправильный адрес).",

@@ -112,6 +112,7 @@
     "cozy need patch": "Cozy a besoin d'un correctif",
     "wrong password": "Mot de passe incorrect",
     "device name already exist": "Ce nom d'appareil existe déjà",
+    "Relaunch the synchronization": "Relancer la synchronisation",
     "An error happened (UNKNOWN)": "Une erreur est survenue",
     "An error happened (NOT FOUND)": "Une erreur est survenue (non trouvé)",
     "An error happened (INVALID URL)": "Une erreur est survenue (url invalide)",

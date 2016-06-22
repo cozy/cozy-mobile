@@ -112,6 +112,7 @@
     "cozy need patch": "Cozy braucht ein Update",
     "wrong password": "Passwort falsch",
     "device name already exist": "Gerätename existiert bereits",
+    "Relaunch the synchronization": "Relaunch the synchronization",
     "An error happened (UNKNOWN)": "Ein Fehler ist aufgetreten",
     "An error happened (NOT FOUND)": "Ein Fehler ist aufgetreten.(Datei nicht gefunden)",
     "An error happened (INVALID URL)": "Ein Fehler ist aufgetreten.(Falsche URL)",

@@ -19,6 +19,7 @@ module.exports =
         options =
             method: 'get'
             url: "#{config.get 'cozyURL'}/versions"
+            retry: 3
 
         requestCozy.request options, (err, response, body) ->
             return callback err if err # TODO i18n ?

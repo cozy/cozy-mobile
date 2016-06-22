@@ -14,14 +14,19 @@ module.exports = class FirstSyncView extends BaseView
 
     getRenderData: ->
         logButton: @showLogButton or false
+        message: @message
 
 
     events: ->
         'tap #send-log': -> logSender.send()
+        'tap #btn-restart' : =>
+            @hideLogButton()
+            app.init.trigger 'restart'
         'tap #btn-end' : 'end'
 
 
     initialize: ->
+        @message = 'message step 0'
         # Hide layout message bar
         app.layout.hideInitMessage()
         app.layout.stopListening app.init, 'display'
@@ -41,6 +46,7 @@ module.exports = class FirstSyncView extends BaseView
 
 
     onChange: (message) ->
+        @message = message
         @$('#finishSync .progress').text t message
 
 
@@ -55,6 +61,11 @@ module.exports = class FirstSyncView extends BaseView
 
     displayLogButton: ->
         @showLogButton = true
+        @setState 'showLogButton', @showLogButton
+
+
+    hideLogButton: ->
+        @showLogButton = false
         @setState 'showLogButton', @showLogButton
 
 

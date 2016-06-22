@@ -22,7 +22,7 @@ module.exports = class ChangeTagHandler
     dispatch: (cozyCalendar) ->
         log.debug "dispatch"
 
-        @androidCalendarHandler.getOrCreate cozyCalendar.name, \
+        @androidCalendarHandler.getByName cozyCalendar.name, \
                 (err, androidCalendar) =>
             # if androidCalendar is not find, this tag is for another thing
             if androidCalendar

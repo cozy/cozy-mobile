@@ -1,10 +1,19 @@
 .list
     #finishSync.card.no-shadow.more-spacing.flat
-        .progress.item.item-text-wrap= t('message step 0')
+        .progress.item.item-text-wrap= t(message)
         .counter.item.text-center
-    .card.no-shadow.more-spacing
-        button#btn-end.button.button-block.button-balanced= t('waiting...')
 
     if logButton
+
+        .text-center= t('An error happened (UNKNOWN)')
+
+        .card.no-shadow.more-spacing
+            button#btn-restart.button.button-block.button-balanced= t('Relaunch the synchronization')
+
         .card.no-shadow.more-spacing
             button.button.button-block.button-grey#send-log= t('send log')
+
+    else
+
+        .card.no-shadow.more-spacing
+            button#btn-end.button.button-block.button-balanced= t('waiting...')
