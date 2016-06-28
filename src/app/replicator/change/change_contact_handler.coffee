@@ -41,24 +41,25 @@ module.exports = class ChangeContactHandler
     _update: (doc, androidContact, callback) ->
         log.debug "_update"
 
-        try
-            toSaveInPhone = @cozyToAndroidContact.transform doc
-            toSaveInPhone = navigator.contacts.create toSaveInPhone
-        catch err
-            return callback err if err
+        @_setPictureBase64data doc, (doc) =>
+            try
+                toSaveInPhone = @cozyToAndroidContact.transform doc
+                toSaveInPhone = navigator.contacts.create toSaveInPhone
+            catch err
+                return callback err if err
 
-        if androidContact # Update
-            toSaveInPhone.id = androidContact.id
-            toSaveInPhone.rawId = androidContact.rawId
+            if androidContact # Update
+                toSaveInPhone.id = androidContact.id
+                toSaveInPhone.rawId = androidContact.rawId
 
-        options =
-            accountType: AndroidAccount.TYPE
-            accountName: AndroidAccount.NAME
-            callerIsSyncAdapter: true # apply immediately
-            resetFields: true # remove all fields before update
+            options =
+                accountType: AndroidAccount.TYPE
+                accountName: AndroidAccount.NAME
+                callerIsSyncAdapter: true # apply immediately
+                resetFields: true # remove all fields before update
 
-        toSaveInPhone.save ((contact) -> callback null, contact), callback
-        , options
+            toSaveInPhone.save ((contact) -> callback null, contact), callback
+            , options
 
 
     _delete: (doc, androidContact, callback) ->
@@ -79,3 +80,21 @@ module.exports = class ChangeContactHandler
         , cb
         , new ContactFindOptions cozyId, false, [], AndroidAccount.TYPE, \
             AndroidAccount.NAME
+
+
+    _setPictureBase64data: (doc, callback) ->
+        unless doc._attachments or 'picture' of doc._attachments
+            return callback doc
+        return callback doc if typeof doc._attachments.picture.data is 'string'
+
+        reader = new FileReader()
+        reader.onload = ->
+            data = reader.result
+            prefix = 'data:application/octet-stream;base64,'
+            if data.startsWith prefix
+                data = data.substr prefix
+            doc._attachments.picture.data = data
+            callback doc
+        reader.onerror = ->
+            callback doc
+        reader.readAsDataURL doc._attachments.picture.data
