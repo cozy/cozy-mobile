@@ -69,10 +69,14 @@ _tags2Categories = (tags) ->
 # Build pohto (list) field from contact's photo.
 _attachments2Photos = (contact) ->
     if contact._attachments? and 'picture' of contact._attachments
-        photo = new ContactField 'base64', contact._attachments.picture.data
-
-        return [photo]
-
+        try
+            data = contact._attachments.picture.data
+            window.atob data
+            photo = new ContactField 'base64', contact._attachments.picture.data
+            return [photo]
+        catch e
+            if e.code is DOMException.INVALID_CHARACTER_ERR
+                log.warn 'base64 invalid.'
     return []
 
 _adr2ContactAddress = (datapoint) ->
