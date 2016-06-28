@@ -19,7 +19,7 @@ module.exports = class ChangeContactHandler
 
         @_getFromPhoneByCozyId doc._id, (err, androidContact) =>
             if androidContact?
-                if doc._delete
+                if doc._deleted
                     @_delete doc, androidContact, continueOnError callback
                 else
                     @_update doc, androidContact, continueOnError callback
