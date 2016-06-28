@@ -92,7 +92,7 @@ module.exports = class ChangeContactHandler
             data = reader.result
             prefix = 'data:application/octet-stream;base64,'
             if data.startsWith prefix
-                data = data.substr prefix
+                data = data.substr prefix.length
             doc._attachments.picture.data = data
             callback doc
         reader.onerror = ->
