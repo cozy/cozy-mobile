@@ -1,5 +1,5 @@
 log = require('../../lib/persistent_log')
-    prefix: "contact"
+    prefix: "CozyToAndroidContact"
     date: true
 
 
