@@ -83,7 +83,7 @@ module.exports = class ChangeContactHandler
 
 
     _setPictureBase64data: (doc, callback) ->
-        unless doc._attachments or 'picture' of doc._attachments
+        if doc._attachments is undefined or 'picture' not of doc._attachments
             return callback doc
         return callback doc if typeof doc._attachments.picture.data is 'string'
 
