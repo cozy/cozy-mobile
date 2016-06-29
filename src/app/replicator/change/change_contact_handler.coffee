@@ -19,7 +19,7 @@ module.exports = class ChangeContactHandler
 
         @_getFromPhoneByCozyId doc._id, (err, androidContact) =>
             if androidContact?
-                if doc._delete
+                if doc._deleted
                     @_delete doc, androidContact, continueOnError callback
                 else
                     @_update doc, androidContact, continueOnError callback
@@ -83,7 +83,7 @@ module.exports = class ChangeContactHandler
 
 
     _setPictureBase64data: (doc, callback) ->
-        unless doc._attachments or 'picture' of doc._attachments
+        if doc._attachments is undefined or 'picture' not of doc._attachments
             return callback doc
         return callback doc if typeof doc._attachments.picture.data is 'string'
 
@@ -92,7 +92,7 @@ module.exports = class ChangeContactHandler
             data = reader.result
             prefix = 'data:application/octet-stream;base64,'
             if data.startsWith prefix
-                data = data.substr prefix
+                data = data.substr prefix.length
             doc._attachments.picture.data = data
             callback doc
         reader.onerror = ->
