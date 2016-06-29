@@ -71,6 +71,8 @@ _attachments2Photos = (contact) ->
     if contact._attachments? and 'picture' of contact._attachments
         try
             data = contact._attachments.picture.data
+            # atob allow to ensure this data was a valid base64,
+            # if is not valid and save in Android our app is killed...
             window.atob data
             photo = new ContactField 'base64', contact._attachments.picture.data
             return [photo]
