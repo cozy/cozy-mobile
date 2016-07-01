@@ -112,7 +112,7 @@
     "cozy need patch": "Cozy はパッチが必要です",
     "wrong password": "パスワードが正しくありません",
     "device name already exist": "デバイス名はすでに存在します",
-    "Relaunch the synchronization": "Relaunch the synchronization",
+    "Relaunch the synchronization": "同期を再起動",
     "An error happened (UNKNOWN)": "エラーが発生しました。",
     "An error happened (NOT FOUND)": "エラーが発生しました (見つかりません)。",
     "An error happened (INVALID URL)": "エラーが発生しました (URL が)。",
