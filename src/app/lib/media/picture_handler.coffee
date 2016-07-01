@@ -292,7 +292,7 @@ module.exports = class PictureHandler
                     body:
                         key: t 'photos'
 
-                @requestCozy.request options, (err, res, docs) ->
+                @requestCozy.request options, (err, res, docs) =>
                     return callback err if err
 
                     if docs?.length is 0
