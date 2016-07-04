@@ -49,8 +49,8 @@
     "moment-timezone": "0.5.4",
     "node-polyglot": "2.0.0",
     "path-browser": "2.2.1",
-    "pouchdb": "5.4.4",
-    "semver": "5.1.0",
+    "pouchdb": "5.4.5",
+    "semver": "5.2.0",
     "underscore": "1.8.3",
     "validator": "5.4.0"
   },
