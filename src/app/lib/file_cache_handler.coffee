@@ -144,10 +144,9 @@ module.exports = class FileCacheHandler
                 return callback err
 
 
-    # Download the binary of the specified file in cache.
+    # Get or download the binary of the specified file in cache.
     # @param cozyFile cozy File document
     # @param progressback progress callback.
-    # TODO: refactoring name to downloadBinary
     getBinary: (cozyFile, progressback, callback) ->
         log.debug 'getBinary'
 
@@ -166,6 +165,9 @@ module.exports = class FileCacheHandler
             callback err
 
 
+    # Download the binary of the specified file in cache.
+    # @param cozyFile cozy File document
+    # @param progressback progress callback.
     downloadBinary: (cozyFile, progressback, callback) ->
         log.debug 'downloadBinary'
 
