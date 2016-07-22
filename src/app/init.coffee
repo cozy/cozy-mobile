@@ -154,7 +154,6 @@ module.exports = class Init
         fConfig: enter: ['config']
         fFirstSyncView:
             enter: ['firstSyncView'] # RUN
-            display: 'message step 0' # TODO: more accurate translate key
         fLocalDesignDocuments:
             enter: ['upsertLocalDesignDocuments']
             display: 'message step 0' # TODO: more accurate translate key
