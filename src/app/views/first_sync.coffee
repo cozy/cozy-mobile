@@ -26,18 +26,11 @@ module.exports = class FirstSyncView extends BaseView
 
 
     initialize: ->
+        app.layout.hideInitMessage()
         @message = 'message step 0'
         # Hide layout message bar
-        app.layout.hideInitMessage()
         app.layout.stopListening app.init, 'display'
         app.layout.stopListening app.init, 'error'
-
-        # Put it back as living this page.
-        @listenTo app.init, 'transition', (leaveState, enterState) ->
-            if enterState is 'aLoadFilePage'
-                app.layout.listenTo app.init, 'display'
-                , app.layout.showInitMessage
-
 
         @listenTo app.init, 'display', @onChange
         @listenTo app.init, 'error', @displayLogButton

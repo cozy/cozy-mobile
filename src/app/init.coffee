@@ -342,6 +342,7 @@ module.exports = class Init
             'errorViewed': 'fConfig'
         'fWizardFiles':
             'clickNext': 'fWizardContacts'
+            'finish': 'fFirstSyncView'
         'fWizardContacts':
             'clickBack': 'fWizardFiles'
             'clickNext': 'fWizardCalendars'
