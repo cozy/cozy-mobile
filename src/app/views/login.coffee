@@ -86,6 +86,10 @@ module.exports = class LoginView extends BaseView
 
 
     validLogin: ->
+        unless app.init.connection.isConnected()
+            @setState 'error', 'connection disable'
+            return
+
         @btnLogin.attr 'disabled', 'true'
         url = @config.get 'cozyURL'
         password = @inputPassword.val()
