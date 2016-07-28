@@ -85,6 +85,13 @@ class Config
         _.extend @, Backbone.Events
 
 
+    display: ->
+        configClone = JSON.parse JSON.stringify config
+        configClone.devicePassword = '********************'
+        log.info "Start v#{APP_VERSION} -- \
+                          config: #{JSON.stringify configClone}"
+
+
     load: (callback) ->
         log.debug "load"
 
@@ -99,16 +106,14 @@ class Config
                         return migration.migrate doc.appVersion, =>
                             @load callback
 
-                configClone = JSON.parse JSON.stringify config
-                configClone.devicePassword = '********************'
-                log.info "Start v#{APP_VERSION} -- \
-                          config: #{JSON.stringify configClone}"
+                @display()
 
                 @database.setRemoteDatabase @getCozyUrl() if @getCozyUrl()
                 @loaded = true
                 return callback err, true
 
             log.info 'Initialize app configuration'
+
             config = DEFAULT_CONFIG
             config.deviceName = "Android-#{device.manufacturer}-#{device.model}"
             setConfig @database.replicateDb, (err) =>
