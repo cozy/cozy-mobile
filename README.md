@@ -12,6 +12,9 @@ Get it from the [Google Play Store](https://play.google.com/store/apps/details?i
 or head over to the [Releases page](https://github.com/cozy/cozy-mobile/releases)
 or compile it.
 
+    Some Time we need To mention that there is a case we on testing on real device there can be this error
+    ``Android Cannot access org.apache.http.client.HttpClient ``
+    - And can be solved by adding this ``useLibrary 'org.apache.http.legacy'`` into gradle in android part
     git clone https://github.com/cozy/cozy-mobile
     cd cozy-mobile
     npm install -g coffee-script
