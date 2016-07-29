@@ -216,3 +216,16 @@ module.exports = class FileCacheHandler
                 fs.rmrf binaryFolder, (err) ->
                     return callback err if err and err.code is not 1
                     callback()
+
+
+    open: (url) ->
+        success = (entry) =>
+            entry.file (file) =>
+                cordova.plugins.fileOpener2.open file.localURL, file.type,
+                    success: -> , # do nothing
+                    error: (err) ->
+                        log.error err
+                        alert t err.message
+        error = (err) ->
+            log.error err
+        resolveLocalFileSystemURL url, success, error

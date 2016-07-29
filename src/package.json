@@ -18,28 +18,6 @@
     "release": "rm ../CozyFiles.apk -f && npm run buildapk && cd .. && cake release",
     "postrelease": "PACKAGE_VERSION=$(node -p -e \"require('./package.json').version\"); mv -f ../CozyFiles.apk ../CozyMobile_$PACKAGE_VERSION.apk; md5sum ../CozyMobile_$PACKAGE_VERSION.apk; sha1sum ../CozyMobile_$PACKAGE_VERSION.apk"
   },
-  "cordovaPlatforms": [
-    "android"
-  ],
-  "cordovaPlugins": {
-    "cordova-plugin-x-toast": "cordova-plugin-x-toast@2.5.2",
-    "cordova-plugin-whitelist": "cordova-plugin-whitelist@1.2.2",
-    "cordova-plugin-device": "cordova-plugin-device@1.1.2",
-    "cordova-plugin-globalization": "https://github.com/StyrLabs/cordova-plugin-globalization.git",
-    "cordova-plugin-file": "cordova-plugin-file@4.2.0",
-    "cordova-plugin-file-transfer": "cordova-plugin-file-transfer@1.5.1",
-    "cordova-plugin-battery-status": "cordova-plugin-battery-status@1.1.2",
-    "cordova-plugin-network-information": "cordova-plugin-network-information@1.2.1",
-    "cordova-plugin-blob-constructor-polyfill": "cordova-plugin-blob-constructor-polyfill@1.0.2",
-    "com.fgomiero.cordova.externafileutil": "https://github.com/aenario/cordova-external-file-open",
-    "cordova-sqlite-storage": "cordova-sqlite-storage@1.4.1",
-    "de.appplant.cordova.plugin.local-notification": "de.appplant.cordova.plugin.local-notification@0.8.4",
-    "io.cozy.cordova-images-browser": "https://github.com/cozy/cordova-images-browser#v1.0.2",
-    "io.cozy.jsbackgroundservice": "https://github.com/cozy/cordova-jsbackgroundservice#v1.1.2",
-    "io.cozy.jsbgservice-newpicture": "https://github.com/cozy/cordova-jsbgservice-newpicture#v1.0.0",
-    "io.cozy.contacts": "https://github.com/cozy/cordova-plugin-contacts#c1.0.4",
-    "io.cozy.calendarsync": "https://github.com/cozy/cordova-plugin-calendarsync#v1.0.0"
-  },
   "dependencies": {
     "async": "1.5.2",
     "backbone": "1.3.3",
