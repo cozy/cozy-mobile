@@ -19,7 +19,8 @@
     "postrelease": "PACKAGE_VERSION=$(node -p -e \"require('./package.json').version\"); mv -f ../CozyFiles.apk ../CozyMobile_$PACKAGE_VERSION.apk; md5sum ../CozyMobile_$PACKAGE_VERSION.apk; sha1sum ../CozyMobile_$PACKAGE_VERSION.apk"
   },
   "cordovaPlatforms": [
-    "android"
+    "android",
+    "ios"
   ],
   "cordovaPlugins": {
     "cordova-plugin-x-toast": "cordova-plugin-x-toast@2.5.2",
