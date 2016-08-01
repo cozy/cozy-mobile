@@ -121,6 +121,7 @@
     "photo folder not replicated yet": "La inicialización aún no ha terminado.",
     "Not Found": "Error en la inicialización. ¿Ha usted instalado la aplicación Archivos en su Cozy?",
     "connexion error": "La conexión a su cozy ha fallado. Revisar que su periférico esté conectado a internet, que la dirección de su cozy esté bien escrita y si su cozy funciona. Para los usuarios avezados con cozy en sus propios servidores, consultar la <a href=https://docs.cozy.io/en/mobile/trouble.html#note-about-self-signed-certificates' target='_system'>documentación sobre los certificados auto-firmados </a>",
+    "connection disable": "We failed to connect to your cozy. Please check that your device is connected to the internet.",
     "no images in DCIM": "Copia de seguridad de imágenes: no se ha encontrado ninguna imagen en el directorio DCIM.",
     "Document update conflict": "Conflictos en la actualización de la base de datos. Usted podría reinicializar la aplicación para resoverlos.",
     "Database not initialized. Confirm initialize": "La inicialización no terminó correctamente. ¿Tratar de nuevo?",

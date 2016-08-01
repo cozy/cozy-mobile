@@ -5,7 +5,9 @@ log = require('../lib/persistent_log')
     prefix: "FolderLineView"
     date: true
 
+
 module.exports = class FolderLineView extends BaseView
+
 
     tagName: 'a'
     template: require '../templates/folder_line'
@@ -13,20 +15,23 @@ module.exports = class FolderLineView extends BaseView
         'tap .item-content': 'onClick'
         'tap .item-options .download': 'addToCache'
         'tap .item-options .uncache': 'removeFromCache'
-
     className: 'item item-icon-left item-icon-right item-complex'
+
 
     initialize: ->
         @fileCacheHandler = new FileCacheHandler()
         @listenTo @model, 'change', @render
 
+
     getRenderData: ->
         _.extend super, isFolder: @model.isFolder()
+
 
     afterRender: =>
         @$el[0].dataset.folderid = @model.get('_id')
         if @model.isDeviceFolder
             @$('.ion-folder').css color: '#34a6ff'
+
 
     setCacheIcon: (klass) =>
         icon = @$('.cache-indicator')
@@ -34,6 +39,7 @@ module.exports = class FolderLineView extends BaseView
         icon.removeClass('ion-ios7-download-outline ion-looping')
         icon.append klass
         @parent?.ionicView?.clearDragEffects()
+
 
     displayProgress: =>
         @downloading = true
@@ -43,9 +49,10 @@ module.exports = class FolderLineView extends BaseView
 
         @progresscontainer.appendTo @$el
 
+
     hideProgress: (err) =>
         @downloading = false
-        if err then alert JSON.stringify err
+        if err then navigator.notification.alert JSON.stringify err
 
         incache = @fileCacheHandler.isCached @model.attributes
         version = @fileCacheHandler.isSameBinary @model.attributes
@@ -59,8 +66,10 @@ module.exports = class FolderLineView extends BaseView
         @progresscontainer?.remove()
         @render()
 
+
     updateProgress: (done, total) =>
         @progressbar?.css 'width', (100 * done / total) + '%'
+
 
     getOnDownloadedCallback: (callback) ->
         callback = callback or ->
@@ -69,11 +78,12 @@ module.exports = class FolderLineView extends BaseView
 
             if err
                 log.error err
-                return alert t(err.message)
+                return navigator.notification.alert t(err.message)
 
             @model.set incache: @fileCacheHandler.isCached @model.attributes
             @model.set version: @fileCacheHandler.isSameBinary @model.attributes
             callback(err, url)
+
 
     onClick: (event) =>
         # ignore .cache-indicator click
@@ -86,20 +96,21 @@ module.exports = class FolderLineView extends BaseView
             app.router.navigate "#folder#{path}", trigger: true
             return true
 
-        # else, the model is a file, we get its binary and open it
-        @displayProgress()
-        @fileCacheHandler.getBinary @model.attributes, @updateProgress, \
-                @getOnDownloadedCallback (err, url) ->
-            # let android open the file
-            app.init.trigger 'openFile'
-            # app.backFromOpen = true
-            ExternalFileUtil.openWith url, '', undefined,
-                (success) -> , # do nothing
-                (err) ->
-                    if 0 is err?.indexOf 'No Activity found'
-                        err = t 'no activity found'
-                    log.error err
-                    alert err.message
+        cozyFile = @model.attributes
+        if @fileCacheHandler.isSameBinary cozyFile
+            @fileCacheHandler.getBinaryUrl cozyFile, (err, url) =>
+                return log.warn err if err
+                @fileCacheHandler.open url
+        else
+            # else, the model is a file, we get its binary and open it
+            @displayProgress()
+            @fileCacheHandler.getBinary cozyFile, @updateProgress, \
+                      @getOnDownloadedCallback (err, url) =>
+                return log.warn err if err
+                # let android open the file
+                app.init.trigger 'openFile'
+                @fileCacheHandler.open url
+
 
     addToCache: =>
         return true if @downloading
@@ -112,19 +123,21 @@ module.exports = class FolderLineView extends BaseView
             @fileCacheHandler.getBinary @model.attributes, @updateProgress, \
                 @getOnDownloadedCallback()
 
+
     removeFromCache: =>
         return true if @downloading
 
         @displayProgress()
         onremoved = (err) =>
             @hideProgress()
-            return alert JSON.stringify err if err
+            return navigator.notification.alert JSON.stringify err if err
             @model.set incache: false
 
         if @model.isFolder()
             app.init.replicator.removeLocalFolder @model.attributes, onremoved
         else
             @fileCacheHandler.removeLocal @model.attributes, onremoved
+
 
     mimeClasses:
         'application/octet-stream'      : 'type-file'

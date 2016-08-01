@@ -104,13 +104,14 @@ stepColorMixin(color, btnColor)
 
 
     #btn-back-fsm
-        flex 0 0 1.2em
-        width 1.2em
-        text-align left
-        background transparent
-        border 0 none
-        color white
-        font-size 3em
+        width 0
+        height 0
+        margin 15px 0 5px
+        padding 0
+        border-style solid
+        border-width 15px 30px 15px 0
+        border-color transparent white transparent transparent
+        background-color transparent
 
     #btn-back
         text-align left
@@ -133,6 +134,7 @@ stepColorMixin(color, btnColor)
         font 1.8em 'Source Sans Pro', Sans-serif
         background transparent
         color white
+        height auto
 
         &.cloned-text-input
             display none

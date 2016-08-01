@@ -43,7 +43,7 @@ module.exports = class Router extends Backbone.Router
         collection.search (err) ->
             if err
                 log.error err.stack
-                return alert(err)
+                return navigator.notification.alert(err)
 
             $('#search-input').blur() # close keyboard
 

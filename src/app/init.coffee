@@ -154,7 +154,6 @@ module.exports = class Init
         fConfig: enter: ['config']
         fFirstSyncView:
             enter: ['firstSyncView'] # RUN
-            display: 'message step 0' # TODO: more accurate translate key
         fLocalDesignDocuments:
             enter: ['upsertLocalDesignDocuments']
             display: 'message step 0' # TODO: more accurate translate key
@@ -343,6 +342,7 @@ module.exports = class Init
             'errorViewed': 'fConfig'
         'fWizardFiles':
             'clickNext': 'fWizardContacts'
+            'finish': 'fFirstSyncView'
         'fWizardContacts':
             'clickBack': 'fWizardFiles'
             'clickNext': 'fWizardCalendars'
@@ -739,7 +739,7 @@ module.exports = class Init
                     # currentView is device-name view
                     return @handleError err
                 else
-                    alert err.message
+                    navigator.notification.alert err.message
                     return @app.exit()
 
             @trigger 'validPlatformVersions'
