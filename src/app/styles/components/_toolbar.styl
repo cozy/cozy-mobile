@@ -1,11 +1,27 @@
 // Header
+
+header-size = 48px
+
+.platform-ios
+    .bar-header
+        height header-size + ios-header
+        padding-top ios-header
+
+        .title
+            top 15px
+    .bar-subheader
+        top header-size + ios-header
+
+    .has-header
+        top header-size + ios-header
+
 .bar
     // overrides inonic default header's height
-    height 48px
+    height header-size
 
 .has-header
     // overrides inonic default header's height
-    top 48px
+    top header-size
 
 
 .bar-header

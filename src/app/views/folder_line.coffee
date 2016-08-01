@@ -52,7 +52,7 @@ module.exports = class FolderLineView extends BaseView
 
     hideProgress: (err) =>
         @downloading = false
-        if err then alert JSON.stringify err
+        if err then navigator.notification.alert JSON.stringify err
 
         incache = @fileCacheHandler.isCached @model.attributes
         version = @fileCacheHandler.isSameBinary @model.attributes
@@ -78,7 +78,7 @@ module.exports = class FolderLineView extends BaseView
 
             if err
                 log.error err
-                return alert t(err.message)
+                return navigator.notification.alert t(err.message)
 
             @model.set incache: @fileCacheHandler.isCached @model.attributes
             @model.set version: @fileCacheHandler.isSameBinary @model.attributes
@@ -130,7 +130,7 @@ module.exports = class FolderLineView extends BaseView
         @displayProgress()
         onremoved = (err) =>
             @hideProgress()
-            return alert JSON.stringify err if err
+            return navigator.notification.alert JSON.stringify err if err
             @model.set incache: false
 
         if @model.isFolder()

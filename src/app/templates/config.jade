@@ -1,25 +1,27 @@
 .list
 
-    .item.item-divider= t('synchronisation title')
+    if device.platform === 'Android'
+        .item.item-divider= t('synchronisation title')
 
-    .item.checkbox
-        input#contactSyncCheck(type="checkbox", checked=syncContacts)
-        label(for='contactSyncCheck')= t('contacts sync label')
+        .item.checkbox
+            input#contactSyncCheck(type="checkbox", checked=syncContacts)
+            label(for='contactSyncCheck')= t('contacts sync label')
 
-    .item.checkbox
-        input#calendarSyncCheck(type="checkbox", checked=syncCalendars)
-        label(for='calendarSyncCheck')= t('calendars sync label')
+        .item.checkbox
+            input#calendarSyncCheck(type="checkbox", checked=syncCalendars)
+            label(for='calendarSyncCheck')= t('calendars sync label')
 
-    .item.checkbox
-        input#cozyNotificationsCheck(type="checkbox", checked=cozyNotifications)
-        label(for='cozyNotificationsCheck')= t('cozy notifications sync label')
+        .item.checkbox
+            input#cozyNotificationsCheck(type="checkbox", checked=cozyNotifications)
+            label(for='cozyNotificationsCheck')= t('cozy notifications sync label')
 
 
     .item.item-divider= t('backup title')
 
-    .item.checkbox
-        input#imageSyncCheck(type="checkbox", checked=syncImages)
-        label(for='imageSyncCheck')= t('images sync label')
+    if device.platform === 'Android'
+        .item.checkbox
+            input#imageSyncCheck(type="checkbox", checked=syncImages)
+            label(for='imageSyncCheck')= t('images sync label')
 
     .item.checkbox
         input#wifiSyncCheck(type="checkbox", checked=syncOnWifi)

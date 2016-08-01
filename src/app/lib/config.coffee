@@ -27,9 +27,9 @@ DEFAULT_CONFIG =
     appState: 'launch'
     appVersion: APP_VERSION
 
-    syncContacts: true
-    syncCalendars: true
-    syncImages: true
+    syncContacts: false
+    syncCalendars: false
+    syncImages: false
     syncOnWifi: true
     cozyNotifications: false
 

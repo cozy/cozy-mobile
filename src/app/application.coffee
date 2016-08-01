@@ -54,7 +54,7 @@ module.exports =
             log.error err
             msg = err.message or err
             msg += "\n #{t('error try restart')}"
-            alert msg
+            navigator.notification.alert msg
         navigator.app.exitApp()
 
     addDeviceListener: ->

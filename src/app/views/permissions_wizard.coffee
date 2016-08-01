@@ -34,6 +34,10 @@ module.exports = class PermissionsWizard extends BaseView
                 config.set 'state', 'appConfigured'
             else # dont stock permission for Files, always true
 
+        if device.platform is 'iOS'
+            config.set 'state', 'appConfigured'
+            return @options.fsm.trigger 'finish'
+
         @options.fsm.trigger 'clickNext'
 
 

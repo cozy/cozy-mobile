@@ -19,12 +19,14 @@
     "postrelease": "PACKAGE_VERSION=$(node -p -e \"require('./package.json').version\"); mv -f ../CozyFiles.apk ../CozyMobile_$PACKAGE_VERSION.apk; md5sum ../CozyMobile_$PACKAGE_VERSION.apk; sha1sum ../CozyMobile_$PACKAGE_VERSION.apk"
   },
   "cordovaPlatforms": [
-    "android"
+    "android",
+    "ios"
   ],
   "cordovaPlugins": {
     "cordova-plugin-x-toast": "cordova-plugin-x-toast@2.5.2",
     "cordova-plugin-whitelist": "cordova-plugin-whitelist@1.2.2",
     "cordova-plugin-device": "cordova-plugin-device@1.1.2",
+    "cordova-plugin-dialogs": "cordova-plugin-dialogs@1.2.1",
     "cordova-plugin-globalization": "https://github.com/StyrLabs/cordova-plugin-globalization.git",
     "cordova-plugin-file": "cordova-plugin-file@4.2.0",
     "cordova-plugin-file-opener2": "cordova-plugin-file-opener2@2.0.2",
