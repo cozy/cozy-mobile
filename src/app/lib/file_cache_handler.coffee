@@ -144,10 +144,9 @@ module.exports = class FileCacheHandler
                 return callback err
 
 
-    # Download the binary of the specified file in cache.
+    # Get or download the binary of the specified file in cache.
     # @param cozyFile cozy File document
     # @param progressback progress callback.
-    # TODO: refactoring name to downloadBinary
     getBinary: (cozyFile, progressback, callback) ->
         log.debug 'getBinary'
 
@@ -166,6 +165,9 @@ module.exports = class FileCacheHandler
             callback err
 
 
+    # Download the binary of the specified file in cache.
+    # @param cozyFile cozy File document
+    # @param progressback progress callback.
     downloadBinary: (cozyFile, progressback, callback) ->
         log.debug 'downloadBinary'
 
@@ -214,3 +216,16 @@ module.exports = class FileCacheHandler
                 fs.rmrf binaryFolder, (err) ->
                     return callback err if err and err.code is not 1
                     callback()
+
+
+    open: (url) ->
+        success = (entry) =>
+            entry.file (file) =>
+                cordova.plugins.fileOpener2.open file.localURL, file.type,
+                    success: -> , # do nothing
+                    error: (err) ->
+                        log.error err
+                        alert t err.message
+        error = (err) ->
+            log.error err
+        resolveLocalFileSystemURL url, success, error

@@ -121,6 +121,7 @@
     "photo folder not replicated yet": "초기화가 아직 완료 되지 않았습니다.",
     "Not Found": "초기화 중 오류. 클라우드에 파일 관련 앱을 설치 하였습니까?",
     "connexion error": "클라우드에 연결 하지 못했습니다. 인터넷 연결 상태, 접속 URL, 클라우드 실행 상태를 확인 하세요.  <a href='https://docs.cozy.io/en/mobile/trouble.html#note-about-self-signed-certificates target='_system'>참고 문서</a>",
+    "connection disable": "We failed to connect to your cozy. Please check that your device is connected to the internet.",
     "no images in DCIM": "백업 이미지 : DCIM 디렉터리에 이미지가 없습니다.",
     "Document update conflict": "데이터 베이스 업데이트 충돌, 처리 후 앱을 다시 시작 하세요.",
     "Database not initialized. Confirm initialize": "초기화가 완전히 되지 못했습니다. 다시 시도 하시겠습니까?",
