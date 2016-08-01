@@ -263,7 +263,7 @@ module.exports = class Replicator extends Backbone.Model
                 return callback err if err
                 if totalSize > available * 1024 # available is in KB
                     log.warn 'not enough space'
-                    alert t 'not enough space'
+                    navigator.notification.alert t 'not enough space'
                     callback null
 
                 else

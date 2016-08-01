@@ -739,7 +739,7 @@ module.exports = class Init
                     # currentView is device-name view
                     return @handleError err
                 else
-                    alert err.message
+                    navigator.notification.alert err.message
                     return @app.exit()
 
             @trigger 'validPlatformVersions'

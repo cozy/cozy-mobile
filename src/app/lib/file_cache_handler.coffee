@@ -225,7 +225,7 @@ module.exports = class FileCacheHandler
                     success: -> , # do nothing
                     error: (err) ->
                         log.error err
-                        alert t err.message
+                        navigator.notification.alert t err.message
         error = (err) ->
             log.error err
         resolveLocalFileSystemURL url, success, error
