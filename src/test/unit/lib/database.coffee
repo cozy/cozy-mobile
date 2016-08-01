@@ -3,9 +3,10 @@ Database = require '../../../app/lib/database'
 
 options = db: require 'memdown'
 url = 'cozyUrlForTest'
-global.device = {}
+
 
 module.exports = describe 'Database Service Test', ->
+
 
     describe 'constants', ->
 
@@ -15,9 +16,10 @@ module.exports = describe 'Database Service Test', ->
         it 'should get local database name', ->
             Database.LOCAL_DB.should.be.equal 'cozy-photos.db'
 
+
     describe 'Create databases', ->
 
-        database = new Database options, device
+        database = new Database options
 
         it 'must have replicate database', ->
             database.replicateDb.should.be.an.Object
