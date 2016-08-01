@@ -221,7 +221,7 @@ module.exports = class FileCacheHandler
     open: (url) ->
         success = (entry) ->
             entry.file (file) ->
-                cordova.plugins.fileOpener2.open file.localURL, file.type,
+                cordova.plugins.fileOpener2.open entry.toURL(), file.type,
                     success: -> , # do nothing
                     error: (err) ->
                         log.error err
