@@ -86,20 +86,19 @@ module.exports = class FolderLineView extends BaseView
             app.router.navigate "#folder#{path}", trigger: true
             return true
 
-        # else, the model is a file, we get its binary and open it
-        @displayProgress()
-        @fileCacheHandler.getBinary @model.attributes, @updateProgress, \
-                @getOnDownloadedCallback (err, url) ->
-            # let android open the file
-            app.init.trigger 'openFile'
-            # app.backFromOpen = true
-            ExternalFileUtil.openWith url, '', undefined,
-                (success) -> , # do nothing
-                (err) ->
-                    if 0 is err?.indexOf 'No Activity found'
-                        err = t 'no activity found'
-                    log.error err
-                    alert err.message
+        cozyFile = @model.attributes
+        if @fileCacheHandler.isSameBinary cozyFile
+            @fileCacheHandler.getBinaryUrl cozyFile, (err, url) =>
+                @fileCacheHandler.open url
+        else
+            # else, the model is a file, we get its binary and open it
+            @displayProgress()
+            @fileCacheHandler.getBinary cozyFile, @updateProgress, \
+                    @getOnDownloadedCallback (err, url) =>
+                return log.warn err if err
+                # let android open the file
+                app.init.trigger 'openFile'
+                @fileCacheHandler.open url
 
     addToCache: =>
         return true if @downloading
