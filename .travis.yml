@@ -14,8 +14,7 @@ android:
 
 install:
   - nvm install $TRAVIS_NODE_VERSION
-  - npm install -g coffee-script
-  - cake install
+  - cd src && npm install && cd ..
 
 script:
   - cd src && npm run lint && cd ..

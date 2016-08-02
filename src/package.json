@@ -7,16 +7,19 @@
     "node": "~4.4.7"
   },
   "scripts": {
-    "postinstall": "npm run build",
+    "postinstall": "npm run build && cordova prepare",
     "build": "brunch build",
+    "watch": "brunch watch",
+    "android": "cordova run android --device",
+    "android-emulator": "cordova run android --emulator",
+    "ios": "cordova run ios --device",
+    "ios-emulator": "cordova run ios --emulator",
     "lint": "coffeelint -r app test *.coffee",
     "test": "mocha test/unit/*/* --reporter spec --compilers coffee:coffee-script/register --colors",
     "test:watch": "npm run test -- --watch --watch-extensions coffee",
-    "start": "brunch watch --server",
-    "device": "cordova run --device",
-    "buildapk": "npm run build && cordova build --release",
-    "release": "rm ../CozyFiles.apk -f && npm run buildapk && cd .. && cake release",
-    "postrelease": "PACKAGE_VERSION=$(node -p -e \"require('./package.json').version\"); mv -f ../CozyFiles.apk ../CozyMobile_$PACKAGE_VERSION.apk; md5sum ../CozyMobile_$PACKAGE_VERSION.apk; sha1sum ../CozyMobile_$PACKAGE_VERSION.apk"
+    "prerelease": "npm run build && cordova build android --release",
+    "release": "jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore ../keys/cozy-play-store.keystore -storepass `cat ../keys/cozy-play-store.password` ../platforms/android/build/outputs/apk/android-release-unsigned.apk cozy-play-store && zipalign -v 4 ../platforms/android/build/outputs/apk/android-release-unsigned.apk ../CozyFiles.apk",
+    "postrelease": "PACKAGE_VERSION=$(node -p -e \"require('./package.json').version\"); mv -f ../CozyFiles.apk ../CozyMobile_$PACKAGE_VERSION.apk; md5 ../CozyMobile_$PACKAGE_VERSION.apk; shasum ../CozyMobile_$PACKAGE_VERSION.apk"
   },
   "dependencies": {
     "async": "1.5.2",
