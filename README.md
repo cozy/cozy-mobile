@@ -106,6 +106,14 @@ We have [some issues][14] which await
 you. The label `first contribution` is more simple. :hatching_chick:
 
 
+## :rainbow: Icons & Splashscreen
+
+You can generate all icons & splashscreens with splashicon-generator.
+
+    npm install -g splashicon-generator
+    splashicon-generator --imagespath="res"
+
+
 ## License
 
 Cozy Mobile Client is developed by Cozy Cloud and distributed under the LGPL v3
