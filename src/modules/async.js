@@ -1,1 +1,1 @@
-../node_modules/async/lib/async.js
+../node_modules/async/dist/async.js
