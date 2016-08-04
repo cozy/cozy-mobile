@@ -42,6 +42,7 @@
     <plugin name="cordova-plugin-file-opener2" spec="2.0.2" />
     <plugin name="cordova-plugin-file-transfer" spec="1.5.1" />
     <plugin name="cordova-plugin-globalization" spec="https://github.com/StyrLabs/cordova-plugin-globalization.git" />
+    <plugin name="cordova-plugin-inappbrowser" spec="1.4.0" />
     <plugin name="cordova-plugin-network-information" spec="1.2.1" />
     <plugin name="cordova-plugin-whitelist" spec="1.2.2" />
     <plugin name="cordova-plugin-x-toast" spec="2.5.2" />
