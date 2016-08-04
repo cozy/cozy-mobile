@@ -134,7 +134,7 @@ You can reach the Cozy Community by:
 
 
 [0]:  https://cozy.io
-[1]:  https://travis-ci.org/cozy/cozy-mobile.svg
+[1]:  https://travis-ci.org/cozy/cozy-mobile.svg?branch=master
 [2]:  https://travis-ci.org/cozy/cozy-mobile
 [3]:  https://www.versioneye.com/user/projects/575534e27757a0003bd4b117/badge.svg?style=flat-square
 [4]:  https://www.versioneye.com/user/projects/575534e27757a0003bd4b117

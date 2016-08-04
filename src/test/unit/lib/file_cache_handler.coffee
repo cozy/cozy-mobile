@@ -163,6 +163,7 @@ module.exports = describe 'FileCacheHandler Test', ->
                         should.not.exist err
                         should.exist doc
                         done()
+            return
 
 
     describe 'removeInCache Test', ->
@@ -181,9 +182,11 @@ module.exports = describe 'FileCacheHandler Test', ->
                         should.exist err
                         should.not.exist doc
                         done()
+            return
 
 
         it 'must not return an error when doc not exist', (done) ->
             fileCacheHandler.removeInCache cozyFile, (err) ->
                 should.not.exist err
                 done()
+            return
