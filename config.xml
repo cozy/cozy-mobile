@@ -2,11 +2,11 @@
 <widget android-versionCode="10402"
         android-versionName="1.4.2"
         id="io.cozy.files_client"
-        ios-CFBundleIdentifier="io.cozy.files"
+        ios-CFBundleIdentifier="io.cozy.mobile.sync"
         version="1.4.2"
         xmlns="http://www.w3.org/ns/widgets"
         xmlns:cdv="http://cordova.apache.org/ns/1.0">
-    <name>Cozy</name>
+    <name>Cozy Mobile</name>
     <description>Sync files from your cozycloud</description>
     <author email="contact@cozycloud.cc" href="https://cozy.io">Cozy Cloud</author>
     <preference name="Fullscreen" value="false" />
