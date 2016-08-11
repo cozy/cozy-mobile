@@ -21,7 +21,7 @@ log = require('../lib/persistent_log')
 module.exports =
 
     # wrapper around _backup to maintain the state of inBackup
-    backup: (options, callback = ->) ->
+    backup: (sync, callback = ->) ->
 
         return callback null if @get 'inBackup'
 
@@ -51,7 +51,8 @@ module.exports =
 
                     @config.set 'lastBackup', Date.now()
                     log.debug "backup end."
+                    callback() if sync
         catch e
             log.error "Error in backup: ", e
 
-        callback()
+        callback() unless sync

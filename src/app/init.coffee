@@ -523,7 +523,8 @@ module.exports = class Init
 
 
     backup: ->
-        @replicator.backup {}, @getCallbackTrigger 'backupDone'
+        sync = @app.name is 'SERVICE'
+        @replicator.backup sync, @getCallbackTrigger 'backupDone'
 
 
     onResume: ->
