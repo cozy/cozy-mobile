@@ -138,6 +138,7 @@ module.exports = class FileCacheHandler
             if err and err.code isnt FileError.PATH_EXISTS_ERR
                 return callback err
             fileName = @getFileName cozyFile
+            fileName = decodeURIComponent fileName if device.name is "Android"
             fs.getFile binaryFolder, fileName, (err, entry) ->
                 # file already exist
                 return callback null, entry.toURL() if entry
@@ -221,7 +222,10 @@ module.exports = class FileCacheHandler
     open: (url) ->
         success = (entry) ->
             entry.file (file) ->
-                cordova.plugins.fileOpener2.open entry.toURL(), file.type,
+                fileName = entry.toURL()
+                if device.platform is "Android"
+                    fileName = decodeURIComponent fileName
+                cordova.plugins.fileOpener2.open fileName, file.type,
                     success: -> , # do nothing
                     error: (err) ->
                         log.error err
