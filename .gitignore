@@ -1,9 +1,14 @@
 platforms
 plugins
-Cozy*.apk
-keys/cozy-play-store.keystore
-keys/cozy-play-store.password
+keys/android/*
+!keys/android/.gitkeep
+keys/ios/*
+!keys/ios/.gitkeep
 *.transifex.coffee
 www
 src/coverage
 src/node_modules
+/fastlane/report.xml
+/fastlane/Error*.png
+/fastlane/Preview.html
+build
