@@ -1,6 +1,7 @@
 # :cloud: [Cozy Cloud][0] Mobile client
 
 [![Build Status][1]][2]
+[![Build Status][20]][21]
 [![Dependency Status][3]][4]
 [![Code Climate][5]][6]
 [![codecov][18]][19]
@@ -162,3 +163,5 @@ You can reach the Cozy Community by:
 [17]: https://twitter.com/mycozycloud
 [18]: https://codecov.io/gh/cozy/cozy-mobile/branch/master/graph/badge.svg
 [19]: https://codecov.io/gh/cozy/cozy-mobile
+[20]: https://www.bitrise.io/app/36b370453746d4d3.svg?token=InnoPe-xAPqYJWkC9aWNYw&branch=master
+[21]: https://www.bitrise.io/app/36b370453746d4d3
