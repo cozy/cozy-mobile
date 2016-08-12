@@ -3,6 +3,7 @@
 [![Build Status][1]][2]
 [![Dependency Status][3]][4]
 [![Code Climate][5]][6]
+[![codecov][18]][19]
 
 This is the native mobile client for Cozy.
 
@@ -159,3 +160,5 @@ You can reach the Cozy Community by:
 [15]: https://raw.github.com/cozy/cozy-setup/gh-pages/assets/images/happycloud.png
 [16]: https://github.com/cozy/
 [17]: https://twitter.com/mycozycloud
+[18]: https://codecov.io/gh/cozy/cozy-mobile/branch/master/graph/badge.svg
+[19]: https://codecov.io/gh/cozy/cozy-mobile
