@@ -138,7 +138,8 @@ module.exports = class FileCacheHandler
             if err and err.code isnt FileError.PATH_EXISTS_ERR
                 return callback err
             fileName = @getFileName cozyFile
-            fileName = decodeURIComponent fileName if device.name is "Android"
+            if device.platform is "Android"
+                fileName = decodeURIComponent fileName
             fs.getFile binaryFolder, fileName, (err, entry) ->
                 # file already exist
                 return callback null, entry.toURL() if entry
