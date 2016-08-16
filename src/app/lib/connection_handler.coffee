@@ -10,10 +10,13 @@ instance = null
 module.exports = class ConnectionHandler
 
 
-    constructor:  ->
+    constructor: (@ConnectionState) ->
         return instance if instance
         instance = @
-        @connected = navigator.connection.type isnt Connection.NONE
+
+        # Connection is from cordova-plugin-network-information
+        @ConnectionState ?= Connection
+        @connected = navigator.connection.type isnt @ConnectionState.NONE
         log.debug @connected
         document.addEventListener 'offline', @_offline, false
         document.addEventListener 'online', @_online, false
@@ -39,7 +42,7 @@ module.exports = class ConnectionHandler
 
 
     isConnected: ->
-        connected = navigator.connection.type isnt Connection.NONE
+        connected = navigator.connection.type isnt @ConnectionState.NONE
         if connected isnt @connected
             if connected
                 @_online()
@@ -52,4 +55,4 @@ module.exports = class ConnectionHandler
 
 
     isWifi: ->
-        @connected and navigator.connection.type is Connection.WIFI
+        @isConnected() and navigator.connection.type is @ConnectionState.WIFI
