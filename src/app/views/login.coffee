@@ -1,5 +1,5 @@
 BaseView = require '../lib/base_view'
-validator = require 'validator'
+urlValidator = require '../lib/url_validator'
 
 module.exports = class LoginView extends BaseView
 
@@ -15,6 +15,20 @@ module.exports = class LoginView extends BaseView
         inputURL      : '#input-url'
         inputPassword : '#input-password'
         btnLogin      : '#btn-password'
+
+
+    events: ->
+        # welcome page
+        'tap #btn-welcome'       : -> @options.fsm.trigger 'clickNext'
+        # url page
+        'blur #input-url'        : 'onURLBlur'
+        'change #input-url'      : -> @setState 'error', null if @error
+        'tap #btn-url'           : 'validUrl'
+        # password page
+        'tap #btn-back-fsm'      : -> @options.fsm.trigger 'clickBack'
+        'tap #btn-back'          : -> @options.fsm.trigger 'clickBack'
+        'change #input-password' : -> @setState 'error', null if @error
+        'tap #btn-password'      : 'validLogin'
 
 
 
@@ -43,20 +57,6 @@ module.exports = class LoginView extends BaseView
         @$el.css 'background-color'
 
 
-    events: ->
-        # welcome page
-        'tap #btn-welcome'       : -> @options.fsm.trigger 'clickNext'
-        # url page
-        'blur #input-url'        : 'onURLBlur'
-        'change #input-url'      : -> @setState 'error', null if @error
-        'tap #btn-url'           : 'validUrl'
-        # password page
-        'tap #btn-back-fsm'      : -> @options.fsm.trigger 'clickBack'
-        'tap #btn-back'          : -> @options.fsm.trigger 'clickBack'
-        'change #input-password' : -> @setState 'error', null if @error
-        'tap #btn-password'      : 'validLogin'
-
-
     getRenderData: ->
         @config = window.app.init.config
         cozyURL: @config.get 'cozyURL'
@@ -66,20 +66,14 @@ module.exports = class LoginView extends BaseView
 
     onURLBlur: ->
         return unless @inputURL.val()
-        @inputURL.val @_cleanUrl @inputURL.val()
+        @inputURL.val urlValidator.cleanUrl @inputURL.val()
         @config.setCozyUrl @inputURL.val()
 
 
     validUrl: ->
         url = @inputURL.val()
-        isLocalhost = url.indexOf('localhost') is 0
-        protocols = ['https']
-        if window.isBrowserDebugging and isLocalhost
-            protocols.push 'http'
 
-        options = protocols: protocols
-
-        if validator.isURL url, options
+        if urlValidator.validUrl url
             @options.fsm.trigger 'clickNext'
         else
             @setState 'error', "url invalid"
@@ -102,22 +96,3 @@ module.exports = class LoginView extends BaseView
             else
                 @config.set 'devicePassword', @inputPassword.val()
                 app.init.trigger 'validCredentials'
-
-
-    _cleanUrl: (url) ->
-        # trim white space
-        url = url.replace /^\s+|\s+$/g,''
-
-        # add .cozycloud.cc if the user only input name
-        if url.indexOf('.') is -1 and url.length > 0
-            url = url + ".cozycloud.cc"
-
-        # Add http on the hostname
-        if url[0..3] isnt 'http'
-            url = 'https://' + url
-
-        # remove trailing slash
-        if url[url.length-1] is '/'
-            url = url[..-2]
-
-        return url
