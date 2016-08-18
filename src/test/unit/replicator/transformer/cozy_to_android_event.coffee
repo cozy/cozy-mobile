@@ -1,11 +1,10 @@
 should = require('chai').should()
+helper = require '../../../helper/helper'
 
 global._ = require 'underscore'
 global.moment = require 'moment-timezone'
 
-CozyToAndroidEvent = require \
-    '../../../../app/replicator/transformer/cozy_to_android_event'
-
+CozyToAndroidEvent = helper.requireTestFile __filename
 
 c2A = new CozyToAndroidEvent()
 timezone = 'Europe/Paris'
