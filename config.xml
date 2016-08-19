@@ -1,9 +1,9 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget android-versionCode="10402"
-        android-versionName="1.4.2"
+<widget android-versionCode="10403"
+        android-versionName="1.4.3"
         id="io.cozy.files_client"
         ios-CFBundleIdentifier="io.cozy.mobile.sync"
-        version="1.4.2"
+        version="1.4.3"
         xmlns="http://www.w3.org/ns/widgets"
         xmlns:cdv="http://cordova.apache.org/ns/1.0">
     <name>Cozy Mobile</name>
