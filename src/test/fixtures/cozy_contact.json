@@ -238,7 +238,7 @@
         "value": "Partner",
         "type": "partner"
     },
-    { 
+    {
       "name": "relation",
       "value": "Domestic Partner",
       "type": "domestic_partner"
@@ -252,6 +252,10 @@
   "note": "Blah, blah\n\nblah blah blah.\n\nblahblah\nCustom: Custom field data",
   "tags": [
   ],
-  "docType": "contact"
+  "docType": "contact",
+  "_attachments": {
+    "picture": {
+      "data": "ZGF0YTppbWFnZS9naWY7YmFzZTY0LFIwbEdPRGxoQVFBQkFJQUFBUC8vLy8vLy95SDVCQUVLQUFFQUxBQUFBQUFCQUFFQUFBSUNUQUVBT3c9PQ=="
+    }
   }
-  
+}
