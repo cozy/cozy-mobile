@@ -2,4 +2,4 @@ Cozy.io is a platform that brings all your web services in the same private spac
 
 This is the Android mobile client to your personnal Cozy server. Connect it to your Cozy server and browse through your cozy files from your Android device. You can also synchronize your contacts and your calendars.
 
-Use github issues to report bugs and vote for next features : https://github.com/mycozycloud/cozy-files-mobile/issues
+Use github issues to report bugs and vote for next features : https://github.com/cozy/cozy-mobile/issues

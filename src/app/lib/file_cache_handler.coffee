@@ -15,10 +15,12 @@ module.exports = class FileCacheHandler
     constructor: (@localDb, @replicateDb, @requestCozy) ->
         return instance if instance
         instance = @
+
         @cache = Object.create(null)
         @localDb ?= app.init.database.localDb
         @replicateDb ?= app.init.database.replicateDb
         @requestCozy ?= app.init.requestCozy
+
         fs.initialize (err, downloads) =>
             return log.error err if err
             @downloads = downloads

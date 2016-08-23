@@ -1,5 +1,6 @@
 database = require './database'
 fixture = require './fixture'
+config = require './config'
 
 
 module.exports =
@@ -11,3 +12,4 @@ module.exports =
 
     database: database
     fixture: fixture
+    config: config

@@ -634,8 +634,13 @@ module.exports = class Init
             return @handleError err if err
             @trigger 'firstSyncViewDisplayed'
 
+
     takeDBCheckpoint: ->
-        @replicator.takeCheckpoint @getCallbackTrigger 'checkPointed'
+        @replicator.getRemoteCheckpoint (err, checkpoint) =>
+            return @handleError err if err
+            window.app.checkpointed = checkpoint
+            @trigger 'checkPointed'
+
 
     initFiles: ->
         options =

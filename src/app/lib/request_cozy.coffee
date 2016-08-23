@@ -3,6 +3,7 @@ log = require('./persistent_log')
     prefix: "RequestCozy"
     date: true
 
+
 # private
 
 
@@ -22,7 +23,7 @@ del = (options, callback) ->
 # public
 
 
-class RequestCozy
+module.exports = class RequestCozy
 
     constructor: (@config) ->
 
@@ -77,5 +78,3 @@ class RequestCozy
             username: @config.get 'deviceName'
             password: @config.get 'devicePassword'
         url: @getDataSystemUrl path, withUrlAuth
-
-module.exports = RequestCozy
