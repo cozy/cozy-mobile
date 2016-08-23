@@ -1,4 +1,3 @@
-should = require('chai').should()
 helper = require '../../../helper/helper'
 Transformer = helper.requireTestFile __filename
 
@@ -15,12 +14,15 @@ global.window =
 
 module.exports = describe 'Cozy To Android Contact Transformer Test', ->
 
+
     transformer = new Transformer()
 
+
     it 'can transform cozy to android', ->
-        cozyContact = helper.getCozyContact()
+        cozyContact = helper.fixture.getCozyContact()
         cordovaContact = transformer.transform cozyContact
         cordovaContact.should.be.exist
+
 
     it 'can transform android to cozy', (done) ->
         cordovaContact = require '../../../fixtures/cordova_contact.json'
