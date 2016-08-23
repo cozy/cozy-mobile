@@ -178,7 +178,7 @@ module.exports = class Replicator extends Backbone.Model
         async.retry retryOptions, ((cb) => @_fetchAll options, cb)
         , (err, rows) =>
             return callback err if err
-            return callback null unless rows?.length isnt 0
+            return callback null, [] unless rows?.length isnt 0
 
             total = rows.length
             count = 1

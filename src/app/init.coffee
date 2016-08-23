@@ -670,6 +670,7 @@ module.exports = class Init
                 retry: 3
             @replicator.copyView options, (err, contacts) =>
                 return @handleError err if err
+                return @trigger 'contactsInited' unless contacts
 
                 total = contacts.length
                 count = 1
@@ -695,6 +696,7 @@ module.exports = class Init
                 retry: 3
             @replicator.copyView options, (err, events) =>
                 return @handleError err if err
+                return @trigger 'calendarsInited' unless events
 
                 total = events.length
                 count = 1
