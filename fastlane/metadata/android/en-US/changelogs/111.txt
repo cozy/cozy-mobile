@@ -1,0 +1,2 @@
+* Improve application design.
+* Bug fixes for contacts synchronization.

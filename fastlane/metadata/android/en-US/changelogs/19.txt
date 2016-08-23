@@ -1,0 +1,3 @@
+* Bug fix for password with accents.
+* Improve logs
+* Improve user feedbacks
