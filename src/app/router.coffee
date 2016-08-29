@@ -1,5 +1,6 @@
 app = require './application'
 FolderView = require './views/folder'
+MediaPlayView = require './views/media_player'
 LoginWizard = require './views/login'
 PermissionsWizard = require './views/permissions_wizard'
 PermissionsView = require './views/permissions'
@@ -15,12 +16,19 @@ module.exports = class Router extends Backbone.Router
 
     routes:
         'folder/*path'                    : 'folder'
+        'media/*path'                     : 'media'
         'search/*query'                   : 'search'
         'login/*step'                     : 'login_wizard'
         'permissions/*step'               : 'permissions_wizard' # install
         'permissions'                     : 'permissions' # after change
         'first-sync'                      : 'firstSync'
         'config'                          : 'config'
+
+
+    media: (path) ->
+        app.layout.hideTitle()
+        @display new MediaPlayView path: path
+
 
     folder: (path) ->
         $('#btn-menu').show()

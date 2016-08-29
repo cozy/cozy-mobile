@@ -100,6 +100,10 @@ module.exports = class FolderLineView extends BaseView
         if @fileCacheHandler.isSameBinary cozyFile
             @fileCacheHandler.getBinaryUrl cozyFile, (err, url) =>
                 return log.warn err if err
+
+                if @mimeClasses[@model.attributes.mime] is 'type-image'
+                    app.router.navigate "#media/#{url}", trigger: true
+                    return true
                 @fileCacheHandler.open url
         else
             # else, the model is a file, we get its binary and open it
@@ -109,6 +113,9 @@ module.exports = class FolderLineView extends BaseView
                 return log.warn err if err
                 # let android open the file
                 app.init.trigger 'openFile'
+                if @mimeClasses[@model.attributes.mime] is 'type-image'
+                    app.router.navigate "#media/#{url}", trigger: true
+                    return true
                 @fileCacheHandler.open url
 
 
