@@ -26,6 +26,7 @@
     "async": "2.0.1",
     "backbone": "1.3.3",
     "backbone.statemachine": "0.2.7",
+    "hammerjs": "2.0.8",
     "jquery": "1.9.1",
     "moment": "2.14.1",
     "moment-timezone": "0.5.5",
