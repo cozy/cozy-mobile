@@ -2,17 +2,16 @@ BaseView = require '../lib/base_view'
 Hammer = require 'hammer'
 FileCacheHandler = require '../lib/file_cache_handler'
 
-log = require('../lib/persistent_log')
-    prefix: "MediaPlayerView"
-    date: true
 
 module.exports = class MediaPlayerView extends BaseView
+
 
     btnBackEnabled: true
     template: require '../templates/media_player'
 
-    initialize: ->
-        super
+
+    initialize: (options) ->
+        @path = options.path
         new Hammer @el
         @fileCacheHandler = new FileCacheHandler()
 
@@ -30,7 +29,7 @@ module.exports = class MediaPlayerView extends BaseView
 
     onClickOpen: (e) ->
         e.preventDefault()
-        @fileCacheHandler.open @options.path
+        @fileCacheHandler.open @path
 
 
     onClickExit: (e) ->
@@ -39,7 +38,7 @@ module.exports = class MediaPlayerView extends BaseView
 
 
     getRenderData: ->
-        path: @options.path
+        path: @path
 
 
     onSwipe: (event) ->
