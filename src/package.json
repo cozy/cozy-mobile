@@ -28,6 +28,7 @@
     "backbone.statemachine": "0.2.7",
     "hammerjs": "2.0.8",
     "jquery": "1.9.1",
+    "material-design-icons": "3.0.0",
     "moment": "2.14.1",
     "moment-timezone": "0.5.5",
     "node-polyglot": "2.0.0",
