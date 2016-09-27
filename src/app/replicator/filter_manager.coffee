@@ -53,8 +53,11 @@ module.exports = class FilterManager
      * @param {String} deviceName - it's device name
      * @param {PouchDB} db - the main PouchDB instance of the app.
     ###
-    # constructor: (@cozyUrl, @auth, @deviceName, @db) ->
-    constructor: (@config, @requestCozy, @db) ->
+    # constructor: (@cozyUrl, @auth, @deviceName, @replicateDb) ->
+    constructor: (@config, @requestCozy, @replicateDb) ->
+        @config ?= app.init.config
+        @requestCozy ?= app.init.requestCozy
+        @replicateDb ?= app.init.database.replicateDb
         deviceName = @config.get 'deviceName'
 
     ###*
@@ -79,12 +82,12 @@ module.exports = class FilterManager
         # Add the filter in PouchDB
         filterId = @getFilterDocId()
         doc._id = filterId
-        @db.get filterId, (err, existing) =>
+        @replicateDb.get filterId, (err, existing) =>
             # assume err is 404, which means no doc yet.
             if existing?
                 doc._rev = existing._rev
 
-            @db.put doc, (err) =>
+            @replicateDb.put doc, (err) =>
                 return callback err if err
 
                 # Delete rev before sending to Cozy

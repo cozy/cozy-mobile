@@ -70,7 +70,7 @@ module.exports = class ContactImporter
                         picture.revpos = 1 + \
                             parseInt contact._rev.split('-')[0]
 
-            @db.put contact, contact._id, contact._rev, (err, idNrev) =>
+            @db.put contact, (err, idNrev) =>
                 return callback err if err
                 @_undirty phoneContact, idNrev, callback
 
@@ -103,7 +103,7 @@ module.exports = class ContactImporter
             _rev: phoneContact.sync2
             _deleted: true
 
-        @db.put toDelete, toDelete._id, toDelete._rev, (err, res) ->
+        @db.put toDelete, (err, res) ->
             return callback err if err
             phoneContact.remove (-> callback()), callback, \
                     callerIsSyncAdapter: true

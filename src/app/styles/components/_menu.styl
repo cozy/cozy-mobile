@@ -19,17 +19,17 @@
         border-color transparent
         color grey-01
 
-        &::before
+        &before
             opacity .8
             margin-right (10/16)em
 
-        &.icon-folder::before
+        &.icon-folderbefore
             @extend $icon-folder
 
-        &.icon-cog::before
+        &.icon-cogbefore
             @extend $icon-cog
 
-        &.icon-sync::before
+        &.icon-syncbefore
             @extend $icon-sync
 
     .item-input-inset
@@ -44,7 +44,223 @@
 
     a
     button
-        &.item:after
+        &.itemafter
             // hide right arrow on the side menu
             display none
 
+.userView
+    background-image url(../img/icon.png)
+    background-position center center
+    background-size contain
+    background-repeat no-repeat
+    height 200px
+
+#information
+    width 90%
+    background-color white
+    .modal-content
+        padding 24px 10px
+    ul
+        border-width 0
+
+        li
+            border-width 0
+
+
+.header-file
+    .open
+        display block
+    .close
+        display none
+
+    &.search-open
+        .open
+            display none
+        .close
+            display block
+
+    .brand-logo
+        top 0
+        right 58px!important
+        left 68px!important
+        transform inherit!important
+        overflow hidden
+        text-overflow ellipsis
+        font-size 1.6rem
+    .input-field input[type=search] ~ .material-icons
+        color inherit
+    .input-field input[type=search]:focus ~ .material-icons
+        color #444
+
+.cozy.loader
+    top 56px
+    bottom 0
+    left 0
+    right 0
+    position absolute
+    .center
+        width 100%
+    .spinner-red-only
+        border-color blue
+    .preloader-wrapper
+        display block
+        margin 0 auto 10px
+
+
+.path
+    padding-left 56px
+
+
+.collection.files
+    min-height 100%
+    margin 0
+    overflow-y auto
+    background-color white
+
+    .valign-wrapper
+        height 100%
+
+        .center
+            width 100%
+
+            .mdi
+                display block
+                font-size 4em
+
+    .collection-item
+        background-color white!important
+        min-height 50px
+        padding-left 55px
+        padding-right 55px
+        position relative
+
+        .title
+            padding 4px 0
+            color grey
+
+        .icon, .status
+            position absolute
+            overflow hidden
+            display inline-block
+            vertical-align middle
+            color blue
+            font-size 30px
+
+        .icon
+            left 15px
+
+            &.is-cached
+                color #388e3c
+
+        .status
+            right 0
+            top 0
+            padding 14px 19px
+            font-size 20px
+            color gray
+
+        .menu
+            position absolute
+            top 0
+            right 0
+
+            .toggle
+                position absolute
+                top 0
+                right 0
+                background-color white
+
+                i
+                    line-height 32px
+                    text-align center
+                    width 30px
+                    height 30px
+                    margin 10px 14px 9px
+
+            .open
+                i
+                    background-color white
+                    color grey
+                    border-width 0
+                    box-shadow none
+            .close
+                display none
+                i
+                    background-color grey
+
+            ul
+                li
+                    margin 6px 15px 0 0
+
+
+
+        &.menuOpen
+            .title
+                display none
+            .open
+                display none
+            .close
+                display block
+
+
+        .progress
+            display none
+            border-radius inherit
+            position absolute
+            left 0
+            right 0
+            z-index 999
+
+.cozy-breadcrumb
+    display none
+    position fixed
+    bottom 0
+    overflow hidden
+    
+
+
+
+.crumbs
+    position relative
+
+    a
+        color white
+
+    .crumbs-list
+        position: relative
+        padding: 1em
+        width: 100%
+        white-space: nowrap
+        overflow-x: auto
+        /* has to be scroll, not auto */
+        -webkit-overflow-scrolling: touch
+        margin: 0
+
+        li
+            display: inline-block
+
+            &:before
+                content: '/'
+                padding: 0 0.5em 0 0.75em
+                color: white
+
+            &:first-child:before
+                content ''
+                padding 0
+
+            i
+                padding 10px 0 10px 10px
+
+#slide-out.side-nav
+    height inherit
+    bottom 0
+
+    footer
+        position absolute
+        bottom 0
+        left 0
+        right 0
+
+        div
+            margin 0 30px 20px 0
+            text-align right

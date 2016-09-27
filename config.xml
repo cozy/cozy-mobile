@@ -1,26 +1,20 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget android-versionCode="10404"
-        android-versionName="1.4.4"
-        id="io.cozy.files_client"
-        ios-CFBundleIdentifier="io.cozy.mobile.sync"
-        version="1.4.4"
-        xmlns="http://www.w3.org/ns/widgets"
-        xmlns:cdv="http://cordova.apache.org/ns/1.0">
+<widget android-versionCode="10404" android-versionName="1.4.4" id="io.cozy.files_client" ios-CFBundleIdentifier="io.cozy.files" version="1.4.4" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
     <name>Cozy Mobile</name>
     <description>Sync files from your cozycloud</description>
     <author email="contact@cozycloud.cc" href="https://cozy.io">Cozy Cloud</author>
     <preference name="Fullscreen" value="false" />
-    <preference name="Orientation" value="portrait" />
     <preference name="android-minSdkVersion" value="14" />
     <preference name="AndroidLaunchMode" value="singleTask" />
     <preference name="android-windowSoftInputMode" value="stateHidden|adjustPan" />
     <preference name="KeyboardDisplayRequiresUserAction" value="false" />
     <content src="index.html" />
     <preference name="SplashScreenDelay" value="3000" />
-    <preference name="FadeSplashScreen" value="false"/>
-    <preference name="ShowSplashScreenSpinner" value="false"/>
+    <preference name="FadeSplashScreen" value="false" />
+    <preference name="ShowSplashScreenSpinner" value="false" />
+    <preference name="StatusBarOverlaysWebView" value="false" />
+    <preference name="StatusBarBackgroundColor" value="#33A6FF" />
     <platform name="android">
-        <preference name="android-minSdkVersion" value="19" />
         <icon density="ldpi" src="res/icons/android/icon-36-ldpi.png" />
         <icon density="mdpi" src="res/icons/android/icon-48-mdpi.png" />
         <icon density="hdpi" src="res/icons/android/icon-72-hdpi.png" />
@@ -91,4 +85,7 @@
     <plugin name="io.cozy.cordova-images-browser" spec="https://github.com/cozy/cordova-images-browser#v1.0.2" />
     <plugin name="io.cozy.jsbackgroundservice" spec="https://github.com/cozy/cordova-jsbackgroundservice#v1.1.2" />
     <plugin name="io.cozy.jsbgservice-newpicture" spec="https://github.com/cozy/cordova-jsbgservice-newpicture#v1.0.0" />
+    <plugin name="cordova-plugin-screen-orientation" spec="1.4.2" />
+    <plugin name="ionic-plugin-keyboard" spec="2.2.1" />
+    <plugin name="cordova-plugin-statusbar" spec="2.2.0" />
 </widget>

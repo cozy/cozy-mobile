@@ -1,0 +1,57 @@
+.collection.files.z-depth-2.snap-content
+    if loading
+        .valign-wrapper
+            .center.cozy-color
+                .row
+                    .col.s12
+                        .preloader-wrapper.active
+                            .spinner-layer.spinner-cozy
+                                .circle-clipper.left
+                                    .circle
+                                .gap-patch
+                                    .circle
+                                .circle-clipper.right
+                                    .circle
+                    .col.s12
+                        span Loading
+    else
+        //if parentPath != ''
+        //    .crumbs.bg-cozy-color
+        //        ul.crumbs-list#breadcrumb
+        //            each link in breadcrumb
+        //                li
+        //                    if link.name
+        //                        a(href='#folder' + link.link)= link.name
+        //                    else
+        //                        a(href='#folder/')
+        //                            i.mdi.mdi-cloud
+
+        each file in files
+            a.collection-item.download(href=file.link, data-key=file._id, data-doctype=file.docType, data-type=file.icon, data-fullpath=file.fullPath)
+                if file.isCached
+                    i(class="icon mdi mdi-#{file.icon} is-cached")
+                else
+                    i(class="icon mdi mdi-#{file.icon}")
+                span.title.truncate= file.name
+
+                //.menu.fixed-action-btn.horizontal.click-to-toggle
+                //    .toggle.open
+                //        i.mdi.mdi-dots-vertical.btn-floating
+                //    .toggle.close
+                //        i.mdi.mdi-close.btn-floating
+                //    ul
+                //        if file.isCached
+                //            li
+                //                .btn-floating.red.remove
+                //                    i.material-icons phonelink_erase
+                //        else
+                //            li
+                //                .btn-floating.green.download
+                //                    i.material-icons cloud_download
+                .progress
+                    .determinate.fileProgress(style='width: 0%')
+        else
+            .valign-wrapper
+                .center.cozy-color
+                    i.mdi.mdi-file
+                    span Aucun fichier

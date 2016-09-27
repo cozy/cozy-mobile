@@ -46,8 +46,6 @@ module.exports = class FileCacheHandler
 
 
     getFolderName: (cozyFile) ->
-        log.debug 'getFolderName'
-
         return cozyFile._id if cozyFile._id
 
         log.warn JSON.stringify cozyFile
@@ -55,8 +53,6 @@ module.exports = class FileCacheHandler
 
 
     isCached: (cozyFile) ->
-        log.debug 'isCached'
-
         @cache[@getFolderName cozyFile]?
 
 

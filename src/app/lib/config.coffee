@@ -115,10 +115,11 @@ class Config
             log.info 'Initialize app configuration'
 
             config = DEFAULT_CONFIG
-            config.deviceName = "Android-#{device.manufacturer}-#{device.model}"
+            config.deviceName = "#{device.platform}-#{device.manufacturer}-#{device.model}"
             setConfig @database.replicateDb, (err) =>
                 log.error err if err
-                @load callback
+                app.init.upsertLocalDesignDocuments =>
+                    @load callback
 
 
     setConfigValue: (newConfig) ->

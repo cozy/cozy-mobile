@@ -1,0 +1,57 @@
+#slide-out.side-nav
+    ul
+        li
+            .userView
+        li
+            a(href='#folder/')
+                i.material-icons folder_open
+                = t('files')
+        li
+            a(href='#config')
+                i.material-icons settings
+                = t('config')
+        li
+            .divider
+        li
+            a(href=userUrl, onclick="open('#{userUrl}', '_system', 'location=yes')")
+                i.material-icons cloud
+                = userUrl
+        li
+            a
+                i.material-icons stay_current_portrait
+                = deviceName
+        if displayRender
+            li
+                a#senderBtn
+                    i.material-icons bug_report
+                    = t('send log')
+    footer
+        div#displaySender v
+            = appVersion
+
+
+#header.navbar-fixed.header-file
+    nav.open
+        .nav-wrapper.bg-cozy-color
+
+            if displaySearch
+                ul.right.search
+                    li.toggleSearch
+                        a#searchButton
+                            i.material-icons search
+
+            a.brand-logo.center(href='#')= t(title)
+
+            ul.left.file
+                li
+                    a#menuButton.button-collapse(href='#', data-activates='slide-out')
+                        i.material-icons menu
+
+    nav.close
+        .nav-wrapper.bg-cozy-color
+            form#searchForm
+                .input-field
+                    input#searchInput(type='search', required='')
+                    label(for='searchInput')
+                        i.material-icons search
+                    i.toggleSearch.material-icons close

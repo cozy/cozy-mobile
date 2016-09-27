@@ -76,7 +76,7 @@ module.exports = class EventImporter
             cozyEvent = @cozyToAndroidEvent.reverseTransform androidEvent, \
                     androidCalendar, cozyEvent
 
-            @db.put cozyEvent, cozyEvent._id, cozyEvent._rev, (err, response) =>
+            @db.put cozyEvent, (err, response) =>
                 return callback err if err
 
                 androidEvent.sync_data2 = response.rev
@@ -97,7 +97,7 @@ module.exports = class EventImporter
             _rev: androidEvent.sync_data2
             _deleted: true
 
-        @db.put cozyEvent, cozyEvent._id, cozyEvent._rev, (err, res) =>
+        @db.put cozyEvent, (err, res) =>
             return callback err if err
 
             @changeEventHandler._delete cozyEvent, androidEvent, callback

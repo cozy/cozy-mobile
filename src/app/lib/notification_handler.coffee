@@ -42,8 +42,7 @@ module.exports = class NotificationHandler
                 callback()
             else
                 cozyNotif._deleted = true
-                @replicateDb.put cozyNotif, cozyNotif._id, cozyNotif._rev, \
-                    callback
+                @replicateDb.put cozyNotif, callback
 
 
     deletesIfIsNotPresent: (callback) ->

@@ -1,0 +1,18 @@
+#url.wizard-step.fWizardURL
+    .block-100.valign-wrapper
+        .valign.center
+            form
+                .row
+                    .input-field.col.s12
+                        i.material-icons.prefix account_circle
+                        input#input-url(type='url', value=cozyUrl, class=(error?'invalid':''))
+                        label(for='input-url', data-error=(error?t(error):' '))
+                            = t('url placeholder')
+
+            p.flow-text
+                = t('url help')
+
+            a#btn-register(href="#", onclick="open('https://cozy.io/en/try-it/', '_system', 'location=yes')")
+                = t('no account register')
+
+            a#btn-url.button.waves-effect.waves-light.btn-large.white.text-cozy(href='#onboarding/password')= t('next')

@@ -26,7 +26,6 @@ module.exports = class Layout extends BaseView
     initialize: ->
         document.addEventListener "menubutton", @onMenuButtonClicked, false
         document.addEventListener "searchbutton", @onSearchButtonClicked, false
-        document.addEventListener "backbutton", @onBackButtonClicked, false
 
         @listenTo app.init.replicator, 'change:inSync change:inBackup', =>
 
@@ -246,7 +245,7 @@ module.exports = class Layout extends BaseView
 
 
     onBackButtonClicked: (event) =>
-        if @currentView.btnBackEnabled? and @currentView.btnBackEnabled is false
+        if false and @currentView.btnBackEnabled? and @currentView.btnBackEnabled is false
             @currentView.onBackButtonClicked event
 
         # close menu first
@@ -259,6 +258,7 @@ module.exports = class Layout extends BaseView
                 navigator.app.exitApp()
 
         else
+            app.router.layout.back = true
             window.history.back()
 
 

@@ -1,32 +1,42 @@
 # intialize module which initialize global vars.
 require './lib/utils'
 toast = require './lib/toast'
-
-LayoutView     = require './views/layout'
-Init           = require './init'
-
+Initialize = require './lib/initialize'
+Synchronization = require './lib/synchronization'
 log = require('./lib/persistent_log')
     prefix: "application"
     date: true
     processusTag: "Application"
 
+
 module.exports =
+
 
     initialize: ->
         log.debug "initialize"
 
         @name = 'APP'
-        @init = new Init @
+        @init = new Initialize @
         @init.initConfig =>
-            @init.startStateMachine()
-            @init.trigger 'startApplication'
+            Backbone.history.start()
+            @startLayout()
+            @startSynchronization()
+
 
     startLayout: ->
         log.debug "startLayout"
 
         Router = require './router'
         @router = new Router()
-        @layout = new LayoutView()
+        @router.init @init.config.get 'state'
+
+
+    startSynchronization: ->
+        log.info 'startSynchronization'
+
+        @synchro = new Synchronization()
+        @synchro.sync()
+
 
     setListeners: ->
         log.debug "setListeners"
@@ -56,6 +66,7 @@ module.exports =
             msg += "\n #{t('error try restart')}"
             navigator.notification.alert msg
         navigator.app.exitApp()
+
 
     addDeviceListener: ->
         log.debug "addDeviceListener"

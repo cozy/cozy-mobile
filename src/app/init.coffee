@@ -77,30 +77,6 @@ module.exports = class Init
         Backbone.StateMachine.startStateMachine.apply @
 
 
-    # activating contact or calendar sync requires to init them,
-    # trough init state machine
-    # @param needSync {calendars: true, contacts: false } type object, if
-    # it should be updated or not.
-    updateConfig: (needInit) ->
-        log.debug 'updateConfig'
-        # Do sync only while on Realtime : TODO: handles others Running states
-        # waiting for them to end.
-        if @currentState in ['nRealtime', 'cUpdateIndex', 'nImport', 'nBackup']
-            db = @database.replicateDb
-            filterManager = new FilterManager @config, @requestCozy, db
-            filterManager.setFilter =>
-                if needInit.syncCalendars and needInit.syncContacts
-                    @toState 'c3RemoteRequest'
-                else if needInit.syncContacts
-                    @toState 'c1RemoteRequest'
-                else if needInit.syncCalendars
-                    @toState 'c2RemoteRequest'
-                else
-                    @toState 'c4RemoteRequest'
-        else
-            @app.router.forceRefresh()
-            @trigger 'error', new Error 'App is busy'
-
 
     launchBackup: ->
         log.debug 'backup'
@@ -593,11 +569,12 @@ module.exports = class Init
 
 
     loginWizard: ->
-        @app.router.navigate "login/#{@currentState}", trigger: true
+        @app.router.navigate "#onboarding/welcome", trigger: true
+#        @app.router.navigate "login/#{@currentState}", trigger: true
 
 
     permissionsWizard: ->
-        @app.router.navigate "permissions/#{@currentState}", trigger: true
+        @app.router.navigate "#permissions/files", trigger: true
 
 
     createDevice: ->
