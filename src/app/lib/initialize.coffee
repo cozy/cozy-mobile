@@ -12,7 +12,6 @@ FileCacheHandler = require './file_cache_handler'
 PutRemoteRequest = require('../migrations/put_remote_request')
 Replicator = require '../replicator/main'
 RequestCozy = require './request_cozy'
-ServiceManager = require '../models/service_manager'
 Translation = require './translation'
 ConnectionHandler = require './connection_handler'
 toast = require './toast'
@@ -51,11 +50,6 @@ module.exports = class Initialize
             @config.load =>
                 state = if @app.name is 'APP' then 'launch' else 'service'
                 @config.set 'appState', state, =>
-                    # The ServiceManager is a flag for the background plugin to
-                    # know if it's the service or the application,
-                    # see https://git.io/vVjJO
-                    unless @app.name is 'SERVICE'
-                        @serviceManager = new ServiceManager()
                     @fileCacheHandler.load =>
                         @replicator.initConfig @config, @requestCozy, @database, \
                             @fileCacheHandler

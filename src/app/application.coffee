@@ -3,6 +3,7 @@ require './lib/utils'
 toast = require './lib/toast'
 Initialize = require './lib/initialize'
 Synchronization = require './lib/synchronization'
+ServiceManager = require '../models/service_manager'
 log = require('./lib/persistent_log')
     prefix: "application"
     date: true
@@ -21,6 +22,10 @@ module.exports =
             Backbone.history.start()
             @startLayout()
             @startSynchronization()
+            # The ServiceManager is a flag for the background plugin to
+            # know if it's the service or the application,
+            # see https://git.io/vVjJO
+            @serviceManager = new ServiceManager()
 
 
     startLayout: ->
