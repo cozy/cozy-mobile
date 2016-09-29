@@ -72,27 +72,45 @@ module.exports = class Synchronization
 
 
     syncAndroidToCozy: (callback) ->
-        callback() unless @connectionHandler.isConnected()
         @canSync (err, isOk) =>
             log.warn err if err
 
             if isOk
+                log.info 'start synchronization android to cozy'
                 @changesImporter.synchronize callback
             else
                 callback()
 
 
     uploadMedia: (callback) ->
-        @mediaUploader.upload callback
+        @canSync (err, isOk) =>
+            log.warn err if err
+
+            if isOk
+                log.info 'start upload media'
+                @mediaUploader.upload callback
+            else
+                callback()
 
 
     downloadCacheFile: (callback) ->
-        @replicator.syncCache callback
+        @canSync (err, isOk) =>
+            log.warn err if err
+
+            if isOk
+                log.info 'start download cache file'
+                @replicator.syncCache callback
+            else
+                callback()
 
 
     canSync: (callback)->
-        if 'syncCompleted' is @config.get 'state'
-            @filterManader.setFilter callback
+        isConnected = @connectionHandler.isConnected()
+        isStateOk = 'syncCompleted' is @config.get 'state'
+        if isConnected and isStateOk
+            @filterManader.filterRemoteExist callback
+        else
+            callback null, false
 
 
     stop: ->
