@@ -27,7 +27,6 @@ module.exports = class ConfigView extends BaseView
         @firstReplication = new FirstReplication()
         @replicator = app.init.replicator
         @filterManager = new FilterManager()
-        @synchro = app.synchro
 
 
     events: ->
@@ -54,13 +53,11 @@ module.exports = class ConfigView extends BaseView
 
     toggleNotification: ->
         checked = @calendarCheckbox.is(':checked')
-        @synchro.stop()
         @config.set 'cozyNotifications', checked
 
 
     toggleCalendar: ->
         checked = @calendarCheckbox.is(':checked')
-        @synchro.stop()
         @config.set 'syncCalendars', checked
 
         if checked
@@ -70,18 +67,14 @@ module.exports = class ConfigView extends BaseView
 
             @firstReplication.addTask 'calendars', =>
                 @render()
-                @synchro.startLive()
 
             setTimeout =>
                 @render()
             , 200
-        else
-            @synchro.startLive()
 
 
     toggleContact: ->
         checked = @contactCheckbox.is(':checked')
-        @synchro.stop()
         @config.set 'syncContacts', checked
 
         if checked
@@ -91,13 +84,10 @@ module.exports = class ConfigView extends BaseView
 
             @firstReplication.addTask 'contacts', =>
                 @render()
-                @synchro.startLive()
 
             setTimeout =>
                 @render()
             , 200
-        else
-            @synchro.startLive()
 
 
     toggleWifi: ->
