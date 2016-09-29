@@ -1,7 +1,8 @@
 # intialize module which initialize global vars.
 require './lib/utils'
 
-Init          = require './init'
+Initialize = require './lib/initialize'
+Synchronization = require './lib/synchronization'
 
 log = require('./lib/persistent_log')
     prefix: "application"
@@ -21,10 +22,17 @@ module.exports = BackgroundService =
         log.debug "initialize"
 
         @name = 'SERVICE'
-        @init = new Init @
+        @init = new Initialize @
         @init.initConfig =>
-            @init.startStateMachine()
-            @init.trigger 'startService'
+            @startSynchronization()
+
+
+    startSynchronization: ->
+        log.info 'startSynchronization'
+
+        @synchro = new Synchronization()
+        @synchro.sync live: false, =>
+            @exit()
 
 
     startMainActivity: (err)->
