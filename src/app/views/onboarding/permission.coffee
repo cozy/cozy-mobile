@@ -11,6 +11,11 @@ module.exports = class Permission extends BaseView
         'contacts': require '../../templates/onboarding/permission_contacts'
         'calendars': require '../../templates/onboarding/permission_calendars'
         'photos': require '../../templates/onboarding/permission_photos'
+    colors:
+        'files': '#9169F2'
+        'contacts': '#FD7461'
+        'calendars': '#34D882'
+        'photos': '#FFAE5F'
     refs:
         noBtn: '#btn-nope'
         yesBtn: '#btn-yep'
@@ -24,6 +29,7 @@ module.exports = class Permission extends BaseView
         @config ?= app.init.config
         @router ?= app.router
         @platform ?= device.platform
+        StatusBar.backgroundColorByHexString @colors[@step]
 
 
     events: ->
@@ -49,7 +55,9 @@ module.exports = class Permission extends BaseView
 
         route = 'folder/' if @platform is 'iOS'
 
-        if route is 'folder/' and 'syncCompleted' isnt @config.get 'state'
-            @config.set 'state', 'appConfigured'
+        if route is 'folder/'
+            StatusBar.backgroundColorByHexString '#33A6FF'
+            if 'syncCompleted' isnt @config.get 'state'
+                @config.set 'state', 'appConfigured'
 
         @router.navigate route, trigger: true

@@ -18,6 +18,7 @@ module.exports = class Password extends BaseView
         @config ?= app.init.config
         @cozyUrl = @config.get 'cozyURL'
         @password = ''
+        StatusBar.backgroundColorByHexString '#4DCEC5'
 
         if @error and @error.startsWith 'CORS request rejected'
             @error = 'CORS request rejected'

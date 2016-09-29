@@ -15,6 +15,7 @@ module.exports = class CheckCredentials extends BaseView
         @database ?= app.init.database
         @canRedirect = false
         @firstReplication = new FirstReplication()
+        StatusBar.backgroundColorByHexString '#33A6FF'
 
         setTimeout =>
             @canRedirect = true

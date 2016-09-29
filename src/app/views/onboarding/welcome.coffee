@@ -12,3 +12,4 @@ module.exports = class Welcome extends BaseView
     initialize: ->
         @backExit = true
         screen.lockOrientation 'portrait'
+        StatusBar.backgroundColorByHexString '#fff'

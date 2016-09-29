@@ -17,6 +17,7 @@ module.exports = class Url extends BaseView
         @config ?= app.init.config
         @cozyUrl = @config.get 'cozyURL'
         @error = ''
+        StatusBar.backgroundColorByHexString '#33A6FF'
 
 
     getRenderData: ->
