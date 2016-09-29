@@ -17,31 +17,42 @@ module.exports = class ContactImporter
     constructor: (@db) ->
         @db ?= app.init.database.replicateDb
         @transformer = new CozyToAndroidContact()
+        @permissions = cordova.plugins.permissions
 
-    # Sync dirty (modified) phone contact to app's pouchDB.
+
     synchronize: (callback) ->
-        log.debug "synchronize"
+        success = =>
+            # Go through modified contacts (dirtys)
+            # delete, update or create....
+            navigator.contacts.find [navigator.contacts.fieldType.dirty]
+            , (contacts) =>
+                processed = 0
+                log.info "syncPhone2Pouch #{contacts.length} contacts."
+                # contact to update number. contacts.length
+                async.eachSeries contacts, (contact, cb) =>
+                    setImmediate => # helps refresh UI
+                        if contact.deleted
+                            @_delete contact, continueOnError cb
+                        else if contact.sourceId
+                            @_update contact, continueOnError cb
+                        else
+                            @_create contact, continueOnError cb
+                , callback
 
-        # Go through modified contacts (dirtys)
-        # delete, update or create....
-        navigator.contacts.find [navigator.contacts.fieldType.dirty]
-        , (contacts) =>
-            processed = 0
-            log.info "syncPhone2Pouch #{contacts.length} contacts."
-            # contact to update number. contacts.length
-            async.eachSeries contacts, (contact, cb) =>
-                setImmediate => # helps refresh UI
-                    if contact.deleted
-                        @_delete contact, continueOnError cb
-                    else if contact.sourceId
-                        @_update contact, continueOnError cb
-                    else
-                        @_create contact, continueOnError cb
             , callback
+            , new ContactFindOptions "1", true, []
+            , AndroidAccount.TYPE, AndroidAccount.NAME
 
-        , callback
-        , new ContactFindOptions "1", true, []
-        , AndroidAccount.TYPE, AndroidAccount.NAME
+        check = (status) =>
+            if (!status.hasPermission)
+                @permissions.requestPermission \
+                    @permissions.READ_CONTACTS, (status) =>
+                        if status.hasPermission then success() else callback()
+                    , callback
+            else
+                success()
+
+        @permissions.hasPermission @permissions.READ_CONTACTS, check, callback
 
 
     # Update contact in pouchDB with specified contact from phone.

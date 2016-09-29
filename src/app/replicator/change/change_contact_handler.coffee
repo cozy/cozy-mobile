@@ -12,6 +12,7 @@ module.exports = class ChangeContactHandler
 
     constructor: ->
         @cozyToAndroidContact = new CozyToAndroidContact()
+        @permissions = cordova.plugins.permissions
 
 
     dispatch: (doc, callback) ->
@@ -71,15 +72,27 @@ module.exports = class ChangeContactHandler
         , callerIsSyncAdapter: true
 
 
-    _getFromPhoneByCozyId: (cozyId, cb) ->
+    _getFromPhoneByCozyId: (cozyId, callback) ->
         log.debug "_getFromPhoneByCozyId"
 
-        navigator.contacts.find [navigator.contacts.fieldType.sourceId]
-        , (contacts) ->
-            cb null, contacts[0]
-        , cb
-        , new ContactFindOptions cozyId, false, [], AndroidAccount.TYPE, \
-            AndroidAccount.NAME
+        success = =>
+            navigator.contacts.find [navigator.contacts.fieldType.sourceId]
+            , (contacts) ->
+                callback null, contacts[0]
+            , callback
+            , new ContactFindOptions cozyId, false, [], AndroidAccount.TYPE, \
+                AndroidAccount.NAME
+
+        check = (status) =>
+            if (!status.hasPermission)
+                @permissions.requestPermission \
+                  @permissions.READ_CONTACTS, (status) =>
+                    if status.hasPermission then success() else callback()
+                , callback
+            else
+                success()
+
+        @permissions.hasPermission @permissions.READ_CONTACTS, check, callback
 
 
     _setPictureBase64data: (doc, callback) ->
