@@ -61,7 +61,7 @@ module.exports = class MediaPlayerView extends BaseView
 
         @fileCacheHandler.removeLocal cozyFile, =>
             @onClickExit()
-            @layout.views[@layout.views.length - 2].update()
+            $("[data-key=#{cozyFileId}] .is-cached").removeClass('is-cached')
 
 
     getRenderData: ->
