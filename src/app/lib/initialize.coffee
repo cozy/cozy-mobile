@@ -53,7 +53,8 @@ module.exports = class Initialize
                     @fileCacheHandler.load =>
                         @replicator.initConfig @config, @requestCozy, @database, \
                             @fileCacheHandler
-                        callback()
+                        @replicator.initFileSystem =>
+                            callback()
 
 
 
