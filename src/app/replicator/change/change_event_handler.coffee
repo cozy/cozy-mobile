@@ -18,6 +18,7 @@ module.exports = class ChangeEventHandler
         @account = AndroidAccount.ACCOUNT
         @androidCalendarHandler = new AndroidCalendarHandler()
         @cozyToAndroidEvent = new CozyToAndroidEvent()
+        @permissions = cordova.plugins.permissions
         @calendarSync ?= navigator.calendarsync
         unless @timezone
             @timezone = 'Europe/Paris'
@@ -27,17 +28,29 @@ module.exports = class ChangeEventHandler
 
 
     dispatch: (cozyEvent, callback) ->
-        @calendarSync.eventBySyncId cozyEvent._id, (err, androidEvents) =>
-            if androidEvents and androidEvents.length > 0
-                androidEvent = androidEvents[0]
-                if cozyEvent._deleted
-                    @_delete cozyEvent, androidEvent, callback
+        success = =>
+            @calendarSync.eventBySyncId cozyEvent._id, (err, androidEvents) =>
+                if androidEvents and androidEvents.length > 0
+                    androidEvent = androidEvents[0]
+                    if cozyEvent._deleted
+                        @_delete cozyEvent, androidEvent, callback
+                    else
+                        @_update cozyEvent, androidEvent, callback
                 else
-                    @_update cozyEvent, androidEvent, callback
+                    # event may have already been deleted from device
+                    # or event never been created
+                    @_create cozyEvent, callback unless cozyEvent._deleted
+
+        check = (status) =>
+            if (!status.hasPermission)
+                @permissions.requestPermission \
+                  @permissions.READ_CALENDAR, (status) =>
+                    if status.hasPermission then success() else callback()
+                , callback
             else
-                # event may have already been deleted from device
-                # or event never been created
-                @_create cozyEvent, callback unless cozyEvent._deleted
+                success()
+
+        @permissions.hasPermission @permissions.READ_CALENDAR, check, callback
 
 
     _create: (cozyEvent, callback) ->

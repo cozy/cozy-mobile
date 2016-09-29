@@ -16,16 +16,30 @@ module.exports = class EventImporter
         @cozyToAndroidEvent = new CozyToAndroidEvent()
         @androidCalendarHandler = new AndroidCalendarHandler()
         @changeEventHandler = new ChangeEventHandler()
+        @permissions = cordova.plugins.permissions
 
     synchronize: (callback) ->
-        @calendarSync.dirtyEvents AndroidAccount.ACCOUNT, \
-                (err, androidEvents) =>
-            return log.error err if err
-            log.info "syncPhone2Pouch #{androidEvents.length} events."
+        success = =>
+            @calendarSync.dirtyEvents AndroidAccount.ACCOUNT, \
+                    (err, androidEvents) =>
+                return log.error err if err
+                log.info "syncPhone2Pouch #{androidEvents.length} events."
 
-            async.eachSeries androidEvents, (androidEvent, cb) =>
-                @_change androidEvent, cb
-            , callback
+                async.eachSeries androidEvents, (androidEvent, cb) =>
+                    @_change androidEvent, cb
+                , callback
+
+        check = (status) =>
+            if (!status.hasPermission)
+                @permissions.requestPermission \
+                  @permissions.READ_CALENDAR, (status) =>
+                    if status.hasPermission then success() else callback()
+                , callback
+            else
+                success()
+
+        @permissions.hasPermission @permissions.READ_CALENDAR, check, callback
+
 
     _change: (androidEvent, callback) ->
         log.debug "_change"
