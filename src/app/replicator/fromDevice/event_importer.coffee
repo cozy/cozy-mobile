@@ -7,6 +7,7 @@ log = require('../../lib/persistent_log')
     prefix: "EventImporter  "
     date: true
 continueOnError = require('../../lib/utils').continueOnError log
+Permission = require '../../lib/permission'
 
 module.exports = class EventImporter
 
@@ -16,7 +17,7 @@ module.exports = class EventImporter
         @cozyToAndroidEvent = new CozyToAndroidEvent()
         @androidCalendarHandler = new AndroidCalendarHandler()
         @changeEventHandler = new ChangeEventHandler()
-        @permissions = cordova.plugins.permissions
+        @permission = new Permission()
 
     synchronize: (callback) ->
         success = =>
@@ -29,16 +30,7 @@ module.exports = class EventImporter
                     @_change androidEvent, cb
                 , callback
 
-        check = (status) =>
-            if (!status.hasPermission)
-                @permissions.requestPermission \
-                  @permissions.READ_CALENDAR, (status) =>
-                    if status.hasPermission then success() else callback()
-                , callback
-            else
-                success()
-
-        @permissions.hasPermission @permissions.READ_CALENDAR, check, callback
+        @permission 'calendar', success, callback
 
 
     _change: (androidEvent, callback) ->

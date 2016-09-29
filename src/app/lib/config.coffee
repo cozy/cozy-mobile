@@ -221,4 +221,11 @@ class Config
             serializePermissions(PERMISSIONS)
 
 
+    removeSync: (type) ->
+        if type is 'contacts'
+            @set 'syncContacts', false
+        else if type is 'calendar'
+            @set 'syncCalendars', false
+
+
 module.exports = Config

@@ -143,6 +143,7 @@ module.exports = class PictureHandler
 
 
     _findLocalPicturesPath: (callback) ->
+
         ImagesBrowser.getImagesList (err, pictures) ->
             if pictures
                 if device.platform is 'Android'

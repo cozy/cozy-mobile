@@ -1,6 +1,7 @@
 AndroidAccount = require '../fromDevice/android_account'
 AndroidCalendarHandler = require '../../lib/android_calendar_handler'
 CozyToAndroidEvent = require '../transformer/cozy_to_android_event'
+Permission = require '../../lib/permission'
 log = require('../../lib/persistent_log')
     prefix: 'ChangeEventHandler'
     date: true
@@ -18,8 +19,8 @@ module.exports = class ChangeEventHandler
         @account = AndroidAccount.ACCOUNT
         @androidCalendarHandler = new AndroidCalendarHandler()
         @cozyToAndroidEvent = new CozyToAndroidEvent()
-        @permissions = cordova.plugins.permissions
         @calendarSync ?= navigator.calendarsync
+        @permission = new Permission()
         unless @timezone
             @timezone = 'Europe/Paris'
             successCB = (date) => @timezone = date.timezone
@@ -41,16 +42,7 @@ module.exports = class ChangeEventHandler
                     # or event never been created
                     @_create cozyEvent, callback unless cozyEvent._deleted
 
-        check = (status) =>
-            if (!status.hasPermission)
-                @permissions.requestPermission \
-                  @permissions.READ_CALENDAR, (status) =>
-                    if status.hasPermission then success() else callback()
-                , callback
-            else
-                success()
-
-        @permissions.hasPermission @permissions.READ_CALENDAR, check, callback
+        @permission 'calendar', success, callback
 
 
     _create: (cozyEvent, callback) ->

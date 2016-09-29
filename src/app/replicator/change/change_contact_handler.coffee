@@ -1,5 +1,6 @@
 CozyToAndroidContact = require "../transformer/cozy_to_android_contact"
 AndroidAccount = require '../fromDevice/android_account'
+Permission = require '../../lib/permission'
 
 log = require('../../lib/persistent_log')
     prefix: "ChangeContactHandler"
@@ -12,7 +13,7 @@ module.exports = class ChangeContactHandler
 
     constructor: ->
         @cozyToAndroidContact = new CozyToAndroidContact()
-        @permissions = cordova.plugins.permissions
+        @permission = new Permission()
 
 
     dispatch: (doc, callback) ->
@@ -83,16 +84,7 @@ module.exports = class ChangeContactHandler
             , new ContactFindOptions cozyId, false, [], AndroidAccount.TYPE, \
                 AndroidAccount.NAME
 
-        check = (status) =>
-            if (!status.hasPermission)
-                @permissions.requestPermission \
-                  @permissions.READ_CONTACTS, (status) =>
-                    if status.hasPermission then success() else callback()
-                , callback
-            else
-                success()
-
-        @permissions.hasPermission @permissions.READ_CONTACTS, check, callback
+        @permission 'contacts', success, callback
 
 
     _setPictureBase64data: (doc, callback) ->

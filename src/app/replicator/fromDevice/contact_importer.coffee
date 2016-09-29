@@ -1,6 +1,7 @@
 async = require 'async'
 AndroidAccount = require './android_account'
 CozyToAndroidContact = require "../transformer/cozy_to_android_contact"
+Permission = require '../../lib/permission'
 
 log = require('../../lib/persistent_log')
     prefix: "ContactImporter"
@@ -17,7 +18,7 @@ module.exports = class ContactImporter
     constructor: (@db) ->
         @db ?= app.init.database.replicateDb
         @transformer = new CozyToAndroidContact()
-        @permissions = cordova.plugins.permissions
+        @permission = new Permission()
 
 
     synchronize: (callback) ->
@@ -43,16 +44,7 @@ module.exports = class ContactImporter
             , new ContactFindOptions "1", true, []
             , AndroidAccount.TYPE, AndroidAccount.NAME
 
-        check = (status) =>
-            if (!status.hasPermission)
-                @permissions.requestPermission \
-                    @permissions.READ_CONTACTS, (status) =>
-                        if status.hasPermission then success() else callback()
-                    , callback
-            else
-                success()
-
-        @permissions.hasPermission @permissions.READ_CONTACTS, check, callback
+        @permission 'contacts', success, callback
 
 
     # Update contact in pouchDB with specified contact from phone.
