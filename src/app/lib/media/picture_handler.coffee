@@ -31,8 +31,6 @@ module.exports = class PictureHandler
 
 
     upload: (callback) ->
-        log.debug 'upload'
-
         @_findLocalPicturesPath (err, picturesPath) =>
             return callback err if err
 
@@ -72,8 +70,6 @@ module.exports = class PictureHandler
 
 
     _checkCozyBinary: (pictureCache, callback) ->
-        log.debug '_checkCozyBinary'
-
         pictureValue = pictureCache.value
         return callback() if pictureValue.binaryExist or !pictureValue.binaryId
 
@@ -87,8 +83,6 @@ module.exports = class PictureHandler
 
 
     _uploadCozyBinary: (pictureCache, callback) ->
-        log.debug '_uploadCozyBinary'
-
         pictureValue = pictureCache.value
         return callback() if pictureValue.binaryId or not pictureValue.fileId
 
@@ -117,8 +111,6 @@ module.exports = class PictureHandler
 
 
     _uploadCozyFile: (pictureCache, cozyFiles, callback) ->
-        log.debug '_uploadCozyFile'
-
         return callback() if pictureCache.value.fileId
 
         setFileId = (fileId) =>
@@ -138,8 +130,6 @@ module.exports = class PictureHandler
 
 
     _findPicturesOnCozy: (callback) ->
-        log.debug '_findPicturesOnCozy'
-
         options =
             startkey: ['/' + t 'photos']
             endkey: ['/' + t('photos'), {}]
@@ -153,8 +143,6 @@ module.exports = class PictureHandler
 
 
     _findLocalPicturesPath: (callback) ->
-        log.debug '_findLocalPicturesPath'
-
         ImagesBrowser.getImagesList (err, pictures) ->
             if pictures
                 if device.platform is 'Android'
@@ -173,8 +161,6 @@ module.exports = class PictureHandler
 
 
     _createFile: (picturePath, callback) ->
-        log.debug '_createFile'
-
         cozyPath = "/#{t 'photos'}"
 
         fs.getFileFromPath picturePath, (err, file) =>
@@ -188,8 +174,6 @@ module.exports = class PictureHandler
     ###
 
     _removeOldPicturesOnCache: (picturesPath, callback) ->
-        log.debug '_removeOldPicturesOnCache'
-
         @_findPicturesOnCache (err, cachePictures) =>
             return callback err if err
 
@@ -202,8 +186,6 @@ module.exports = class PictureHandler
 
 
     _saveNewPicturesOnCache: (picturesPath, callback) ->
-        log.debug '_saveNewPicturesOnCache'
-
         @_findPicturesOnCache (err, cachePictures) =>
             return callback err if err
 
@@ -220,8 +202,6 @@ module.exports = class PictureHandler
 
 
     _deleteCache: (pictureId, callback) ->
-        log.debug '_deleteCache'
-
         @localDb.get pictureId, (err, cachePicture) =>
             return callback err if err
 
@@ -229,8 +209,6 @@ module.exports = class PictureHandler
 
 
     _createCache: (picturePath, callback) ->
-        log.debug '_createCache'
-
         cachePicture =
             docType : 'Photo'
             localId: picturePath
@@ -239,8 +217,6 @@ module.exports = class PictureHandler
 
 
     _updateCache: (pictureId, data, callback) ->
-        log.debug '_updateCache'
-
         @localDb.get pictureId, (err, cachePicture) =>
             return callback err if err
 
@@ -252,8 +228,6 @@ module.exports = class PictureHandler
 
 
     _findPicturesOnCache: (callback) ->
-        log.debug '_findPicturesOnCache'
-
         @localDb.query DesignDocuments.PHOTOS_BY_LOCAL_ID, {}, (err, result) ->
             return callback err if err
             cachePictures = result.rows
@@ -265,8 +239,6 @@ module.exports = class PictureHandler
 
 
     _ensureDeviceFolder: (callback) ->
-        log.debug "ensureDeviceFolder"
-
         findFolder = (id, cb) =>
             @replicateDb.get id, (err, result) ->
                 if not err?

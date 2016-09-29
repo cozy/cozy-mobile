@@ -24,8 +24,6 @@ module.exports = class MediaUploader
 
 
     upload: (callback) ->
-        log.debug 'upload'
-
         if @_isUploadable()
             @pictureHandler.upload callback
         else

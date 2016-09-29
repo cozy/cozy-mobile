@@ -31,7 +31,6 @@ _getConfigFilter = (syncContacts, syncCalendars, syncNotifs) ->
         config: "function (doc) { return #{compare}; }"
 
 _getFilterDocName = ->
-    log.debug "getFilterDocId"
     "filter-#{deviceName}-config"
 
 deviceName = null
@@ -44,6 +43,7 @@ deviceName = null
  * @see https://git.io/vzcCL filters.coffee controller in data-system
 ###
 module.exports = class FilterManager
+
 
     ###*
      * Create a FilterManager.
@@ -60,6 +60,7 @@ module.exports = class FilterManager
         @replicateDb ?= app.init.database.replicateDb
         deviceName = @config.get 'deviceName'
 
+
     ###*
      * Create or update a filter for a specific configuration.
      *
@@ -70,14 +71,9 @@ module.exports = class FilterManager
     ###
     # setFilter: (syncContacts, syncCalendars, syncNotifs, callback) ->
     setFilter: (callback) ->
-        syncContacts = @config.get 'syncContacts'
-        syncCalendars = @config.get 'syncCalendars'
-        syncNotifs = @config.get 'cozyNotifications'
+        log.info 'set Filter'
 
-        log.info "setFilter syncContacts: #{syncContacts}, syncCalendars: " + \
-                "#{syncCalendars}, syncNotifs: #{syncNotifs}"
-
-        doc = _getConfigFilter syncContacts, syncCalendars, syncNotifs
+        doc = @getFilterDoc()
 
         # Add the filter in PouchDB
         filterId = @getFilterDocId()
@@ -106,9 +102,8 @@ module.exports = class FilterManager
 
                     callback null, true
 
-    filterRemoteExist: (callback = ->) ->
-        log.debug "filterRemoteExist"
 
+    filterRemoteExist: (callback = ->) ->
         options =
             method: 'get'
             type: 'data-system'
@@ -116,9 +111,22 @@ module.exports = class FilterManager
             retry: 3
         @requestCozy.request options, (err, res, body) =>
             if res?.status is 404
-                console.info 'The above 404 is normal, we create the filter'
+                log.info 'The above 404 is normal, we create the filter'
                 return @setFilter callback
-            callback()
+
+            unless body.filters.config is @getFilterDoc().filters.config
+                log.info 'filter is not the same'
+                return @setFilter callback
+
+            callback null, true
+
+
+    getFilterDoc: ->
+        syncContacts = @config.get 'syncContacts'
+        syncCalendars = @config.get 'syncCalendars'
+        syncNotifs = @config.get 'cozyNotifications'
+        _getConfigFilter syncContacts, syncCalendars, syncNotifs
+
 
     ###*
      * Get the design docId of the filter this device.
@@ -134,6 +142,4 @@ module.exports = class FilterManager
      * @return {String}
     ###
     getFilterName: ->
-        log.debug "getFilterName"
-
         "#{_getFilterDocName()}/config"

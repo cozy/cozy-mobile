@@ -107,8 +107,6 @@ module.exports = class FileCacheHandler
 
 
     downloadUnsynchronizedFiles: (callback) ->
-        log.debug 'downloadUnsynchronizedFiles'
-
         progressback = ->
         async.forEachOfSeries @cache, (cacheFile, id, cb) =>
             return cb() if cacheFile.downloaded is cacheFile.version

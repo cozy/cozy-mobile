@@ -49,8 +49,6 @@ module.exports = class ConnectionHandler
             else
                 @_offline()
 
-        log.debug "isConnected: #{@connected}"
-
         @connected
 
 

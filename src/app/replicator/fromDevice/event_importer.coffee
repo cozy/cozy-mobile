@@ -4,7 +4,7 @@ async = require 'async'
 CozyToAndroidEvent = require "../transformer/cozy_to_android_event"
 AndroidCalendarHandler = require "../../lib/android_calendar_handler"
 log = require('../../lib/persistent_log')
-    prefix: "EventImporter"
+    prefix: "EventImporter  "
     date: true
 continueOnError = require('../../lib/utils').continueOnError log
 
@@ -18,8 +18,6 @@ module.exports = class EventImporter
         @changeEventHandler = new ChangeEventHandler()
 
     synchronize: (callback) ->
-        log.debug "synchronize"
-
         @calendarSync.dirtyEvents AndroidAccount.ACCOUNT, \
                 (err, androidEvents) =>
             return log.error err if err

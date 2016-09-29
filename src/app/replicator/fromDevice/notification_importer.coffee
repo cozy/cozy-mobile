@@ -13,6 +13,4 @@ module.exports = class NotificationImporter
 
 
     synchronize: (callback) ->
-        log.debug "synchronize"
-
         @notificationHandler.deletesIfIsNotPresent callback

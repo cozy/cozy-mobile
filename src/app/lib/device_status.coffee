@@ -94,5 +94,4 @@ module.exports.checkReadyForSync = checkReadyForSync = (callback)->
             log.info "NOT ready on no wifi."
             return callbackWaiting null, false, 'no wifi'
 
-        log.debug "ready to sync."
         callbackWaiting null, true

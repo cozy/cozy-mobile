@@ -46,8 +46,6 @@ module.exports = class NotificationHandler
 
 
     deletesIfIsNotPresent: (callback) ->
-        log.debug "deletesIfIsNotPresent"
-
         @cordovaPlugin.getAll (cordovaNotifs) =>
             async.eachSeries cordovaNotifs, (cordovaNotif, cb) =>
                 @cordovaPlugin.isPresent cordovaNotif.id, (isPresent) =>

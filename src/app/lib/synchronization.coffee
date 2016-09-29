@@ -30,6 +30,7 @@ module.exports = class Synchronization
 
     sync: (syncLoop = true, callback = ->) ->
         unless @currentSynchro
+            log.info 'start synchronization'
             @currentSynchro = true
             @syncCozyToAndroid live: false, (err) =>
                 log.warn err if err
@@ -47,20 +48,21 @@ module.exports = class Synchronization
                             log.warn err if err
 
                             @currentSynchro = false
+                            log.info 'end synchronization'
                             if syncLoop
                                 setTimeout =>
                                     @sync()
-                                , 3 * 60 * 1000
+                                , 60 * 1000
                             else
                                 callback()
 
 
     syncCozyToAndroid: (options, callback) ->
-        callback() unless @connectionHandler.isConnected()
         @canSync (err, isOk) =>
             log.warn err if err
 
             if isOk and not @live
+                log.info 'start synchronization cozy to android'
                 @live = true if options.live
                 @replicator.startRealtime options, (err) =>
                     @live = false if options.live
