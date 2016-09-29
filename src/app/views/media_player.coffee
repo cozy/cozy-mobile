@@ -52,6 +52,9 @@ module.exports = class MediaPlayerView extends BaseView
     onClickExit: (event) ->
         event.preventDefault() if event
         @layout.showHeader()
+        window.history.back()
+        @layout.alredyLoad = true
+        @layout.views.pop()
         @destroy()
 
 

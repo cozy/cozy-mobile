@@ -24,6 +24,7 @@ module.exports = class LayoutWithHeader extends Layout
         @header = new Header()
         @views = []
         @router = app.router
+        @alredyLoad = false
 
 
     afterRender: ->

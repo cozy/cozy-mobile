@@ -82,6 +82,7 @@ module.exports = class Router extends Backbone.Router
             log.info 'create LayoutWithHeader'
             @layout = new LayoutWithHeader()
             $('body').html @layout.render().el
+        return @layout.alredyLoad = false if @layout.alredyLoad
         if @layout.back
             @layout.goBack()
         else
