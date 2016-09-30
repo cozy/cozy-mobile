@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget android-versionCode="10404" android-versionName="1.4.4" id="io.cozy.files_client" ios-CFBundleIdentifier="io.cozy.files" version="1.4.4" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+<widget android-versionCode="20000" android-versionName="2.0.0" id="io.cozy.files_client" ios-CFBundleIdentifier="io.cozy.files" version="2.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
     <name>Cozy Mobile</name>
     <description>Sync files from your cozycloud</description>
     <author email="contact@cozycloud.cc" href="https://cozy.io">Cozy Cloud</author>
