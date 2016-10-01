@@ -24,6 +24,7 @@ module.exports = class Synchronization
         @connectionHandler = new ConnectionHandler()
 
         @currentSynchro = false
+        @forceStop = false
         @live = false
         @sync()
 
@@ -105,6 +106,7 @@ module.exports = class Synchronization
 
 
     canSync: (callback)->
+        return callback null, false if @forceStop
         isConnected = @connectionHandler.isConnected()
         isStateOk = 'syncCompleted' is @config.get 'state'
         if isConnected and isStateOk
@@ -113,5 +115,6 @@ module.exports = class Synchronization
             callback null, false
 
 
-    stop: ->
+    stop: (forceStop = false) ->
+        @forceStop = true if forceStop
         @replicator.stopRealtime()

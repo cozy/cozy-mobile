@@ -224,8 +224,10 @@ class Config
     removeSync: (type) ->
         if type is 'contacts'
             @set 'syncContacts', false
-        else if type is 'calendar'
+        else if type is 'calendars'
             @set 'syncCalendars', false
+        else if type is 'files' or type is 'photos'
+            @set 'syncImages', false
 
 
 module.exports = Config

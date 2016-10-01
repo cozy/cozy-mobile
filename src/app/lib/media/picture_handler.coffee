@@ -4,6 +4,7 @@ fs = require '../../replicator/filesystem'
 path = require 'path'
 DesignDocuments = require '../../replicator/design_documents'
 MediaUploader = require './media_uploader'
+Permission = require '../permission'
 log = require('../persistent_log')
     prefix: 'PictureHandler'
     date: true
@@ -28,6 +29,7 @@ module.exports = class PictureHandler
         @connectionHandler ?= new ConnectionHandler()
         @requestCozy ?= app.init.requestCozy
         @queue = 0
+        @permission = new Permission()
 
 
     upload: (callback) ->
@@ -86,6 +88,7 @@ module.exports = class PictureHandler
         pictureValue = pictureCache.value
         return callback() if pictureValue.binaryId or not pictureValue.fileId
 
+        @remoteDb ?= app.init.database.remoteDb
         @remoteDb.get pictureValue.fileId, (err, cozyFile) =>
             return callback err if err
 
@@ -144,21 +147,25 @@ module.exports = class PictureHandler
 
     _findLocalPicturesPath: (callback) ->
 
-        ImagesBrowser.getImagesList (err, pictures) ->
-            if pictures
-                if device.platform is 'Android'
+        success = =>
+            ImagesBrowser.getImagesList (err, pictures) ->
+                if pictures
+                    if device.platform is 'Android'
 
-                    # Filter images : keep only the ones from Camera
+                        # Filter images : keep only the ones from Camera
+                        pictures = pictures.filter (picturePath) ->
+                            picturePath? and picturePath.indexOf('/DCIM/') isnt -1
+
+                    # Filter pathes with ':' (colon), as cordova plugin won't pick
+                    # them especially ':nopm:' ending files,
+                    # which may be google+ 's NO Photo Manager
                     pictures = pictures.filter (picturePath) ->
-                        picturePath? and picturePath.indexOf('/DCIM/') isnt -1
+                        picturePath.indexOf(':') is -1
 
-                # Filter pathes with ':' (colon), as cordova plugin won't pick
-                # them especially ':nopm:' ending files,
-                # which may be google+ 's NO Photo Manager
-                pictures = pictures.filter (picturePath) ->
-                    picturePath.indexOf(':') is -1
+                callback err, pictures
 
-            callback err, pictures
+        @permission.checkPermission 'files', success, (err) =>
+            callback err, []
 
 
     _createFile: (picturePath, callback) ->

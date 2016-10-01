@@ -18,15 +18,16 @@ module.exports = class FirstReplication
         @requestCozy = app.init.requestCozy
         @changeDispatcher = new ChangeDispatcher()
         @synchro = app.synchro
+        @permissions = cordova.plugins.permissions
 
         @queue = async.queue (task, callback) =>
-            @synchro.stop()
+            @synchro.stop true
             @['_' + task] (err) =>
                 if err
                     log.warn err
                     return @queue.unshift task, callback
                 callback()
-                @synchro.startLive() if @queue.workersList().length is 1
+                @synchro.forceStop = false if @queue.workersList().length is 0
 
 
     isRunning: ->
@@ -40,7 +41,7 @@ module.exports = class FirstReplication
             ''
 
 
-    addTask: (task, callback) ->
+    addTask: (task, callback = ->) ->
         @queue.push task, (err) =>
             status = 'success'
             if err

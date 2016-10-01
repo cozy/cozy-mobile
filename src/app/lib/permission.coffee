@@ -16,19 +16,43 @@ module.exports = class Permission
         @synchro = app.synchro
 
 
-    checkPermission: (permission, success, callback) ->
-        permission = @permissions['READ_' + permission.toUpperCase()]
+    checkPermission: (type, success, callback) ->
 
-        error = =>
-            @config.removeSync permission
-            callback()
+        if device.platform is 'iOS'
+            success true
 
-        check = (status) =>
+        if type is 'calendars'
+            permission = 'CALENDAR'
+        else if type is 'files' or type is 'photos'
+            permission = 'EXTERNAL_STORAGE'
+        else if type is 'contacts'
+            permission = 'CONTACTS'
+
+        readPermission = @permissions['READ_' + permission]
+        writePermission = @permissions['WRITE_' + permission]
+
+        error = (err) =>
+            log.info 'err', err
+            @config.removeSync type
+            callback false
+
+        read = (status) =>
             if (!status.hasPermission)
-                @permissions.requestPermission permission, (status) =>
-                    if status.hasPermission then success() else error()
+                @permissions.requestPermission readPermission, (status) =>
+                    if status.hasPermission then checkWritePermission() else error()
                 , error
             else
-                success()
+                checkWritePermission()
 
-        @permissions.hasPermission permission, check, error
+        write = (status) =>
+            if (!status.hasPermission)
+                @permissions.requestPermission writePermission, (status) =>
+                    if status.hasPermission then success true else error()
+                , error
+            else
+                success true
+
+        checkWritePermission = =>
+            @permissions.hasPermission writePermission, write, error
+
+        @permissions.hasPermission readPermission, read, error
