@@ -56,9 +56,7 @@ module.exports = class Layout extends BaseView
                 .one animationEnd, =>
                     newPage.removeClass animationEntrance
             oldPage.addClass(animationExit)
-            setTimeout =>
-                @oldView.destroy()
-            , 1000
+            @oldView.destroyWithDelay()
         else
             newPage = $("#contentContainer > div:first-child")
             setTimeout =>

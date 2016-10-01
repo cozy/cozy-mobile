@@ -37,6 +37,12 @@ module.exports = class BaseView extends Backbone.View
     afterRender: ->
 
 
+    destroyWithDelay: (delay = 1000) ->
+        setTimeout =>
+            @destroy()
+        , delay
+
+
     destroy: ->
         @undelegateEvents()
         @$el.removeData().unbind()
