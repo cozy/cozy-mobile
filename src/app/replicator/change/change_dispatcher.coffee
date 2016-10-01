@@ -36,8 +36,6 @@ module.exports = class ChangeDispatcher
      * @param {Function} callback
     ###
     dispatch: (doc, callback = ->) ->
-        log.debug "dispatch #{doc.docType}"
-
         docType = doc.docType.toLowerCase()
         if @changeHandlers[docType]?
             @changeHandlers[docType].dispatch doc, callback

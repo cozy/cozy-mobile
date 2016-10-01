@@ -29,6 +29,7 @@ module.exports = class ChangeEventHandler
 
 
     dispatch: (cozyEvent, callback) ->
+
         success = =>
             @calendarSync.eventBySyncId cozyEvent._id, (err, androidEvents) =>
                 if androidEvents and androidEvents.length > 0
@@ -42,10 +43,12 @@ module.exports = class ChangeEventHandler
                     # or event never been created
                     @_create cozyEvent, callback unless cozyEvent._deleted
 
-        @permission 'calendar', success, callback
+        @permission.checkPermission 'calendars', success, callback
 
 
     _create: (cozyEvent, callback) ->
+        log.info "create"
+
         unless cozyEvent?.tags?.length > 0
             return @_calendarNameError cozyEvent, callback
 
@@ -67,6 +70,8 @@ module.exports = class ChangeEventHandler
 
 
     _update: (cozyEvent, androidEvent, callback) ->
+        log.info "update"
+
         unless cozyEvent?.tags?.length > 0
             return @_calendarNameError cozyEvent, callback
 
@@ -94,6 +99,8 @@ module.exports = class ChangeEventHandler
 
 
     _delete: (cozyEvent, androidEvent, callback) ->
+        log.info "delete"
+
         @calendarSync.deleteEvent androidEvent, @account, (err, deletedCount) =>
             if err
                 msg = 'This event can\'t be deleted due to an error'

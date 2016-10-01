@@ -44,7 +44,7 @@ module.exports = class ContactImporter
             , new ContactFindOptions "1", true, []
             , AndroidAccount.TYPE, AndroidAccount.NAME
 
-        @permission 'contacts', success, callback
+        @permission.checkPermission 'contacts', success, callback
 
 
     # Update contact in pouchDB with specified contact from phone.

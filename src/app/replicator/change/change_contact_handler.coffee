@@ -17,7 +17,6 @@ module.exports = class ChangeContactHandler
 
 
     dispatch: (doc, callback) ->
-        log.debug "dispatch"
 
         @_getFromPhoneByCozyId doc._id, (err, androidContact) =>
             if androidContact?
@@ -35,13 +34,13 @@ module.exports = class ChangeContactHandler
 
 
     _create: (doc, callback) ->
-        log.debug "_create"
+        log.info "create"
 
         @_update doc, undefined, callback
 
 
     _update: (doc, androidContact, callback) ->
-        log.debug "_update"
+        log.info "update" if androidContact
 
         @_setPictureBase64data doc, (doc) =>
             try
@@ -65,7 +64,7 @@ module.exports = class ChangeContactHandler
 
 
     _delete: (doc, androidContact, callback) ->
-        log.debug "_delete"
+        log.info "delete"
 
         # Use callerIsSyncAdapter flag to apply immediately in
         # android(no dirty flag cycle)
@@ -74,7 +73,6 @@ module.exports = class ChangeContactHandler
 
 
     _getFromPhoneByCozyId: (cozyId, callback) ->
-        log.debug "_getFromPhoneByCozyId"
 
         success = =>
             navigator.contacts.find [navigator.contacts.fieldType.sourceId]
@@ -84,10 +82,11 @@ module.exports = class ChangeContactHandler
             , new ContactFindOptions cozyId, false, [], AndroidAccount.TYPE, \
                 AndroidAccount.NAME
 
-        @permission 'contacts', success, callback
+        @permission.checkPermission 'contacts', success, callback
 
 
     _setPictureBase64data: (doc, callback) ->
+
         if doc._attachments is undefined or 'picture' not of doc._attachments
             return callback doc
         return callback doc if typeof doc._attachments.picture.data is 'string'

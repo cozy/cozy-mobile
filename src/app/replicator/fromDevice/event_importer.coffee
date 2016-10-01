@@ -30,7 +30,7 @@ module.exports = class EventImporter
                     @_change androidEvent, cb
                 , callback
 
-        @permission 'calendar', success, callback
+        @permission.checkPermission 'calendars', success, callback
 
 
     _change: (androidEvent, callback) ->
