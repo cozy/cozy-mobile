@@ -1,4 +1,5 @@
 BaseView = require '../layout/base_view'
+ConnectionHandler = require '../../lib/connection_handler'
 
 
 module.exports = class Password extends BaseView
@@ -19,9 +20,10 @@ module.exports = class Password extends BaseView
         @cozyUrl = @config.get 'cozyURL'
         @password = ''
         StatusBar.backgroundColorByHexString '#4DCEC5'
+        @connectionHandler = new ConnectionHandler()
 
         if @error and @error.startsWith 'CORS request rejected'
-            @error = 'CORS request rejected'
+            @error = 'connexion error'
 
 
     getRenderData: ->
@@ -55,6 +57,10 @@ module.exports = class Password extends BaseView
 
         unless @password
             @error = 'onboarding_password_empty'
+            return @render()
+
+        unless @connectionHandler.isConnected()
+            @error = 'connection disable'
             return @render()
 
         app.router.checkCredentials @password
