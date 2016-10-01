@@ -1,4 +1,6 @@
 BaseView = require '../layout/base_view'
+FirstReplication = require '../../lib/first_replication'
+CheckPermission = require '../../lib/permission'
 
 
 module.exports = class Permission extends BaseView
@@ -26,10 +28,17 @@ module.exports = class Permission extends BaseView
 
 
     initialize: (@step) ->
+        if @step is 'files'
+            @backExit = true
+        else
+            @backExit = false
         @config ?= app.init.config
         @router ?= app.router
         @platform ?= device.platform
         StatusBar.backgroundColorByHexString @colors[@step]
+        @firstReplication = new FirstReplication()
+        @checkPermission = new CheckPermission()
+
 
 
     events: ->
@@ -38,15 +47,6 @@ module.exports = class Permission extends BaseView
 
 
     setPermission: (value) ->
-        switch @step
-            when 'contacts'
-                @config.set 'syncContacts', value
-            when 'calendars'
-                @config.set 'syncCalendars', value
-            when 'photos'
-                @config.set 'syncImages', value
-            # dont stock permission for Files, always true
-
         route = switch @step
             when 'files' then 'permissions/contacts'
             when 'contacts' then 'permissions/calendars'
@@ -60,4 +60,21 @@ module.exports = class Permission extends BaseView
             if 'syncCompleted' isnt @config.get 'state'
                 @config.set 'state', 'appConfigured'
 
-        @router.navigate route, trigger: true
+        if @step is 'files'
+            return @router.navigate route, trigger: true
+
+        next = (status) =>
+            switch @step
+                when 'contacts'
+                    @config.set 'syncContacts', status
+                when 'calendars'
+                    @config.set 'syncCalendars', status
+                when 'photos'
+                    @config.set 'syncImages', status
+
+            if status and @step is 'contacts' or @step is 'calendars'
+                @firstReplication.addTask 'contacts'
+
+            @router.navigate route, trigger: true
+
+        @checkPermission.checkPermission @step, next, next

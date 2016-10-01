@@ -133,5 +133,8 @@
     "bad credentials, did you enter an email address": "Bad credentials, did you enter an email address, instead of the url of your Cozy?",
     "error try restart": "Please try restarting the application.",
     "error need min %version for %app": "Please upgrade your %app on your Cozy. The app requires at least version %version",
+    "onboarding_password_display": "Display password",
+    "onboarding_password_empty": "Password empty.",
+    "onboarding_device_create": "Create your device on your cozy.",
     "Unexpected token <": "Check that your cozy working properly."
 }

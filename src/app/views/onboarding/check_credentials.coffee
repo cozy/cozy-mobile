@@ -7,6 +7,7 @@ module.exports = class CheckCredentials extends BaseView
 
     className: 'page'
     template: require '../../templates/onboarding/check_credentials'
+    backExit: true
 
 
     initialize: (@password) ->
@@ -19,7 +20,7 @@ module.exports = class CheckCredentials extends BaseView
 
         setTimeout =>
             @canRedirect = true
-        , 1000
+        , 1500
 
         cozyUrl = @config.get 'cozyURL'
         deviceName = @config.get 'deviceName'

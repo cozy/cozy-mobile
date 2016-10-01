@@ -7,6 +7,7 @@ module.exports = class Url extends BaseView
 
     className: 'page'
     template: require '../../templates/onboarding/url'
+    backExit: true
     refs:
         inputUrl: '#input-url'
         buttonUrl: '#btn-url'

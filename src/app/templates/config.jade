@@ -8,9 +8,11 @@ if running
 
                         h2.display-icon
                             if taskName == 'contacts'
-                                i.material-icons people
+                                i.material-icons contacts
                             else if taskName == 'calendars'
-                                i.material-icons event_available
+                                i.material-icons event
+                            else if taskName == 'files'
+                                i.material-icons folder
                         .progress
                             .determinate#configProgress(style="width: 0%")
                         br

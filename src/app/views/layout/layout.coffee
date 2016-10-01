@@ -21,7 +21,7 @@ module.exports = class Layout extends BaseView
 
 
     onBackButtonClicked: (event) =>
-        console.log 'onBackButtonClicked'
+        log.info 'onBackButtonClicked'
 
         if @currentView.backExit
             if window.confirm t "confirm exit message"

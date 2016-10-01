@@ -54,7 +54,7 @@ module.exports = class Password extends BaseView
         @password = @inputPassword.val()
 
         unless @password
-            @error = 'password empty'
+            @error = 'onboarding_password_empty'
             return @render()
 
         app.router.checkCredentials @password

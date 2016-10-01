@@ -24,6 +24,7 @@ module.exports = class ConfigView extends BaseView
 
     initialize: ->
         @config ?= app.init.config
+        @synchro ?= app.synchro
         @firstReplication = new FirstReplication()
         @replicator = app.init.replicator
         @filterManager = new FilterManager()
@@ -54,6 +55,7 @@ module.exports = class ConfigView extends BaseView
     toggleNotification: ->
         checked = @calendarCheckbox.is(':checked')
         @config.set 'cozyNotifications', checked
+        @synchro.stop()
 
 
     toggleCalendar: ->
