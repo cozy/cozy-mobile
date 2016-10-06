@@ -3,6 +3,7 @@ ChangesImporter = require '../replicator/fromDevice/changes_importer'
 ConnectionHandler = require './connection_handler'
 FilterManager = require '../replicator/filter_manager'
 MediaUploader = require './media/media_uploader'
+FirstReplication = require './first_replication'
 log = require('./persistent_log')
     prefix: "Synchronization"
     date: true
@@ -22,6 +23,7 @@ module.exports = class Synchronization
         @changesImporter = new ChangesImporter()
         @mediaUploader = new MediaUploader()
         @connectionHandler = new ConnectionHandler()
+        @firstReplication = new FirstReplication @
 
         @currentSynchro = false
         @forceStop = false
@@ -33,29 +35,59 @@ module.exports = class Synchronization
         unless @currentSynchro
             log.info 'start synchronization'
             @currentSynchro = true
-            @syncCozyToAndroid live: false, (err) =>
-                log.warn err if err
-
-                @syncAndroidToCozy (err) =>
+            @checkFirstReplication =>
+                @syncCozyToAndroid live: false, (err) =>
                     log.warn err if err
 
-                    @syncCozyToAndroid live: true, (err) =>
+                    @syncAndroidToCozy (err) =>
                         log.warn err if err
 
-                    @uploadMedia (err) =>
-                        log.warn err if err
-
-                        @downloadCacheFile (err) =>
+                        @syncCozyToAndroid live: true, (err) =>
                             log.warn err if err
 
-                            @currentSynchro = false
-                            log.info 'end synchronization'
-                            if syncLoop
-                                setTimeout =>
-                                    @sync()
-                                , 60 * 1000
-                            else
-                                callback()
+                        @uploadMedia (err) =>
+                            log.warn err if err
+
+                            @downloadCacheFile (err) =>
+                                log.warn err if err
+
+                                @currentSynchro = false
+                                log.info 'end synchronization'
+                                if syncLoop
+                                    setTimeout =>
+                                        @sync()
+                                    , 60 * 1000
+                                else
+                                    callback()
+
+
+    checkFirstReplication: (callback) ->
+        @canSync (err, isOk) =>
+            log.warn err if err
+
+            isDone = =>
+                if not @config.get('firstSyncFiles') or \
+                        (@config.get('syncContacts') and \
+                            not @config.get('firstSyncContacts')) or \
+                        (@config.get('syncCalendars') and \
+                            not @config.get('firstSyncCalendars'))
+                    return false
+                true
+
+            launch = =>
+                unless @config.get 'firstSyncFiles'
+                    @firstReplication.addTask 'files'
+                if @config.get('syncContacts') and \
+                        not @config.get('firstSyncContacts')
+                    @firstReplication.addTask 'contacts'
+                if @config.get('syncCalendars') and \
+                  not @config.get('firstSyncCalendars')
+                    @firstReplication.addTask 'calendars'
+
+            if isOk and not isDone()
+                launch()
+
+            callback()
 
 
     syncCozyToAndroid: (options, callback) ->

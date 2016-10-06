@@ -10,15 +10,16 @@ instance = null
 module.exports = class FirstReplication
 
 
-    constructor: ->
+    constructor: (@synchro) ->
         return instance if instance
         instance = @
 
         @replicator = app.init.replicator
         @requestCozy = app.init.requestCozy
         @changeDispatcher = new ChangeDispatcher()
-        @synchro = app.synchro
+        @synchro ?= app.synchro
         @permissions = cordova.plugins.permissions
+        @config = app.init.config
 
         @queue = async.queue (task, callback) =>
             @synchro.stop true
@@ -43,12 +44,19 @@ module.exports = class FirstReplication
 
     addTask: (task, callback = ->) ->
         @queue.push task, (err) =>
-            status = 'success'
             if err
                 status = 'error'
                 log.error err
+            else
+                status = 'success'
+                if task is 'files'
+                    @config.set 'firstSyncFiles', true
+                else if task is 'contacts'
+                    @config.set 'firstSyncContacts', true
+                else if task is 'calendars'
+                    @config.set 'firstSyncCalendars', true
+
             log.info "task #{task} is finished with #{status}."
-            log.info @queue.workersList()
             callback()
 
 

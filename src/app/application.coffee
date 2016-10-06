@@ -25,7 +25,8 @@ module.exports =
             # The ServiceManager is a flag for the background plugin to
             # know if it's the service or the application,
             # see https://git.io/vVjJO
-            @serviceManager = new ServiceManager()
+            unless device.version[0] is "7"
+                @serviceManager = new ServiceManager()
 
 
     startLayout: ->

@@ -32,6 +32,9 @@ DEFAULT_CONFIG =
     syncImages: false
     syncOnWifi: true
     cozyNotifications: false
+    firstSyncFiles: false
+    firstSyncContacts: false
+    firstSyncCalendars: false
 
     cozyURL: ''
     cozyHostname: ''
