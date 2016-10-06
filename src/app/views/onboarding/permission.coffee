@@ -57,8 +57,7 @@ module.exports = class Permission extends BaseView
 
         if route is 'folder/'
             StatusBar.backgroundColorByHexString '#33A6FF'
-            if 'syncCompleted' isnt @config.get 'state'
-                @config.set 'state', 'appConfigured'
+            @config.set 'state', 'appConfigured'
 
         if @step is 'files'
             return @router.navigate route, trigger: true
@@ -73,8 +72,11 @@ module.exports = class Permission extends BaseView
                     @config.set 'syncImages', status
 
             if status and @step is 'contacts' or @step is 'calendars'
-                @firstReplication.addTask 'contacts'
+                @firstReplication.addTask @step
 
             @router.navigate route, trigger: true
 
-        @checkPermission.checkPermission @step, next, next
+        if value
+            @checkPermission.checkPermission @step, next, next
+        else
+            next false

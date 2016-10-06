@@ -54,9 +54,10 @@ module.exports = class FileViewer extends BaseView
         else
             @append = false
             @parentPath = ''
+            @backExit = true
 
         startLoading = =>
-            if 'syncCompleted' is @config.get 'state'
+            if @config.get 'firstSyncFiles'
                 @load @options.path
             else
                 setTimeout =>

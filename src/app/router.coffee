@@ -40,9 +40,7 @@ module.exports = class Router extends Backbone.Router
 
 
     init: (state) ->
-        console.log 'state', state
-
-        if state is 'syncCompleted' or state is 'appConfigured'
+        if state is 'appConfigured'
             @navigate 'folder/'
             return @fileViewer '/'
 
@@ -78,7 +76,11 @@ module.exports = class Router extends Backbone.Router
     fileViewer: (path) ->
         log.info 'foleViewer', path
 
-        if @layout is undefined or not(@layout instanceof LayoutWithHeader)
+        unless @layout is undefined or @layout instanceof LayoutWithHeader
+            @layout.destroy()
+            @layout = undefined
+
+        if @layout is undefined
             log.info 'create LayoutWithHeader'
             @layout = new LayoutWithHeader()
             $('body').html @layout.render().el

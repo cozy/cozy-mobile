@@ -16,6 +16,7 @@ module.exports = class CheckCredentials extends BaseView
         @database ?= app.init.database
         @canRedirect = false
         @firstReplication = new FirstReplication()
+        @replicator = app.init.replicator
         StatusBar.backgroundColorByHexString '#33A6FF'
 
         setTimeout =>
@@ -25,7 +26,7 @@ module.exports = class CheckCredentials extends BaseView
         cozyUrl = @config.get 'cozyURL'
         deviceName = @config.get 'deviceName'
 
-        app.init.replicator.registerRemoteSafe cozyUrl, @password, deviceName, \
+        @replicator.registerRemoteSafe cozyUrl, @password, deviceName, \
                 (err, body) =>
             if err
                 @goTo =>
@@ -39,7 +40,7 @@ module.exports = class CheckCredentials extends BaseView
                 @goTo =>
                     @router.navigate '#permissions/files', trigger: true
                 @firstReplication.addTask 'files', =>
-                    @config.set 'state', 'syncCompleted'
+                    @replicator.updateIndex ->
 
 
     goTo: (callback) ->
