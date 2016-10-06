@@ -145,6 +145,8 @@ module.exports = class FirstReplication
                 @replicator.sync options, (err) =>
                     return callback err if err
 
+                    @_updateProgression()
+                    @_updateProgression()
                     callback()
 
 
@@ -170,7 +172,7 @@ module.exports = class FirstReplication
             return callback err if err
             return callback null, [] unless rows?.length isnt 0
 
-            @total = rows.length
+            @total = rows.length + 1
             @progression = 0
             log.info 'total', @total
 

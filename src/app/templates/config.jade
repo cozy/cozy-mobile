@@ -16,8 +16,7 @@ if running
                         .progress
                             .determinate#configProgress(style="width: 0%")
                         br
-                        span Loading
-                            = taskName
+                        span= t('config_loading_' + taskName)
 
 else
 

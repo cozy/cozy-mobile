@@ -1,5 +1,4 @@
 BaseView = require '../lib/base_view'
-Config = require '../lib/config'
 logSender = require '../lib/log_sender'
 FirstReplication = require '../lib/first_replication'
 FilterManager = require '../replicator/filter_manager'
@@ -52,6 +51,20 @@ module.exports = class ConfigView extends BaseView
         taskName: @firstReplication.getTaskName()
 
 
+    beforeRender: ->
+        if @firstReplication.isRunning()
+            log.info 'task:', @firstReplication.getTaskName()
+            @firstReplication.addProgressionView (progression, total) =>
+                percentage = progression * 100 / (total * 2)
+                $('#configProgress').css 'width', "#{percentage}%"
+                @render() if percentage >= 100
+
+            setTimeout =>
+                unless @firstReplication.isRunning()
+                    @render()
+            , 1000
+
+
     toggleNotification: ->
         checked = @calendarCheckbox.is(':checked')
         @config.set 'cozyNotifications', checked
@@ -64,13 +77,7 @@ module.exports = class ConfigView extends BaseView
         @synchro.stop()
 
         if checked
-            @firstReplication.addProgressionView (progression, total) =>
-                percentage = progression * 100 / (total * 2)
-                $('#configProgress').css 'width', "#{percentage}%"
-
-            @firstReplication.addTask 'calendars', =>
-                @render()
-
+            @firstReplication.addTask 'calendars', ->
             setTimeout =>
                 @render()
             , 200
@@ -82,13 +89,7 @@ module.exports = class ConfigView extends BaseView
         @synchro.stop()
 
         if checked
-            @firstReplication.addProgressionView (progression, total) =>
-                percentage = progression * 100 / (total * 2)
-                $('#configProgress').css 'width', "#{percentage}%"
-
-            @firstReplication.addTask 'contacts', =>
-                @render()
-
+            @firstReplication.addTask 'contacts', ->
             setTimeout =>
                 @render()
             , 200
