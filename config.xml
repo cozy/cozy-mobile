@@ -83,7 +83,7 @@
     <plugin name="io.cozy.calendarsync" spec="https://github.com/cozy/cordova-plugin-calendarsync#v1.0.0" />
     <plugin name="io.cozy.contacts" spec="https://github.com/cozy/cordova-plugin-contacts#c1.0.4" />
     <plugin name="io.cozy.cordova-images-browser" spec="https://github.com/cozy/cordova-images-browser#v1.0.2" />
-    <plugin name="io.cozy.jsbackgroundservice" spec="https://github.com/cozy/cordova-jsbackgroundservice#v1.1.2" />
+    <plugin name="io.cozy.jsbackgroundservice" spec="https://github.com/cozy/cordova-jsbackgroundservice#v1.1.4" />
     <plugin name="io.cozy.jsbgservice-newpicture" spec="https://github.com/cozy/cordova-jsbgservice-newpicture#v1.0.0" />
     <plugin name="cordova-plugin-screen-orientation" spec="1.4.2" />
     <plugin name="cordova-plugin-statusbar" spec="https://github.com/cozy/cordova-plugin-statusbar" />
