@@ -1,6 +1,5 @@
 async = require 'async'
 ChangeDispatcher = require '../replicator/change/change_dispatcher'
-Synchronization = require './synchronization'
 log = require('./persistent_log')
     prefix: "FirstReplication"
     date: true
@@ -10,16 +9,15 @@ instance = null
 module.exports = class FirstReplication
 
 
-    constructor: (@synchro) ->
+    constructor: ->
         return instance if instance
         instance = @
 
         @replicator = app.init.replicator
         @requestCozy = app.init.requestCozy
         @changeDispatcher = new ChangeDispatcher()
-        @synchro ?= app.synchro
-        @permissions = cordova.plugins.permissions
         @config = app.init.config
+        @filterManager = app.init.filterManager
 
         @queue = async.queue (task, callback) =>
             @['_' + task] (err) =>
@@ -135,7 +133,7 @@ module.exports = class FirstReplication
 
 
     _postCopyViewSync: (remoteCheckpoint, callback) ->
-        @synchro.checkFilter (err) =>
+        @filterManager.setFilter (err) =>
             return callback err if err
 
             @getLocalCheckpoint (err, localCheckpoint) =>
