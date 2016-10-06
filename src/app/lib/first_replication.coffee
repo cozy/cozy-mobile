@@ -22,13 +22,11 @@ module.exports = class FirstReplication
         @config = app.init.config
 
         @queue = async.queue (task, callback) =>
-            @synchro.stop true
             @['_' + task] (err) =>
                 if err
                     log.warn err
                     return @queue.unshift task, callback
                 callback()
-                @synchro.forceStop = false if @queue.workersList().length is 0
 
 
     isRunning: ->

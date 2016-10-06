@@ -61,6 +61,7 @@ module.exports = class ConfigView extends BaseView
     toggleCalendar: ->
         checked = @calendarCheckbox.is(':checked')
         @config.set 'syncCalendars', checked
+        @synchro.stop()
 
         if checked
             @firstReplication.addProgressionView (progression, total) =>
@@ -78,6 +79,7 @@ module.exports = class ConfigView extends BaseView
     toggleContact: ->
         checked = @contactCheckbox.is(':checked')
         @config.set 'syncContacts', checked
+        @synchro.stop()
 
         if checked
             @firstReplication.addProgressionView (progression, total) =>

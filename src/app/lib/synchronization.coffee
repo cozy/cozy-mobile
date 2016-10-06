@@ -26,7 +26,6 @@ module.exports = class Synchronization
         @firstReplication = new FirstReplication @
 
         @currentSynchro = false
-        @forceStop = false
         @live = false
         @sync()
 
@@ -147,6 +146,7 @@ module.exports = class Synchronization
             callback null, false
 
 
-    stop: (forceStop = false) ->
-        @forceStop = true if forceStop
-        @replicator.stopRealtime()
+    stop: ->
+        if @live
+            @live = false
+            @replicator.stopRealtime()
