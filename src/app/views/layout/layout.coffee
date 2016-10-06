@@ -68,6 +68,7 @@ module.exports = class Layout extends BaseView
 
 
     destroy: ->
+        document.removeEventListener "backbutton", @onBackButtonClicked, false
         @undelegateEvents()
         @$el.removeData().unbind()
         @remove();

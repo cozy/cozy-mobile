@@ -233,4 +233,12 @@ class Config
             @set 'syncImages', false
 
 
+    firstSyncIsDone: ->
+        if not @get('firstSyncFiles') or \
+                (@get('syncContacts') and not @get('firstSyncContacts')) or \
+                (@get('syncCalendars') and not @get('firstSyncCalendars'))
+            return false
+        true
+
+
 module.exports = Config

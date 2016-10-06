@@ -255,15 +255,21 @@ module.exports = class Replicator extends Backbone.Model
 
         @stopRealtime() if @replicationLauncher
 
-        @filterManager ?= new FilterManager @config, @requestCozy, @db
-
-        @filterManager.filterRemoteExist =>
+        launch = =>
             @replicationLauncher = new ReplicationLauncher @database, \
-                app.router, @filterManager.getFilterName(), @config
+                    app.router, @filterManager.getFilterName(), @config
             @replicationLauncher.start options, (err) =>
                 log.warn err if err
                 @stopRealtime()
                 callback.apply @, arguments
+
+        @filterManager ?= new FilterManager @config, @requestCozy, @db
+        @filterManager.filterRemoteIsSame (isSame) =>
+            if isSame
+                launch()
+            else
+                @filterManager.setFilter launch
+
 
     # Stop replication.
     stopRealtime: =>

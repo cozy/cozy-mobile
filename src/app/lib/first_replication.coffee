@@ -135,16 +135,19 @@ module.exports = class FirstReplication
 
 
     _postCopyViewSync: (remoteCheckpoint, callback) ->
-        @getLocalCheckpoint (err, localCheckpoint) =>
+        @synchro.checkFilter (err) =>
             return callback err if err
 
-            options =
-                remoteCheckpoint: remoteCheckpoint
-                localCheckpoint: localCheckpoint
-            @replicator.sync options, (err) =>
+            @getLocalCheckpoint (err, localCheckpoint) =>
                 return callback err if err
 
-                callback()
+                options =
+                    remoteCheckpoint: remoteCheckpoint
+                    localCheckpoint: localCheckpoint
+                @replicator.sync options, (err) =>
+                    return callback err if err
+
+                    callback()
 
 
     # 1. Fetch all documents of specified docType

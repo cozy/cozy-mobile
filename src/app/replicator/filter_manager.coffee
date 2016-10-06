@@ -1,5 +1,5 @@
 log = require('../lib/persistent_log')
-    prefix: "Filter Manager"
+    prefix: "FilterManager "
     date: true
 
 ###*
@@ -103,7 +103,19 @@ module.exports = class FilterManager
                     callback null, true
 
 
-    filterRemoteExist: (callback = ->) ->
+    filterLocalIsSame: (callback = ->) ->
+        doc = @getFilterDoc()
+
+        # Add the filter in PouchDB
+        filterId = @getFilterDocId()
+        doc._id = filterId
+        @replicateDb.get filterId, (err, existing) =>
+            return callback false if err
+
+            callback existing?.filter?.config is @getFilterDoc().filters.config
+
+
+    filterRemoteIsSame: (callback = ->) ->
         options =
             method: 'get'
             type: 'data-system'
@@ -112,13 +124,13 @@ module.exports = class FilterManager
         @requestCozy.request options, (err, res, body) =>
             if res?.status is 404
                 log.info 'The above 404 is normal, we create the filter'
-                return @setFilter callback
+                return callback false
 
             unless body.filters.config is @getFilterDoc().filters.config
                 log.info 'filter is not the same'
-                return @setFilter callback
+                return callback false
 
-            callback null, true
+            callback true
 
 
     getFilterDoc: ->

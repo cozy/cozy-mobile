@@ -1,7 +1,6 @@
 async = require 'async'
 ChangesImporter = require '../replicator/fromDevice/changes_importer'
 ConnectionHandler = require './connection_handler'
-FilterManager = require '../replicator/filter_manager'
 MediaUploader = require './media/media_uploader'
 FirstReplication = require './first_replication'
 log = require('./persistent_log')
@@ -17,7 +16,7 @@ module.exports = class Synchronization
         return instance if instance
         instance = @
 
-        @filterManader = new FilterManager()
+        @filterManager = app.init.filterManager
         @replicator = app.init.replicator
         @config = app.init.config
         @changesImporter = new ChangesImporter()
@@ -27,73 +26,107 @@ module.exports = class Synchronization
 
         @currentSynchro = false
         @live = false
-        @sync()
 
 
-    sync: (syncLoop = true, callback = ->) ->
+    sync: (@syncLoop = true, callback = ->) ->
         unless @currentSynchro
             log.info 'start synchronization'
             @currentSynchro = true
-            @checkFirstReplication =>
-                @syncCozyToAndroid live: false, (err) =>
-                    log.warn err if err
 
-                    @syncAndroidToCozy (err) =>
-                        log.warn err if err
+            @checkFilter (err) =>
+                return @_finishSync err, callback if err
 
-                        @syncCozyToAndroid live: true, (err) =>
-                            log.warn err if err
+                @checkFirstReplication (err) =>
+                    return @_finishSync err, callback if err
 
-                        @uploadMedia (err) =>
-                            log.warn err if err
+                    @syncCozyToAndroid live: false, (err) =>
+                        return @_finishSync err, callback if err
 
-                            @downloadCacheFile (err) =>
+                        @syncAndroidToCozy (err) =>
+                            return @_finishSync err, callback if err
+
+                            @syncCozyToAndroid live: true, (err) =>
+                                # don't finishSync may be is already call
+                                # synchronization live restart with next sync
                                 log.warn err if err
 
-                                @currentSynchro = false
-                                log.info 'end synchronization'
-                                if syncLoop
-                                    setTimeout =>
-                                        @sync()
-                                    , 60 * 1000
-                                else
-                                    callback()
+                            @uploadMedia (err) =>
+                                return @_finishSync err, callback if err
+
+                                @downloadCacheFile (err) =>
+                                    @_finishSync err, callback
 
 
-    checkFirstReplication: (callback) ->
-        @canSync (err, isOk) =>
-            log.warn err if err
+    _finishSync: (err, callback) ->
+        @currentSynchro = false
+        if err
+            log.warn err
+        log.info 'end synchronization'
 
-            isDone = =>
-                if not @config.get('firstSyncFiles') or \
-                        (@config.get('syncContacts') and \
-                            not @config.get('firstSyncContacts')) or \
-                        (@config.get('syncCalendars') and \
-                            not @config.get('firstSyncCalendars'))
-                    return false
-                true
-
-            launch = =>
-                unless @config.get 'firstSyncFiles'
-                    @firstReplication.addTask 'files'
-                if @config.get('syncContacts') and \
-                        not @config.get('firstSyncContacts')
-                    @firstReplication.addTask 'contacts'
-                if @config.get('syncCalendars') and \
-                  not @config.get('firstSyncCalendars')
-                    @firstReplication.addTask 'calendars'
-
-            if isOk and not isDone()
-                launch()
-
+        if @syncLoop
+            setTimeout =>
+                @sync @syncLoop, callback
+            , 60 * 1000
+        else
             callback()
 
 
-    syncCozyToAndroid: (options, callback) ->
-        @canSync (err, isOk) =>
-            log.warn err if err
+    checkFilter: (callback) ->
+        @_canSync (err) =>
+            return callback err if err
 
-            if isOk and not @live
+            @filterManager.filterLocalIsSame (isSame) =>
+                unless isSame
+                    @stop()
+                    return @filterManager.setFilter callback
+
+                @filterManager.filterRemoteIsSame (isSame) =>
+                    unless isSame
+                        @stop()
+                        @filterManager.setFilter callback
+                    else
+                        callback()
+
+
+    checkFirstReplication: (callback) ->
+        @_canSync (err) =>
+            return callback err if err
+
+            unless @config.firstSyncIsDone()
+
+                checkFiles = (callback) =>
+                    unless @config.get 'firstSyncFiles'
+                        @firstReplication.addTask 'files', callback
+                    else
+                        callback()
+
+                checkContacts = (callback) =>
+                    if @config.get('syncContacts') and \
+                            not @config.get('firstSyncContacts')
+                        @firstReplication.addTask 'contacts', callback
+                    else
+                        callback()
+
+                checkCalendars = (callback) =>
+                    if @config.get('syncCalendars') and \
+                            not @config.get('firstSyncCalendars')
+                        @firstReplication.addTask 'calendars', callback
+                    else
+                        callback()
+
+                checkFiles =>
+                    checkContacts =>
+                        checkCalendars =>
+                            callback()
+            else
+                callback()
+
+
+    syncCozyToAndroid: (options, callback) ->
+        @_canSync (err) =>
+            return callback err if err
+
+            unless @live
                 log.info 'start synchronization cozy to android'
                 @live = true if options.live
                 @replicator.startRealtime options, (err) =>
@@ -104,46 +137,37 @@ module.exports = class Synchronization
 
 
     syncAndroidToCozy: (callback) ->
-        @canSync (err, isOk) =>
-            log.warn err if err
+        @_canSync (err) =>
+            return callback err if err
 
-            if isOk
-                log.info 'start synchronization android to cozy'
-                @changesImporter.synchronize callback
-            else
-                callback()
+            log.info 'start synchronization android to cozy'
+            @changesImporter.synchronize callback
 
 
     uploadMedia: (callback) ->
-        @canSync (err, isOk) =>
-            log.warn err if err
+        @_canSync (err) =>
+            return callback err if err
 
-            if isOk
-                log.info 'start upload media'
-                @mediaUploader.upload callback
-            else
-                callback()
+            log.info 'start upload media'
+            @mediaUploader.upload callback
 
 
     downloadCacheFile: (callback) ->
-        @canSync (err, isOk) =>
-            log.warn err if err
+        @_canSync (err) =>
+            return callback err if err
 
-            if isOk
-                log.info 'start download cache file'
-                @replicator.syncCache callback
-            else
-                callback()
+            log.info 'start download cache file'
+            @replicator.syncCache callback
 
 
-    canSync: (callback)->
-        return callback null, false if @forceStop
+    _canSync: (callback)->
         isConnected = @connectionHandler.isConnected()
-        isStateOk = 'syncCompleted' is @config.get 'state'
-        if isConnected and isStateOk
-            @filterManader.filterRemoteExist callback
+        isStateOk = 'appConfigured' is @config.get 'state'
+        syncIsFinish = not @firstReplication.isRunning()
+        if isConnected and isStateOk and syncIsFinish
+            callback()
         else
-            callback null, false
+            callback "can't synchronize"
 
 
     stop: ->

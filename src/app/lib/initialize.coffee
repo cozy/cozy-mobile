@@ -49,6 +49,8 @@ module.exports = class Initialize
         @translation.setDeviceLocale =>
             @config.load =>
                 state = if @app.name is 'APP' then 'launch' else 'service'
+
+                @filterManager = new FilterManager @config, @requestCozy, @database.replicateDb
                 @config.set 'appState', state, =>
                     @fileCacheHandler.load =>
                         @replicator.initConfig @config, @requestCozy, @database, \
