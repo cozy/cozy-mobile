@@ -229,4 +229,5 @@ module.exports = class FileCacheHandler
                         navigator.notification.alert t err.message
         error = (err) ->
             log.error err
+        url = encodeURI(url).replace /#/g, '%23'
         resolveLocalFileSystemURL url, success, error
