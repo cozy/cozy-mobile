@@ -9,8 +9,10 @@ env:
 
 android:
   components:
-    - android-22
-    - build-tools-22.0.1
+    - tools # to get the new `repository-11.xml`
+    - tools # to install Android SDK tools 25.1.x (x = 6 right now)
+    - build-tools-23.4.0
+    - android-23
 
 install:
   - nvm install $TRAVIS_NODE_VERSION

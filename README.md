@@ -55,21 +55,6 @@ folder):
     npm run ios-emulator
 
 
-### :warning: Android bug
-
-You need to be aware that, some times, there is a special case when testing on
-real device, where the error
-`Android Cannot access org.apache.http.client.HttpClient` can happen.
-It can be solved by adding into gradle in android part:
-
-    // path : platforms/android/build.gradle
-
-    android {
-        useLibrary 'org.apache.http.legacy'    // <-- this
-        sourceSets {
-            ...
-
-
 ### :books: Resource for cordova installation
 
  - [ubuntu todolist][10]

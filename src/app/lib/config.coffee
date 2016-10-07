@@ -81,11 +81,12 @@ serializePermissions = (permissions) ->
 class Config
 
 
-    constructor: (@database) ->
+    constructor: (@database, @initialize) ->
         log.debug "constructor"
 
         @loaded = false
         _.extend @, Backbone.Events
+        @initialize ?= app.init
 
 
     display: ->
@@ -104,7 +105,7 @@ class Config
                 config = doc
 
                 if @isNewVersion()
-                    return app.init.upsertLocalDesignDocuments =>
+                    return @initialize.upsertLocalDesignDocuments =>
                         migration = require '../migrations/migration'
                         return migration.migrate doc.appVersion, =>
                             @load callback
@@ -122,7 +123,7 @@ class Config
                 "#{device.platform}-#{device.manufacturer}-#{device.model}"
             setConfig @database.replicateDb, (err) =>
                 log.error err if err
-                app.init.upsertLocalDesignDocuments =>
+                @initialize.upsertLocalDesignDocuments =>
                     @load callback
 
 
