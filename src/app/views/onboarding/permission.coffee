@@ -71,7 +71,7 @@ module.exports = class Permission extends BaseView
                 when 'photos'
                     @config.set 'syncImages', status
 
-            if status and @step is 'contacts' or @step is 'calendars'
+            if status and (@step is 'contacts' or @step is 'calendars')
                 @firstReplication.addTask @step
 
             @router.navigate route, trigger: true
