@@ -245,7 +245,7 @@ module.exports = class Layout extends BaseView
 
 
     onBackButtonClicked: (event) =>
-        if false and @currentView.btnBackEnabled? and @currentView.btnBackEnabled is false
+        if @currentView.btnBackEnabled? and @currentView.btnBackEnabled is false
             @currentView.onBackButtonClicked event
 
         # close menu first

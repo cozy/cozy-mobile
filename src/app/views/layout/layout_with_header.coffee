@@ -66,7 +66,10 @@ module.exports = class LayoutWithHeader extends Layout
         @oldView.destroy()
         @back = false
         @currentView = @views[@views.length - 1]
-        @updateHeader path: @currentView.options.path or 'files', displaySearch: true
+        options =
+            path: @currentView.options.path or 'files'
+            displaySearch: true
+        @updateHeader options
         if @views.length > 1
             @oldView = @views[@views.length - 2]
         else

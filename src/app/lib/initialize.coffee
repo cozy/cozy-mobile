@@ -50,12 +50,13 @@ module.exports = class Initialize
             @config.load =>
                 state = if @app.name is 'APP' then 'launch' else 'service'
 
-                @filterManager = new FilterManager @config, @requestCozy, @database.replicateDb
+                @filterManager = new FilterManager @config, @requestCozy, \
+                        @database.replicateDb
                 @config.set 'appState', state, =>
                     @fileCacheHandler.load =>
-                        @replicator.initConfig @config, @requestCozy, @database, \
-                            @fileCacheHandler
-                        @replicator.initFileSystem =>
+                        @replicator.initConfig @config, @requestCozy, \
+                                @database, @fileCacheHandler
+                        @replicator.initFileSystem ->
                             callback()
 
 

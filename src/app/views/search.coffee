@@ -1,7 +1,7 @@
 FileViewer = require './file_viewer'
 log = require('../lib/persistent_log')
-      prefix: "Search"
-      date: true
+    prefix: "Search"
+    date: true
 
 
 module.exports = class Search extends FileViewer
@@ -17,7 +17,8 @@ module.exports = class Search extends FileViewer
         @breadcrumb = @getBreadcrumb @options.path
 
         if @options.path isnt '/'
-            @parentPath = @options.path.replace(/\\/g,'/').replace(/\/[^\/]*$/, '')
+            @parentPath = @options.path.replace(/\\/g,'/')
+                .replace(/\/[^\/]*$/, '')
             @parentPath = '/' unless @parentPath
             @folderName = @options.path.replace(/^.*[\\\/]/, '')
         else
@@ -51,7 +52,7 @@ module.exports = class Search extends FileViewer
         @files.forEach (file) =>
             if file._id is cozyFileId
                 progressDesign = menu.find('.determinate')
-                reportProgress = (id, done, total) =>
+                reportProgress = (id, done, total) ->
                     percentage = parseInt done * 100 / total
                     progressDesign.css('width', percentage + '%')
                 pregressBar = reportProgress.bind null, file._id

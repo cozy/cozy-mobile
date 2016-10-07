@@ -45,7 +45,7 @@ module.exports = class Synchronization
                         @syncAndroidToCozy (err) =>
                             return @_finishSync err, callback if err
 
-                            @syncCozyToAndroid live: true, (err) =>
+                            @syncCozyToAndroid live: true, (err) ->
                                 # don't finishSync may be is already call
                                 # synchronization live restart with next sync
                                 log.warn err if err
@@ -114,9 +114,9 @@ module.exports = class Synchronization
                     else
                         callback()
 
-                checkFiles =>
-                    checkContacts =>
-                        checkCalendars =>
+                checkFiles ->
+                    checkContacts ->
+                        checkCalendars ->
                             callback()
             else
                 callback()

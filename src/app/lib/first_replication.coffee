@@ -65,7 +65,7 @@ module.exports = class FirstReplication
             method: 'get'
             type: 'replication'
             path: '/_changes?descending=true&limit=1'
-        @requestCozy.request options, (err, res, body) =>
+        @requestCozy.request options, (err, res, body) ->
             return callback err if err
             callback null, body.last_seq
 
@@ -74,7 +74,7 @@ module.exports = class FirstReplication
         options =
             descending: true
             limit: 1
-        @replicator.db.changes options, (err, changes) =>
+        @replicator.db.changes options, (err, changes) ->
             return callback err if err
             callback null, changes.last_seq
 

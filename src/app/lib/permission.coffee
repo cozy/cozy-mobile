@@ -38,15 +38,18 @@ module.exports = class Permission
 
         read = (status) =>
             if (!status.hasPermission)
-                @permissions.requestPermission readPermission, (status) =>
-                    if status.hasPermission then checkWritePermission() else error()
+                @permissions.requestPermission readPermission, (status) ->
+                    if status.hasPermission
+                        checkWritePermission()
+                    else
+                        error()
                 , error
             else
                 checkWritePermission()
 
         write = (status) =>
             if (!status.hasPermission)
-                @permissions.requestPermission writePermission, (status) =>
+                @permissions.requestPermission writePermission, (status) ->
                     if status.hasPermission then success true else error()
                 , error
             else

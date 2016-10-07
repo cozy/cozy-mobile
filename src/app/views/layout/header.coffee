@@ -72,7 +72,7 @@ module.exports = class Header extends BaseView
 
     searchSubmit: (event) ->
         if @searchInput.val()
-                @router.navigate '#search/' + @searchInput.val()
+            @router.navigate '#search/' + @searchInput.val()
         return false
 
 

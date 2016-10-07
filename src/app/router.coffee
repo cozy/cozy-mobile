@@ -136,20 +136,20 @@ module.exports = class Router extends Backbone.Router
         collection.fetch()
         collection.once 'fullsync', => @trigger 'collectionfetched'
 
-    search: (query) ->
-        $('#btn-menu').show()
-        $('#btn-back').hide()
-        app.layout.setBackButton '#folder/', 'home'
-        app.layout.setTitle t('search') + ' "' + query + '"'
-
-        collection = new FolderCollection [], query: query
-        @display new FolderView {collection}
-        collection.search (err) ->
-            if err
-                log.error err.stack
-                return navigator.notification.alert(err)
-
-            $('#search-input').blur() # close keyboard
+#    search: (query) ->
+#        $('#btn-menu').show()
+#        $('#btn-back').hide()
+#        app.layout.setBackButton '#folder/', 'home'
+#        app.layout.setTitle t('search') + ' "' + query + '"'
+#
+#        collection = new FolderCollection [], query: query
+#        @display new FolderView {collection}
+#        collection.search (err) ->
+#            if err
+#                log.error err.stack
+#                return navigator.notification.alert(err)
+#
+#            $('#search-input').blur() # close keyboard
 
     login_wizard: (step) ->
         app.layout.hideTitle()

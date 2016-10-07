@@ -74,7 +74,7 @@ module.exports = class ChangeContactHandler
 
     _getFromPhoneByCozyId: (cozyId, callback) ->
 
-        success = =>
+        success = ->
             navigator.contacts.find [navigator.contacts.fieldType.sourceId]
             , (contacts) ->
                 callback null, contacts[0]

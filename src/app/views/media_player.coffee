@@ -30,7 +30,7 @@ module.exports = class MediaPlayerView extends BaseView
 
 
     beforeRender: ->
-        StatusBar.backgroundColorByHexString("#000");
+        StatusBar.backgroundColorByHexString "#000"
         @layout.hideHeader()
 
 
@@ -59,12 +59,12 @@ module.exports = class MediaPlayerView extends BaseView
 
 
     removeFile: ->
-        cozyFileId = pathHelper.getFileName(pathHelper.getDirName(@path))
+        cozyFileId = pathHelper.getFileName pathHelper.getDirName @path
         cozyFile = _id: cozyFileId
 
         @fileCacheHandler.removeLocal cozyFile, =>
             @onClickExit()
-            $("[data-key=#{cozyFileId}] .is-cached").removeClass('is-cached')
+            $("[data-key=#{cozyFileId}] .is-cached").removeClass 'is-cached'
 
 
     getRenderData: ->
@@ -73,5 +73,5 @@ module.exports = class MediaPlayerView extends BaseView
 
 
     destroy: ->
-        StatusBar.backgroundColorByHexString("#33A6FF");
+        StatusBar.backgroundColorByHexString "#33A6FF"
         super

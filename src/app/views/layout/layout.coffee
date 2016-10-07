@@ -33,10 +33,13 @@ module.exports = class Layout extends BaseView
 
     display: (@view, back = false) ->
         log.info 'display'
-        animationEnd = 'webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend'
+        animationEnd = 'webkitAnimationEnd mozAnimationEnd MSAnimationEnd' + \
+                ' oanimationend animationend'
 
-        animationExit = 'animated ' + (@currentView?.animationExit or 'slideOutLeft')
-        animationEntrance = 'animated ' + (@view?.animationEntrance or 'slideInRight')
+        animationExit =
+            'animated ' + (@currentView?.animationExit or 'slideOutLeft')
+        animationEntrance =
+            'animated ' + (@view?.animationEntrance or 'slideInRight')
 
         if @back
             animationExit = animationExit.replace('Left', 'Right')
@@ -53,16 +56,16 @@ module.exports = class Layout extends BaseView
             newPage = $("#contentContainer > div:last-child")
             newPage
                 .addClass(animationEntrance)
-                .one animationEnd, =>
+                .one animationEnd, ->
                     newPage.removeClass animationEntrance
             oldPage.addClass(animationExit)
             @oldView.destroyWithDelay()
         else
             newPage = $("#contentContainer > div:first-child")
-            setTimeout =>
+            setTimeout ->
                 newPage
                     .addClass(animationEntrance)
-                    .one animationEnd, =>
+                    .one animationEnd, ->
                         newPage.removeClass animationEntrance
             , 100
 
@@ -71,4 +74,4 @@ module.exports = class Layout extends BaseView
         document.removeEventListener "backbutton", @onBackButtonClicked, false
         @undelegateEvents()
         @$el.removeData().unbind()
-        @remove();
+        @remove()

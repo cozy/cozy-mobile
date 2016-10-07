@@ -6,8 +6,8 @@ HeaderView = require './layout/header'
 
 
 log = require('../lib/persistent_log')
-  prefix: "FileViewer"
-  date: true
+    prefix: "FileViewer"
+    date: true
 
 
 module.exports = class FileViewer extends BaseView
@@ -48,7 +48,8 @@ module.exports = class FileViewer extends BaseView
         @breadcrumb = @getBreadcrumb @options.path
 
         if @options.path isnt '/'
-            @parentPath = @options.path.replace(/\\/g,'/').replace(/\/[^\/]*$/, '')
+            @parentPath = @options.path.replace(/\\/g,'/')
+                .replace(/\/[^\/]*$/, '')
             @parentPath = '/' unless @parentPath
             @folderName = @options.path.replace(/^.*[\\\/]/, '')
         else
@@ -60,7 +61,7 @@ module.exports = class FileViewer extends BaseView
             if @config.get 'firstSyncFiles'
                 @load @options.path
             else
-                setTimeout =>
+                setTimeout ->
                     startLoading()
                 , 1000
 
@@ -103,7 +104,7 @@ module.exports = class FileViewer extends BaseView
         @files.forEach (file) =>
             if file._id is cozyFileId
                 progressDesign = menu.find('.fileProgress')
-                reportProgress = (id, done, total) =>
+                reportProgress = (id, done, total) ->
                     percentage = parseInt done * 100 / total
                     progressDesign.css('width', percentage + '%')
                 pregressBar = reportProgress.bind null, file._id
