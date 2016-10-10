@@ -77,7 +77,7 @@
     "authenticating...": "Vérification des identifiants…",
     "permissions explanations": "Votre terminal requiert les permissions suivantes à votre Cozy :",
     "files header": "Synchronisation des fichiers",
-    "files explanation": "Retrouvez les fichiers de votre Cozy sur votre téléphone et choisissez lesquels seront disponible hors ligne",
+    "files explanation": "Retrouvez les fichiers de votre Cozy sur votre téléphone et choisissez lesquels seront disponibles hors ligne",
     "pictures header": "Sauvegarde de photos",
     "pictures explanation": "Sauvegardez automatiquement vos photos et retrouvez les dans votre Cozy.",
     "files permission description": "Afficher les fichiers du Cozy et envoyer vos photos de votre terminal sur votre Cozy.",
@@ -133,5 +133,11 @@
     "bad credentials, did you enter an email address": "Adresse ou mot de passe incorrect. Aviez-vous entré un email à la place de l'url de votre Cozy ?",
     "error try restart": "Essayez de redémarrer l'application.",
     "error need min %version for %app": "Mettez à jour %app sur votre Cozy s'il vous plaît. L'application requiert la version %version ou supérieure.",
+    "onboarding_password_display": "Afficher le mot de passe",
+    "onboarding_password_empty": "Mot de passe vide.",
+    "onboarding_device_create": "Enregistrement de votre appareil sur votre Cozy.",
+    "config_loading_files": "Chargement des fichiers et des dossiers.",
+    "config_loading_calendars": "Chargement des calendriers.",
+    "config_loading_contacts": "Chargement des contacts.",
     "Unexpected token <": "Vérifier que votre Cozy fonctionne correctement"
 }

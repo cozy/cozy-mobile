@@ -121,7 +121,7 @@
     "photo folder not replicated yet": "Инициализация еще не закончена.",
     "Not Found": "Ошибка во время инициализации. Вы установили приложение Файлы на вашем Cozy ?",
     "connexion error": "мы не смогли соединится с Cozy. Проверьте подключение к интернету на вашем устройстве, правильность адреса сервера Cozy и работоспособность вашего Cozy. Если вы продвинутый пользователь с домашним Cozy, то перейдите по ссылке href='https://docs.cozy.io/en/mobile/trouble.html#note-about-self-signed-certificates' target='_system'> Информация о самоподписанных сертификатах</a>.",
-    "connection disable": "We failed to connect to your cozy. Please check that your device is connected to the internet.",
+    "connection disable": "Нам не удалось подключиться к Вашему Cozy . Пожалуйста, убедитесь, что устройство подключено к Интернету.",
     "no images in DCIM": "Резервная загрузка: нет изображений в DCIM папке.",
     "Document update conflict": "Конфликт обновления в базе данных, попробуйте перезагрузить приложения для исправления.",
     "Database not initialized. Confirm initialize": "Инициализация завершилась неверно. Повторить ?",
@@ -133,5 +133,11 @@
     "bad credentials, did you enter an email address": "Неверные учетные данные , вы введите адрес электронной почты , а не адрес вашего Cozy ?",
     "error try restart": "Пожалуйста, попробуйте перезапустить приложение.",
     "error need min %version for %app": "Пожалйста обновите %app на вашем Cozy. Требуется версия приложения не ниже %version",
+    "onboarding_password_display": "Display password",
+    "onboarding_password_empty": "Password empty.",
+    "onboarding_device_create": "Register your device on your cozy.",
+    "config_loading_files": "Loading files and folders.",
+    "config_loading_calendars": "Loading calendars.",
+    "config_loading_contacts": "Loading contacts.",
     "Unexpected token <": "Проверьте исправность вашего Cozy."
 }
