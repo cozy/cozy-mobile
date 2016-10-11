@@ -13,7 +13,7 @@ module.exports =
             # remove lastInitState
             # add state
             for key of defaultConfig
-                if doc[key] isnt undefined
+                if key of doc
                     newConfig[key] = doc[key]
                 else
                     newConfig[key] = defaultConfig[key]

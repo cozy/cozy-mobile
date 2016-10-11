@@ -2,6 +2,7 @@ BaseView = require './layout/base_view'
 DesignDocuments = require '../replicator/design_documents'
 FileCacheHandler = require '../lib/file_cache_handler'
 HeaderView = require './layout/header'
+pathHelper = require '../lib/path'
 
 
 log = require('../lib/persistent_log')
@@ -47,10 +48,9 @@ module.exports = class FileViewer extends BaseView
         @breadcrumb = @getBreadcrumb @options.path
 
         if @options.path isnt '/'
-            @parentPath = @options.path.replace(/\\/g,'/')
-                .replace(/\/[^\/]*$/, '')
+            @parentPath = pathHelper.getDirName @options.path
             @parentPath = '/' unless @parentPath
-            @folderName = @options.path.replace(/^.*[\\\/]/, '')
+            @folderName = pathHelper.getFileName @options.path
         else
             @append = false
             @parentPath = ''

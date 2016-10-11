@@ -8,7 +8,10 @@ module.exports =
 
 
     get: (database) ->
-        new Config database
+        initialize =
+            upsertLocalDesignDocuments: (callback) ->
+                callback()
+        new Config database, initialize
 
 
     getLoaded: (database, callback) ->

@@ -25,9 +25,10 @@ module.exports = class ContactImporter
         success = =>
             # Go through modified contacts (dirtys)
             # delete, update or create....
-            navigator.contacts.find [navigator.contacts.fieldType.dirty]
-            , (contacts) =>
-                processed = 0
+
+            fields = [navigator.contacts.fieldType.dirty]
+
+            successCB = (contacts) =>
                 log.info "syncPhone2Pouch #{contacts.length} contacts."
                 # contact to update number. contacts.length
                 async.eachSeries contacts, (contact, cb) =>
@@ -40,9 +41,15 @@ module.exports = class ContactImporter
                             @_create contact, continueOnError cb
                 , callback
 
-            , callback
-            , new ContactFindOptions "1", true, []
-            , AndroidAccount.TYPE, AndroidAccount.NAME
+            filter = "1"
+            multiple = true
+            desiredFields = []
+            accountType = AndroidAccount.TYPE
+            accountName = AndroidAccount.NAME
+            findOptions = new ContactFindOptions filter, multiple, \
+                    desiredFields, accountType, accountName
+
+            navigator.contacts.find fields, successCB, callback, findOptions
 
         @permission.checkPermission 'contacts', success, callback
 

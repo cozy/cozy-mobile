@@ -75,12 +75,21 @@ module.exports = class ChangeContactHandler
     _getFromPhoneByCozyId: (cozyId, callback) ->
 
         success = ->
-            navigator.contacts.find [navigator.contacts.fieldType.sourceId]
-            , (contacts) ->
+
+            fields = [navigator.contacts.fieldType.sourceId]
+
+            successCB = (contacts) ->
                 callback null, contacts[0]
-            , callback
-            , new ContactFindOptions cozyId, false, [], AndroidAccount.TYPE, \
-                AndroidAccount.NAME
+
+            filter = cozyId
+            multiple = false
+            desiredFields = []
+            accountType = AndroidAccount.TYPE
+            accountName = AndroidAccount.NAME
+            findOptions = new ContactFindOptions filter, multiple, \
+                    desiredFields, accountType, accountName
+
+            navigator.contacts.find fields, successCB, callback, findOptions
 
         @permission.checkPermission 'contacts', success, callback
 
@@ -95,7 +104,7 @@ module.exports = class ChangeContactHandler
         reader.onload = ->
             data = reader.result
             prefix = 'data:application/octet-stream;base64,'
-            if data and data.startsWith prefix
+            if data?.startsWith prefix
                 data = data.substr prefix.length
             doc._attachments.picture.data = data
             callback doc

@@ -157,6 +157,23 @@ module.exports = class FirstReplication
     # Return the list of added doc to PouchDB.
     _copyView: (options, callback) ->
         log.info "enter copyView for #{options.docType}."
+
+        # Fetch all documents, with a previously put couchdb view.
+        fetchAll = (doc, callback) =>
+            options =
+                method: 'post'
+                type: 'data-system'
+                path: "/request/#{doc.docType}/all/"
+                body:
+                    include_docs: true
+                    show_revs: true
+                retry: doc.retry
+            @requestCozy.request options, (err, res, rows) ->
+                if not err and res.statusCode isnt 200
+                    err = new Error res.statusCode, res.reason
+
+                callback err, rows
+
         # Last step
         putInPouch = (doc, cb) =>
             @replicateDb.put doc, 'new_edits': false, (err) ->
@@ -167,7 +184,7 @@ module.exports = class FirstReplication
             times: options.retry or 1
             interval: 20 * 1000
 
-        async.retry retryOptions, ((cb) => @replicator._fetchAll options, cb)
+        async.retry retryOptions, ((cb) -> fetchAll options, cb)
         , (err, rows) =>
             return callback err if err
             return callback null, [] unless rows?.length isnt 0
