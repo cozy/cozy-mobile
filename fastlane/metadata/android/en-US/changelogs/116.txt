@@ -1,0 +1,3 @@
+* Calendar synchronization
+* Add devices permissions
+* Change mails for debug logs.

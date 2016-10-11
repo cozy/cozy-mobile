@@ -1,0 +1,2 @@
+* Few bugs fixes for contacts synchronization.
+* New: report a bug! In the configuration screen, scroll all the way down, and send us the logs.

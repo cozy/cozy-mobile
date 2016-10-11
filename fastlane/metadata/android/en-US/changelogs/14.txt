@@ -1,0 +1,6 @@
+Temporary cozy notifications synchronization
+Photos synchronization thanks a deamon service
+Add a infinite scroll for big folder
+Fix duplicated folder
+Fix synchronization problems (for cozy to phone)
+Some UI improvements

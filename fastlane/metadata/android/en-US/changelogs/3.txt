@@ -1,0 +1,2 @@
+Use views for faster initial replication
+Full control of local vs cloud files

@@ -1,5 +1,6 @@
 BaseView = require '../lib/base_view'
 urlValidator = require '../lib/url_validator'
+Replicator = require '../replicator/main'
 
 module.exports = class LoginView extends BaseView
 
@@ -88,8 +89,9 @@ module.exports = class LoginView extends BaseView
         url = @config.get 'cozyURL'
         password = @inputPassword.val()
         return @setState 'error', "password help" if password is ''
-        checkCredentials = window.app.init.replicator.checkCredentials
-        checkCredentials url, password, (err) =>
+        replicator = new Replicator()
+        replicator.setRequestCozy window.app.init.requestCozy
+        replicator.checkCredentials url, password, (err) =>
             @btnLogin.removeAttr("disabled")
             if err
                 @setState 'error', err

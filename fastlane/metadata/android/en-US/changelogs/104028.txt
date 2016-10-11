@@ -1,0 +1,2 @@
+- Fix display file with special characters.
+- Fix bug when service is launch upload picture can't finish, so now is synchronous.

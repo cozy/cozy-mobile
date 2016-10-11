@@ -5,7 +5,8 @@ options = db: require 'memdown'
 module.exports =
 
 
-    getDatabase: (name) ->
+    get: (name) ->
+        name ?= new Date().toISOString()
         database = new Database options
         if name
             database.replicateDb = new PouchDB "#{name}.replicateDb", options

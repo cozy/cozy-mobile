@@ -1,9 +1,6 @@
 async = require 'async'
-ChangeDispatcher = require './change/change_dispatcher'
-Db = require '../lib/database'
 DesignDocuments = require './design_documents'
 DeviceStatus = require '../lib/device_status'
-FileCacheHandler = require '../lib/file_cache_handler'
 FilterManager = require './filter_manager'
 fs = require './filesystem'
 ReplicationLauncher = require "./replication_launcher"
@@ -29,12 +26,7 @@ module.exports = class Replicator extends Backbone.Model
         inBackup: false
 
 
-    initFileSystem: (callback) ->
-        fs.initialize (err, downloads, cache) =>
-            return callback err if err
-            @downloads = downloads
-            @cache = cache
-            callback()
+    setRequestCozy: (@requestCozy) ->
 
 
     initConfig: (@config, @requestCozy, @database, @fileCacheHandler) ->
@@ -42,93 +34,7 @@ module.exports = class Replicator extends Backbone.Model
         @photosDB = @database.localDb
 
 
-    # pings the cozy to check the credentials without creating a device
-    checkCredentials: (url, password, callback) ->
-        options =
-            method: 'post'
-            url: "#{url}/login"
-            retry: 3
-            json:
-                username: 'owner'
-                password: password
-            auth: false
-        window.app.init.requestCozy.request options, (err, response, body) ->
-            if err and err.message is "Unexpected token <"
-                error = t err.message
-            else if err
-                # Unexpected error, just show it to the user.
-                log.error err
-                error = err.message
-                if error.indexOf('CORS request rejected') isnt -1
-                    error = t 'connexion error'
-            else if response?.status is 0
-                error = t 'connexion error'
-            else if body?.error is "error otp invalid code"
-                error = null
-            else if response?.statusCode isnt 200
-                error = err?.message or body.error or body.message
-            else
-                error = null
-
-            callback error
-
-    registerRemoteSafe: (url, password, deviceName, callback, num = 0) ->
-        name = deviceName
-        name += "-#{num}" if num > 0
-        log.debug 'deviceName', name
-        @_registerRemote url, password, name, (err, body) =>
-            if err and err.message is 'device name already exist'
-                console.info 'The above 400 is totally normal. Device name \
-                    already exist, we test another'
-                @registerRemoteSafe url, password, deviceName, callback, num + 1
-            else
-                callback err, body
-
-    _registerRemote: (url, password, deviceName, callback) ->
-        options =
-            method: "post"
-            url: "#{url}/device"
-            retry: 3
-            auth:
-                username: 'owner'
-                password: password
-            json:
-                login: deviceName
-                permissions: @config.get 'devicePermissions'
-        @requestCozy.request options, (err, response, body) ->
-            if err
-                callback err
-            else if response.statusCode is 401 and response.reason
-                callback new Error 'cozy need patch'
-            else if response.statusCode is 401
-                callback new Error 'wrong password'
-            else if response.statusCode is 400
-                callback new Error 'device name already exist'
-            else if response.statusCode isnt 201
-                log.error "while registering device:  #{response.statusCode}"
-                callback new Error response.statusCode, response.reason
-            else
-                callback err, body
-
-
-    updatePermissions: (password, callback) ->
-        options =
-            method: 'put'
-            url: "#{@config.getCozyUrl()}/device/#{@config.get('deviceName')}"
-            retry: 3
-            auth:
-                username: 'owner'
-                password: password
-            json:
-                login: @config.get 'deviceName'
-                permissions: app.init.config.getDefaultPermissions()
-        @requestCozy.request options, (err, response, body) =>
-            return callback err if err
-
-            @config.set 'devicePermissions', body.permissions, callback
-
-
-    takeCheckpoint: (callback) ->
+    getRemoteCheckpoint: (callback) ->
         options =
             retry: 3
             method: 'get'
@@ -136,26 +42,7 @@ module.exports = class Replicator extends Backbone.Model
             path: '/_changes?descending=true&limit=1'
         @requestCozy.request options, (err, res, body) ->
             return callback err if err
-            window.app.checkpointed = body.last_seq
-            callback()
-
-
-    # Fetch all documents, with a previously put couchdb view.
-    _fetchAll: (doc, callback) ->
-        options =
-            method: 'post'
-            type: 'data-system'
-            path: "/request/#{doc.docType}/all/"
-            body:
-                include_docs: true
-                show_revs: true
-            retry: doc.retry
-        @requestCozy.request options, (err, res, rows) ->
-            if not err and res.statusCode isnt 200
-                err = new Error res.statusCode, res.reason
-
-            return callback err if err
-            callback null, rows
+            callback undefined, body.last_seq
 
 
     # 1. Fetch all documents of specified docType
@@ -164,6 +51,23 @@ module.exports = class Replicator extends Backbone.Model
     # Return the list of added doc to PouchDB.
     copyView: (options, callback) ->
         log.info "enter copyView for #{options.docType}."
+
+        # Fetch all documents, with a previously put couchdb view.
+        fetchAll = (doc, callback) =>
+            options =
+                method: 'post'
+                type: 'data-system'
+                path: "/request/#{doc.docType}/all/"
+                body:
+                    include_docs: true
+                    show_revs: true
+                retry: doc.retry
+            @requestCozy.request options, (err, res, rows) ->
+                if not err and res.statusCode isnt 200
+                    err = new Error res.statusCode, res.reason
+
+                callback err, rows
+
         # Last step
         putInPouch = (doc, cb) =>
             @db.put doc, 'new_edits':false, (err) ->
@@ -175,7 +79,7 @@ module.exports = class Replicator extends Backbone.Model
             times: options.retry or 1
             interval: 20 * 1000
 
-        async.retry retryOptions, ((cb) => @_fetchAll options, cb)
+        async.retry retryOptions, ((cb) -> fetchAll options, cb)
         , (err, rows) =>
             return callback err if err
             return callback null, [] unless rows?.length isnt 0
@@ -231,6 +135,15 @@ module.exports = class Replicator extends Backbone.Model
 
 # BEGIN Cache methods
 
+
+
+
+    initFileSystem: (callback) ->
+        fs.initialize (err, downloads, cache) =>
+            return callback err if err
+            @downloads = downloads
+            @cache = cache
+            callback()
 
 
     # Check if the all the subtree of the specified path is in cache.
@@ -368,3 +281,97 @@ module.exports = class Replicator extends Backbone.Model
         DeviceStatus.checkReadyForSync (err, ready, msg) =>
             return callback() unless ready
             @fileCacheHandler.downloadUnsynchronizedFiles callback
+
+
+# BEGIN Login Function: TODO move in lib/login.coffee
+
+
+    # pings the cozy to check the credentials without creating a device
+    checkCredentials: (url, password, callback) ->
+        options =
+            method: 'post'
+            url: "#{url}/login"
+            retry: 3
+            json:
+                username: 'owner'
+                password: password
+            auth: false
+        @requestCozy.request options, (err, response, body) ->
+            if err and err.message is "Unexpected token <"
+                error = t err.message
+            else if err
+                # Unexpected error, just show it to the user.
+                log.error err
+                error = err.message
+                if error.indexOf('CORS request rejected') isnt -1
+                    error = t 'connexion error'
+            else if response?.status is 0
+                error = t 'connexion error'
+            else if body?.error is "error otp invalid code"
+                error = null
+            else if response?.statusCode isnt 200
+                error = err?.message or body.error or body.message
+            else
+                error = null
+
+            callback error
+
+
+    registerRemoteSafe: (url, password, deviceName, callback, num = 0) ->
+        name = deviceName
+        name += "-#{num}" if num > 0
+        log.debug 'deviceName', name
+        @_registerRemote url, password, name, (err, body) =>
+            if err and err.message is 'device name already exist'
+                console.info 'The above 400 is totally normal. Device name \
+                    already exist, we test another'
+                @registerRemoteSafe url, password, deviceName, callback, num + 1
+            else
+                callback err, body
+
+
+    _registerRemote: (url, password, deviceName, callback) ->
+        options =
+            method: "post"
+            url: "#{url}/device"
+            retry: 3
+            auth:
+                username: 'owner'
+                password: password
+            json:
+                login: deviceName
+                permissions: @config.get 'devicePermissions'
+        @requestCozy.request options, (err, response, body) ->
+            if err
+                callback err
+            else if response.statusCode is 401 and response.reason
+                callback new Error 'cozy need patch'
+            else if response.statusCode is 401
+                callback new Error 'wrong password'
+            else if response.statusCode is 400
+                callback new Error 'device name already exist'
+            else if response.statusCode isnt 201
+                log.error "while registering device:  #{response.statusCode}"
+                callback new Error response.statusCode, response.reason
+            else
+                callback err, body
+
+
+    updatePermissions: (password, callback) ->
+        options =
+            method: 'put'
+            url: "#{@config.getCozyUrl()}/device/#{@config.get('deviceName')}"
+            retry: 3
+            auth:
+                username: 'owner'
+                password: password
+            json:
+                login: @config.get 'deviceName'
+                permissions: @config.getDefaultPermissions()
+        @requestCozy.request options, (err, response, body) =>
+            return callback err if err
+
+            @config.set 'devicePermissions', body.permissions, callback
+
+
+# END Login function

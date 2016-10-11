@@ -5,7 +5,7 @@ Config = require '../../../app/lib/config'
 
 global._ = require 'underscore'
 global.Backbone = require 'backbone'
-global.device = helper.getAndroidDevice()
+global.device = helper.fixture.getAndroidDevice()
 
 
 module.exports = describe 'Config Test', ->
@@ -13,7 +13,7 @@ module.exports = describe 'Config Test', ->
 
     describe 'Config initialization', (done) ->
 
-        database = helper.getDatabase()
+        database = helper.database.get()
         config = new Config database
 
         it 'should have database variable', ->
@@ -28,7 +28,7 @@ module.exports = describe 'Config Test', ->
 
     describe 'Config load', (done) ->
 
-        database = helper.getDatabase()
+        database = helper.database.get()
         config = new Config database
 
         it 'is loaded', (done) ->
@@ -51,7 +51,7 @@ module.exports = describe 'Config Test', ->
 
     describe 'Config Cozy Url', ->
 
-        database = helper.getDatabase()
+        database = helper.database.get()
         config = new Config database
 
         it 'should not have cozy url', ->
@@ -68,7 +68,7 @@ module.exports = describe 'Config Test', ->
 
     describe 'Config version', ->
 
-        database = helper.getDatabase()
+        database = helper.database.get()
         config = new Config database
 
         it 'should have same version by default', (done) ->

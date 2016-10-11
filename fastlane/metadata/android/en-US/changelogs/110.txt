@@ -1,0 +1,1 @@
+* Bug fix when user doesn't synchronize his contacts.

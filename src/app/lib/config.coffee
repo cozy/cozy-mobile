@@ -216,7 +216,7 @@ class Config
 
     hasPermissions: ->
         _.isEqual \
-            serializePermissions(@get('devicePermissions')),
+            @get('devicePermissions'),
             serializePermissions(PERMISSIONS)
 
 
