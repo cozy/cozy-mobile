@@ -1,9 +1,6 @@
 log = require('./persistent_log')
     prefix: 'ConnectionHandler'
     date: true
-toast = require './toast'
-
-
 instance = null
 
 
@@ -16,40 +13,37 @@ module.exports = class ConnectionHandler
 
         # Connection is from cordova-plugin-network-information
         @ConnectionState ?= Connection
-        @connected = navigator.connection.type isnt @ConnectionState.NONE
-        log.debug @connected
+        @connected = @_getConnected()
+
+        log.info @connected
+
         document.addEventListener 'offline', @_offline, false
         document.addEventListener 'online', @_online, false
 
 
     _online: ->
         unless @connected
+            log.info 'online'
             @connected = true
-            log.debug 'online'
-            app.init.startRealtime() if app.init.currentState is 'nRealtime'
-            if app.init.currentState and app.init.currentState[0] is 'f'
-                app.layout.onCloseErrorIndicator()
-                app.init.trigger 'restart'
 
 
     _offline: ->
         if @connected
-            log.debug 'offline'
+            log.info 'offline'
             @connected = false
-            app.init.stopRealtime() if app.init.currentState is 'nRealtime'
-            if app.init.currentState and app.init.currentState[0] is 'f'
-                toast.warn 'lost_connection_first_replication'
+
+
+    _getConnected: ->
+        navigator.connection.type isnt @ConnectionState.NONE
 
 
     isConnected: ->
-        connected = navigator.connection.type isnt @ConnectionState.NONE
+        connected = @_getConnected()
         if connected isnt @connected
             if connected
                 @_online()
             else
                 @_offline()
-
-        log.debug "isConnected: #{@connected}"
 
         @connected
 

@@ -2,7 +2,7 @@ log = require("./persistent_log")
     prefix: "Config"
     date: true
 
-APP_VERSION = "1.4.4"
+APP_VERSION = "2.0.0"
 DOC_ID = '_local/appconfig'
 PERMISSIONS =
     File: description: "files permission description"
@@ -32,6 +32,9 @@ DEFAULT_CONFIG =
     syncImages: false
     syncOnWifi: true
     cozyNotifications: false
+    firstSyncFiles: false
+    firstSyncContacts: false
+    firstSyncCalendars: false
 
     cozyURL: ''
     cozyHostname: ''
@@ -78,11 +81,12 @@ serializePermissions = (permissions) ->
 class Config
 
 
-    constructor: (@database) ->
+    constructor: (@database, @initialize) ->
         log.debug "constructor"
 
         @loaded = false
         _.extend @, Backbone.Events
+        @initialize ?= app.init
 
 
     display: ->
@@ -101,7 +105,7 @@ class Config
                 config = doc
 
                 if @isNewVersion()
-                    return app.init.upsertLocalDesignDocuments =>
+                    return @initialize.upsertLocalDesignDocuments =>
                         migration = require '../migrations/migration'
                         return migration.migrate doc.appVersion, =>
                             @load callback
@@ -115,10 +119,12 @@ class Config
             log.info 'Initialize app configuration'
 
             config = DEFAULT_CONFIG
-            config.deviceName = "Android-#{device.manufacturer}-#{device.model}"
+            config.deviceName =
+                "#{device.platform}-#{device.manufacturer}-#{device.model}"
             setConfig @database.replicateDb, (err) =>
                 log.error err if err
-                @load callback
+                @initialize.upsertLocalDesignDocuments =>
+                    @load callback
 
 
     setConfigValue: (newConfig) ->
@@ -218,6 +224,23 @@ class Config
         _.isEqual \
             @get('devicePermissions'),
             serializePermissions(PERMISSIONS)
+
+
+    removeSync: (type) ->
+        if type is 'contacts'
+            @set 'syncContacts', false
+        else if type is 'calendars'
+            @set 'syncCalendars', false
+        else if type is 'files' or type is 'photos'
+            @set 'syncImages', false
+
+
+    firstSyncIsDone: ->
+        if not @get('firstSyncFiles') or \
+                (@get('syncContacts') and not @get('firstSyncContacts')) or \
+                (@get('syncCalendars') and not @get('firstSyncCalendars'))
+            return false
+        true
 
 
 module.exports = Config

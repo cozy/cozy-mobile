@@ -1,60 +1,69 @@
-.list
+if running
 
-    if device.platform === 'Android'
-        .item.item-divider= t('synchronisation title')
+    .collection.files.z-depth-2.snap-content
+        .valign-wrapper
+            .center.cozy-color
+                .row
+                    .col.s8.offset-s2
 
-        .item.checkbox
-            input#contactSyncCheck(type="checkbox", checked=syncContacts)
-            label(for='contactSyncCheck')= t('contacts sync label')
+                        h2.display-icon
+                            if taskName == 'contacts'
+                                i.material-icons contacts
+                            else if taskName == 'calendars'
+                                i.material-icons event
+                            else if taskName == 'files'
+                                i.material-icons folder
+                        .progress
+                            .determinate#configProgress(style="width: 0%")
+                        br
+                        span= t('config_loading_' + taskName)
 
-        .item.checkbox
-            input#calendarSyncCheck(type="checkbox", checked=syncCalendars)
-            label(for='calendarSyncCheck')= t('calendars sync label')
+else
 
-        .item.checkbox
-            input#cozyNotificationsCheck(type="checkbox", checked=cozyNotifications)
-            label(for='cozyNotificationsCheck')= t('cozy notifications sync label')
+    ul.collection.with-header
+        if device.platform === 'Android'
+            li.collection-header
+                h5= t('synchronisation title')
+            li.collection-item
+                p
+                    input#contactSyncCheck(type="checkbox", checked=syncContacts)
+                    label(for='contactSyncCheck')= t('contacts sync label')
+                p
+                    input#calendarSyncCheck(type="checkbox", checked=syncCalendars)
+                    label(for='calendarSyncCheck')= t('calendars sync label')
+                p
+                    input#cozyNotificationsCheck(type="checkbox", checked=cozyNotifications)
+                    label(for='cozyNotificationsCheck')= t('cozy notifications sync label')
+
+        li.collection-header
+            h5= t('backup title')
+            li.collection-item
+                if device.platform === 'Android'
+                    p
+                        input#imageSyncCheck(type="checkbox", checked=syncImages)
+                        label(for='imageSyncCheck')= t('images sync label')
+                p
+                    input#wifiSyncCheck(type="checkbox", checked=syncOnWifi)
+                    label(for='wifiSyncCheck')= t('wifi sync label')
 
 
-    .item.item-divider= t('backup title')
+        li.collection-header
+            h5= t('reset title')
 
-    if device.platform === 'Android'
-        .item.checkbox
-            input#imageSyncCheck(type="checkbox", checked=syncImages)
-            label(for='imageSyncCheck')= t('images sync label')
-
-    .item.checkbox
-        input#wifiSyncCheck(type="checkbox", checked=syncOnWifi)
-        label(for='wifiSyncCheck')= t('wifi sync label')
-
-    if initState === 'fConfig' || initState === 'mConfig'
-        .item
-            button#configDone.button.button-block.button-balanced= t('next')
-
-    else
-
-        .item.item-divider= t('about')
-
-        #doBackup.item.item-icon
-            .icon-backup
-            span.text
-                = t('last backup')
-                | &nbsp;#{lastBackup}.
-
-        .item= t('synchronized with') + " " + cozyURL
-        .item= t('device name') + ' : ' + deviceName
-        .item= t('app name') + ' v' + appVersion
-
-        .item.item-divider= t('reset title')
-
-        .item
+        li.collection-item
             p= t('synchro warning')
-            button#synchrobtn.button.button-grey.button-full-width= t('retry synchro')
+            p.center
+                button#synchrobtn.waves-effect.waves-light.btn.bg-cozy-color
+                    i.material-icons.left cloud_download
+                    = t('retry synchro')
 
-        .item.item-divider= t('support')
 
-        .item
+        li.collection-header
+            h5= t('support')
+
+        li.collection-item
             p= t('send log info')
-            button#sendlogbtn.button.button-grey.button-full-width= t('send log')
-
-
+            p.center
+                button#sendlogbtn.waves-effect.waves-light.btn.bg-cozy-color
+                    i.material-icons.left send
+                    = t('send log')

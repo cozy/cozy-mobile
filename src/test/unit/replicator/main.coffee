@@ -10,17 +10,6 @@ global.Backbone = require 'backbone'
 module.exports = describe 'Replicator Test', ->
 
 
-    it 'have default variable', ->
-        # arrange
-
-        # act
-        replicator = new Replicator()
-
-        # assert
-        replicator.get('inSync').should.be.false
-        replicator.get('inBackup').should.be.false
-
-
     it 'can be init config', ->
         # arrange
         config = "config"
@@ -60,7 +49,7 @@ module.exports = describe 'Replicator Test', ->
     it 'can update index of pouchdb', (done) ->
         # arrange
         replicator = new Replicator()
-        replicator.db =
+        replicator.replicateDb =
             query: (name, options, cb) ->
                 cb()
 

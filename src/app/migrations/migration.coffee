@@ -8,6 +8,7 @@ log = require('../lib/persistent_log')
 
 # corresponding of migration file
 migrations = [
+    '2.0.0'
     '1.3.0'
     '1.2.0'
     '1.1.1'

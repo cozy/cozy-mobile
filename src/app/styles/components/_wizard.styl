@@ -30,6 +30,8 @@ stepColorMixin(color, btnColor)
     stepColorMixin $urlBlue, white
 .fWizardPassword
     stepColorMixin $passwordGreen, white
+    .button
+        color $passwordGreen
 .fWizardFiles
     stepColorMixin $filesPurple, white
 .fWizardContacts
@@ -48,7 +50,16 @@ stepColorMixin(color, btnColor)
     align-content stretch
     overflow hidden
     padding 1em
-    max-height 100vh
+    height 100vh
+
+    .block-100
+        height 100vh
+
+    .block-50
+        height 50vh
+
+    .block-25
+        height 25vh
 
     .welcome
         .big-icon-container
@@ -81,7 +92,7 @@ stepColorMixin(color, btnColor)
         img
             display block
             width 80%
-            margin 10% auto 10% auto
+            margin 0 auto
 
     p
         font 1.2em 'Source Sans Pro', Sans-serif
@@ -114,7 +125,6 @@ stepColorMixin(color, btnColor)
         background-color transparent
 
     #btn-back
-        text-align left
         background transparent
         color white
         font-size 1em
@@ -145,3 +155,36 @@ stepColorMixin(color, btnColor)
     background-color grey-04
     border-color grey-04
     background-image none
+
+.wizard-step
+    .input-field
+        label
+            color: #fff
+            font-size 1em
+        input[type=text] + label, input[type=password] + label, input[type=url] + label
+            transform translateY(-140%)
+        input
+            border-bottom-color #fff
+        input:focus + label
+            color #fff
+        input:focus
+            border-bottom-color #fff
+            box-shadow 0 1px 0 0 #fff
+        input[type=checkbox] + label:before
+            border-color white
+        input[type=checkbox]:checked + label:before
+            border-color transparent white white transparent
+        .prefix.active
+            color #fff
+    &.keyboard
+        .hide-keyboard-open
+            display none
+    .button
+        margin 0 auto
+        width: 90%
+
+
+#check
+    width 100%
+    height 100%
+    color white

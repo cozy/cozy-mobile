@@ -133,5 +133,11 @@
     "bad credentials, did you enter an email address": "로그인 하지 못했습니다. Cozy URL 대신 이메일을 입력 하였습니까?",
     "error try restart": "응용 프로그램을 다시 시작해 주세요.",
     "error need min %version for %app": "Cozy의 %app을 업그레이드해 주세요. 최소 %version 버전 이어야 합니다.",
+    "onboarding_password_display": "Display password",
+    "onboarding_password_empty": "Password empty.",
+    "onboarding_device_create": "Register your device on your cozy.",
+    "config_loading_files": "Loading files and folders.",
+    "config_loading_calendars": "Loading calendars.",
+    "config_loading_contacts": "Loading contacts.",
     "Unexpected token <": "Cozy가 정상 작동 하는지 확인해 주세요."
 }

@@ -133,5 +133,11 @@
     "bad credentials, did you enter an email address": "Falsche Anmeldeinformationen. Hast du versehentlich eine E-Mail anstatt deiner Cozy URL eingegeben?",
     "error try restart": "Bitte versuchen Sie Ihre Applikation neu zu starten.",
     "error need min %version for %app": "Bite aktualisiere %app in deinem Cozy. Diese App benötigt die neuste Version %version",
+    "onboarding_password_display": "Display password",
+    "onboarding_password_empty": "Password empty.",
+    "onboarding_device_create": "Register your device on your cozy.",
+    "config_loading_files": "Loading files and folders.",
+    "config_loading_calendars": "Loading calendars.",
+    "config_loading_contacts": "Loading contacts.",
     "Unexpected token <": "Prüfe, ob dein Cozy richtig funktioniert"
 }

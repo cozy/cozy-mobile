@@ -1,5 +1,5 @@
 log = require('../lib/persistent_log')
-    prefix: "Filter Manager"
+    prefix: "FilterManager "
     date: true
 
 ###*
@@ -31,7 +31,6 @@ _getConfigFilter = (syncContacts, syncCalendars, syncNotifs) ->
         config: "function (doc) { return #{compare}; }"
 
 _getFilterDocName = ->
-    log.debug "getFilterDocId"
     "filter-#{deviceName}-config"
 
 deviceName = null
@@ -45,6 +44,7 @@ deviceName = null
 ###
 module.exports = class FilterManager
 
+
     ###*
      * Create a FilterManager.
      *
@@ -53,9 +53,13 @@ module.exports = class FilterManager
      * @param {String} deviceName - it's device name
      * @param {PouchDB} db - the main PouchDB instance of the app.
     ###
-    # constructor: (@cozyUrl, @auth, @deviceName, @db) ->
-    constructor: (@config, @requestCozy, @db) ->
+    # constructor: (@cozyUrl, @auth, @deviceName, @replicateDb) ->
+    constructor: (@config, @requestCozy, @replicateDb) ->
+        @config ?= app.init.config
+        @requestCozy ?= app.init.requestCozy
+        @replicateDb ?= app.init.database.replicateDb
         deviceName = @config.get 'deviceName'
+
 
     ###*
      * Create or update a filter for a specific configuration.
@@ -67,24 +71,19 @@ module.exports = class FilterManager
     ###
     # setFilter: (syncContacts, syncCalendars, syncNotifs, callback) ->
     setFilter: (callback) ->
-        syncContacts = @config.get 'syncContacts'
-        syncCalendars = @config.get 'syncCalendars'
-        syncNotifs = @config.get 'cozyNotifications'
+        log.info 'set Filter'
 
-        log.info "setFilter syncContacts: #{syncContacts}, syncCalendars: " + \
-                "#{syncCalendars}, syncNotifs: #{syncNotifs}"
-
-        doc = _getConfigFilter syncContacts, syncCalendars, syncNotifs
+        doc = @getFilterDoc()
 
         # Add the filter in PouchDB
         filterId = @getFilterDocId()
         doc._id = filterId
-        @db.get filterId, (err, existing) =>
+        @replicateDb.get filterId, (err, existing) =>
             # assume err is 404, which means no doc yet.
             if existing?
                 doc._rev = existing._rev
 
-            @db.put doc, (err) =>
+            @replicateDb.put doc, (err) =>
                 return callback err if err
 
                 # Delete rev before sending to Cozy
@@ -103,9 +102,20 @@ module.exports = class FilterManager
 
                     callback null, true
 
-    filterRemoteExist: (callback = ->) ->
-        log.debug "filterRemoteExist"
 
+    filterLocalIsSame: (callback = ->) ->
+        doc = @getFilterDoc()
+
+        # Add the filter in PouchDB
+        filterId = @getFilterDocId()
+        doc._id = filterId
+        @replicateDb.get filterId, (err, existing) =>
+            return callback false if err
+
+            callback existing?.filter?.config is @getFilterDoc().filters.config
+
+
+    filterRemoteIsSame: (callback = ->) ->
         options =
             method: 'get'
             type: 'data-system'
@@ -113,9 +123,22 @@ module.exports = class FilterManager
             retry: 3
         @requestCozy.request options, (err, res, body) =>
             if res?.status is 404
-                console.info 'The above 404 is normal, we create the filter'
-                return @setFilter callback
-            callback()
+                log.info 'The above 404 is normal, we create the filter'
+                return callback false
+
+            unless body.filters.config is @getFilterDoc().filters.config
+                log.info 'filter is not the same'
+                return callback false
+
+            callback true
+
+
+    getFilterDoc: ->
+        syncContacts = @config.get 'syncContacts'
+        syncCalendars = @config.get 'syncCalendars'
+        syncNotifs = @config.get 'cozyNotifications'
+        _getConfigFilter syncContacts, syncCalendars, syncNotifs
+
 
     ###*
      * Get the design docId of the filter this device.
@@ -131,6 +154,4 @@ module.exports = class FilterManager
      * @return {String}
     ###
     getFilterName: ->
-        log.debug "getFilterName"
-
         "#{_getFilterDocName()}/config"

@@ -1,6 +1,7 @@
 AndroidAccount = require '../fromDevice/android_account'
 AndroidCalendarHandler = require '../../lib/android_calendar_handler'
 CozyToAndroidEvent = require '../transformer/cozy_to_android_event'
+Permission = require '../../lib/permission'
 log = require('../../lib/persistent_log')
     prefix: 'ChangeEventHandler'
     date: true
@@ -19,6 +20,7 @@ module.exports = class ChangeEventHandler
         @androidCalendarHandler = new AndroidCalendarHandler()
         @cozyToAndroidEvent = new CozyToAndroidEvent()
         @calendarSync ?= navigator.calendarsync
+        @permission = new Permission()
         unless @timezone
             @timezone = 'Europe/Paris'
             successCB = (date) => @timezone = date.timezone
@@ -27,20 +29,26 @@ module.exports = class ChangeEventHandler
 
 
     dispatch: (cozyEvent, callback) ->
-        @calendarSync.eventBySyncId cozyEvent._id, (err, androidEvents) =>
-            if androidEvents and androidEvents.length > 0
-                androidEvent = androidEvents[0]
-                if cozyEvent._deleted
-                    @_delete cozyEvent, androidEvent, callback
+
+        success = =>
+            @calendarSync.eventBySyncId cozyEvent._id, (err, androidEvents) =>
+                if androidEvents and androidEvents.length > 0
+                    androidEvent = androidEvents[0]
+                    if cozyEvent._deleted
+                        @_delete cozyEvent, androidEvent, callback
+                    else
+                        @_update cozyEvent, androidEvent, callback
                 else
-                    @_update cozyEvent, androidEvent, callback
-            else
-                # event may have already been deleted from device
-                # or event never been created
-                @_create cozyEvent, callback unless cozyEvent._deleted
+                    # event may have already been deleted from device
+                    # or event never been created
+                    @_create cozyEvent, callback unless cozyEvent._deleted
+
+        @permission.checkPermission 'calendars', success, callback
 
 
     _create: (cozyEvent, callback) ->
+        log.info "create"
+
         unless cozyEvent?.tags?.length > 0
             return @_calendarNameError cozyEvent, callback
 
@@ -62,6 +70,8 @@ module.exports = class ChangeEventHandler
 
 
     _update: (cozyEvent, androidEvent, callback) ->
+        log.info "update"
+
         unless cozyEvent?.tags?.length > 0
             return @_calendarNameError cozyEvent, callback
 
@@ -89,6 +99,8 @@ module.exports = class ChangeEventHandler
 
 
     _delete: (cozyEvent, androidEvent, callback) ->
+        log.info "delete"
+
         @calendarSync.deleteEvent androidEvent, @account, (err, deletedCount) =>
             if err
                 msg = 'This event can\'t be deleted due to an error'

@@ -1,5 +1,6 @@
 CozyToAndroidContact = require "../transformer/cozy_to_android_contact"
 AndroidAccount = require '../fromDevice/android_account'
+Permission = require '../../lib/permission'
 
 log = require('../../lib/persistent_log')
     prefix: "ChangeContactHandler"
@@ -12,10 +13,10 @@ module.exports = class ChangeContactHandler
 
     constructor: ->
         @cozyToAndroidContact = new CozyToAndroidContact()
+        @permission = new Permission()
 
 
     dispatch: (doc, callback) ->
-        log.debug "dispatch"
 
         @_getFromPhoneByCozyId doc._id, (err, androidContact) =>
             if androidContact?
@@ -33,13 +34,13 @@ module.exports = class ChangeContactHandler
 
 
     _create: (doc, callback) ->
-        log.debug "_create"
+        log.info "create"
 
         @_update doc, undefined, callback
 
 
     _update: (doc, androidContact, callback) ->
-        log.debug "_update"
+        log.info "update" if androidContact
 
         @_setPictureBase64data doc, (doc) =>
             try
@@ -63,7 +64,7 @@ module.exports = class ChangeContactHandler
 
 
     _delete: (doc, androidContact, callback) ->
-        log.debug "_delete"
+        log.info "delete"
 
         # Use callerIsSyncAdapter flag to apply immediately in
         # android(no dirty flag cycle)
@@ -71,18 +72,30 @@ module.exports = class ChangeContactHandler
         , callerIsSyncAdapter: true
 
 
-    _getFromPhoneByCozyId: (cozyId, cb) ->
-        log.debug "_getFromPhoneByCozyId"
+    _getFromPhoneByCozyId: (cozyId, callback) ->
 
-        navigator.contacts.find [navigator.contacts.fieldType.sourceId]
-        , (contacts) ->
-            cb null, contacts[0]
-        , cb
-        , new ContactFindOptions cozyId, false, [], AndroidAccount.TYPE, \
-            AndroidAccount.NAME
+        success = ->
+
+            fields = [navigator.contacts.fieldType.sourceId]
+
+            successCB = (contacts) ->
+                callback null, contacts[0]
+
+            filter = cozyId
+            multiple = false
+            desiredFields = []
+            accountType = AndroidAccount.TYPE
+            accountName = AndroidAccount.NAME
+            findOptions = new ContactFindOptions filter, multiple, \
+                    desiredFields, accountType, accountName
+
+            navigator.contacts.find fields, successCB, callback, findOptions
+
+        @permission.checkPermission 'contacts', success, callback
 
 
     _setPictureBase64data: (doc, callback) ->
+
         if doc._attachments is undefined or 'picture' not of doc._attachments
             return callback doc
         return callback doc if typeof doc._attachments.picture.data is 'string'
@@ -91,7 +104,7 @@ module.exports = class ChangeContactHandler
         reader.onload = ->
             data = reader.result
             prefix = 'data:application/octet-stream;base64,'
-            if data.startsWith prefix
+            if data?.startsWith prefix
                 data = data.substr prefix.length
             doc._attachments.picture.data = data
             callback doc

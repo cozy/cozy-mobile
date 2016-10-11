@@ -1,4 +1,4 @@
-BaseView = require '../lib/base_view'
+BaseView = require './layout/base_view'
 
 module.exports = class BreadcrumbsView extends BaseView
 

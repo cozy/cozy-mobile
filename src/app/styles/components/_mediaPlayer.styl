@@ -1,25 +1,45 @@
 .mediaPicture
     background-size contain
     position fixed
-    top 5px
-    bottom 5px
-    left 5px
-    right 5px
+    top 0
+    bottom 0
+    left 0
+    right 0
+    z-index 99999
+    background-color black
+    border: 5px solid black
+    color white
     background-repeat no-repeat
     background-position center, center
 
-    .actions
-        position: fixed;
-        bottom: 40px;
-        left: 0;
-        right: 0;
+    &.display-actions
+        .mediaHeader
+            top 0
+        .mediaFooter
+            bottom 0
 
-        li
-            display inline-block
+    .mediaHeader
+        transition-duration: 0.3s;
+        position fixed
+        top -56px
+        left 0
+        right 0
 
-        a
-            margin 10px 40px
+        .btn-floating
+            background-color transparent
+            box-shadow inherit
 
-.platform-ios
-    .mediaPicture
-        top 20px
+    .mediaFooter
+        transition-duration: 0.3s;
+        position fixed
+        bottom -56px
+        left 0
+        right 0
+
+        .btn-flat
+            color white
+            height 100%
+
+
+    nav
+        background-color rgba(0, 0, 0, 0.25)

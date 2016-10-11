@@ -1,11 +1,12 @@
 helper = require '../../helper/helper'
 should   = require('chai').should()
-Config = require '../../../app/lib/config'
+Config = helper.requireTestFile __filename
 
 
 global._ = require 'underscore'
 global.Backbone = require 'backbone'
 global.device = helper.fixture.getAndroidDevice()
+initialize = upsertLocalDesignDocuments: (callback) -> callback()
 
 
 module.exports = describe 'Config Test', ->
@@ -14,7 +15,7 @@ module.exports = describe 'Config Test', ->
     describe 'Config initialization', (done) ->
 
         database = helper.database.get()
-        config = new Config database
+        config = new Config database, initialize
 
         it 'should have database variable', ->
             config.database.should.be.exist
@@ -29,7 +30,7 @@ module.exports = describe 'Config Test', ->
     describe 'Config load', (done) ->
 
         database = helper.database.get()
-        config = new Config database
+        config = new Config database, initialize
 
         it 'is loaded', (done) ->
 
@@ -52,7 +53,7 @@ module.exports = describe 'Config Test', ->
     describe 'Config Cozy Url', ->
 
         database = helper.database.get()
-        config = new Config database
+        config = new Config database, initialize
 
         it 'should not have cozy url', ->
             config.getCozyUrl().should.equal ''
@@ -69,7 +70,7 @@ module.exports = describe 'Config Test', ->
     describe 'Config version', ->
 
         database = helper.database.get()
-        config = new Config database
+        config = new Config database, initialize
 
         it 'should have same version by default', (done) ->
             config.load ->

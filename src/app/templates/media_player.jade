@@ -1,9 +1,26 @@
-div(style="background-image: url(#{path})", class="mediaPicture" id="mediaPicture")
-    .actions.center.hide
-        ul
-            li
-                a#exit.btn-large.btn-floating.bg-cozy-color
-                    i.large.material-icons close
-            li
-                a#open.btn-large.btn-floating.bg-cozy-color
-                    i.large.material-icons open_in_browser
+#mediaPicture.mediaPicture.display-actions(style="background-image: url('#{path}')")
+    .mediaHeader.actions
+        nav
+            .nav-wrapper
+                ul.left
+                    li
+                        a#exit
+                            i.material-icons.left arrow_back
+                    li
+                        span= fileName
+
+                //ul.right
+                //    li
+                //        a#actions
+                //            i.mdi.mdi-dots-vertical.btn-floating
+    .mediaFooter.actions
+        nav
+            .nav-wrapper
+                ul.left
+                    li
+                        a#remove.waves-effect.waves-teal.btn-flat
+                            i.large.material-icons phonelink_erase
+                ul.right
+                    li
+                        a#open.waves-effect.waves-teal.btn-flat
+                            i.large.material-icons launch

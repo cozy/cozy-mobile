@@ -46,8 +46,6 @@ module.exports = class FileCacheHandler
 
 
     getFolderName: (cozyFile) ->
-        log.debug 'getFolderName'
-
         return cozyFile._id if cozyFile._id
 
         log.warn JSON.stringify cozyFile
@@ -55,8 +53,6 @@ module.exports = class FileCacheHandler
 
 
     isCached: (cozyFile) ->
-        log.debug 'isCached'
-
         @cache[@getFolderName cozyFile]?
 
 
@@ -111,8 +107,6 @@ module.exports = class FileCacheHandler
 
 
     downloadUnsynchronizedFiles: (callback) ->
-        log.debug 'downloadUnsynchronizedFiles'
-
         progressback = ->
         async.forEachOfSeries @cache, (cacheFile, id, cb) =>
             return cb() if cacheFile.downloaded is cacheFile.version
@@ -235,4 +229,5 @@ module.exports = class FileCacheHandler
                         navigator.notification.alert t err.message
         error = (err) ->
             log.error err
+        url = encodeURI(url).replace /#/g, '%23'
         resolveLocalFileSystemURL url, success, error

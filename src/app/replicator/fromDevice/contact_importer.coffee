@@ -1,6 +1,7 @@
 async = require 'async'
 AndroidAccount = require './android_account'
 CozyToAndroidContact = require "../transformer/cozy_to_android_contact"
+Permission = require '../../lib/permission'
 
 log = require('../../lib/persistent_log')
     prefix: "ContactImporter"
@@ -17,31 +18,40 @@ module.exports = class ContactImporter
     constructor: (@db) ->
         @db ?= app.init.database.replicateDb
         @transformer = new CozyToAndroidContact()
+        @permission = new Permission()
 
-    # Sync dirty (modified) phone contact to app's pouchDB.
+
     synchronize: (callback) ->
-        log.debug "synchronize"
+        success = =>
+            # Go through modified contacts (dirtys)
+            # delete, update or create....
 
-        # Go through modified contacts (dirtys)
-        # delete, update or create....
-        navigator.contacts.find [navigator.contacts.fieldType.dirty]
-        , (contacts) =>
-            processed = 0
-            log.info "syncPhone2Pouch #{contacts.length} contacts."
-            # contact to update number. contacts.length
-            async.eachSeries contacts, (contact, cb) =>
-                setImmediate => # helps refresh UI
-                    if contact.deleted
-                        @_delete contact, continueOnError cb
-                    else if contact.sourceId
-                        @_update contact, continueOnError cb
-                    else
-                        @_create contact, continueOnError cb
-            , callback
+            fields = [navigator.contacts.fieldType.dirty]
 
-        , callback
-        , new ContactFindOptions "1", true, []
-        , AndroidAccount.TYPE, AndroidAccount.NAME
+            successCB = (contacts) =>
+                log.info "syncPhone2Pouch #{contacts.length} contacts."
+                # contact to update number. contacts.length
+                async.eachSeries contacts, (contact, cb) =>
+                    setImmediate => # helps refresh UI
+                        if contact.deleted
+                            @_delete contact, continueOnError cb
+                        else if contact.sourceId
+                            @_update contact, continueOnError cb
+                        else
+                            @_create contact, continueOnError cb
+                , callback
+
+            filter = "1"
+            multiple = true
+            desiredFields = []
+            accountType = AndroidAccount.TYPE
+            accountName = AndroidAccount.NAME
+            findOptions = new ContactFindOptions filter, multiple, \
+                    desiredFields, accountType, accountName
+
+            navigator.contacts.find fields, successCB, callback, findOptions
+
+        @permission.checkPermission 'contacts', success, callback
 
 
     # Update contact in pouchDB with specified contact from phone.
@@ -70,7 +80,7 @@ module.exports = class ContactImporter
                         picture.revpos = 1 + \
                             parseInt contact._rev.split('-')[0]
 
-            @db.put contact, contact._id, contact._rev, (err, idNrev) =>
+            @db.put contact, (err, idNrev) =>
                 return callback err if err
                 @_undirty phoneContact, idNrev, callback
 
@@ -103,7 +113,7 @@ module.exports = class ContactImporter
             _rev: phoneContact.sync2
             _deleted: true
 
-        @db.put toDelete, toDelete._id, toDelete._rev, (err, res) ->
+        @db.put toDelete, (err, res) ->
             return callback err if err
             phoneContact.remove (-> callback()), callback, \
                     callerIsSyncAdapter: true

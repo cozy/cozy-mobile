@@ -1,7 +1,7 @@
 {
   "name": "cozy-mobile",
   "description": "This is the native mobile client for Cozy.",
-  "version": "1.4.4",
+  "version": "2.0.0",
   "license": "LGPL-3.0",
   "engines": {
     "node": "~4.4.7"
@@ -23,20 +23,23 @@
     "postrelease:android": "PACKAGE_VERSION=$(node -p -e \"require('./package.json').version\"); mv -f ../build/android/CozyMobile.apk ../build/android/CozyMobile_$PACKAGE_VERSION.apk; md5 ../build/android/CozyMobile_$PACKAGE_VERSION.apk; shasum ../build/android/CozyMobile_$PACKAGE_VERSION.apk"
   },
   "dependencies": {
+    "animate.css": "^3.5.2",
     "async": "2.0.1",
     "backbone": "1.3.3",
     "backbone.statemachine": "0.2.7",
     "hammerjs": "2.0.8",
     "jquery": "1.9.1",
-    "material-design-icons": "3.0.0",
-    "moment": "2.14.1",
+    "material-design-icons": "3.0.1",
+    "materialize-css": "https://github.com/Dogfalo/materialize.git",
+    "moment": "2.15.1",
     "moment-timezone": "0.5.5",
     "node-polyglot": "2.0.0",
     "path-browser": "2.2.1",
-    "pouchdb": "5.4.5",
+    "pouchdb": "6.0.5",
     "semver": "5.3.0",
+    "snap.js": "https://github.com/kosssi/snap.js.git#develop",
     "underscore": "1.8.3",
-    "validator": "5.5.0"
+    "validator": "6.0.0"
   },
   "devDependencies": {
     "brunch": "1.8.5",
@@ -44,16 +47,16 @@
     "clean-css-brunch": "1.8.0",
     "codecov": "1.0.1",
     "coffee-coverage": "1.0.1",
-    "coffee-script": "1.10.0",
+    "coffee-script": "1.11.0",
     "coffee-script-brunch": "1.8.3",
     "coffeelint": "1.15.7",
-    "cordova": "6.3.0",
+    "cordova": "6.3.1",
     "css-brunch": "1.7.0",
-    "istanbul": "0.4.4",
+    "istanbul": "0.4.5",
     "jade-brunch": "1.8.2",
     "javascript-brunch": "1.8.0",
     "json-brunch": "1.5.4",
-    "memdown": "1.2.0",
+    "memdown": "1.2.2",
     "mocha": "3.0.2",
     "mockery": "1.7.0",
     "stylus-brunch": "1.8.1",

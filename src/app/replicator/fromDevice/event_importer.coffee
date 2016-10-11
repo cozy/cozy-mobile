@@ -4,9 +4,10 @@ async = require 'async'
 CozyToAndroidEvent = require "../transformer/cozy_to_android_event"
 AndroidCalendarHandler = require "../../lib/android_calendar_handler"
 log = require('../../lib/persistent_log')
-    prefix: "EventImporter"
+    prefix: "EventImporter  "
     date: true
 continueOnError = require('../../lib/utils').continueOnError log
+Permission = require '../../lib/permission'
 
 module.exports = class EventImporter
 
@@ -16,18 +17,21 @@ module.exports = class EventImporter
         @cozyToAndroidEvent = new CozyToAndroidEvent()
         @androidCalendarHandler = new AndroidCalendarHandler()
         @changeEventHandler = new ChangeEventHandler()
+        @permission = new Permission()
 
     synchronize: (callback) ->
-        log.debug "synchronize"
+        success = =>
+            @calendarSync.dirtyEvents AndroidAccount.ACCOUNT, \
+                    (err, androidEvents) =>
+                return log.error err if err
+                log.info "syncPhone2Pouch #{androidEvents.length} events."
 
-        @calendarSync.dirtyEvents AndroidAccount.ACCOUNT, \
-                (err, androidEvents) =>
-            return log.error err if err
-            log.info "syncPhone2Pouch #{androidEvents.length} events."
+                async.eachSeries androidEvents, (androidEvent, cb) =>
+                    @_change androidEvent, cb
+                , callback
 
-            async.eachSeries androidEvents, (androidEvent, cb) =>
-                @_change androidEvent, cb
-            , callback
+        @permission.checkPermission 'calendars', success, callback
+
 
     _change: (androidEvent, callback) ->
         log.debug "_change"
@@ -76,7 +80,7 @@ module.exports = class EventImporter
             cozyEvent = @cozyToAndroidEvent.reverseTransform androidEvent, \
                     androidCalendar, cozyEvent
 
-            @db.put cozyEvent, cozyEvent._id, cozyEvent._rev, (err, response) =>
+            @db.put cozyEvent, (err, response) =>
                 return callback err if err
 
                 androidEvent.sync_data2 = response.rev
@@ -97,7 +101,7 @@ module.exports = class EventImporter
             _rev: androidEvent.sync_data2
             _deleted: true
 
-        @db.put cozyEvent, cozyEvent._id, cozyEvent._rev, (err, res) =>
+        @db.put cozyEvent, (err, res) =>
             return callback err if err
 
             @changeEventHandler._delete cozyEvent, androidEvent, callback

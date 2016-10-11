@@ -8,24 +8,28 @@ log = require("./persistent_log")
 
 androidCalendarsCache = null
 
+
 module.exports = class AndroidCalendarHandler
 
-    constructor: (@db, @calendarSync) ->
-        @db ?= window.app.init.database.replicateDb
+
+    constructor: (@replicateDb, @calendarSync) ->
+        @replicateDb ?= app.init.database.replicateDb
         @cozyToAndroidCalendar = new CozyToAndroidCalendar()
         @calendarSync ?= navigator.calendarsync
+        @requestCozy = app.init.requestCozy
+
 
     _getAll: (callback) ->
         log.debug "_getAll"
 
         return callback null, androidCalendarsCache if androidCalendarsCache
 
-        @calendarSync.allCalendars AndroidAccount.ACCOUNT, \
-                (err, calendars) ->
+        @calendarSync.allCalendars AndroidAccount.ACCOUNT, (err, calendars) ->
             return callback err if err
 
             androidCalendarsCache = calendars
             callback null, calendars
+
 
     getByName: (calendarName, callback) ->
         log.debug "getByName"
@@ -39,6 +43,7 @@ module.exports = class AndroidCalendarHandler
 
             callback new Error "No calendar found with '#{calendarName}' name."
 
+
     getById: (calendarId, callback) ->
         log.debug "getById"
 
@@ -51,6 +56,7 @@ module.exports = class AndroidCalendarHandler
 
             callback new Error "Calendar isn't find with id:#{calendarId}"
 
+
     getOrCreate: (calendarName, callback) ->
         log.debug "getOrCreate"
 
@@ -59,6 +65,7 @@ module.exports = class AndroidCalendarHandler
                 @_create calendarName, callback
             else
                 callback null, calendar
+
 
     _create: (calendarName, callback) ->
         log.debug "_create"
@@ -79,6 +86,7 @@ module.exports = class AndroidCalendarHandler
                 @getById calendarId, (err, calendar) ->
                     callback err, calendar
 
+
     update: (androidCalendar, callback) ->
         log.debug "update"
 
@@ -92,6 +100,7 @@ module.exports = class AndroidCalendarHandler
                     androidCalendarsCache[key] = androidCalendar
 
             callback null, true
+
 
     _delete: (androidCalendar, callback) ->
         log.debug "_delete"
@@ -107,10 +116,11 @@ module.exports = class AndroidCalendarHandler
 
             callback null, true
 
+
     deleteIfEmpty: (androidCalendar, callback) ->
         log.debug "deleteIfEmpty"
 
-        @db.query DesignDocuments.CALENDARS
+        @replicateDb.query DesignDocuments.CALENDARS
         ,
             key: androidCalendar.name
             limit: 1
@@ -124,6 +134,7 @@ module.exports = class AndroidCalendarHandler
             else
                 callback()
 
+
     deleteIfEmptyById: (androidCalendarId, callback) ->
         log.debug "deleteIfEmptyById"
 
@@ -131,8 +142,6 @@ module.exports = class AndroidCalendarHandler
             return callback err if err
 
             @deleteIfEmpty androidCalendar, callback
-
-
 
 
     _getCalendarFromCozy: (calendarName, callback) ->
@@ -144,8 +153,8 @@ module.exports = class AndroidCalendarHandler
             body:
                 include_docs: true
                 key: calendarName
-        requestCozy = window.app.init.requestCozy
-        requestCozy.request options, (err, res, body) ->
+
+        @requestCozy.request options, (err, res, body) ->
             return callback err if err
             # No tag found, put a default color.
             calendar = body[0]?.doc or { name: calendarName , color: '#2979FF' }
