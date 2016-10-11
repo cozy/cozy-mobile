@@ -40,7 +40,8 @@
                         a#searchButton
                             i.material-icons search
 
-            a.brand-logo.center(href='#')= t(title)
+            if title
+                a.brand-logo.center(href='#')= t(title)
 
             ul.left.file
                 li

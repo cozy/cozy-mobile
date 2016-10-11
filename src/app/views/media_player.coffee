@@ -1,5 +1,4 @@
-BaseView = require '../lib/base_view'
-Hammer = require 'hammer'
+BaseView = require './layout/base_view'
 FileCacheHandler = require '../lib/file_cache_handler'
 pathHelper = require '../lib/path'
 

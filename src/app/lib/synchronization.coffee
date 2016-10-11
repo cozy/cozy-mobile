@@ -81,59 +81,54 @@ module.exports = class Synchronization
                     return @filterManager.setFilter callback
 
                 @filterManager.filterRemoteIsSame (isSame) =>
-                    unless isSame
+                    if isSame
+                        callback()
+                    else
                         @stop()
                         @filterManager.setFilter callback
-                    else
-                        callback()
 
 
     checkFirstReplication: (callback) ->
         @_canSync (err) =>
             return callback err if err
+            return callback() if @config.firstSyncIsDone()
 
-            unless @config.firstSyncIsDone()
+            checkFiles = (callback) =>
+                if @config.get 'firstSyncFiles'
+                    callback()
+                else
+                    @firstReplication.addTask 'files', callback
 
-                checkFiles = (callback) =>
-                    unless @config.get 'firstSyncFiles'
-                        @firstReplication.addTask 'files', callback
-                    else
+            checkContacts = (callback) =>
+                if @config.get('syncContacts') and \
+                        not @config.get('firstSyncContacts')
+                    @firstReplication.addTask 'contacts', callback
+                else
+                    callback()
+
+            checkCalendars = (callback) =>
+                if @config.get('syncCalendars') and \
+                        not @config.get('firstSyncCalendars')
+                    @firstReplication.addTask 'calendars', callback
+                else
+                    callback()
+
+            checkFiles ->
+                checkContacts ->
+                    checkCalendars ->
                         callback()
-
-                checkContacts = (callback) =>
-                    if @config.get('syncContacts') and \
-                            not @config.get('firstSyncContacts')
-                        @firstReplication.addTask 'contacts', callback
-                    else
-                        callback()
-
-                checkCalendars = (callback) =>
-                    if @config.get('syncCalendars') and \
-                            not @config.get('firstSyncCalendars')
-                        @firstReplication.addTask 'calendars', callback
-                    else
-                        callback()
-
-                checkFiles ->
-                    checkContacts ->
-                        checkCalendars ->
-                            callback()
-            else
-                callback()
 
 
     syncCozyToAndroid: (options, callback) ->
         @_canSync (err) =>
             return callback err if err
+            return callback() if @live
 
-            unless @live
-                log.info 'start synchronization cozy to android'
-                @live = true if options.live
-                @replicator.startRealtime options, (err) =>
-                    @live = false if options.live
-                    callback err
-            else
-                callback()
+            log.info 'start synchronization cozy to android'
+            @live = true if options.live
+            @replicator.startRealtime options, (err) =>
+                @live = false if options.live
+                callback err
 
 
     syncAndroidToCozy: (callback) ->

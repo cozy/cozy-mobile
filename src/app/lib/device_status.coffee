@@ -85,11 +85,11 @@ module.exports.checkReadyForSync = checkReadyForSync = (callback)->
         unless (battery.level > 20 or battery.isPlugged)
             log.info "NOT ready on battery low."
             return callbackWaiting null, false, 'no battery'
-        unless window.app.init.config.loaded
+        unless app.init.config.loaded
             cb = ->
                 checkReadyForSync callback
             return setTimeout cb, 1000
-        if window.app.init.config.get('syncOnWifi') and \
+        if app.init.config.get('syncOnWifi') and \
                 (not (navigator.connection.type is Connection.WIFI))
             log.info "NOT ready on no wifi."
             return callbackWaiting null, false, 'no wifi'

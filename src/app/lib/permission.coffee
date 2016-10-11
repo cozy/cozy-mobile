@@ -19,7 +19,7 @@ module.exports = class Permission
     checkPermission: (type, success, callback) ->
 
         if device.platform is 'iOS'
-            success true
+            return success true
 
         if type is 'calendars'
             permission = 'CALENDAR'

@@ -250,11 +250,11 @@ module.exports = class PictureHandler
     _ensureDeviceFolder: (callback) ->
         findFolder = (id, cb) =>
             @replicateDb.get id, (err, result) ->
-                if not err?
+                if not err? and result.rows isnt undefined
                     cb null, result.rows[0]
                 else
                     # Busy waiting for device folder creation
-                    setTimeout (-> findFolder id, cb ), 200
+                    setTimeout (-> findFolder id, cb ), 1000
 
         designId = DesignDocuments.FILES_AND_FOLDER
         options = key: ['', "1_#{t('photos').toLowerCase()}"]

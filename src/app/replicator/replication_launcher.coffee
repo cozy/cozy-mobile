@@ -63,10 +63,6 @@ module.exports = class ReplicationLauncher
                     @conflictsHandler.handleConflicts doc, (err, doc) =>
                         log.error err if err
 
-                        if @router and doc?.docType?.toLowerCase() in \
-                                ['file', 'folder']
-                            @router.forceRefresh()
-
                         if @changeDispatcher.isDispatched doc
                             @changeDispatcher.dispatch doc, next
                         else

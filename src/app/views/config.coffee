@@ -1,4 +1,4 @@
-BaseView = require '../lib/base_view'
+BaseView = require './layout/base_view'
 logSender = require '../lib/log_sender'
 FirstReplication = require '../lib/first_replication'
 FilterManager = require '../replicator/filter_manager'
@@ -7,7 +7,9 @@ log = require('../lib/persistent_log')
     prefix: "config view"
     date: true
 
+
 module.exports = class ConfigView extends BaseView
+
 
     template: require '../templates/config'
     menuEnabled: true

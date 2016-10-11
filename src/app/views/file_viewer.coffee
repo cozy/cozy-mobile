@@ -1,5 +1,4 @@
-BaseView = require '../lib/base_view'
-Hammer = require 'hammer'
+BaseView = require './layout/base_view'
 DesignDocuments = require '../replicator/design_documents'
 FileCacheHandler = require '../lib/file_cache_handler'
 HeaderView = require './layout/header'
@@ -184,14 +183,15 @@ module.exports = class FileViewer extends BaseView
                 endkey: [filePath, {}]
             view = DesignDocuments.FILES_AND_FOLDER
 
-        app.init.replicator.db.query view, params, (err, results) =>
+        @replicateDb ?= app.init.database.replicateDb
+        @replicateDb.query view, params, (err, results) =>
             inPathIds = results.rows.map (row) -> return row.id
 
             params =
                 keys: inPathIds
                 include_docs: true
 
-            app.init.replicator.db.allDocs params, (err, items) =>
+            @replicateDb.allDocs params, (err, items) =>
                 @files = items.rows.map (row) =>
                     doc = row.doc
                     doc.icon = @getIcon doc

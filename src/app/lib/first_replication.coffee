@@ -18,6 +18,7 @@ module.exports = class FirstReplication
         @changeDispatcher = new ChangeDispatcher()
         @config = app.init.config
         @filterManager = app.init.filterManager
+        @replicateDb = app.init.database.replicateDb
 
         @queue = async.queue (task, callback) =>
             @['_' + task] (err) =>
@@ -74,7 +75,7 @@ module.exports = class FirstReplication
         options =
             descending: true
             limit: 1
-        @replicator.db.changes options, (err, changes) ->
+        @replicateDb.changes options, (err, changes) ->
             return callback err if err
             callback null, changes.last_seq
 
@@ -158,9 +159,8 @@ module.exports = class FirstReplication
         log.info "enter copyView for #{options.docType}."
         # Last step
         putInPouch = (doc, cb) =>
-            @replicator.db.put doc, 'new_edits': false, (err) ->
-                return cb err if err
-                cb null, doc
+            @replicateDb.put doc, 'new_edits': false, (err) ->
+                cb err, doc
 
         # 1. Fetch all documents
         retryOptions =

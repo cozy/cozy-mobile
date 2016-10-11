@@ -10,28 +10,18 @@ log = require('../lib/persistent_log')
     date: true
 
 
-#Replicator extends Model to watch/set inBackup, inSync
 module.exports = class Replicator extends Backbone.Model
 
     db: null
     config: null
-
-    # backup images functions are in replicator_backups
-    _.extend Replicator.prototype, require './replicator_backups'
-
-    _.extend Replicator.prototype, require '../migrations/replicator_migration'
-
-    defaults: ->
-        inSync: false
-        inBackup: false
 
 
     setRequestCozy: (@requestCozy) ->
 
 
     initConfig: (@config, @requestCozy, @database, @fileCacheHandler) ->
-        @db = @database.replicateDb
-        @photosDB = @database.localDb
+        @replicateDb = @database.replicateDb
+        @localDb = @database.localDb
 
 
     getRemoteCheckpoint: (callback) ->
@@ -70,7 +60,7 @@ module.exports = class Replicator extends Backbone.Model
 
         # Last step
         putInPouch = (doc, cb) =>
-            @db.put doc, 'new_edits':false, (err) ->
+            @replicateDb.put doc, 'new_edits':false, (err) ->
                 return cb err if err
                 cb null, doc
 
@@ -126,10 +116,10 @@ module.exports = class Replicator extends Backbone.Model
                 callback()
 
         # build pouch's map indexes
-        @db.query DesignDocuments.FILES_AND_FOLDER, {}, call
+        @replicateDb.query DesignDocuments.FILES_AND_FOLDER, {}, call
 
         # build pouch's map indexes
-        @db.query DesignDocuments.LOCAL_PATH, {}, call
+        @replicateDb.query DesignDocuments.LOCAL_PATH, {}, call
 
 # END initialisations methods
 
@@ -150,13 +140,14 @@ module.exports = class Replicator extends Backbone.Model
     # @param path the path to the subtree to check
     # @param callback get true as result if the whole subtree is present.
     folderInFileSystem: (path, callback) =>
+        name = DesignDocuments.PATH_TO_BINARY
         options =
             startkey: path
             endkey: path + '\uffff'
 
         fsCacheFolder = @cache.map (entry) -> entry.name
 
-        @db.query DesignDocuments.PATH_TO_BINARY, options, (err, results) ->
+        @replicateDb.query name, options, (err, results) ->
             return callback err if err
             return callback() if results.rows.length is 0
             callback null, _.every results.rows, (row) ->
@@ -200,12 +191,13 @@ module.exports = class Replicator extends Backbone.Model
     _getDbFilesOfFolder: (folder, callback) ->
         path = folder.path
         path += '/' + folder.name
+        name = DesignDocuments.FILES_AND_FOLDER
         options =
             startkey: [path]
             endkey: [path + '/\uffff', {}]
             include_docs: true
 
-        @db.query DesignDocuments.FILES_AND_FOLDER, options, (err, results) ->
+        @replicateDb.query name, options, (err, results) ->
             return callback err if err
             docs = results.rows.map (row) -> row.doc
             files = docs.filter (doc) -> doc.docType?.toLowerCase() is 'file'
@@ -222,15 +214,10 @@ module.exports = class Replicator extends Backbone.Model
             , callback
 
 
-    # wrapper around startRealtime to maintain the state of inSync
     sync: (options, callback) ->
-        return callback() if @get 'inSync'
-
         log.info "start a sync"
-        @set 'inSync', true
         options.live = false
         @startRealtime options, (err) =>
-            @set 'inSync', false
             if err?.status is 404
                 console.info 'The above 404 is not normal, but we retest with \
                               smallest pouch last_seq (remoteCheckpoint).'
@@ -263,7 +250,7 @@ module.exports = class Replicator extends Backbone.Model
                 @stopRealtime()
                 callback.apply @, arguments
 
-        @filterManager ?= new FilterManager @config, @requestCozy, @db
+        @filterManager ?= new FilterManager @config, @requestCozy, @replicateDb
         @filterManager.filterRemoteIsSame (isSame) =>
             if isSame
                 launch()
@@ -280,10 +267,6 @@ module.exports = class Replicator extends Backbone.Model
 
     # Update cache files with outdated revisions. Called while backup<
     syncCache:  (callback) ->
-        @set 'backup_step', 'files_sync'
-        @set 'backup_step_total', null
-        @set 'backup_step_done', null
-
         DeviceStatus.checkReadyForSync (err, ready, msg) =>
             return callback() unless ready
             @fileCacheHandler.downloadUnsynchronizedFiles callback
