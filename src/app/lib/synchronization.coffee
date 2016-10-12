@@ -143,8 +143,11 @@ module.exports = class Synchronization
         @_canSync (err) =>
             return callback err if err
 
-            log.info 'start upload media'
-            @mediaUploader.upload callback
+            if config.get 'firstSyncFiles'
+                log.info 'start upload media'
+                @mediaUploader.upload callback
+            else
+                callback()
 
 
     downloadCacheFile: (callback) ->
