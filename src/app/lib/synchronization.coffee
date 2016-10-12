@@ -143,7 +143,7 @@ module.exports = class Synchronization
         @_canSync (err) =>
             return callback err if err
 
-            if config.get 'firstSyncFiles'
+            if @config.get 'firstSyncFiles'
                 log.info 'start upload media'
                 @mediaUploader.upload callback
             else

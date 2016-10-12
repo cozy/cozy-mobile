@@ -149,7 +149,7 @@ module.exports = class AndroidCalendarHandler
     _getCalendarFromCozy: (calendarName, callback) ->
         docType = 'tag'
         filterName = 'byname'
-        @remoteRequest docType, filterName, (err) =>
+        @remoteRequest.putRequest docType, filterName, (err) =>
             return callback err if err
 
             options =
