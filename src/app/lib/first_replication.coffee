@@ -1,5 +1,6 @@
 async = require 'async'
 ChangeDispatcher = require '../replicator/change/change_dispatcher'
+RemoteRequest = require './remote_request'
 log = require('./persistent_log')
     prefix: "FirstReplication"
     date: true
@@ -19,6 +20,7 @@ module.exports = class FirstReplication
         @config = app.init.config
         @filterManager = app.init.filterManager
         @replicateDb = app.init.database.replicateDb
+        @remoteRequest = new RemoteRequest()
 
         @queue = async.queue (task, callback) =>
             @['_' + task] (err) =>
@@ -159,20 +161,7 @@ module.exports = class FirstReplication
         log.info "enter copyView for #{options.docType}."
 
         # Fetch all documents, with a previously put couchdb view.
-        fetchAll = (doc, callback) =>
-            options =
-                method: 'post'
-                type: 'data-system'
-                path: "/request/#{doc.docType}/all/"
-                body:
-                    include_docs: true
-                    show_revs: true
-                retry: doc.retry
-            @requestCozy.request options, (err, res, rows) ->
-                if not err and res.statusCode isnt 200
-                    err = new Error res.statusCode, res.reason
 
-                callback err, rows
 
         # Last step
         putInPouch = (doc, cb) =>
@@ -184,7 +173,7 @@ module.exports = class FirstReplication
             times: options.retry or 1
             interval: 20 * 1000
 
-        async.retry retryOptions, ((cb) -> fetchAll options, cb)
+        async.retry retryOptions, ((cb) => @remoteRequest.fetchAll options, cb)
         , (err, rows) =>
             return callback err if err
             return callback null, [] unless rows?.length isnt 0

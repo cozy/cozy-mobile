@@ -4,6 +4,7 @@ fs = require '../../replicator/filesystem'
 path = require 'path'
 DesignDocuments = require '../../replicator/design_documents'
 MediaUploader = require './media_uploader'
+RemoteRequest = require '../remote_request'
 Permission = require '../permission'
 log = require('../persistent_log')
     prefix: 'PictureHandler'
@@ -28,6 +29,7 @@ module.exports = class PictureHandler
         @media ?= new MediaUploader()
         @connectionHandler ?= new ConnectionHandler()
         @requestCozy ?= app.init.requestCozy
+        @remoteRequest = new RemoteRequest @requestCozy
         @queue = 0
         @permission = new Permission()
 
@@ -265,27 +267,30 @@ module.exports = class PictureHandler
                 folder = results.rows[0]
                 callback null, folder
             else
-                options =
-                    method: 'post'
-                    type: 'data-system'
-                    path: '/request/folder/byfullpath/'
-                    retry: 3
-                    body:
-                        key: t 'photos'
+                docType = 'folder'
+                filterName = 'byfullpath'
 
-                @requestCozy.request options, (err, res, docs) =>
+                @remoteRequest docType, filterName, (err) =>
                     return callback err if err
 
-                    if docs?.length is 0
-                        @media.createFolder t('photos'), '', (err, id) ->
-                            return callback err if err
+                    options =
+                        method: 'post'
+                        type: 'data-system'
+                        path: "/request/#{docType}/#{filterName}/"
+                        retry: 3
+                        body:
+                            key: t 'photos'
 
-                            # Wait to receive folder in local database
-                            findFolder id, (err, folder) ->
+                    @requestCozy.request options, (err, res, docs) =>
+                        return callback err if err
+
+                        if docs?.length is 0
+                            @media.createFolder t('photos'), '', (err, id) ->
                                 return callback err if err
 
-                                callback null, folder
-                    else
-                        # should not reach here: already exist remote, but not
-                        # present in replicated @replicateDb ...
-                        callback new Error 'photo folder not replicated yet'
+                                # Wait to receive folder in local database
+                                findFolder id, callback
+                        else
+                            # should not reach here: already exist remote,
+                            # but not present in replicated @replicateDb ...
+                            callback new Error 'photo folder not replicated yet'
