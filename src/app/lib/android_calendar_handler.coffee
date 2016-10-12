@@ -2,6 +2,7 @@ AndroidAccount = require "../replicator/fromDevice/android_account"
 CozyToAndroidCalendar = require \
         "../replicator/transformer/cozy_to_android_calendar"
 DesignDocuments = require "../replicator/design_documents"
+RemoteRequest = require './remote_request'
 log = require("./persistent_log")
     prefix: "AndroidCalendarHandler"
     date: true
@@ -17,6 +18,7 @@ module.exports = class AndroidCalendarHandler
         @cozyToAndroidCalendar = new CozyToAndroidCalendar()
         @calendarSync ?= navigator.calendarsync
         @requestCozy = app.init.requestCozy
+        @remoteRequest = new RemoteRequest @requestCozy
 
 
     _getAll: (callback) ->
@@ -145,17 +147,23 @@ module.exports = class AndroidCalendarHandler
 
 
     _getCalendarFromCozy: (calendarName, callback) ->
-        options =
-            method: 'post'
-            path: '/request/tag/byname/'
-            type: 'data-system'
-            retry: 3
-            body:
-                include_docs: true
-                key: calendarName
-
-        @requestCozy.request options, (err, res, body) ->
+        docType = 'tag'
+        filterName = 'byname'
+        @remoteRequest docType, filterName, (err) =>
             return callback err if err
-            # No tag found, put a default color.
-            calendar = body[0]?.doc or { name: calendarName , color: '#2979FF' }
-            callback null, calendar
+
+            options =
+                method: 'post'
+                path: "/request/#{docType}/#{filterName}/"
+                type: 'data-system'
+                retry: 3
+                body:
+                    include_docs: true
+                    key: calendarName
+
+            @requestCozy.request options, (err, res, body) ->
+                return callback err if err
+
+                # No tag found, put a default color.
+                calendar = body[0]?.doc or name: calendarName, color: '#2979FF'
+                callback null, calendar
