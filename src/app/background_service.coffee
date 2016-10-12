@@ -31,7 +31,8 @@ module.exports = BackgroundService =
         log.info 'startSynchronization'
 
         @synchro = new Synchronization()
-        @synchro.sync live: false, =>
+        syncLoop = false
+        @synchro.sync syncLoop, =>
             @exit()
 
 
