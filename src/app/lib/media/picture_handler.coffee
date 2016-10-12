@@ -270,7 +270,7 @@ module.exports = class PictureHandler
                 docType = 'folder'
                 filterName = 'byfullpath'
 
-                @remoteRequest docType, filterName, (err) =>
+                @remoteRequest.putRequest docType, filterName, (err) =>
                     return callback err if err
 
                     options =
