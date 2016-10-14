@@ -81,7 +81,7 @@ module.exports = class ConfigView extends BaseView
         @synchro.stop()
 
         if checked
-            @firstReplication.addTask 'calendars', ->
+            @firstReplication.addTask 'calendars'
             setTimeout =>
                 @render()
             , 200
@@ -93,7 +93,7 @@ module.exports = class ConfigView extends BaseView
         @synchro.stop()
 
         if checked
-            @firstReplication.addTask 'contacts', ->
+            @firstReplication.addTask 'contacts'
             setTimeout =>
                 @render()
             , 200

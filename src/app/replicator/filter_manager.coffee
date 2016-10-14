@@ -30,11 +30,6 @@ _getConfigFilter = (syncContacts, syncCalendars, syncNotifs) ->
     filters:
         config: "function (doc) { return #{compare}; }"
 
-_getFilterDocName = ->
-    "filter-#{deviceName}-config"
-
-deviceName = null
-
 ###*
  * FilterManager allows to create a filter specific by device and
  * get this filter to replicate couchdb with it to reduce consumption data.
@@ -47,18 +42,11 @@ module.exports = class FilterManager
 
     ###*
      * Create a FilterManager.
-     *
-     * @param {String} cozyUrl - it's url
-     * @param {String} auth - it's header authentication
-     * @param {String} deviceName - it's device name
-     * @param {PouchDB} db - the main PouchDB instance of the app.
     ###
-    # constructor: (@cozyUrl, @auth, @deviceName, @replicateDb) ->
     constructor: (@config, @requestCozy, @replicateDb) ->
         @config ?= app.init.config
         @requestCozy ?= app.init.requestCozy
         @replicateDb ?= app.init.database.replicateDb
-        deviceName = @config.get 'deviceName'
 
 
     ###*
@@ -146,7 +134,7 @@ module.exports = class FilterManager
      * @return {String}
     ###
     getFilterDocId: ->
-        return "_design/#{_getFilterDocName()}"
+        return "_design/#{@_getFilterDocName()}"
 
     ###*
      * Get filter name for this device.
@@ -154,4 +142,9 @@ module.exports = class FilterManager
      * @return {String}
     ###
     getFilterName: ->
-        "#{_getFilterDocName()}/config"
+        "#{@_getFilterDocName()}/config"
+
+
+
+    _getFilterDocName: ->
+        "filter-#{@config.get 'deviceName'}-config"
