@@ -54,9 +54,7 @@ module.exports = class Header extends BaseView
         parentPath: @parentPath
         title: @title
         displaySearch: @displaySearch
-        appVersion: @config.get 'appVersion'
         userUrl: @config.get 'cozyURL'
-        deviceName: @config.get 'deviceName'
         displayRender: @displaySender > 1
 
 

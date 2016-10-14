@@ -48,6 +48,8 @@ module.exports = class ConfigView extends BaseView
         syncImages: @config.get 'syncImages'
         syncOnWifi: @config.get 'syncOnWifi'
         cozyNotifications: @config.get 'cozyNotifications'
+        deviceName: @config.get 'deviceName'
+        appVersion: @config.get 'appVersion'
 
         running: @firstReplication.isRunning()
         taskName: @firstReplication.getTaskName()

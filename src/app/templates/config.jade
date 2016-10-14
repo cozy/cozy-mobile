@@ -21,6 +21,16 @@ if running
 else
 
     ul.collection.with-header
+        li.collection-item
+            div
+                = deviceName
+                .secondary-content
+                    i.material-icons stay_current_portrait
+        li.collection-item
+            div v
+                = appVersion
+                .secondary-content
+                    i.material-icons info
         if device.platform === 'Android'
             li.collection-header
                 h5= t('synchronisation title')
