@@ -41,7 +41,7 @@ module.exports = class FirstReplication
             ''
 
 
-    addTask: (task, callback = ->) ->
+    addTask: (task, callback, retry = 3) ->
         @queue.push task, (err) =>
             if err
                 status = 'error'
@@ -56,7 +56,12 @@ module.exports = class FirstReplication
                     @config.set 'firstSyncCalendars', true
 
             log.info "task #{task} is finished with #{status}."
-            callback()
+
+            retry--
+            if err and retry > 0
+                @addTask task, callback, retry
+            else
+                callback err
 
 
     addProgressionView: (@updateView) ->
