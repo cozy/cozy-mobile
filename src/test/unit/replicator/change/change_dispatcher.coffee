@@ -1,6 +1,8 @@
 should = require('chai').should()
 mockery = require 'mockery'
-""
+global.app = init: database: remoteDb: get: (docId, options, cb) -> cb()
+
+
 module.exports = describe 'ChangeDispatcher Test', ->
 
     config = {}
