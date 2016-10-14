@@ -4,6 +4,7 @@ module.exports =
     migrate: (callback) ->
         config = app.init.config
         defaultConfig = config.getDefault()
+        replicateDb = app.init.database.replicateDb
         newConfig = {}
 
         replicateDb.get defaultConfig._id, (err, doc) ->
