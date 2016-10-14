@@ -100,7 +100,7 @@ module.exports = class FilterManager
         @replicateDb.get filterId, (err, existing) =>
             return callback false if err
 
-            callback existing?.filter?.config is @getFilterDoc().filters.config
+            callback existing?.filters?.config is @getFilterDoc().filters.config
 
 
     filterRemoteIsSame: (callback = ->) ->
