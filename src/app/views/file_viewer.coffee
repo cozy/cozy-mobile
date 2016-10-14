@@ -314,3 +314,4 @@ module.exports = class FileViewer extends BaseView
         'application/x-zip-compressed'  : 'archive'
         'application/x-apple-diskimage' : 'archive'
         'multipart/x-gzip'              : 'archive'
+        'application/vnd.android.package-archive' : 'android'

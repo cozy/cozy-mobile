@@ -123,6 +123,7 @@ module.exports = class Synchronization
         @_canSync (err) =>
             return callback err if err
             return callback() if @live
+            return callback() unless @config.firstSyncIsDone()
 
             log.info 'start synchronization cozy to android'
             @live = true if options.live
@@ -134,6 +135,7 @@ module.exports = class Synchronization
     syncAndroidToCozy: (callback) ->
         @_canSync (err) =>
             return callback err if err
+            return callback() unless @config.firstSyncIsDone()
 
             log.info 'start synchronization android to cozy'
             @changesImporter.synchronize callback
@@ -142,6 +144,7 @@ module.exports = class Synchronization
     uploadMedia: (callback) ->
         @_canSync (err) =>
             return callback err if err
+            return callback() unless @config.firstSyncIsDone()
 
             if @config.get 'firstSyncFiles'
                 log.info 'start upload media'
@@ -153,6 +156,7 @@ module.exports = class Synchronization
     downloadCacheFile: (callback) ->
         @_canSync (err) =>
             return callback err if err
+            return callback() unless @config.firstSyncIsDone()
 
             log.info 'start download cache file'
             @replicator.syncCache callback

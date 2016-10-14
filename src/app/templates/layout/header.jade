@@ -1,33 +1,25 @@
 #slide-out.side-nav
     ul
         li
-            .userView
-        li
-            a(href='#folder/')
-                i.material-icons folder_open
-                = t('files')
-        li
-            a(href='#config')
-                i.material-icons settings
-                = t('config')
-        li
-            .divider
-        li
-            a(href=userUrl, onclick="open('#{userUrl}', '_system', 'location=yes')")
+            a.truncate(href=userUrl, onclick="open('#{userUrl}', '_system', 'location=yes')")
                 i.material-icons cloud
                 = userUrl
         li
-            a
-                i.material-icons stay_current_portrait
-                = deviceName
+            .divider
+        li
+            a.truncate(href='#folder/')
+                i.material-icons folder
+                = t('files')
+        li
+            a.truncate(href='#config')
+                i.material-icons settings
+                = t('config')
         if displayRender
             li
-                a#senderBtn
+                a.truncate#senderBtn
                     i.material-icons bug_report
                     = t('send log')
-    footer
-        div#displaySender v
-            = appVersion
+    footer#displaySender
 
 
 #header.navbar-fixed.header-file

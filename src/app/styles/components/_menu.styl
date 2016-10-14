@@ -48,13 +48,6 @@
             // hide right arrow on the side menu
             display none
 
-.userView
-    background-image url(../img/icon.png)
-    background-position center center
-    background-size contain
-    background-repeat no-repeat
-    height 200px
-
 #information
     width 90%
     background-color white
@@ -68,6 +61,16 @@
 
 
 .header-file
+    height 56px
+
+    nav, .button-collapse
+        height 56px
+        line-height 56px
+
+    ul
+        a:hover
+            background-color inherit
+
     .open
         display block
     .close
@@ -254,6 +257,8 @@
 #slide-out.side-nav
     height inherit
     bottom 0
+    top 56px
+    width 75%
 
     footer
         position absolute
