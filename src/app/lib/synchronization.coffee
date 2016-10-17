@@ -45,10 +45,12 @@ module.exports = class Synchronization
                         @syncAndroidToCozy (err) =>
                             return @_finishSync err, callback if err
 
-                            @syncCozyToAndroid live: true, (err) ->
-                                # don't finishSync may be is already call
-                                # synchronization live restart with next sync
-                                log.warn err if err
+                            if @syncLoop
+                                @syncCozyToAndroid live: true, (err) ->
+                                    # don't finishSync may be is already call
+                                    # synchronization live restart with next
+                                    # sync
+                                    log.warn err if err
 
                             @uploadMedia (err) =>
                                 return @_finishSync err, callback if err
