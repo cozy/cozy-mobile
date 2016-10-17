@@ -183,7 +183,11 @@ module.exports = class Replicator extends Backbone.Model
         @filterManager ?= new FilterManager @config, @requestCozy, @replicateDb
         @filterManager.filterRemoteIsSame (isSame) =>
             if isSame
-                launch()
+                @filterManager.filterLocalIsSame (isSame) =>
+                    if isSame
+                        launch()
+                    else
+                        @filterManager.setFilter launch
             else
                 @filterManager.setFilter launch
 
