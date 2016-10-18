@@ -27,7 +27,6 @@
     "reset warning": "お使いの電話からすべてのCozy で生成されたデータを消去します。",
     "support": "サポート",
     "toast_migration": "移行中、しばらく時間がかかることがあります。",
-    "send log": "ログを送信",
     "send log info": "私たちが品質と安定性を改善するために、アプリケーションログをメールで送信します。",
     "send log please describe problem": "問題を説明してください:",
     "send log trace begin": "ログトレース: 触れないでください (または、私たちに何か教えてください)",
@@ -139,5 +138,7 @@
     "config_loading_files": "ファイルとフォルダーのロード中。",
     "config_loading_calendars": "カレンダーのロード中。",
     "config_loading_contacts": "連絡先のロード中。",
+    "config_log_send": "ログを送信",
+    "config_log_share": "Share logs",
     "Unexpected token <": "Cozy が正しく動作しているか確認してください。"
 }

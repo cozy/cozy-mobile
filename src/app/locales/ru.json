@@ -27,7 +27,6 @@
     "reset warning": "Удалить все данные Cozy с вашего телефона.",
     "support": "Поддержка",
     "toast_migration": "Во время миграции это может занять некоторое время.",
-    "send log": "Отправить лог",
     "send log info": "Отправить e-mail с логом для улучшения стабильности и качества приложения.",
     "send log please describe problem": "Пожалуйста, опишите проблему:",
     "send log trace begin": "Журнал: пожалуйста не трогайте (или скажите нам, что трогали)",
@@ -139,5 +138,7 @@
     "config_loading_files": "Загрузка файлов и папок.",
     "config_loading_calendars": "Загрузка календарей.",
     "config_loading_contacts": "Загрузка контактов.",
+    "config_log_send": "Отправить лог",
+    "config_log_share": "Share logs",
     "Unexpected token <": "Проверьте исправность вашего Cozy."
 }
