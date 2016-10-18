@@ -4,6 +4,9 @@ language: android
 
 sudo: false
 
+jdk:
+  - oraclejdk8
+
 env:
   - TRAVIS_NODE_VERSION="4"
 
@@ -11,8 +14,8 @@ android:
   components:
     - tools # to get the new `repository-11.xml`
     - tools # to install Android SDK tools 25.1.x (x = 6 right now)
-    - build-tools-23.4.0
-    - android-23
+    - build-tools-24.0.1
+    - android-24
 
 install:
   - nvm install $TRAVIS_NODE_VERSION

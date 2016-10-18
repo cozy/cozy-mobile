@@ -1,4 +1,5 @@
 ChangeFileHandler = require "./change_file_handler"
+ChangeFolderHandler = require "./change_folder_handler"
 ChangeEventHandler = require "./change_event_handler"
 ChangeContactHandler = require "./change_contact_handler"
 ChangeTagHandler = require "./change_tag_handler"
@@ -23,6 +24,7 @@ module.exports = class ChangeDispatcher
     constructor: ->
         @changeHandlers =
             "file": new ChangeFileHandler()
+            "folder": new ChangeFolderHandler()
             "event": new ChangeEventHandler()
             "contact": new ChangeContactHandler()
             "tag": new ChangeTagHandler()

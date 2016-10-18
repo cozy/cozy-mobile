@@ -1,6 +1,8 @@
 BaseView = require './layout/base_view'
 DesignDocuments = require '../replicator/design_documents'
 FileCacheHandler = require '../lib/file_cache_handler'
+ChangeFolderHandler = require '../replicator/change/change_folder_handler'
+ChangeFileHandler = require '../replicator/change/change_file_handler'
 HeaderView = require './layout/header'
 pathHelper = require '../lib/path'
 
@@ -68,6 +70,15 @@ module.exports = class FileViewer extends BaseView
         @loadjQueryFunction = false
 
         app.view = @
+
+        @changeFolderHandler = new ChangeFolderHandler()
+        @changeFileHandler = new ChangeFileHandler()
+        cb = (object, path) =>
+            if @parentPath is path
+                @update()
+        @listenTo @changeFolderHandler, "change:path", cb
+        @listenTo @changeFileHandler, "change:path", cb
+
 
 
     getBreadcrumb: (path) ->
@@ -160,8 +171,6 @@ module.exports = class FileViewer extends BaseView
 
 
     load: (filePath) ->
-        console.log "filePath: #{filePath}"
-
         if @header
             @header.update path: filePath, displaySearch: true
         else

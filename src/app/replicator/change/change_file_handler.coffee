@@ -1,9 +1,11 @@
+DeletedDocument = require '../../lib/deleted_document'
 DeviceStatus = require '../../lib/device_status'
 FileCacheHandler = require '../../lib/file_cache_handler'
 fs = require '../filesystem'
 log = require('../../lib/persistent_log')
     prefix: "ChangeFileHandler"
     date: true
+instance = null
 
 
 ###*
@@ -18,6 +20,11 @@ module.exports = class ChangeFileHandler
      * Create a ChangeFileHandler.
     ###
     constructor: ->
+        return instance if instance
+        instance = @
+
+        _.extend @, Backbone.Events
+        @deletedDocument = new DeletedDocument()
         @fileCacheHandler = new FileCacheHandler()
         @directoryEntry = app.init.replicator.downloads
 
@@ -30,15 +37,25 @@ module.exports = class ChangeFileHandler
     dispatch: (doc, callback) ->
         log.debug "dispatch"
 
+        cb = (err, doc) =>
+            @trigger "change:path", @, doc.path if doc?.path or doc?.path is ""
+            callback err
+
         if doc._deleted
-            @_delete doc, callback
+            @_delete doc, (err) =>
+                return callback err if err
+                @deletedDocument.getDocBeforeDeleted doc._id, cb
         else
-            return callback() unless @fileCacheHandler.isCached doc
+            return cb null, doc unless @fileCacheHandler.isCached doc
 
             if not @fileCacheHandler.isSameBinary doc
-                @_download doc, callback
+                @_download doc, (err) ->
+                    cb err, doc
             else if not @fileCacheHandler.isSameName doc
-                @_rename doc, callback
+                @_rename doc, (err) ->
+                    cb err, doc
+            else
+                cb null, doc
 
 
     ###*

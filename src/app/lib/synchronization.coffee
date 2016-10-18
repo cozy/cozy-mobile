@@ -33,28 +33,27 @@ module.exports = class Synchronization
             log.info 'start synchronization'
             @currentSynchro = true
 
-            @checkFilter (err) =>
+            @checkFirstReplication (err) =>
                 return @_finishSync err, callback if err
 
-                @checkFirstReplication (err) =>
+                @syncCozyToDevice live: false, (err) =>
                     return @_finishSync err, callback if err
 
-                    @syncCozyToAndroid live: false, (err) =>
+                    @syncDeviceToCozy (err) =>
                         return @_finishSync err, callback if err
 
-                        @syncAndroidToCozy (err) =>
-                            return @_finishSync err, callback if err
-
-                            @syncCozyToAndroid live: true, (err) ->
+                        if @syncLoop
+                            @syncCozyToDevice live: true, (err) ->
                                 # don't finishSync may be is already call
-                                # synchronization live restart with next sync
+                                # synchronization live restart with next
+                                # sync
                                 log.warn err if err
 
-                            @uploadMedia (err) =>
-                                return @_finishSync err, callback if err
+                        @uploadMedia (err) =>
+                            return @_finishSync err, callback if err
 
-                                @downloadCacheFile (err) =>
-                                    @_finishSync err, callback
+                            @downloadCacheFile (err) =>
+                                @_finishSync err, callback
 
 
     _finishSync: (err, callback) ->
@@ -69,23 +68,6 @@ module.exports = class Synchronization
             , 60 * 1000
         else
             callback()
-
-
-    checkFilter: (callback) ->
-        @_canSync (err) =>
-            return callback err if err
-
-            @filterManager.filterLocalIsSame (isSame) =>
-                unless isSame
-                    @stop()
-                    return @filterManager.setFilter callback
-
-                @filterManager.filterRemoteIsSame (isSame) =>
-                    if isSame
-                        callback()
-                    else
-                        @stop()
-                        @filterManager.setFilter callback
 
 
     checkFirstReplication: (callback) ->
@@ -119,7 +101,7 @@ module.exports = class Synchronization
                         callback()
 
 
-    syncCozyToAndroid: (options, callback) ->
+    syncCozyToDevice: (options, callback) ->
         @_canSync (err) =>
             return callback err if err
             return callback() if @live
@@ -132,7 +114,7 @@ module.exports = class Synchronization
                 callback err
 
 
-    syncAndroidToCozy: (callback) ->
+    syncDeviceToCozy: (callback) ->
         @_canSync (err) =>
             return callback err if err
             return callback() unless @config.firstSyncIsDone()

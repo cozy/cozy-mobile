@@ -114,7 +114,7 @@ module.exports = class FilterManager
                 log.info 'The above 404 is normal, we create the filter'
                 return callback false
 
-            unless body.filters.config is @getFilterDoc().filters.config
+            unless body?.filters?.config is @getFilterDoc().filters.config
                 log.info 'filter is not the same'
                 return callback false
 
