@@ -6,7 +6,7 @@ instance = null
 
 
 ###*
- * ChangeFolderHandler allows to dispatch event.
+ * ChangeFolderHandler allows to dispatch event when folder change.
  *
  * @class ChangeFolderHandler
 ###
@@ -37,6 +37,6 @@ module.exports = class ChangeFolderHandler
             callback err
 
         if doc._deleted
-            @deletedDocument.get doc._id, cb
+            @deletedDocument.getDocBeforeDeleted doc._id, cb
         else
             cb null, doc

@@ -171,8 +171,6 @@ module.exports = class FileViewer extends BaseView
 
 
     load: (filePath) ->
-        console.log "filePath: #{filePath}"
-
         if @header
             @header.update path: filePath, displaySearch: true
         else

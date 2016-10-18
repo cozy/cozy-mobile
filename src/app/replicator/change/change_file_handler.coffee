@@ -44,7 +44,7 @@ module.exports = class ChangeFileHandler
         if doc._deleted
             @_delete doc, (err) =>
                 return callback err if err
-                @deletedDocument.get doc._id, cb
+                @deletedDocument.getDocBeforeDeleted doc._id, cb
         else
             return cb null, doc unless @fileCacheHandler.isCached doc
 
