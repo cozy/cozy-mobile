@@ -7,11 +7,11 @@
         li
             .divider
         li
-            a.truncate(href='#folder/')
+            a.truncate(href='#folder/', onclick="$('#slide-out').sideNav('hide')")
                 i.material-icons folder
                 = t('files')
         li
-            a.truncate(href='#config')
+            a.truncate(href='#config', onclick="$('#slide-out').sideNav('hide')")
                 i.material-icons settings
                 = t('config')
         if displayRender
