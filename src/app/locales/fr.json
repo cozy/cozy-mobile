@@ -27,7 +27,6 @@
     "reset warning": "Supprime les données de votre terminal, et lance la synchronisation comme au premier démarrage.",
     "support": "Support",
     "toast_migration": "Migration en cours cela peut prendre un peu de temps.",
-    "send log": "Envoyer Journal",
     "send log info": "Envoyer un email avec le journal de l'application afin de nous aider à améliorer sa qualité et sa fiabilité.",
     "send log please describe problem": "Décrivez le problème que vous rencontrez s'il vous plait :",
     "send log trace begin": "Journal de l'application : ne le modifiez pas s'il vous plait (ou alors dites-nous ce que vous modifiez)",
@@ -139,5 +138,7 @@
     "config_loading_files": "Chargement des fichiers et des dossiers.",
     "config_loading_calendars": "Chargement des calendriers.",
     "config_loading_contacts": "Chargement des contacts.",
+    "config_log_send": "Envoyer le Journal",
+    "config_log_share": "Partager le Journal",
     "Unexpected token <": "Vérifier que votre Cozy fonctionne correctement"
 }

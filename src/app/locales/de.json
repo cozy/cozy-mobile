@@ -27,7 +27,6 @@
     "reset warning": "Alle Cozy Daten auf deinem Handy löschen",
     "support": "Support",
     "toast_migration": "Die Migration kann etwas Zeit brauchen.",
-    "send log": "Protokoll senden",
     "send log info": "Sende uns eine E-Mail mit dem App-Protokoll, um zu helfen die Qualität und Stabilität zu verbessern.",
     "send log please describe problem": "Bitte beschreiben Sie Ihr Problem:",
     "send log trace begin": "Log Trace: Bitte nichts ändern! (oder uns sagen was!)",
@@ -139,5 +138,7 @@
     "config_loading_files": "Lade Dateien und Ordner.",
     "config_loading_calendars": "Lade Kalender.",
     "config_loading_contacts": "Lade Kontakte.",
+    "config_log_send": "Protokoll senden",
+    "config_log_share": "Share logs",
     "Unexpected token <": "Prüfe, ob dein Cozy richtig funktioniert."
 }

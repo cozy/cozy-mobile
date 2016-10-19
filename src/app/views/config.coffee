@@ -34,6 +34,7 @@ module.exports = class ConfigView extends BaseView
     events: ->
         'click #synchrobtn': 'synchroBtn'
         'click #sendlogbtn': -> logSender.send()
+        'click #sharelogbtn': -> logSender.share()
 
         'change #contactSyncCheck': 'toggleContact'
         'change #calendarSyncCheck': 'toggleCalendar'

@@ -16,9 +16,15 @@
                 = t('config')
         if displayRender
             li
+                .divider
+            li
                 a.truncate#senderBtn
-                    i.material-icons bug_report
-                    = t('send log')
+                    i.material-icons send
+                    = t('config_log_send')
+            li
+                a.truncate#shareBtn
+                    i.material-icons share
+                    = t('config_log_share')
     footer#displaySender
 
 

@@ -28,6 +28,7 @@ module.exports = class Header extends BaseView
         'submit #searchForm': 'searchSubmit'
         'click #displaySender': 'displaySender'
         'click #senderBtn': -> logSender.send()
+        'click #shareBtn': -> logSender.share()
 
 
     hide: ->

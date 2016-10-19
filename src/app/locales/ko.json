@@ -27,7 +27,6 @@
     "reset warning": "휴대폰의 모든 Cozy에 의해 생성된 모든 데이터를 삭제 합니다.",
     "support": "지원",
     "toast_migration": "During migration it may take some time.",
-    "send log": "로그 보내기",
     "send log info": "앱 로그를 관리자에게 보내세요. 클라우드 성능 향상에 도움이 될 것입니다.",
     "send log please describe problem": "오류 내용을 기록해 주세요:",
     "send log trace begin": "로그 추적:변경하지 마세요.",
@@ -139,5 +138,7 @@
     "config_loading_files": "Loading files and folders.",
     "config_loading_calendars": "Loading calendars.",
     "config_loading_contacts": "Loading contacts.",
+    "config_log_send": "로그 보내기",
+    "config_log_share": "Share logs",
     "Unexpected token <": "Cozy가 정상 작동 하는지 확인해 주세요."
 }
