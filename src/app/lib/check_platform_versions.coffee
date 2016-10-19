@@ -6,7 +6,7 @@ log = require('../lib/persistent_log')
 
 PLATFORM_VERSIONS =
     'proxy': '>=2.1.11'
-    'data-system': '>=2.1.8'
+    'data-system': '>=2.5.13'
 
 
 module.exports =
