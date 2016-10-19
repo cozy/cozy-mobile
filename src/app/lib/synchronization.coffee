@@ -3,6 +3,8 @@ ChangesImporter = require '../replicator/fromDevice/changes_importer'
 ConnectionHandler = require './connection_handler'
 MediaUploader = require './media/media_uploader'
 FirstReplication = require './first_replication'
+CheckPlatformVersion = require './check_platform_versions'
+toast = require './toast'
 log = require('./persistent_log')
     prefix: "Synchronization"
     date: true
@@ -144,14 +146,30 @@ module.exports = class Synchronization
             @replicator.syncCache callback
 
 
+    checkPlatformVersions: (callback) ->
+        return callback null, @isPlatformOk if @isPlatformOk
+
+        CheckPlatformVersion.checkPlatformVersions (err) =>
+            if err
+                if @isPlatformOk is undefined
+                    toast.info err.message, 180000
+
+                @isPlatformOk = false
+                err = new Error "Platform version isn't ok."
+            else
+                @isPlatformOk = true
+
+            callback err, @isPlatformOk
+
+
     _canSync: (callback)->
         isConnected = @connectionHandler.isConnected()
         isStateOk = 'appConfigured' is @config.get 'state'
         syncIsFinish = not @firstReplication.isRunning()
         if isConnected and isStateOk and syncIsFinish
-            callback()
+            @checkPlatformVersions callback
         else
-            callback "can't synchronize"
+            callback new Error "can't synchronize"
 
 
     stop: ->
