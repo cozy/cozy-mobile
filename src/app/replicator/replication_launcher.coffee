@@ -113,7 +113,8 @@ module.exports = class ReplicationLauncher
             replicationOptions.live = true
             replicationOptions.retry = true
             replicationOptions.heartbeat = false
-            replicationOptions.back_off_function = (delay) ->
+            replicationOptions.back_off_function = (delay) =>
+                @stop() if delay > 10000 and not @connection.isConnected()
                 log.info "back_off_function", delay
                 return 1000 if delay is 0
                 return delay if delay > 60000
