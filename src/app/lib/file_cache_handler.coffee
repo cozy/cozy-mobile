@@ -226,7 +226,8 @@ module.exports = class FileCacheHandler
                     success: -> , # do nothing
                     error: (err) ->
                         log.error err
-                        navigator.notification.alert t err.message
+                        msg = if err.message then err.message else err
+                        navigator.notification.alert t msg
         error = (err) ->
             log.error err
         url = encodeURI(url).replace /#/g, '%23'
