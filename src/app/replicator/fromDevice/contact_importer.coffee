@@ -15,8 +15,8 @@ continueOnError = require('../../lib/utils').continueOnError log
 ###
 module.exports = class ContactImporter
 
-    constructor: (@db) ->
-        @db ?= app.init.database.replicateDb
+    constructor: (@replicateDb) ->
+        @replicateDb ?= app.init.database.replicateDb
         @transformer = new CozyToAndroidContact()
         @permission = new Permission()
 
@@ -59,7 +59,7 @@ module.exports = class ContactImporter
     _update: (phoneContact, callback) ->
         async.parallel
             fromPouch: (cb) =>
-                @db.get phoneContact.sourceId,  attachments: true, cb
+                @replicateDb.get phoneContact.sourceId,  attachments: true, cb
 
             fromPhone: (cb) =>
                 @transformer.reverseTransform phoneContact, cb
@@ -73,14 +73,14 @@ module.exports = class ContactImporter
                 picture = contact._attachments.picture
 
                 if res.fromPouch._attachments?.picture?
-                    oldPicture = res.fromPouch._attachments?.picture?
+                    oldPicture = res.fromPouch._attachments?.picture
                     if oldPicture.data is picture.data
                         picture.revpos = oldPicture.revpos
                     else
                         picture.revpos = 1 + \
                             parseInt contact._rev.split('-')[0]
 
-            @db.put contact, (err, idNrev) =>
+            @replicateDb.put contact, (err, idNrev) =>
                 return callback err if err
                 @_undirty phoneContact, idNrev, callback
 
@@ -98,7 +98,7 @@ module.exports = class ContactImporter
             if contact._attachments?.picture?
                 contact._attachments.picture.revpos = 1
 
-            @db.post contact, (err, idNrev) =>
+            @replicateDb.post contact, (err, idNrev) =>
                 return callback err if err
                 @_undirty phoneContact, idNrev, callback
 
@@ -113,7 +113,7 @@ module.exports = class ContactImporter
             _rev: phoneContact.sync2
             _deleted: true
 
-        @db.put toDelete, (err, res) ->
+        @replicateDb.put toDelete, (err, res) ->
             return callback err if err
             phoneContact.remove (-> callback()), callback, \
                     callerIsSyncAdapter: true
