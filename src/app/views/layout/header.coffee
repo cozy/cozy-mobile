@@ -44,7 +44,7 @@ module.exports = class Header extends BaseView
         if options.path
             @parentPath = pathHelper.getDirName options.path
             @title = pathHelper.getFileName options.path
-            @title = 'files' if @parentPath is '' and @title is ''
+            @title = t('files') if @parentPath is '' and @title is ''
             @path = options.path
         @title = options.title if options.title
 

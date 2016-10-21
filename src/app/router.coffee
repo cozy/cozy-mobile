@@ -92,5 +92,5 @@ module.exports = class Router extends Backbone.Router
 
 
     config: ->
-        @layout.updateHeader title: 'config', displaySearch: false
+        @layout.updateHeader title: t('config'), displaySearch: false
         @layout.display new ConfigView()
