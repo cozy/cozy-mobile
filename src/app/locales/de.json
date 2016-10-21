@@ -139,6 +139,6 @@
     "config_loading_calendars": "Lade Kalender.",
     "config_loading_contacts": "Lade Kontakte.",
     "config_log_send": "Protokoll senden",
-    "config_log_share": "Share logs",
+    "config_log_share": "Protokoll freigeben",
     "Unexpected token <": "Prüfe, ob dein Cozy richtig funktioniert."
 }
