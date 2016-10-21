@@ -113,5 +113,12 @@ module.exports = class ConfigView extends BaseView
     # confirm, launch initial replication, navigate to first sync UI.
     synchroBtn: ->
         if confirm t 'confirm message'
-            app.init.replicator.stopRealtime()
-            app.init.toState 'fFirstSyncView'
+            @replicator.stopRealtime()
+            @config.set 'firstSyncFiles', false
+            @config.set 'firstSyncContacts', false
+            @config.set 'firstSyncCalendars', false
+            @firstReplication.addTask 'files', =>
+                @replicator.updateIndex ->
+            setTimeout =>
+                @render()
+            , 200
