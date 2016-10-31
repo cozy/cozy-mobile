@@ -74,7 +74,7 @@
     <plugin name="cordova-plugin-device" spec="1.1.3" />
     <plugin name="cordova-plugin-dialogs" spec="1.3.0" />
     <plugin name="cordova-plugin-file" spec="4.3.0" />
-    <plugin name="cordova-plugin-file-opener2" spec="2.0.2" />
+    <plugin name="cordova-plugin-file-opener2" spec="https://github.com/kosssi/cordova-plugin-file-opener2" />
     <plugin name="cordova-plugin-file-transfer" spec="1.6.0" />
     <plugin name="cordova-plugin-globalization" spec="https://github.com/StyrLabs/cordova-plugin-globalization.git" />
     <plugin name="cordova-plugin-inappbrowser" spec="1.5.0" />

@@ -33,14 +33,8 @@ module.exports = class MediaPlayerView extends BaseView
         @layout.hideHeader()
 
 
-    afterRender: ->
-        setTimeout =>
-            @toggleAction()
-        , 1000
-
     toggleAction: ->
         @picture.toggleClass 'display-actions'
-
 
 
     onClickOpen: (e) ->
