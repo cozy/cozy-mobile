@@ -6,6 +6,7 @@ keys/ios/*
 !keys/ios/.gitkeep
 *.transifex.coffee
 www
+node_modules
 src/coverage
 src/node_modules
 /fastlane/report.xml
