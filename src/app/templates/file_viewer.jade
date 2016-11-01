@@ -27,31 +27,39 @@
         //                            i.mdi.mdi-cloud
 
         each file in files
-            a.collection-item.download(href=file.link, data-key=file._id, data-doctype=file.docType, data-type=file.icon, data-fullpath=file.fullPath)
+            a.collection-item.download(href=file.link, data-key=file._id, data-doctype=file.docType, data-type=file.icon, data-fullpath=file.fullPath, data-name=file.name, data-is-cached=file.isCached?'true':'false', data-is-compatible-viewer=file.isCompatibleViewer?'true':'false')
                 if file.isCached
                     i(class="icon mdi mdi-#{file.icon} is-cached")
                 else
                     i(class="icon mdi mdi-#{file.icon}")
                 span.title.truncate= file.name
 
-                //.menu.fixed-action-btn.horizontal.click-to-toggle
-                //    .toggle.open
-                //        i.mdi.mdi-dots-vertical.btn-floating
-                //    .toggle.close
-                //        i.mdi.mdi-close.btn-floating
-                //    ul
-                //        if file.isCached
-                //            li
-                //                .btn-floating.red.remove
-                //                    i.material-icons phonelink_erase
-                //        else
-                //            li
-                //                .btn-floating.green.download
-                //                    i.material-icons cloud_download
+                if file.docType.toLowerCase() == 'file'
+                    button.actions
+                        i.mdi.mdi-dots-vertical.btn-floating.waves-effect
+
                 .progress
                     .determinate.fileProgress(style='width: 0%')
+
         else
             .valign-wrapper
                 .center.cozy-color
                     i.mdi.mdi-file
                     span Aucun fichier
+
+// Modal Structure
+#actions-modal.modal.bottom-sheet
+    .modal-content
+        .collection.files
+            .collection-header
+                i.file-icon
+                .name.truncate
+            a.collection-item.waves-effect.no-cache.actionDownload
+                i.icon.mdi.mdi-cloud-download
+                span= t('modal_action_file_download')
+            a.collection-item.waves-effect.cache.actionDisplay
+                i.icon.mdi.mdi-play-circle-outline
+                span= t('modal_action_file_display')
+            a.collection-item.waves-effect.cache.actionRemove
+                i.icon.large.material-icons phonelink_erase
+                span= t('modal_action_file_remove_device')

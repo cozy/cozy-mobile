@@ -19,6 +19,8 @@ module.exports = class FileViewer extends BaseView
     template: require '../templates/file_viewer'
     backExit: false
     append: true
+    refs:
+        modal: '#actions-modal'
 
 
     events: ->
@@ -28,6 +30,11 @@ module.exports = class FileViewer extends BaseView
         'click .download': 'downloadFile'
         'click .toggleSearch': 'toggleSearch'
         'click .goParent': 'goParent'
+        'click .actions': 'displayActions'
+
+        'click .actionDisplay': 'actionOpen'
+        'click .actionDownload': 'downloadFile'
+        'click .actionRemove': 'actionRemove'
 
 
     getRenderData: ->
@@ -96,13 +103,18 @@ module.exports = class FileViewer extends BaseView
 
 
     downloadFile: (event) ->
-        if $(event.currentTarget).hasClass 'collection-item'
-            menu = $(event.currentTarget)
+        log.debug 'downloadFile'
+        $elem = $(event.currentTarget)
+        if $elem.hasClass('actionDisplay') or $elem.hasClass 'actionDownload'
+            menu = $('[data-key=' + @modal.data('key') + ']')
+            @modal.modal('close')
+        else if $elem.hasClass 'collection-item'
+            menu = $elem
 
             return if menu.data('doctype').toLowerCase() is 'folder'
             return if menu.data('cached') is true
         else
-            menu = $(event.currentTarget).parents '.menuOpen'
+            menu = $elem.parents '.menuOpen'
 
         cozyFileId = menu.data 'key'
         if @fileCacheHandler.cache[cozyFileId]
@@ -130,10 +142,50 @@ module.exports = class FileViewer extends BaseView
                         @fileCacheHandler.open menu.data 'fullpath'
 
 
+    displayActions: (event) ->
+        log.debug 'displayActions'
+
+        event.preventDefault()
+        event.stopPropagation()
+        $elem = $(event.currentTarget).parents '.download'
+        @modal.removeClass('no-cache').removeClass 'cache'
+        @modal.data 'key', $elem.data 'key'
+        if $elem.data 'is-cached'
+            @modal.addClass 'cache'
+        else
+            @modal.addClass 'no-cache'
+
+        @modal.find('.name').text $elem.data 'name'
+        @modal.find('.file-icon')
+            .attr('class', 'file-icon icon mdi mdi-' + $elem.data('type'))
+        $(event.currentTarget).parents('.files').next('.modal').modal()
+            .modal('open')
+
+
+
+    actionOpen: (event) ->
+        cozyFileId = @modal.data 'key'
+        @modal.modal 'close'
+        $elem = $('[data-key=' + cozyFileId + ']')
+        if $elem.data 'is-compatible-viewer'
+            window.location = $('[data-key=' + cozyFileId + ']').attr 'href'
+        else
+            $elem.click()
+
+
+    actionRemove: (event) ->
+        cozyFileId = @modal.data 'key'
+        @_remove cozyFileId
+
+
     removeFile: (event) ->
         event.preventDefault()
 
         cozyFileId = $(event.currentTarget).parents('.menuOpen').data 'key'
+        @_remove cozyFileId
+
+
+    _remove: (cozyFileId) ->
         @files.forEach (file) =>
             if file._id is cozyFileId
                 @fileCacheHandler.removeLocal file, =>
@@ -211,6 +263,7 @@ module.exports = class FileViewer extends BaseView
                         base = @fileCacheHandler.downloads.nativeURL
                         doc.fullPath = "#{base}#{doc._id}/#{doc.name}"
                         doc.link = "#media/#{doc.fullPath}"
+                        doc.isCompatibleViewer = @isCompatibleViewer doc
                     return row.doc
                 @loading = false
                 @render()
@@ -235,6 +288,10 @@ module.exports = class FileViewer extends BaseView
                         path = @router.layout.currentView.path
                         @router.navigate "folder#{path}", trigger: false
             , 1000
+
+
+    isCompatibleViewer: (cozyFile) ->
+        cozyFile.icon in ['file-image']
 
 
     update: ->
