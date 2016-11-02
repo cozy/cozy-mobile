@@ -1,27 +1,20 @@
 .mediaPicture
     background-size contain
     position fixed
-    top 0
+    top 56px
     bottom 0
     left 0
     right 0
-    z-index 99999
+    z-index 299
     background-color black
-    border: 5px solid black
     color white
     background-repeat no-repeat
     background-position center, center
 
-    &.display-actions
-        .mediaHeader
-            top 0
-        .mediaFooter
-            bottom 0
-
     .mediaHeader
         transition-duration: 0.3s;
         position fixed
-        top -56px
+        top 0
         left 0
         right 0
 
@@ -29,17 +22,20 @@
             background-color transparent
             box-shadow inherit
 
-    .mediaFooter
-        transition-duration: 0.3s;
-        position fixed
-        bottom -56px
-        left 0
-        right 0
+    .mediaContainer
+        height 100%
 
-        .btn-flat
-            color white
+        iframe
+            border none
+            width 100%
             height 100%
 
+    .actions
+        position: absolute
+        top 0
+        right 0
+        padding-left 15px
+        border-radius 28px
 
     nav
-        background-color rgba(0, 0, 0, 0.25)
+        background-color #000

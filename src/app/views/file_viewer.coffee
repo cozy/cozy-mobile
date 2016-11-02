@@ -5,6 +5,7 @@ ChangeFolderHandler = require '../replicator/change/change_folder_handler'
 ChangeFileHandler = require '../replicator/change/change_file_handler'
 HeaderView = require './layout/header'
 pathHelper = require '../lib/path'
+mimetype = require '../lib/mimetype'
 
 
 log = require('../lib/persistent_log')
@@ -106,7 +107,7 @@ module.exports = class FileViewer extends BaseView
         log.debug 'downloadFile'
         $elem = $(event.currentTarget)
         if $elem.hasClass('actionDisplay') or $elem.hasClass 'actionDownload'
-            menu = $('[data-key=' + @modal.data('key') + ']')
+            menu = $ "[data-key=#{@modal.data 'key'}]"
             @modal.modal('close')
         else if $elem.hasClass 'collection-item'
             menu = $elem
@@ -118,7 +119,7 @@ module.exports = class FileViewer extends BaseView
 
         cozyFileId = menu.data 'key'
         if @fileCacheHandler.cache[cozyFileId]
-            return if menu.data('type') is 'file-image'
+            return if menu.data 'is-compatible-viewer'
             event.preventDefault()
             return @fileCacheHandler.open menu.data 'fullpath'
 
@@ -136,7 +137,7 @@ module.exports = class FileViewer extends BaseView
                     menu.find('.progress').hide()
                     progressDesign.css('width', '0%')
                     @render()
-                    if menu.data('type') is 'file-image'
+                    if menu.data 'is-compatible-viewer'
                         @router.navigate menu.attr('href'), trigger: true
                     else
                         @fileCacheHandler.open menu.data 'fullpath'
@@ -148,12 +149,17 @@ module.exports = class FileViewer extends BaseView
         event.preventDefault()
         event.stopPropagation()
         $elem = $(event.currentTarget).parents '.download'
-        @modal.removeClass('no-cache').removeClass 'cache'
+        cached = $elem.data 'is-cached'
+        @modal.toggleClass 'cache', cached
+        @modal.toggleClass 'no-cache', not cached
         @modal.data 'key', $elem.data 'key'
-        if $elem.data 'is-cached'
-            @modal.addClass 'cache'
+
+        # update trad key
+        if $elem.data('is-cached') and $elem.data 'is-compatible-viewer'
+            display = 'block'
         else
-            @modal.addClass 'no-cache'
+            display = 'none'
+        $('.actionDisplay.in').css 'display', display
 
         @modal.find('.name').text $elem.data 'name'
         @modal.find('.file-icon')
@@ -255,16 +261,16 @@ module.exports = class FileViewer extends BaseView
             @replicateDb.allDocs params, (err, items) =>
                 @files = items.rows.map (row) =>
                     doc = row.doc
-                    doc.icon = @getIcon doc
+                    doc.icon = mimetype.getIcon doc
                     doc.isCached = @fileCacheHandler.isCached doc
                     if doc.icon is 'folder'
                         doc.link = "#folder#{doc.path}/#{doc.name}"
                     else
                         base = @fileCacheHandler.downloads.nativeURL
                         doc.fullPath = "#{base}#{doc._id}/#{doc.name}"
-                        doc.link = "#media/#{doc.fullPath}"
+                        doc.link = "#media/#{doc.mime}//#{doc.fullPath}"
                         doc.isCompatibleViewer = @isCompatibleViewer doc
-                    return row.doc
+                    return doc
                 @loading = false
                 @render()
 
@@ -291,93 +297,8 @@ module.exports = class FileViewer extends BaseView
 
 
     isCompatibleViewer: (cozyFile) ->
-        cozyFile.icon in ['file-image']
+        cozyFile.icon in ['file-image', 'file-pdf']
 
 
     update: ->
         @load @options.path
-
-
-    getIcon: (cozyFile) ->
-        if cozyFile.docType.toLowerCase() is 'folder'
-            return 'folder'
-        else if @mimeClasses[cozyFile.mime]
-            return @mimeClasses[cozyFile.mime]
-        else
-            log.info 'mimetype not supported: ', cozyFile.mime
-            return 'file'
-
-
-
-    mimeClasses:
-        'application/octet-stream'      : 'file-document'
-        'application/x-binary'          : 'archive'
-        'text/plain'                    : 'file-document'
-        'text/richtext'                 : 'file-document'
-        'application/x-rtf'             : 'file-document'
-        'application/rtf'               : 'file-document'
-        'application/msword'            : 'file-document'
-        'application/x-iwork-pages-sffpages' : 'file-document'
-        'application/mspowerpoint'      : 'presentation-play'
-        'application/vnd.ms-powerpoint' : 'presentation-play'
-        'application/x-mspowerpoint'    : 'presentation-play'
-        'application/x-iwork-keynote-sffkey' : 'presentation-play'
-        'application/excel'             : 'file-chart'
-        'application/x-excel'           : 'file-chart'
-        'aaplication/vnd.ms-excel'      : 'file-chart'
-        'application/x-msexcel'         : 'file-chart'
-        'application/x-iwork-numbers-sffnumbers' : 'file-chart'
-        'application/pdf'               : 'file-pdf'
-        'text/html'                     : 'file-xml'
-        'text/asp'                      : 'file-xml'
-        'text/css'                      : 'file-xml'
-        'application/x-javascript'      : 'file-xml'
-        'application/x-lisp'            : 'file-xml'
-        'application/xml'               : 'file-xml'
-        'text/xml'                      : 'file-xml'
-        'application/x-sh'              : 'file-xml'
-        'text/x-script.python'          : 'file-xml'
-        'application/x-bytecode.python' : 'file-xml'
-        'text/x-java-source'            : 'file-xml'
-        'application/postscript'        : 'file-image'
-        'image/gif'                     : 'file-image'
-        'image/jpg'                     : 'file-image'
-        'image/jpeg'                    : 'file-image'
-        'image/pjpeg'                   : 'file-image'
-        'image/x-pict'                  : 'file-image'
-        'image/pict'                    : 'file-image'
-        'image/png'                     : 'file-image'
-        'image/x-pcx'                   : 'file-image'
-        'image/x-portable-pixmap'       : 'file-image'
-        'image/x-tiff'                  : 'file-image'
-        'image/tiff'                    : 'file-image'
-        'audio/aiff'                    : 'file-music'
-        'audio/x-aiff'                  : 'file-music'
-        'audio/midi'                    : 'file-music'
-        'audio/x-midi'                  : 'file-music'
-        'audio/x-mid'                   : 'file-music'
-        'audio/mpeg'                    : 'file-music'
-        'audio/x-mpeg'                  : 'file-music'
-        'audio/mpeg3'                   : 'file-music'
-        'audio/x-mpeg3'                 : 'file-music'
-        'audio/wav'                     : 'file-music'
-        'audio/x-wav'                   : 'file-music'
-        'audio/mp4'                     : 'file-music'
-        'audio/ogg'                     : 'file-music'
-        'audio/flac'                    : 'file-music'
-        'audio/x-flac'                  : 'file-music'
-        'video/avi'                     : 'file-video'
-        'video/mpeg'                    : 'file-video'
-        'video/mp4'                     : 'file-video'
-        'application/zip'               : 'archive'
-        'multipart/x-zip'               : 'archive'
-        'multipart/x-zip'               : 'archive'
-        'application/x-bzip'            : 'archive'
-        'application/x-bzip2'           : 'archive'
-        'application/x-gzip'            : 'archive'
-        'application/x-compress'        : 'archive'
-        'application/x-compressed'      : 'archive'
-        'application/x-zip-compressed'  : 'archive'
-        'application/x-apple-diskimage' : 'archive'
-        'multipart/x-gzip'              : 'archive'
-        'application/vnd.android.package-archive' : 'android'

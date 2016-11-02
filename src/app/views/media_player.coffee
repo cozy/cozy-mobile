@@ -1,6 +1,7 @@
 BaseView = require './layout/base_view'
 FileCacheHandler = require '../lib/file_cache_handler'
 pathHelper = require '../lib/path'
+mimetype = require '../lib/mimetype'
 
 log = require('../lib/persistent_log')
     prefix: "MediaPlayerView"
@@ -13,19 +14,22 @@ module.exports = class MediaPlayerView extends BaseView
     append: true
     refs:
         picture: '#mediaPicture'
+        container: '.mediaContainer'
+        modal: '#actions-modal'
 
 
-    initialize: (@path) ->
+    initialize: (@path, @mimetype) ->
         @fileCacheHandler = new FileCacheHandler()
         @fileName = pathHelper.getFileName @path
         @layout = app.router.layout
+        @icon = mimetype.getIcon docType: 'file', mime: @mimetype
 
 
     events: ->
-        'click #mediaPicture': 'toggleAction'
         'click #exit': 'onClickExit'
-        'click #open': 'onClickOpen'
-        'click #remove': 'removeFile'
+        'click .actionDisplay': 'onClickOpen'
+        'click .actionRemove': 'removeFile'
+        'click .actions': 'displayActions'
 
 
     beforeRender: ->
@@ -33,12 +37,9 @@ module.exports = class MediaPlayerView extends BaseView
         @layout.hideHeader()
 
 
-    toggleAction: ->
-        @picture.toggleClass 'display-actions'
-
-
     onClickOpen: (e) ->
         e.preventDefault()
+        @modal.modal 'close'
         @fileCacheHandler.open @path
 
 
@@ -62,8 +63,18 @@ module.exports = class MediaPlayerView extends BaseView
 
 
     getRenderData: ->
+        mimetype:  @mimetype
         path: @path
         fileName: @fileName
+        icon: @icon
+
+
+    displayActions: (event) ->
+        log.debug 'displayActions'
+
+        event.preventDefault()
+        event.stopPropagation()
+        @modal.modal().modal 'open'
 
 
     destroy: ->
