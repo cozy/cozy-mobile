@@ -44,7 +44,6 @@ module.exports = class FileViewer extends BaseView
         files: @files
         parentPath: @parentPath
         folderName: @folderName
-        breadcrumb: @breadcrumb
 
 
     initialize: ->
@@ -54,8 +53,6 @@ module.exports = class FileViewer extends BaseView
         @loading = true
         @files = []
         @config ?= app.init.config
-
-        @breadcrumb = @getBreadcrumb @options.path
 
         if @options.path isnt '/'
             @parentPath = pathHelper.getDirName @options.path
@@ -86,21 +83,6 @@ module.exports = class FileViewer extends BaseView
                 @update()
         @listenTo @changeFolderHandler, "change:path", cb
         @listenTo @changeFileHandler, "change:path", cb
-
-
-
-    getBreadcrumb: (path) ->
-        split = path.split '/'
-        breadcrumb = []
-        link = ''
-
-        for name in split
-            link += "/#{name}" if name
-            breadcrumb.push
-                link: link
-                name: name
-
-        breadcrumb
 
 
     downloadFile: (event) ->
@@ -276,8 +258,6 @@ module.exports = class FileViewer extends BaseView
 
 
     afterRender: ->
-        breadcrumb = document.getElementById "breadcrumb"
-        breadcrumb.scrollLeft = breadcrumb.scrollWidth if breadcrumb
         if @options.path isnt '/'
             @back = 0
             setTimeout =>

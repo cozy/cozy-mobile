@@ -15,17 +15,6 @@
                     .col.s12
                         span= t('config_loading_files')
     else
-        //if parentPath != ''
-        //    .crumbs.bg-cozy-color
-        //        ul.crumbs-list#breadcrumb
-        //            each link in breadcrumb
-        //                li
-        //                    if link.name
-        //                        a(href='#folder' + link.link)= link.name
-        //                    else
-        //                        a(href='#folder/')
-        //                            i.mdi.mdi-cloud
-
         each file in files
             a.collection-item.download(href=file.link, data-key=file._id, data-doctype=file.docType, data-type=file.icon, data-fullpath=file.fullPath, data-name=file.name, data-is-cached=file.isCached?'true':'false', data-is-compatible-viewer=file.isCompatibleViewer?'true':'false')
                 if file.isCached

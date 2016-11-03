@@ -27,7 +27,6 @@
     "async": "2.1.2",
     "backbone": "1.3.3",
     "backbone.statemachine": "0.2.7",
-    "hammerjs": "2.0.8",
     "jquery": "1.9.1",
     "material-design-icons": "3.0.1",
     "materialize-css": "https://github.com/cozy/materialize.git",
