@@ -1,5 +1,5 @@
-#mediaPicture.mediaPicture.display-actions(style="background-image: url('#{path}')")
-    .mediaHeader.actions
+#mediaPicture.mediaPicture
+    .mediaHeader
         nav
             .nav-wrapper
                 ul.left
@@ -9,18 +9,22 @@
                     li
                         span= fileName
 
-                //ul.right
-                //    li
-                //        a#actions
-                //            i.mdi.mdi-dots-vertical.btn-floating
-    .mediaFooter.actions
-        nav
-            .nav-wrapper
-                ul.left
-                    li
-                        a#remove.waves-effect.waves-teal.btn-flat
-                            i.large.material-icons phonelink_erase
-                ul.right
-                    li
-                        a#open.waves-effect.waves-teal.btn-flat
-                            i.large.material-icons launch
+                a.actions.waves-effect.waves-light
+                    i.mdi.mdi-dots-vertical.btn-floating
+
+    .mediaContainer
+        iframe(src="viewer/index.html?mimetype=" + mimetype + "#" + path)
+
+
+#actions-modal.modal.bottom-sheet
+    .modal-content
+        .collection.files.cache
+            .collection-header
+                i(class='icon mdi mdi-' + icon)
+                .name.truncate= fileName
+            a.collection-item.waves-effect.cache.actionDisplay
+                i.icon.mdi.mdi-open-in-new
+                span= t('modal_action_file_display_out')
+            a.collection-item.waves-effect.cache.actionRemove
+                i.icon.large.material-icons phonelink_erase
+                span= t('modal_action_file_remove_device')

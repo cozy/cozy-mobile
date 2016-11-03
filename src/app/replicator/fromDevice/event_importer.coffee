@@ -11,8 +11,8 @@ Permission = require '../../lib/permission'
 
 module.exports = class EventImporter
 
-    constructor: (@db, @calendarSync) ->
-        @db ?= app.init.database.replicateDb
+    constructor: (@replicateDb, @calendarSync) ->
+        @replicateDb ?= app.init.database.replicateDb
         @calendarSync ?= navigator.calendarsync
         @cozyToAndroidEvent = new CozyToAndroidEvent()
         @androidCalendarHandler = new AndroidCalendarHandler()
@@ -59,7 +59,7 @@ module.exports = class EventImporter
         cozyEvent = @cozyToAndroidEvent.reverseTransform androidEvent, \
                 androidCalendar
 
-        @db.post cozyEvent, (err, response) =>
+        @replicateDb.post cozyEvent, (err, response) =>
             return callback err if err
 
             androidEvent._sync_id = response.id
@@ -74,13 +74,13 @@ module.exports = class EventImporter
     _update: (androidEvent, androidCalendar, callback) ->
         log.debug "_update"
 
-        @db.get androidEvent._sync_id, (err, cozyEvent) =>
+        @replicateDb.get androidEvent._sync_id, (err, cozyEvent) =>
             return callback err if err
 
             cozyEvent = @cozyToAndroidEvent.reverseTransform androidEvent, \
                     androidCalendar, cozyEvent
 
-            @db.put cozyEvent, (err, response) =>
+            @replicateDb.put cozyEvent, (err, response) =>
                 return callback err if err
 
                 androidEvent.sync_data2 = response.rev
@@ -101,7 +101,7 @@ module.exports = class EventImporter
             _rev: androidEvent.sync_data2
             _deleted: true
 
-        @db.put cozyEvent, (err, res) =>
+        @replicateDb.put cozyEvent, (err, res) =>
             return callback err if err
 
             @changeEventHandler._delete cozyEvent, androidEvent, callback

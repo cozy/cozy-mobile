@@ -140,5 +140,9 @@
     "config_loading_contacts": "Lade Kontakte.",
     "config_log_send": "Protokoll senden",
     "config_log_share": "Protokoll freigeben",
+    "modal_action_file_download": "Make available offline",
+    "modal_action_file_display_in": "Display",
+    "modal_action_file_display_out": "Open with ...",
+    "modal_action_file_remove_device": "Remove offline",
     "Unexpected token <": "Prüfe, ob dein Cozy richtig funktioniert."
 }

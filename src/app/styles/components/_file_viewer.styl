@@ -1,0 +1,54 @@
+.download
+
+  .actions
+    position absolute
+    top 0
+    right 0
+    border none
+    bottom 0
+    background transparent
+
+    .mdi
+      background transparent
+      color #808080
+      box-shadow none
+
+  .modal
+    z-index 600!important
+
+.modal-overlay
+  z-index 300!important
+
+.modal
+
+  &.cache
+    .no-cache
+      display none
+  &.no-cache
+    .cache
+      display none
+
+  .collection
+    border none
+    margin 0
+    padding 0
+    background-color transparent
+
+    .collection-header
+      border-bottom 1px solid #808080
+      background-color transparent!important
+      font-weight bold
+
+      .name
+        padding-top 10px
+
+    .collection-item
+      border 0
+      color #808080
+      margin-top 10px
+      background-color transparent!important
+      min-height 40px
+
+      .icon
+        color #808080
+        font-size 20px

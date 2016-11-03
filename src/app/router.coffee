@@ -29,7 +29,7 @@ module.exports = class Router extends Backbone.Router
         'permissions/*step'               : 'permissions'
 
         'folder*path'                     : 'fileViewer'
-        'media/*path'                     : 'media'
+        'media/*mimetype//*path'          : 'media'
         'config'                          : 'config'
 
 
@@ -87,8 +87,8 @@ module.exports = class Router extends Backbone.Router
             @layout.display new FileViewer path: path
 
 
-    media: (path) ->
-        @layout.display new MediaPlayerView path
+    media: (mimetype, path) ->
+        @layout.display new MediaPlayerView path, mimetype
 
 
     config: ->

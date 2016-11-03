@@ -139,6 +139,10 @@
     "config_loading_calendars": "Загрузка календарей.",
     "config_loading_contacts": "Загрузка контактов.",
     "config_log_send": "Отправить лог",
-    "config_log_share": "Share logs",
+    "config_log_share": "Поделиться логом",
+    "modal_action_file_download": "Сделать доступным в оффлайне",
+    "modal_action_file_display_in": "Показать",
+    "modal_action_file_display_out": "Открыть в ...",
+    "modal_action_file_remove_device": "Удалить оффлайн доступ",
     "Unexpected token <": "Проверьте исправность вашего Cozy."
 }

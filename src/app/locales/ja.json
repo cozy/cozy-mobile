@@ -140,5 +140,9 @@
     "config_loading_contacts": "連絡先のロード中。",
     "config_log_send": "ログを送信",
     "config_log_share": "ログを共有",
+    "modal_action_file_download": "オフラインで利用できるようにする",
+    "modal_action_file_display_in": "表示",
+    "modal_action_file_display_out": "...で開く",
+    "modal_action_file_remove_device": "オフラインを削除",
     "Unexpected token <": "Cozy が正しく動作しているか確認してください。"
 }
