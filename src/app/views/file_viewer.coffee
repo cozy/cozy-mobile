@@ -26,13 +26,9 @@ module.exports = class FileViewer extends BaseView
 
     events: ->
         'swipe .collection-item': 'onSwipe'
-        'click .menu': 'toggleMenu'
-        'click .remove': 'removeFile'
         'click .download': 'downloadFile'
-        'click .toggleSearch': 'toggleSearch'
         'click .goParent': 'goParent'
         'click .actions': 'displayActions'
-
         'click .actionDisplay': 'actionOpen'
         'click .actionDownload': 'downloadFile'
         'click .actionRemove': 'actionRemove'
@@ -163,40 +159,11 @@ module.exports = class FileViewer extends BaseView
 
     actionRemove: (event) ->
         cozyFileId = @modal.data 'key'
-        @_remove cozyFileId
-
-
-    removeFile: (event) ->
-        event.preventDefault()
-
-        cozyFileId = $(event.currentTarget).parents('.menuOpen').data 'key'
-        @_remove cozyFileId
-
-
-    _remove: (cozyFileId) ->
         @files.forEach (file) =>
             if file._id is cozyFileId
                 @fileCacheHandler.removeLocal file, =>
                     file.isCached = false
                     @render()
-
-
-    toggleMenu: (event) ->
-        event.preventDefault()
-
-        menu = $(event.currentTarget)
-        collection = menu.parent()
-        isOpen = collection.hasClass 'menuOpen'
-
-        # close all menu
-        $('.menuOpen').each (index) ->
-            $(this).removeClass 'menuOpen'
-            $(this).find('.menu').closeFAB()
-
-        unless isOpen
-            collection.toggleClass 'menuOpen'
-            menu.openFAB()
-
 
 
     onSwipe: (event) ->
@@ -261,7 +228,7 @@ module.exports = class FileViewer extends BaseView
         if @options.path isnt '/'
             @back = 0
             setTimeout =>
-                element = $('.files').last()[0]
+                element = $('.snap-content').last()[0]
                 @snapper = new Snap
                     element: element
                     disable: 'right'
