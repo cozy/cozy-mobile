@@ -251,7 +251,7 @@ module.exports = class FileViewer extends BaseView
                         base = @fileCacheHandler.downloads.nativeURL
                         doc.fullPath = "#{base}#{doc._id}/#{doc.name}"
                         doc.link = "#media/#{doc.mime}//#{doc.fullPath}"
-                        doc.isCompatibleViewer = @isCompatibleViewer doc
+                        doc.isCompatibleViewer = mimetype.isCompatibleViewer doc
                     return doc
                 @loading = false
                 @render()
@@ -274,10 +274,6 @@ module.exports = class FileViewer extends BaseView
                         path = @router.layout.currentView.path
                         @router.navigate "folder#{path}", trigger: false
             , 1000
-
-
-    isCompatibleViewer: (cozyFile) ->
-        cozyFile.icon in ['file-image', 'file-pdf']
 
 
     update: ->

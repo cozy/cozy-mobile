@@ -15,6 +15,46 @@ module.exports =
             return 'file'
 
 
+    isCompatibleViewer: (cozyFile) ->
+        # see https://github.com/cozy/ViewerJS/blob/master/src/PluginLoader.js
+        mimetypesCompatible = [
+            # image
+            'image/jpeg'
+            'image/pjpeg'
+            'image/gif'
+            'image/png'
+            'image/bmp'
+            # pdf
+            'application/pdf'
+            # audio
+            'audio/aac'
+            'audio/mp4'
+            'audio/mpeg'
+            'audio/ogg'
+            'audio/wav'
+            'audio/x-wav'
+            'audio/webm'
+            # video
+            'video/mp4'
+            'video/ogg'
+            'video/webm'
+            'video/mpeg'
+            'video/x-m4v'
+            # document
+            'application/vnd.oasis.opendocument.text',
+            'application/vnd.oasis.opendocument.text-flat-xml',
+            'application/vnd.oasis.opendocument.text-template',
+            'application/vnd.oasis.opendocument.presentation',
+            'application/vnd.oasis.opendocument.presentation-flat-xml',
+            'application/vnd.oasis.opendocument.presentation-template',
+            'application/vnd.oasis.opendocument.spreadsheet',
+            'application/vnd.oasis.opendocument.spreadsheet-flat-xml',
+            'application/vnd.oasis.opendocument.spreadsheet-template'
+        ]
+
+        cozyFile.mime in mimetypesCompatible
+
+
     mimeClasses:
         'application/octet-stream'      : 'file-document'
         'text/plain'                    : 'file-document'
@@ -66,6 +106,7 @@ module.exports =
         'image/x-tiff'                  : 'file-image'
         'image/tiff'                    : 'file-image'
 
+        'audio/aac'                     : 'file-music'
         'audio/aiff'                    : 'file-music'
         'audio/x-aiff'                  : 'file-music'
         'audio/midi'                    : 'file-music'
@@ -81,10 +122,12 @@ module.exports =
         'audio/ogg'                     : 'file-music'
         'audio/flac'                    : 'file-music'
         'audio/x-flac'                  : 'file-music'
+        'audio/webm'                    : 'file-music'
 
         'video/avi'                     : 'file-video'
-        'video/mpeg'                    : 'file-video'
         'video/mp4'                     : 'file-video'
+        'video/mpeg'                    : 'file-video'
+        'video/ogg'                     : 'file-video'
         'video/webm'                    : 'file-video'
         'video/x-m4v'                   : 'file-video'
 
