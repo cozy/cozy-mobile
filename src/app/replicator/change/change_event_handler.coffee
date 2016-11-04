@@ -23,7 +23,7 @@ module.exports = class ChangeEventHandler
         @permission = new Permission()
         unless @timezone
             @timezone = 'Europe/Paris'
-            successCB = (date) => @timezone = date.timezone
+            successCB = (date) => @timezone = date.iana_timezone
             errorCB = -> log.warn 'Error getting timezone'
             navigator.globalization.getDatePattern successCB, errorCB
 
