@@ -67,7 +67,7 @@
     </feature>
     <access origin="*" />
     <allow-intent href="mailto:*" />
-    <engine name="android" spec="6.0.0" />
+    <engine name="android" spec="https://github.com/apache/cordova-android.git#6.1.0" />
     <engine name="ios" spec="4.3.0" />
     <plugin name="cordova-plugin-battery-status" spec="1.1.2" />
     <plugin name="cordova-plugin-blob-constructor-polyfill" spec="1.0.2" />
