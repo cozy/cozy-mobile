@@ -26,30 +26,30 @@ module.exports =
             'image/bmp'
             # pdf
             'application/pdf'
-            # audio
-            'audio/aac'
-            'audio/mp4'
-            'audio/mpeg'
-            'audio/ogg'
-            'audio/wav'
-            'audio/x-wav'
-            'audio/webm'
-            # video
-            'video/mp4'
-            'video/ogg'
-            'video/webm'
-            'video/mpeg'
-            'video/x-m4v'
-            # document
-            'application/vnd.oasis.opendocument.text',
-            'application/vnd.oasis.opendocument.text-flat-xml',
-            'application/vnd.oasis.opendocument.text-template',
-            'application/vnd.oasis.opendocument.presentation',
-            'application/vnd.oasis.opendocument.presentation-flat-xml',
-            'application/vnd.oasis.opendocument.presentation-template',
-            'application/vnd.oasis.opendocument.spreadsheet',
-            'application/vnd.oasis.opendocument.spreadsheet-flat-xml',
-            'application/vnd.oasis.opendocument.spreadsheet-template'
+#            # audio
+#            'audio/aac'
+#            'audio/mp4'
+#            'audio/mpeg'
+#            'audio/ogg'
+#            'audio/wav'
+#            'audio/x-wav'
+#            'audio/webm'
+#            # video
+#            'video/mp4'
+#            'video/ogg'
+#            'video/webm'
+#            'video/mpeg'
+#            'video/x-m4v'
+#            # document
+#            'application/vnd.oasis.opendocument.text',
+#            'application/vnd.oasis.opendocument.text-flat-xml',
+#            'application/vnd.oasis.opendocument.text-template',
+#            'application/vnd.oasis.opendocument.presentation',
+#            'application/vnd.oasis.opendocument.presentation-flat-xml',
+#            'application/vnd.oasis.opendocument.presentation-template',
+#            'application/vnd.oasis.opendocument.spreadsheet',
+#            'application/vnd.oasis.opendocument.spreadsheet-flat-xml',
+#            'application/vnd.oasis.opendocument.spreadsheet-template'
         ]
 
         cozyFile.mime in mimetypesCompatible

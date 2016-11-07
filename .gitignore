@@ -13,3 +13,5 @@ src/node_modules
 /fastlane/Error*.png
 /fastlane/Preview.html
 build
+res/drawable*
+res/mipmap*

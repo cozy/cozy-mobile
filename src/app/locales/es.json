@@ -139,10 +139,10 @@
     "config_loading_calendars": "Cargando agendas.",
     "config_loading_contacts": "Cargando contactos.",
     "config_log_send": "Enviar Log",
-    "config_log_share": "Share logs",
-    "modal_action_file_download": "Make available offline",
-    "modal_action_file_display_in": "Display",
-    "modal_action_file_display_out": "Open with ...",
-    "modal_action_file_remove_device": "Remove offline",
+    "config_log_share": "Compartir logs",
+    "modal_action_file_download": "Hacer accesible cuando esté desconectado",
+    "modal_action_file_display_in": "Visualizar",
+    "modal_action_file_display_out": "Abrir con ...",
+    "modal_action_file_remove_device": "Remover cuando esté desconectado",
     "Unexpected token <": "Chequear que su cozy trabaja adecuadamente."
 }
