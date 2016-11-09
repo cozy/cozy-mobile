@@ -111,8 +111,15 @@ _dataPoints2Cordova = (cozyContact, cordovaContact) ->
     addContactField = (cordovaField, datapoint) ->
         cordovaContact[cordovaField] ?= []
 
+        fieldsJson = []
+        for field in cordovaContact[cordovaField]
+            fieldsJson.push JSON.stringify field
+
         field = new ContactField datapoint.type, datapoint.value
-        cordovaContact[cordovaField].push field
+        fieldJson = JSON.stringify field
+
+        if fieldsJson.indexOf(fieldJson) is -1
+            cordovaContact[cordovaField].push field
 
     for i, datapoint of cozyContact.datapoints
         name = datapoint.name.toUpperCase()
@@ -124,8 +131,13 @@ _dataPoints2Cordova = (cozyContact, cordovaContact) ->
                 addContactField 'emails', datapoint
             when 'ADR'
                 cordovaContact.addresses ?= []
-                cordovaContact.addresses.push _adr2ContactAddress datapoint
-
+                addressesJson = []
+                for address in cordovaContact.addresses
+                    addressesJson.push JSON.stringify address
+                address = _adr2ContactAddress datapoint
+                addressJson = JSON.stringify address
+                if addressesJson.indexOf(addressJson) is -1
+                    cordovaContact.addresses.push address
             when 'CHAT'
                 addContactField 'ims', datapoint
 
