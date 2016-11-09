@@ -59,14 +59,16 @@ module.exports = class PictureHandler
                     cozyFiles[fileName] = cozyFile
 
                 async.eachSeries picturesCache, (pictureCache, cb) =>
-                    async.series [
-                        (cb) => @_uploadCozyFile pictureCache, cozyFiles, cb
-                        (cb) => @_uploadCozyBinary pictureCache, cb
-                        (cb) => @_checkCozyBinary pictureCache, cb
-                    ], (err) =>
-                        log.warn err if err
-                        @_setQueue --@queue
-                        cb()
+                    @media.isUploadable (ok) =>
+                        return cb new Error "Is not uploadable." unless ok
+                        async.series [
+                            (cb) => @_uploadCozyFile pictureCache, cozyFiles, cb
+                            (cb) => @_uploadCozyBinary pictureCache, cb
+                            (cb) => @_checkCozyBinary pictureCache, cb
+                        ], (err) =>
+                            log.warn err if err
+                            @_setQueue --@queue
+                            cb()
                 , (err) =>
                     log.warn err if err
                     @_setQueue 0
