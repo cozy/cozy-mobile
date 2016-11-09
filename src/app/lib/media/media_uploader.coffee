@@ -24,10 +24,11 @@ module.exports = class MediaUploader
 
 
     upload: (callback) ->
-        if @_isUploadable()
-            @pictureHandler.upload callback
-        else
-            callback()
+        @isUploadable (ok) =>
+            if ok
+                @pictureHandler.upload callback
+            else
+                callback()
 
 
     checkBinary: (binaryId, callback) ->
@@ -45,52 +46,47 @@ module.exports = class MediaUploader
     uploadBinary: (file, fileId, callback) ->
         log.debug "uploadBinary"
 
-        return callback() unless @_isUploadable()
+        path = "/data/#{fileId}/binaries/"
 
-        DeviceStatus.checkReadyForSync (err, ready, msg) =>
-            return callback() unless ready
+        # Standard Blob isn't available on android prior to 4.3 ,
+        # and FormData doesn't work on 4.0 , so we use FileTransfert plugin.
+        if device.version? and device.version < '4.3'
 
-            path = "/data/#{fileId}/binaries/"
+            options = @requestCozy.getDataSystemOption path
+            options.fileName = 'file'
+            options.mimeType = file.type
+            options.headers =
+                'Authorization': 'Basic ' +
+                    btoa unescape encodeURIComponent(
+                        @config.get('deviceName') + ':' +
+                            @config.get('devicePassword'))
 
-            # Standard Blob isn't available on android prior to 4.3 ,
-            # and FormData doesn't work on 4.0 , so we use FileTransfert plugin.
-            if device.version? and device.version < '4.3'
+            ft = new FileTransfer()
+            ft.upload file.localURL, options.url, callback, (-> callback())
+            , options
 
-                options = @requestCozy.getDataSystemOption path
-                options.fileName = 'file'
-                options.mimeType = file.type
-                options.headers =
-                    'Authorization': 'Basic ' +
-                        btoa unescape encodeURIComponent(
-                            @config.get('deviceName') + ':' +
-                                @config.get('devicePassword'))
+        else
 
-                ft = new FileTransfer()
-                ft.upload file.localURL, options.url, callback, (-> callback())
-                , options
+            fs.getFileAsBlob file, (err, blob) =>
+                return callback err if err
 
-            else
-
-                fs.getFileAsBlob file, (err, blob) =>
-                    return callback err if err
-
-                    url = @requestCozy.getDataSystemUrl path
-                    data = new FormData()
-                    data.append 'file', blob, 'file'
-                    $.ajax
-                        type: 'POST'
-                        url: url
-                        headers:
-                            'Authorization': 'Basic ' +
-                                btoa(@config.get('deviceName') + ':' +
-                                        @config.get('devicePassword'))
-                        username: @config.get 'deviceName'
-                        password: @config.get 'devicePassword'
-                        data: data
-                        contentType: false
-                        processData: false
-                        success: (success) -> callback null, success
-                        error: callback
+                url = @requestCozy.getDataSystemUrl path
+                data = new FormData()
+                data.append 'file', blob, 'file'
+                $.ajax
+                    type: 'POST'
+                    url: url
+                    headers:
+                        'Authorization': 'Basic ' +
+                            btoa(@config.get('deviceName') + ':' +
+                                    @config.get('devicePassword'))
+                    username: @config.get 'deviceName'
+                    password: @config.get 'devicePassword'
+                    data: data
+                    contentType: false
+                    processData: false
+                    success: (success) -> callback null, success
+                    error: callback
 
 
     createFile: (cordovaFile, localPath, cozyPath, callback) ->
@@ -151,6 +147,9 @@ module.exports = class MediaUploader
             callback null, body._id
 
 
-    _isUploadable: ->
-        return false unless @config.get 'syncImages'
-        @connectionHandler.isWifi() or not @config.get 'syncOnWifi'
+    isUploadable: (callback) ->
+        return callback false unless @config.get 'syncImages'
+        if not @connectionHandler.isWifi() and @config.get 'syncOnWifi'
+            return callback false
+        DeviceStatus.checkReadyForSync (err, ready, msg) =>
+            callback ready
