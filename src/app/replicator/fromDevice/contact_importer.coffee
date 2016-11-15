@@ -69,6 +69,24 @@ module.exports = class ContactImporter
             # _.extend : Keeps not android compliant data of the 'cozy'-contact
             contact = _.extend res.fromPouch, res.fromPhone
 
+            # remove duplicated url
+            if contact.url
+                for data of contact.datapoints
+                    if data.name is 'url' and data.value is contact.url
+                        delete contact.url
+
+            # remove duplicated birthday
+            if contact.bday
+                contact.datapoints = contact.datapoints.filter (data) ->
+                    data.name isnt 'about' or data.type isnt 'birthday'
+
+            # remove duplicated datapoint
+            dataJson = []
+            dataJson.push JSON.stringify data for data in contact.datapoints
+            dataJson = _.uniq dataJson
+            contact.datapoints = []
+            contact.datapoints.push JSON.parse data for data in dataJson
+
             if contact._attachments?.picture?
                 picture = contact._attachments.picture
 
