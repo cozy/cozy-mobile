@@ -26,20 +26,20 @@ module.exports =
             'image/bmp'
             # pdf
             'application/pdf'
-#            # audio
-#            'audio/aac'
-#            'audio/mp4'
-#            'audio/mpeg'
-#            'audio/ogg'
-#            'audio/wav'
-#            'audio/x-wav'
-#            'audio/webm'
-#            # video
-#            'video/mp4'
-#            'video/ogg'
-#            'video/webm'
-#            'video/mpeg'
-#            'video/x-m4v'
+            # audio
+            'audio/aac'
+            'audio/mp4'
+            'audio/mpeg'
+            'audio/ogg'
+            'audio/wav'
+            'audio/x-wav'
+            'audio/webm'
+            # video
+            'video/mp4'
+            'video/ogg'
+            'video/webm'
+            'video/mpeg'
+            'video/x-m4v'
 #            # document
 #            'application/vnd.oasis.opendocument.text',
 #            'application/vnd.oasis.opendocument.text-flat-xml',
