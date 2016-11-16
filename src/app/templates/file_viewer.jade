@@ -46,9 +46,10 @@
             a.collection-item.waves-effect.no-cache.actionDownload
                 i.icon.mdi.mdi-cloud-download
                 span= t('modal_action_file_download')
-            a.collection-item.waves-effect.cache.actionDisplay.in
-                i.icon.mdi.mdi-play-circle-outline
-                span= t('modal_action_file_display_in')
+            if isViewerCompatible
+                a.collection-item.waves-effect.cache.actionDisplay.in
+                    i.icon.mdi.mdi-play-circle-outline
+                    span= t('modal_action_file_display_in')
             a.collection-item.waves-effect.cache.actionDisplay
                 i.icon.mdi.mdi-open-in-new
                 span= t('modal_action_file_display_out')
