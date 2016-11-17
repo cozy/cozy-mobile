@@ -1,7 +1,7 @@
 {
   "name": "cozy-mobile",
   "description": "This is the native mobile client for Cozy.",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "license": "LGPL-3.0",
   "engines": {
     "node": "~4.4.7"
@@ -30,9 +30,9 @@
     "jquery": "1.9.1",
     "material-design-icons": "3.0.1",
     "materialize-css": "https://github.com/cozy/materialize.git",
-    "moment": "2.15.2",
-    "moment-timezone": "0.5.7",
-    "node-polyglot": "2.0.0",
+    "moment": "2.16.0",
+    "moment-timezone": "0.5.9",
+    "node-polyglot": "2.2.0",
     "node-viewerjs": "https://github.com/cozy/ViewerJS.git",
     "path-browser": "2.2.1",
     "pouchdb": "6.0.7",

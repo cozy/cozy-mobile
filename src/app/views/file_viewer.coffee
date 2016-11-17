@@ -6,6 +6,7 @@ ChangeFileHandler = require '../replicator/change/change_file_handler'
 HeaderView = require './layout/header'
 pathHelper = require '../lib/path'
 mimetype = require '../lib/mimetype'
+semver = require 'semver'
 
 
 log = require('../lib/persistent_log')
@@ -40,6 +41,21 @@ module.exports = class FileViewer extends BaseView
         files: @files
         parentPath: @parentPath
         folderName: @folderName
+        isViewerCompatible: @isViewerCompatible
+
+
+    setIsViewerCompatible: ->
+        if device.platform is "Android"
+            # device.version is not a semantic version:
+            #   - Froyo OS would return "2.2"
+            #   - Eclair OS would return "2.1", "2.0.1", or "2.0"
+            #   - Version can also return update level "2.1-update1"
+            version = device.version.split('-')[0]
+            version += '.0' unless semver.valid version
+            if semver.valid(version) and semver.satisfies version, '<5.0.0'
+                return @isViewerCompatible = false
+
+        @isViewerCompatible = true
 
 
     initialize: ->
@@ -49,6 +65,7 @@ module.exports = class FileViewer extends BaseView
         @loading = true
         @files = []
         @config ?= app.init.config
+        @setIsViewerCompatible()
 
         if @options.path isnt '/'
             @parentPath = pathHelper.getDirName @options.path
@@ -97,7 +114,7 @@ module.exports = class FileViewer extends BaseView
 
         cozyFileId = menu.data 'key'
         if @fileCacheHandler.cache[cozyFileId]
-            return if menu.data 'is-compatible-viewer'
+            return if @isViewerCompatible and menu.data 'is-compatible-viewer'
             event.preventDefault()
             return @fileCacheHandler.open menu.data 'fullpath'
 
@@ -115,7 +132,7 @@ module.exports = class FileViewer extends BaseView
                     menu.find('.progress').hide()
                     progressDesign.css('width', '0%')
                     @render()
-                    if menu.data 'is-compatible-viewer'
+                    if @isViewerCompatible and menu.data 'is-compatible-viewer'
                         @router.navigate menu.attr('href'), trigger: true
                     else
                         @fileCacheHandler.open menu.data 'fullpath'
@@ -146,15 +163,15 @@ module.exports = class FileViewer extends BaseView
             .modal('open')
 
 
-
     actionOpen: (event) ->
+        isIn = $(event.currentTarget).hasClass 'in'
         cozyFileId = @modal.data 'key'
         @modal.modal 'close'
         $elem = $('[data-key=' + cozyFileId + ']')
-        if $elem.data 'is-compatible-viewer'
+        if isIn and @isViewerCompatible and $elem.data 'is-compatible-viewer'
             window.location = $('[data-key=' + cozyFileId + ']').attr 'href'
         else
-            $elem.click()
+            @fileCacheHandler.open $elem.data 'fullpath'
 
 
     actionRemove: (event) ->
