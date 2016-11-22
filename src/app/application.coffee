@@ -77,6 +77,7 @@ module.exports =
         log.debug "addDeviceListener"
 
         document.addEventListener 'deviceready', =>
+            cordova.plugins.certificates.trustUnsecureCerts true
             window.open = cordova.InAppBrowser.open
             @initialize()
         , false

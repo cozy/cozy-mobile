@@ -63,6 +63,7 @@ module.exports = BackgroundService =
         log.debug "addDeviceListener"
 
         document.addEventListener 'deviceready', =>
+            cordova.plugins.certificates.trustUnsecureCerts true
             try
                 @initialize()
 
