@@ -133,7 +133,7 @@ module.exports = class FileViewer extends BaseView
                     progressDesign.css('width', '0%')
                     @render()
                     if @isViewerCompatible and menu.data 'is-compatible-viewer'
-                        @router.navigate menu.attr('href'), trigger: true
+                        window.location = menu.attr('href')
                     else
                         @fileCacheHandler.open menu.data 'fullpath'
 

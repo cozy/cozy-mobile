@@ -181,13 +181,14 @@ module.exports = class FileCacheHandler
             options.path = androidPath + '_download'
             fs.download options, progressback, (err, entry) =>
                 if entry
+                    fileName = cozyFile.name
                     fs.moveTo entry, binaryFolder, fileName, (err, entry) =>
                         return callback err if err
                         log.info "Binary #{fileName} is downloaded."
                         @saveInCache cozyFile, true, (err) ->
                             log.error err if err
 
-                            callback null, entry.toURL()
+                            callback null, decodeURIComponent entry.toURL()
                 else
                     callback err
 
