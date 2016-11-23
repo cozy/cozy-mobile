@@ -144,5 +144,8 @@
     "modal_action_file_display_in": "表示",
     "modal_action_file_display_out": "...で開く",
     "modal_action_file_remove_device": "オフラインを削除",
+    "modal_file_open_error_button": "OK",
+    "modal_file_open_error_description": "No application can open this file.",
+    "modal_file_open_error_title": "Cannot open this file",
     "Unexpected token <": "Cozy が正しく動作しているか確認してください。"
 }

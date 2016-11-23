@@ -144,5 +144,8 @@
     "modal_action_file_display_in": "Visualizar",
     "modal_action_file_display_out": "Abrir con ...",
     "modal_action_file_remove_device": "Remover cuando esté desconectado",
+    "modal_file_open_error_button": "OK",
+    "modal_file_open_error_description": "No application can open this file.",
+    "modal_file_open_error_title": "Cannot open this file",
     "Unexpected token <": "Chequear que su cozy trabaja adecuadamente."
 }

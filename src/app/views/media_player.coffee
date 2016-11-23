@@ -41,7 +41,10 @@ module.exports = class MediaPlayerView extends BaseView
     onClickOpen: (e) ->
         e.preventDefault()
         @modal.modal 'close'
-        @fileCacheHandler.open @path
+        @fileCacheHandler.open @path, (err) =>
+            if err isnt 'OK'
+                log.warn err
+                @openErrorModal.modal({ending_top: '20%'}).modal 'open'
 
 
     onClickExit: (event) ->

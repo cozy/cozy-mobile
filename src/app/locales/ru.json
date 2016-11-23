@@ -144,5 +144,8 @@
     "modal_action_file_display_in": "Показать",
     "modal_action_file_display_out": "Открыть в ...",
     "modal_action_file_remove_device": "Удалить оффлайн доступ",
+    "modal_file_open_error_button": "OK",
+    "modal_file_open_error_description": "No application can open this file.",
+    "modal_file_open_error_title": "Cannot open this file",
     "Unexpected token <": "Проверьте исправность вашего Cozy."
 }

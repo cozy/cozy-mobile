@@ -217,19 +217,14 @@ module.exports = class FileCacheHandler
                     callback()
 
 
-    open: (url) ->
+    open: (url, callback) ->
         success = (entry) ->
             entry.file (file) ->
                 fileName = entry.toURL()
                 if device.platform is "Android"
                     fileName = decodeURIComponent fileName
                 cordova.plugins.fileOpener2.open fileName, file.type,
-                    success: -> , # do nothing
-                    error: (err) ->
-                        log.error err
-                        msg = if err.message then err.message else err
-                        navigator.notification.alert t msg
-        error = (err) ->
-            log.error err
+                    success: callback, # do nothing
+                    error: callback
         url = encodeURI(url).replace /#/g, '%23'
-        resolveLocalFileSystemURL url, success, error
+        resolveLocalFileSystemURL url, success, callback
