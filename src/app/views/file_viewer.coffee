@@ -125,9 +125,9 @@ module.exports = class FileViewer extends BaseView
                 reportProgress = (id, done, total) ->
                     percentage = parseInt done * 100 / total
                     progressDesign.css('width', percentage + '%')
-                pregressBar = reportProgress.bind null, file._id
+                progressBar = reportProgress.bind null, file._id
                 menu.find('.progress').show()
-                @fileCacheHandler.downloadBinary file, pregressBar, =>
+                @fileCacheHandler.downloadBinary file, progressBar, =>
                     file.isCached = true
                     menu.find('.progress').hide()
                     progressDesign.css('width', '0%')
