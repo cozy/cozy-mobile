@@ -1,1 +1,1 @@
-../../node_modules/jquery/jquery.js
+../../../node_modules/jquery/dist/jquery.js

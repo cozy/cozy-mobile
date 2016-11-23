@@ -1,1 +1,1 @@
-../node_modules/path-browser/path.js
+../../node_modules/path-browser/path.js

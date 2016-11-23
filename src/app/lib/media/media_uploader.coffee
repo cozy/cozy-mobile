@@ -151,5 +151,5 @@ module.exports = class MediaUploader
         return callback false unless @config.get 'syncImages'
         if not @connectionHandler.isWifi() and @config.get 'syncOnWifi'
             return callback false
-        DeviceStatus.checkReadyForSync (err, ready, msg) =>
+        DeviceStatus.checkReadyForSync (err, ready, msg) ->
             callback ready

@@ -3,7 +3,7 @@ require './lib/utils'
 toast = require './lib/toast'
 Initialize = require './lib/initialize'
 Synchronization = require './lib/synchronization'
-ServiceManager = require '../models/service_manager'
+ServiceManager = require './models/service_manager'
 log = require('./lib/persistent_log')
     prefix: "application"
     date: true

@@ -19,12 +19,12 @@ android:
 
 install:
   - nvm install $TRAVIS_NODE_VERSION
-  - cd src && npm install && cd ..
+  - npm install
 
 script:
-  - cd src && npm run lint && cd ..
-  - cd src && npm run test:coverage && cd ..
-  - ./src/node_modules/.bin/cordova build android
+  - npm run lint
+  - npm run test:coverage
+  - ./node_modules/.bin/cordova build android
 
 after_success:
-  - ./src/node_modules/.bin/codecov
+  - ./node_modules/.bin/codecov

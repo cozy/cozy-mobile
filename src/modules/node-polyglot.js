@@ -1,1 +1,1 @@
-../node_modules/node-polyglot/build/polyglot.js
+../../node_modules/node-polyglot/build/polyglot.js

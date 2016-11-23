@@ -35,7 +35,7 @@ Necessary path:
 ### :package: Compile from source
 
     git clone https://github.com/cozy/cozy-mobile
-    cd cozy-mobile/src
+    cd cozy-mobile
     npm install
     npm run build
 
@@ -46,8 +46,7 @@ or if you develop :loop::
 
 ### :helicopter: Deploy
 
-After that, you can deploy with one of these commands (always from `src`
-folder):
+After that, you can deploy with one of these commands:
 
     npm run android
     npm run android-emulator
