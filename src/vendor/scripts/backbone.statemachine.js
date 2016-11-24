@@ -1,1 +1,0 @@
-../../node_modules/backbone.statemachine/backbone.statemachine.js

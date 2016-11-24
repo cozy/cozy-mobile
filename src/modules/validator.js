@@ -1,1 +1,1 @@
-../node_modules/validator/validator.js
+../../node_modules/validator/validator.js
