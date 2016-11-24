@@ -144,5 +144,8 @@
     "modal_action_file_display_in": "Display",
     "modal_action_file_display_out": "Open with ...",
     "modal_action_file_remove_device": "Remove offline",
+    "modal_file_open_error_button": "OK",
+    "modal_file_open_error_description": "No application can open this file.",
+    "modal_file_open_error_title": "Cannot open this file",
     "Unexpected token <": "Check that your cozy working properly."
 }

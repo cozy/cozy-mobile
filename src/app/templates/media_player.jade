@@ -28,3 +28,11 @@
             a.collection-item.waves-effect.cache.actionRemove
                 i.icon.large.material-icons phonelink_erase
                 span= t('modal_action_file_remove_device')
+
+
+#open-error-modal.modal
+    .modal-content
+        h4= t('modal_file_open_error_title')
+        p= t('modal_file_open_error_description')
+    .modal-footer
+        a.modal-action.modal-close.waves-effect.waves-green.btn-flat(href='#!') OK

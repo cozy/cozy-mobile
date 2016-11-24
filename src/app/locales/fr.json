@@ -144,5 +144,8 @@
     "modal_action_file_display_in": "Afficher",
     "modal_action_file_display_out": "Ouvrir avec ...",
     "modal_action_file_remove_device": "Retirer l'accès hors ligne",
+    "modal_file_open_error_button": "OK",
+    "modal_file_open_error_description": "Aucune application ne vous permet de lire ce fichier.",
+    "modal_file_open_error_title": "Impossible d'ouvrir le fichier",
     "Unexpected token <": "Vérifier que votre Cozy fonctionne correctement"
 }

@@ -181,13 +181,14 @@ module.exports = class FileCacheHandler
             options.path = androidPath + '_download'
             fs.download options, progressback, (err, entry) =>
                 if entry
+                    fileName = cozyFile.name
                     fs.moveTo entry, binaryFolder, fileName, (err, entry) =>
                         return callback err if err
                         log.info "Binary #{fileName} is downloaded."
                         @saveInCache cozyFile, true, (err) ->
                             log.error err if err
 
-                            callback null, entry.toURL()
+                            callback null, decodeURIComponent entry.toURL()
                 else
                     callback err
 
@@ -216,19 +217,14 @@ module.exports = class FileCacheHandler
                     callback()
 
 
-    open: (url) ->
+    open: (url, callback) ->
         success = (entry) ->
             entry.file (file) ->
                 fileName = entry.toURL()
                 if device.platform is "Android"
                     fileName = decodeURIComponent fileName
                 cordova.plugins.fileOpener2.open fileName, file.type,
-                    success: -> , # do nothing
-                    error: (err) ->
-                        log.error err
-                        msg = if err.message then err.message else err
-                        navigator.notification.alert t msg
-        error = (err) ->
-            log.error err
+                    success: callback, # do nothing
+                    error: callback
         url = encodeURI(url).replace /#/g, '%23'
-        resolveLocalFileSystemURL url, success, error
+        resolveLocalFileSystemURL url, success, callback

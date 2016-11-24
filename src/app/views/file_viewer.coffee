@@ -23,6 +23,7 @@ module.exports = class FileViewer extends BaseView
     append: true
     refs:
         modal: '#actions-modal'
+        openErrorModal: '#open-error-modal'
 
 
     events: ->
@@ -98,6 +99,13 @@ module.exports = class FileViewer extends BaseView
         @listenTo @changeFileHandler, "change:path", cb
 
 
+    openFile: (url) ->
+        @fileCacheHandler.open url, (err) =>
+            if err isnt 'OK'
+                log.warn err
+                @openErrorModal.modal({ending_top: '20%'}).modal 'open'
+
+
     downloadFile: (event) ->
         log.debug 'downloadFile'
         $elem = $(event.currentTarget)
@@ -116,7 +124,7 @@ module.exports = class FileViewer extends BaseView
         if @fileCacheHandler.cache[cozyFileId]
             return if @isViewerCompatible and menu.data 'is-compatible-viewer'
             event.preventDefault()
-            return @fileCacheHandler.open menu.data 'fullpath'
+            return @openFile menu.data 'fullpath'
 
         event.preventDefault()
         @files.forEach (file) =>
@@ -125,17 +133,17 @@ module.exports = class FileViewer extends BaseView
                 reportProgress = (id, done, total) ->
                     percentage = parseInt done * 100 / total
                     progressDesign.css('width', percentage + '%')
-                pregressBar = reportProgress.bind null, file._id
+                progressBar = reportProgress.bind null, file._id
                 menu.find('.progress').show()
-                @fileCacheHandler.downloadBinary file, pregressBar, =>
+                @fileCacheHandler.downloadBinary file, progressBar, =>
                     file.isCached = true
                     menu.find('.progress').hide()
                     progressDesign.css('width', '0%')
                     @render()
                     if @isViewerCompatible and menu.data 'is-compatible-viewer'
-                        @router.navigate menu.attr('href'), trigger: true
+                        window.location = menu.attr('href')
                     else
-                        @fileCacheHandler.open menu.data 'fullpath'
+                        @openFile menu.data 'fullpath'
 
 
     displayActions: (event) ->
@@ -171,7 +179,7 @@ module.exports = class FileViewer extends BaseView
         if isIn and @isViewerCompatible and $elem.data 'is-compatible-viewer'
             window.location = $('[data-key=' + cozyFileId + ']').attr 'href'
         else
-            @fileCacheHandler.open $elem.data 'fullpath'
+            @openFile $elem.data 'fullpath'
 
 
     actionRemove: (event) ->
