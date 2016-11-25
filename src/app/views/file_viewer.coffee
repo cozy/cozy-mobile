@@ -95,8 +95,12 @@ module.exports = class FileViewer extends BaseView
         cb = (object, path) =>
             if @parentPath is path
                 @update()
-        @listenTo @changeFolderHandler, "change:path", cb
-        @listenTo @changeFileHandler, "change:path", cb
+        @listenTo @changeFolderHandler, "change:path", (object, path) =>
+            if @parentPath is path
+                @update()
+        @listenTo @changeFileHandler, "change:path", (object, path) =>
+            if @options.path is path
+                @update()
 
 
     openFile: (url) ->

@@ -9,7 +9,7 @@ BUILD = { :ios => "build/ios", :android => "build/android" }
 
 
 def build(platform)
-  sh "../src/node_modules/.bin/brunch build ../src && ../src/node_modules/.bin/cordova build #{platform} --release"
+  sh " cd .. && ./node_modules/.bin/brunch build && ./node_modules/.bin/cordova build #{platform} --release"
 end
 
 

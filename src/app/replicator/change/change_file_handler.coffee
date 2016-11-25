@@ -95,14 +95,16 @@ module.exports = class ChangeFileHandler
             fs.getChildren binaryFolder, (err, children) =>
                 return callback err if err
 
-                fileName = @fileCacheHandler.getFileName doc
+                fileName = decodeURIComponent @fileCacheHandler.getFileName doc
                 if children.length is 0
                     # it's anomaly but download it !
                     log.warn "Missing file #{fileName} on device, fetching it."
                     @_download doc, callback
                 else if children[0].name isnt fileName
                     log.info "rename binary of #{doc.name}"
-                    fs.moveTo children[0], binaryFolder, fileName, callback
+                    fs.moveTo children[0], binaryFolder, fileName, (err) =>
+                        return callback err if err
+                        @fileCacheHandler.saveInCache doc, false, callback
                 else
                     # Nothing to do
                     callback()
