@@ -31,7 +31,7 @@
     "materialize-css": "https://github.com/cozy/materialize.git",
     "mdi": "1.7.22",
     "moment": "2.17.0",
-    "moment-timezone": "0.5.9",
+    "moment-timezone": "0.5.10",
     "node-polyglot": "2.2.1",
     "node-viewerjs": "https://github.com/cozy/ViewerJS.git",
     "path-browser": "2.2.1",
