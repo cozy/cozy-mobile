@@ -9,9 +9,12 @@ www
 node_modules
 src/coverage
 src/node_modules
-/fastlane/report.xml
-/fastlane/Error*.png
-/fastlane/Preview.html
 build
 res/drawable*
 res/mipmap*
+
+# fastlane
+/fastlane/report.xml
+/fastlane/Error*.png
+/fastlane/Preview.html
+Preview.html
