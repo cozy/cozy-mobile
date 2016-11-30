@@ -13,6 +13,7 @@ module.exports = class FirstReplication
     constructor: ->
         return instance if instance
         instance = @
+        _.extend @, Backbone.Events
 
         @replicator = app.init.replicator
         @requestCozy = app.init.requestCozy
@@ -23,11 +24,15 @@ module.exports = class FirstReplication
         @remoteRequest = new RemoteRequest()
 
         @queue = async.queue (task, callback) =>
+            @trigger "change:queue", @, task
             @['_' + task] (err) =>
                 if err
                     log.warn err
                     return @queue.unshift task, callback
                 callback()
+
+        @queue.drain = =>
+            @trigger "change:queue", @, false
 
 
     isRunning: ->

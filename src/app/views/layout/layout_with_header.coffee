@@ -1,6 +1,7 @@
 Layout = require './layout'
 Header = require './header'
 FileViewer = require '../file_viewer'
+FirstReplication = require '../../lib/first_replication'
 
 
 log = require('../../lib/persistent_log')
@@ -17,11 +18,24 @@ module.exports = class LayoutWithHeader extends Layout
         headerContainer: '#headerContainer'
         contentContainer: '#contentContainer'
         menuContainer: '#menuContainer'
+        importProgress: '.import-state .determinate'
+        importInfoText: '.import-state .info'
 
 
     initialize: ->
         super
         @header = new Header()
+        @firstReplication = new FirstReplication()
+        @firstReplication.addProgressionView (progression, total) =>
+            percentage = progression * 100 / (total * 2)
+            @importProgress.css 'width', "#{percentage}%"
+        @listenTo @firstReplication, "change:queue", (object, task) =>
+            if task
+                @importInfoText.text t 'config_loading_' + task
+                $('body').addClass 'import'
+            else
+                $('body').removeClass 'import'
+                @importProgress.css 'width', "0%"
         @views = []
         @router = app.router
         @alredyLoad = false
@@ -41,6 +55,11 @@ module.exports = class LayoutWithHeader extends Layout
 
     hideHeader: ->
         @header.hide()
+
+
+    getRenderData: ->
+        running: @firstReplication.isRunning()
+        taskName: @firstReplication.getTaskName()
 
 
     display: (@view) ->
