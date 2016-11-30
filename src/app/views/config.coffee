@@ -58,7 +58,7 @@ module.exports = class ConfigView extends BaseView
 
 
     toggleNotification: ->
-        checked = @calendarCheckbox.is(':checked')
+        checked = @notificationCheckbox.is(':checked')
         @config.set 'cozyNotifications', checked
         @synchro.stop()
 
