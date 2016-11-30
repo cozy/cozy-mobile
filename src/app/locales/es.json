@@ -140,12 +140,13 @@
     "config_loading_contacts": "Cargando contactos.",
     "config_log_send": "Enviar Log",
     "config_log_share": "Compartir logs",
+    "modal_action_file_big": "This file is too large.",
     "modal_action_file_download": "Hacer accesible cuando esté desconectado",
     "modal_action_file_display_in": "Visualizar",
     "modal_action_file_display_out": "Abrir con ...",
     "modal_action_file_remove_device": "Remover cuando esté desconectado",
     "modal_file_open_error_button": "OK",
-    "modal_file_open_error_description": "No application can open this file.",
-    "modal_file_open_error_title": "Cannot open this file",
+    "modal_file_open_error_description": "Ninguna aplicación puede abrir este archivo.",
+    "modal_file_open_error_title": "No se puede abrir este archivo",
     "Unexpected token <": "Chequear que su cozy trabaja adecuadamente."
 }

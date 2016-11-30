@@ -126,7 +126,8 @@ module.exports = class FileViewer extends BaseView
 
         cozyFileId = menu.data 'key'
         if @fileCacheHandler.cache[cozyFileId]
-            return if @isViewerCompatible and menu.data 'is-compatible-viewer'
+            return if @isViewerCompatible and menu.data 'is-compatible-viewer' \
+                    and ! menu.data 'is-big'
             event.preventDefault()
             return @openFile menu.data 'fullpath'
 
@@ -157,6 +158,9 @@ module.exports = class FileViewer extends BaseView
         event.stopPropagation()
         $elem = $(event.currentTarget).parents '.download'
         cached = $elem.data 'is-cached'
+        if cached
+            isBig = $elem.data 'is-big'
+            @modal.toggleClass 'is-big', isBig
         @modal.toggleClass 'cache', cached
         @modal.toggleClass 'no-cache', not cached
         @modal.data 'key', $elem.data 'key'
@@ -248,6 +252,9 @@ module.exports = class FileViewer extends BaseView
                         doc.fullPath = "#{base}#{doc._id}/#{doc.name}"
                         doc.link = "#media/#{doc.mime}//#{doc.fullPath}"
                         doc.isCompatibleViewer = mimetype.isCompatibleViewer doc
+
+                    if doc.mime is 'application/pdf' and doc.size > 5000000 #5Mo
+                        doc.isBig = true
                     return doc
                 @loading = false
                 @render()

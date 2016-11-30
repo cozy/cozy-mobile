@@ -140,6 +140,7 @@
     "config_loading_contacts": "Loading contacts.",
     "config_log_send": "Send logs",
     "config_log_share": "Share logs",
+    "modal_action_file_big": "This file is too large.",
     "modal_action_file_download": "Make available offline",
     "modal_action_file_display_in": "Display",
     "modal_action_file_display_out": "Open with ...",

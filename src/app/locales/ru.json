@@ -140,12 +140,13 @@
     "config_loading_contacts": "Загрузка контактов.",
     "config_log_send": "Отправить лог",
     "config_log_share": "Поделиться логом",
+    "modal_action_file_big": "This file is too large.",
     "modal_action_file_download": "Сделать доступным в оффлайне",
     "modal_action_file_display_in": "Показать",
     "modal_action_file_display_out": "Открыть в ...",
     "modal_action_file_remove_device": "Удалить оффлайн доступ",
-    "modal_file_open_error_button": "OK",
-    "modal_file_open_error_description": "No application can open this file.",
-    "modal_file_open_error_title": "Cannot open this file",
+    "modal_file_open_error_button": "ОК",
+    "modal_file_open_error_description": "Нет приложений для открытия этого файла.",
+    "modal_file_open_error_title": "Невозможно открыть этот файл.",
     "Unexpected token <": "Проверьте исправность вашего Cozy."
 }
