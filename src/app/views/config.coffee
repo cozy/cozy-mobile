@@ -30,6 +30,9 @@ module.exports = class ConfigView extends BaseView
         @replicator = app.init.replicator
         @filterManager = new FilterManager()
 
+        @listenTo @firstReplication, "change:queue", (object, task) =>
+            @render()
+
 
     events: ->
         'click #synchrobtn': 'synchroBtn'
@@ -51,27 +54,11 @@ module.exports = class ConfigView extends BaseView
         cozyNotifications: @config.get 'cozyNotifications'
         deviceName: @config.get 'deviceName'
         appVersion: @config.get 'appVersion'
-
-        running: @firstReplication.isRunning()
-        taskName: @firstReplication.getTaskName()
-
-
-    beforeRender: ->
-        if @firstReplication.isRunning()
-            log.info 'task:', @firstReplication.getTaskName()
-            @firstReplication.addProgressionView (progression, total) =>
-                percentage = progression * 100 / (total * 2)
-                $('#configProgress').css 'width', "#{percentage}%"
-                @render() if percentage >= 100
-
-            setTimeout =>
-                unless @firstReplication.isRunning()
-                    @render()
-            , 1000
+        firstSync: @config.firstSyncIsDone()
 
 
     toggleNotification: ->
-        checked = @calendarCheckbox.is(':checked')
+        checked = @notificationCheckbox.is(':checked')
         @config.set 'cozyNotifications', checked
         @synchro.stop()
 
@@ -82,10 +69,8 @@ module.exports = class ConfigView extends BaseView
         @synchro.stop()
 
         if checked
+            @config.set 'firstSyncCalendars', false
             @firstReplication.addTask 'calendars', ->
-            setTimeout =>
-                @render()
-            , 200
 
 
     toggleContact: ->
@@ -94,10 +79,8 @@ module.exports = class ConfigView extends BaseView
         @synchro.stop()
 
         if checked
+            @config.set 'firstSyncContacts', false
             @firstReplication.addTask 'contacts', ->
-            setTimeout =>
-                @render()
-            , 200
 
 
     toggleWifi: ->
@@ -119,6 +102,3 @@ module.exports = class ConfigView extends BaseView
             @config.set 'firstSyncCalendars', false
             @firstReplication.addTask 'files', =>
                 @replicator.updateIndex ->
-            setTimeout =>
-                @render()
-            , 200
