@@ -138,6 +138,7 @@
     "config_loading_files": "Загрузка файлов и папок.",
     "config_loading_calendars": "Загрузка календарей.",
     "config_loading_contacts": "Загрузка контактов.",
+    "information_backup_picture": "Backup your photos",
     "config_log_send": "Отправить лог",
     "config_log_share": "Поделиться логом",
     "modal_action_file_big": "This file is too large to be display.",

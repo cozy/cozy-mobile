@@ -188,9 +188,8 @@ module.exports = class FirstReplication
             return callback err if err
             return callback null, [] unless rows?.length isnt 0
 
-            @total = rows.length + 1
+            @trigger "change:total", @, rows.length + 1
             @progression = 0
-            log.info 'total', @total
 
             # 2. Put in PouchDB
             async.mapSeries rows, (row, cb) =>
@@ -221,5 +220,4 @@ module.exports = class FirstReplication
 
     _updateProgression: ->
         @progression++
-        if @updateView
-            @updateView @progression, @total
+        @trigger "change:progress", @, @progression

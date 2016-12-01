@@ -13,7 +13,7 @@ instance = null
 module.exports = class MediaUploader
 
 
-    constructor: ->
+    constructor: (@pictureHandler) ->
         return instance if instance
         instance = @
 

@@ -138,6 +138,7 @@
     "config_loading_files": "Chargement des fichiers et des dossiers.",
     "config_loading_calendars": "Chargement des calendriers.",
     "config_loading_contacts": "Chargement des contacts.",
+    "information_backup_picture": "Sauvegarde de vos photos",
     "config_log_send": "Envoyer le Journal",
     "config_log_share": "Partager le Journal",
     "modal_action_file_big": "Ce fichier est trop volumineux pour être affiché.",
