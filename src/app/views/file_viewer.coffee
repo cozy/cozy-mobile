@@ -126,8 +126,8 @@ module.exports = class FileViewer extends BaseView
 
         cozyFileId = menu.data 'key'
         if @fileCacheHandler.cache[cozyFileId]
-            return if @isViewerCompatible and menu.data 'is-compatible-viewer' \
-                    and ! menu.data 'is-big'
+            return if @isViewerCompatible and \
+                    menu.data('is-compatible-viewer') and ! menu.data 'is-big'
             event.preventDefault()
             return @openFile menu.data 'fullpath'
 

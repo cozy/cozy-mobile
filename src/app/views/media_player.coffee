@@ -24,6 +24,7 @@ module.exports = class MediaPlayerView extends BaseView
         @layout = app.router.layout
         @icon = mimetype.getIcon docType: 'file', mime: @mimetype
         $('body').removeClass 'bg-cozy-color'
+        $('.import-state').css 'display', 'none'
 
 
     events: ->
@@ -84,4 +85,5 @@ module.exports = class MediaPlayerView extends BaseView
     destroy: ->
         StatusBar.backgroundColorByHexString "#33A6FF"
         $('body').addClass 'bg-cozy-color'
+        $('.import-state').removeAttr 'style'
         super
