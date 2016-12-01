@@ -140,7 +140,7 @@
     "config_loading_contacts": "Cargando contactos.",
     "config_log_send": "Enviar Log",
     "config_log_share": "Compartir logs",
-    "modal_action_file_big": "This file is too large.",
+    "modal_action_file_big": "This file is too large to be display.",
     "modal_action_file_download": "Hacer accesible cuando esté desconectado",
     "modal_action_file_display_in": "Visualizar",
     "modal_action_file_display_out": "Abrir con ...",

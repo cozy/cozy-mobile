@@ -140,7 +140,7 @@
     "config_loading_contacts": "Chargement des contacts.",
     "config_log_send": "Envoyer le Journal",
     "config_log_share": "Partager le Journal",
-    "modal_action_file_big": "Ce fichier est trop volumineux.",
+    "modal_action_file_big": "Ce fichier est trop volumineux pour être affiché.",
     "modal_action_file_download": "Rendre accessible hors ligne",
     "modal_action_file_display_in": "Afficher",
     "modal_action_file_display_out": "Ouvrir avec ...",

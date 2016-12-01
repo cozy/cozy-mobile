@@ -140,7 +140,7 @@
     "config_loading_contacts": "Lade Kontakte.",
     "config_log_send": "Protokoll senden",
     "config_log_share": "Protokoll freigeben",
-    "modal_action_file_big": "This file is too large.",
+    "modal_action_file_big": "This file is too large to be display.",
     "modal_action_file_download": "Offline verfügbar machen",
     "modal_action_file_display_in": "Anzeigen",
     "modal_action_file_display_out": "Öffnen mit ...",

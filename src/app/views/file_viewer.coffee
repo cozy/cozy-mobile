@@ -145,7 +145,9 @@ module.exports = class FileViewer extends BaseView
                     menu.find('.progress').hide()
                     progressDesign.css('width', '0%')
                     @render()
-                    if @isViewerCompatible and menu.data 'is-compatible-viewer'
+                    if @isViewerCompatible and \
+                            menu.data('is-compatible-viewer') and \
+                            ! menu.data 'is-big'
                         window.location = menu.attr('href')
                     else
                         @openFile menu.data 'fullpath'
