@@ -8,7 +8,7 @@ jdk:
   - oraclejdk8
 
 env:
-  - TRAVIS_NODE_VERSION="4"
+  - TRAVIS_NODE_VERSION="6.9.1"
 
 android:
   components:
@@ -16,6 +16,12 @@ android:
     - tools # to install Android SDK tools 25.1.x (x = 6 right now)
     - build-tools-25.0.0
     - android-25
+
+cache:
+  directories:
+    - node_modules
+    - platforms
+    - plugins
 
 install:
   - nvm install $TRAVIS_NODE_VERSION
