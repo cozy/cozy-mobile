@@ -163,6 +163,8 @@ module.exports = class FileViewer extends BaseView
         if cached
             isBig = $elem.data 'is-big'
             @modal.toggleClass 'is-big', isBig
+        else
+            @modal.toggleClass 'is-big', false
         @modal.toggleClass 'cache', cached
         @modal.toggleClass 'no-cache', not cached
         @modal.data 'key', $elem.data 'key'
