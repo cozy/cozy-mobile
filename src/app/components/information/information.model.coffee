@@ -31,5 +31,6 @@ module.exports = class Information extends Backbone.Model
 
 
     defaults: ->
+        display: true
         text: ''
         progress: 0

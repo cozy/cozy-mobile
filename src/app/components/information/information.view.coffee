@@ -22,3 +22,10 @@ module.exports = class Information extends Backbone.View
         @$el.html @template @model.toJSON()
         @
 
+
+    hide: ->
+        @model.set 'display', false
+
+
+    show: ->
+        @model.set 'display', true

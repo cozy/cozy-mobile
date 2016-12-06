@@ -2,6 +2,7 @@ Layout = require './layout'
 Header = require './header'
 FileViewer = require '../file_viewer'
 InformationView = require '../../components/information/information.view'
+MediaPlayerView = require '../media_player'
 
 
 log = require('../../lib/persistent_log')
@@ -54,6 +55,9 @@ module.exports = class LayoutWithHeader extends Layout
 
         @currentView.backExit = true if @oldView is undefined
 
+        if @currentView instanceof MediaPlayerView
+            @information.hide()
+
         if @currentView.append
             @views.push @currentView
             @contentContainer.append @currentView.render().$el
@@ -66,6 +70,10 @@ module.exports = class LayoutWithHeader extends Layout
 
     goBack: ->
         @oldView = @views.pop()
+
+        if @oldView instanceof MediaPlayerView
+            @information.show()
+
         @oldView.destroy()
         @back = false
         @currentView = @views[@views.length - 1]
