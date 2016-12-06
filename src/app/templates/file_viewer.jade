@@ -16,7 +16,7 @@
                         span= t('config_loading_files')
     else
         each file in files
-            a.collection-item.download(href=file.link, data-key=file._id, data-doctype=file.docType, data-type=file.icon, data-fullpath=file.fullPath, data-name=file.name, data-is-cached=file.isCached?'true':'false', data-is-compatible-viewer=file.isCompatibleViewer?'true':'false')
+            a.collection-item.download(href=file.link, data-key=file._id, data-doctype=file.docType, data-type=file.icon, data-fullpath=file.fullPath, data-name=file.name, data-is-cached=file.isCached?'true':'false', data-is-compatible-viewer=file.isCompatibleViewer?'true':'false', data-is-big=file.isBig?'true':'false')
                 if file.isCached
                     i(class="icon mdi mdi-#{file.icon} is-cached")
                 else
@@ -47,9 +47,12 @@
                 i.icon.mdi.mdi-cloud-download
                 span= t('modal_action_file_download')
             if isViewerCompatible
-                a.collection-item.waves-effect.cache.actionDisplay.in
+                a.collection-item.waves-effect.cache.no-big.actionDisplay.in
                     i.icon.mdi.mdi-play-circle-outline
                     span= t('modal_action_file_display_in')
+                .collection-item.cache.big
+                    i.icon.mdi.mdi-play-circle-outline
+                    span= t('modal_action_file_big')
             a.collection-item.waves-effect.cache.actionDisplay
                 i.icon.mdi.mdi-open-in-new
                 span= t('modal_action_file_display_out')

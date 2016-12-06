@@ -18,6 +18,7 @@ module.exports.config =
     modules:
         nameCleaner: (path) ->
             path.replace /^src\/(modules|app)\//, ''
+                .replace /process\/browser.js$/, 'process.js'
 
     files:
         javascripts:

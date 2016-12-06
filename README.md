@@ -20,15 +20,15 @@ or head over to the [Releases page][9].
 
 ### :wrench: Requirement
 
-- Node v4.4.7
-- Android SDK 23.0.3 to deploy on android
-- Xcode 7.3.1 to deploy on ios
+- Node v6.9.1
+- Android SDK 25.0.0 to deploy on android
+- Xcode 8.1 to deploy on ios
 
 Necessary path:
 
     export ANDROID_HOME="/path/to/android-sdk-linux"
     export PATH="$PATH:$ANDROID_HOME/tools"
-    export PATH="$PATH:$ANDROID_HOME/build-tools/23.0.3"
+    export PATH="$PATH:$ANDROID_HOME/build-tools/25.0.0"
     export PATH="$PATH:$ANDROID_HOME/platform-tools"
 
 
@@ -130,8 +130,8 @@ You can reach the Cozy Community by:
 [0]:  https://cozy.io
 [1]:  https://travis-ci.org/cozy/cozy-mobile.svg?branch=master
 [2]:  https://travis-ci.org/cozy/cozy-mobile
-[3]:  https://www.versioneye.com/user/projects/575534e27757a0003bd4b117/badge.svg?style=flat-square
-[4]:  https://www.versioneye.com/user/projects/575534e27757a0003bd4b117
+[3]:  https://www.versioneye.com/user/projects/5845a7f6b48c9300487974c5/badge.svg
+[4]:  https://www.versioneye.com/user/projects/5845a7f6b48c9300487974c5
 [5]:  https://codeclimate.com/github/cozy/cozy-mobile/badges/gpa.svg
 [6]:  https://codeclimate.com/github/cozy/cozy-mobile
 [7]:  https://play.google.com/store/apps/details?id=io.cozy.files_client

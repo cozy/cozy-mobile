@@ -1,10 +1,10 @@
 {
   "name": "cozy-mobile",
   "description": "This is the native mobile client for Cozy.",
-  "version": "2.0.3",
+  "version": "2.1.0",
   "license": "LGPL-3.0",
   "engines": {
-    "node": "~4.4.7"
+    "node": "~6.9.1"
   },
   "scripts": {
     "postinstall": "npm run build && cordova prepare",
@@ -30,7 +30,7 @@
     "material-design-icons": "3.0.1",
     "materialize-css": "https://github.com/cozy/materialize.git",
     "mdi": "1.7.22",
-    "moment": "2.17.0",
+    "moment": "2.17.1",
     "moment-timezone": "0.5.10",
     "node-polyglot": "2.2.1",
     "node-viewerjs": "https://github.com/cozy/ViewerJS.git",
@@ -47,7 +47,7 @@
     "clean-css-brunch": "2.0.0",
     "codecov": "1.0.1",
     "coffee-coverage": "1.0.1",
-    "coffee-script": "1.11.1",
+    "coffee-script": "1.12.0",
     "coffee-script-brunch": "2.1.0",
     "coffeelint": "1.16.0",
     "cordova": "6.4.0",

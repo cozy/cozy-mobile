@@ -53,6 +53,7 @@ module.exports = class MediaPlayerView extends BaseView
         window.history.back()
         @layout.alredyLoad = true
         @layout.views.pop()
+        @layout.information.show()
         @destroy()
 
 

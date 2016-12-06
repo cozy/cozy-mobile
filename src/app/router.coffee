@@ -39,6 +39,7 @@ module.exports = class Router extends Backbone.Router
             return @fileViewer '/'
 
         @layout = new Layout()
+        @layoutWithHeader = new LayoutWithHeader()
         $('body').html @layout.render().el
 
         if state is 'deviceCreated'
@@ -77,7 +78,10 @@ module.exports = class Router extends Backbone.Router
 
         if @layout is undefined
             log.info 'create LayoutWithHeader'
-            @layout = new LayoutWithHeader()
+            if @layoutWithHeader
+                @layout = @layoutWithHeader
+            else
+                @layout = new LayoutWithHeader()
             $('body').html @layout.render().el
         return @layout.alredyLoad = false if @layout.alredyLoad
         if @layout.back

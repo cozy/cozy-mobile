@@ -13,7 +13,7 @@ module.exports = class ConfigView extends BaseView
 
     template: require '../templates/config'
     menuEnabled: true
-    append: false
+    append: true
     className: 'configClass'
     refs:
         contactCheckbox: '#contactSyncCheck'

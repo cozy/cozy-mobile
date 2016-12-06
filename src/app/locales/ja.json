@@ -1,5 +1,5 @@
 {
-    "app name": "Cozy mobile",
+    "app name": "Cozy モバイル",
     "App is busy": "同期処理中",
     "cozy url": "Cozy のドメイン",
     "cozy password": "Cozy のパスワード",
@@ -138,14 +138,16 @@
     "config_loading_files": "ファイルとフォルダーのロード中。",
     "config_loading_calendars": "カレンダーのロード中。",
     "config_loading_contacts": "連絡先のロード中。",
+    "information_backup_picture": "写真をバックアップ",
     "config_log_send": "ログを送信",
     "config_log_share": "ログを共有",
+    "modal_action_file_big": "このファイルは大きすぎるため表示できません。",
     "modal_action_file_download": "オフラインで利用できるようにする",
     "modal_action_file_display_in": "表示",
     "modal_action_file_display_out": "...で開く",
     "modal_action_file_remove_device": "オフラインを削除",
     "modal_file_open_error_button": "OK",
-    "modal_file_open_error_description": "No application can open this file.",
-    "modal_file_open_error_title": "Cannot open this file",
+    "modal_file_open_error_description": "このファイルを開くアプリケーションがありません。",
+    "modal_file_open_error_title": "このファイルを開くことができません",
     "Unexpected token <": "Cozy が正しく動作しているか確認してください。"
 }

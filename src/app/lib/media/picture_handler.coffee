@@ -17,7 +17,11 @@ instance = null
 module.exports = class PictureHandler
 
 
-    constructor: (@media) ->
+    constructor: (media) ->
+        if instance
+            instance.media = media
+        else
+            @media = media
         return instance if instance
         instance = @
 
@@ -26,11 +30,9 @@ module.exports = class PictureHandler
         @localDb ?= app.init.database.localDb
         @replicateDb ?= app.init.database.replicateDb
         @remoteDb ?= app.init.database.remoteDb
-        @media ?= new MediaUploader()
         @connectionHandler ?= new ConnectionHandler()
         @requestCozy ?= app.init.requestCozy
         @remoteRequest = new RemoteRequest @requestCozy
-        @queue = 0
         @permission = new Permission()
 
 
@@ -51,13 +53,16 @@ module.exports = class PictureHandler
                 picturesCache = picturesCache.filter (pictureCache) ->
                     !pictureCache.value.binaryExist
                 return callback() if picturesCache.length is 0
-                @_setQueue picturesCache.length
+
+                @trigger "change:total", @, picturesCache.length
+                @progression = 0
 
                 cozyFiles = {}
                 for cozyFile in result[4].rows
                     fileName = cozyFile.key[1].substr(2).toLowerCase()
                     cozyFiles[fileName] = cozyFile
 
+                @_updateProgression()
                 async.eachSeries picturesCache, (pictureCache, cb) =>
                     @media.isUploadable (ok) =>
                         return cb new Error "Is not uploadable." unless ok
@@ -67,11 +72,10 @@ module.exports = class PictureHandler
                             (cb) => @_checkCozyBinary pictureCache, cb
                         ], (err) =>
                             log.warn err if err
-                            @_setQueue --@queue
+                            @_updateProgression()
                             cb()
-                , (err) =>
+                , (err) ->
                     log.warn err if err
-                    @_setQueue 0
                     callback()
 
 
@@ -247,10 +251,6 @@ module.exports = class PictureHandler
             callback null, cachePictures
 
 
-    _setQueue: (@queue) ->
-        @trigger "change:queue", @, @queue
-
-
     _ensureDeviceFolder: (callback) ->
         findFolder = (id, cb) =>
             @replicateDb.get id, (err, result) ->
@@ -296,3 +296,8 @@ module.exports = class PictureHandler
                             # should not reach here: already exist remote,
                             # but not present in replicated @replicateDb ...
                             callback new Error 'photo folder not replicated yet'
+
+
+    _updateProgression: ->
+        @progression++
+        @trigger "change:progress", @, @progression

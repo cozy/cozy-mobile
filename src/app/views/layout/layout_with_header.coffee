@@ -1,7 +1,8 @@
 Layout = require './layout'
 Header = require './header'
 FileViewer = require '../file_viewer'
-FirstReplication = require '../../lib/first_replication'
+InformationView = require '../../components/information/information.view'
+MediaPlayerView = require '../media_player'
 
 
 log = require('../../lib/persistent_log')
@@ -18,24 +19,12 @@ module.exports = class LayoutWithHeader extends Layout
         headerContainer: '#headerContainer'
         contentContainer: '#contentContainer'
         menuContainer: '#menuContainer'
-        importProgress: '.import-state .determinate'
-        importInfoText: '.import-state .info'
 
 
     initialize: ->
         super
         @header = new Header()
-        @firstReplication = new FirstReplication()
-        @firstReplication.addProgressionView (progression, total) =>
-            percentage = progression * 100 / (total * 2)
-            @importProgress.css 'width', "#{percentage}%"
-        @listenTo @firstReplication, "change:queue", (object, task) =>
-            if task
-                @importInfoText.text t 'config_loading_' + task
-                $('body').addClass 'import'
-            else
-                $('body').removeClass 'import'
-                @importProgress.css 'width', "0%"
+        @information = new InformationView()
         @views = []
         @router = app.router
         @alredyLoad = false
@@ -43,6 +32,7 @@ module.exports = class LayoutWithHeader extends Layout
 
     afterRender: ->
         @headerContainer.html @header.render().$el
+        @$el.append @information.render().$el
 
 
     updateHeader: (options) ->
@@ -57,11 +47,6 @@ module.exports = class LayoutWithHeader extends Layout
         @header.hide()
 
 
-    getRenderData: ->
-        running: @firstReplication.isRunning()
-        taskName: @firstReplication.getTaskName()
-
-
     display: (@view) ->
         log.info 'display'
 
@@ -69,6 +54,9 @@ module.exports = class LayoutWithHeader extends Layout
         @currentView = @view
 
         @currentView.backExit = true if @oldView is undefined
+
+        if @currentView instanceof MediaPlayerView
+            @information.hide()
 
         if @currentView.append
             @views.push @currentView
@@ -82,6 +70,10 @@ module.exports = class LayoutWithHeader extends Layout
 
     goBack: ->
         @oldView = @views.pop()
+
+        if @oldView instanceof MediaPlayerView
+            @information.show()
+
         @oldView.destroy()
         @back = false
         @currentView = @views[@views.length - 1]
