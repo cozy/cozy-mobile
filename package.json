@@ -42,7 +42,7 @@
     "validator": "6.2.0"
   },
   "devDependencies": {
-    "brunch": "2.9.1",
+    "brunch": "2.10.3",
     "chai": "3.5.0",
     "clean-css-brunch": "2.0.0",
     "codecov": "1.0.1",
