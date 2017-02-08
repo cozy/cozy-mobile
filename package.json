@@ -59,7 +59,7 @@
     "memdown": "1.2.4",
     "mocha": "3.2.0",
     "mockery": "2.0.0",
-    "stylus-brunch": "2.8.0",
+    "stylus-brunch": "2.9.0",
     "xmlhttprequest": "1.8.0"
   }
 }
