@@ -54,7 +54,7 @@
     "css-brunch": "2.6.1",
     "istanbul": "0.4.5",
     "jade-brunch": "2.8.0",
-    "javascript-brunch": "2.0.0",
+    "javascript-brunch": "2.10.0",
     "json-brunch": "1.5.4",
     "memdown": "1.2.4",
     "mocha": "3.2.0",
