@@ -44,7 +44,7 @@
   "devDependencies": {
     "brunch": "2.9.1",
     "chai": "3.5.0",
-    "clean-css-brunch": "2.0.0",
+    "clean-css-brunch": "2.10.0",
     "codecov": "1.0.1",
     "coffee-coverage": "1.0.1",
     "coffee-script": "1.12.2",
