@@ -48,7 +48,7 @@
     "codecov": "1.0.1",
     "coffee-coverage": "1.0.1",
     "coffee-script": "1.12.2",
-    "coffee-script-brunch": "2.1.0",
+    "coffee-script-brunch": "2.10.1",
     "coffeelint": "1.16.0",
     "cordova": "6.4.0",
     "css-brunch": "2.6.1",
