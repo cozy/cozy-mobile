@@ -46,7 +46,7 @@
     "chai": "3.5.0",
     "clean-css-brunch": "2.0.0",
     "codecov": "1.0.1",
-    "coffee-coverage": "1.0.1",
+    "coffee-coverage": "2.0.0",
     "coffee-script": "1.12.2",
     "coffee-script-brunch": "2.1.0",
     "coffeelint": "1.16.0",
