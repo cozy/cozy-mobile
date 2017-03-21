@@ -30,7 +30,7 @@
     "material-design-icons": "3.0.1",
     "materialize-css": "https://github.com/cozy/materialize.git",
     "mdi": "1.7.22",
-    "moment": "2.17.1",
+    "moment": "2.18.1",
     "moment-timezone": "0.5.11",
     "node-polyglot": "2.2.1",
     "node-viewerjs": "https://github.com/cozy/ViewerJS.git",
