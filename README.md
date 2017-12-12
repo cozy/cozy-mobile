@@ -1,4 +1,4 @@
-# :cloud: [Cozy Cloud][0] Mobile client
+# [Deprecated] :cloud: [Cozy Cloud][0] Mobile client
 
 [![Build Status][1]][2]
 [![Build Status][20]][21]
@@ -6,7 +6,7 @@
 [![Code Climate][5]][6]
 [![codecov][18]][19]
 
-This is the native mobile client for Cozy.
+~~This is the native mobile client for Cozy.~~ This *was* the native mobile client for Cozy v2. The code for the current mobile client [can be found here](https://github.com/cozy/cozy-drive/tree/master/targets/drive/mobile).
 
 
 ## :rocket: Install
